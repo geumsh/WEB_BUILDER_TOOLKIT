@@ -8,14 +8,14 @@
  * - GET /api/sales      : Sales table (PAGE)
  * - GET /api/trend      : Trend chart (PAGE)
  *
- * Port: 3003
+ * Port: 4003
  */
 
 const express = require('express');
 const cors = require('cors');
 
 const app = express();
-const PORT = 3003;
+const PORT = 4003;
 
 app.use(cors());
 app.use(express.json());
