@@ -439,4 +439,240 @@ console.log('[Component] appendElement accessible in destroy:', !!this.appendEle
   await page.waitForTimeout(1000);
 
   console.log('✓ TC-LC-005: 컴포넌트 3개 추가 완료 (Button, Close Button, Spinners)');
+
+  // Instance List 패널 열기
+  await page.locator('#edit-menu-bar .el-menu-item').nth(2).locator('svg').click();
+  await page.waitForTimeout(500);
+
+  // 각 컴포넌트에 라이프사이클 로깅 코드 추가
+  const lc005Components = ['badge_1', 'button_1', 'close_button_1', 'spinners_1'];
+
+  // 이미 열려있는 CodeBox 탭을 찾거나 새로 열기
+  let compCodeBox = page.context().pages().find(p => p.url().includes('#/codeBox'));
+
+  for (const instanceName of lc005Components) {
+    // Instance List 패널이 보이는지 확인하고, 보이지 않으면 열기
+    const instanceListVisible = await page.locator('#outline-panel-content').isVisible();
+    if (!instanceListVisible) {
+      await page.locator('#edit-menu-bar .el-menu-item').nth(2).locator('svg').click();
+      await page.waitForTimeout(500);
+    }
+
+    // Instance List에서 컴포넌트 선택
+    await page.locator('#outline-panel-content').getByText(instanceName, { exact: true }).click();
+    await page.waitForTimeout(300);
+
+    // CodeBox 탭이 없으면 새로 열기
+    if (!compCodeBox) {
+      const [newCodeBox] = await Promise.all([
+        page.context().waitForEvent('page'),
+        page.locator('.bi-code-slash').click()
+      ]);
+      compCodeBox = newCodeBox;
+    } else {
+      // 기존 CodeBox 탭 클릭 (새 컴포넌트 정보 로드)
+      await page.locator('.bi-code-slash').click();
+      await compCodeBox.bringToFront();
+    }
+
+    await compCodeBox.waitForLoadState();
+    await compCodeBox.locator('.script-edit-main').waitFor({ state: 'visible' });
+
+    // register 탭 코드 입력
+    const registerEditorSel = '#allEditArea #pane-0 > div > div > div.overflow-guard > div.monaco-scrollable-element.editor-scrollable.vs-dark > div.lines-content.monaco-editor-background > div.view-lines.monaco-mouse-cursor-text';
+    await compCodeBox.locator(registerEditorSel).waitFor({ state: 'visible' });
+    await compCodeBox.locator(registerEditorSel).click();
+    await compCodeBox.keyboard.press('Control+a');
+    await compCodeBox.keyboard.press('Backspace');
+
+    // badge_1에는 openPage 이벤트 추가
+    const registerLogCode = instanceName === 'badge_1'
+      ? `// TC-LC-005: ${instanceName} register
+window.lifecycleLog.push({ type: 'component', name: '${instanceName}', phase: 'register', timestamp: Date.now() });
+console.log('[LC-005] ${instanceName} register');
+
+// openPage 이벤트
+const openPage = wemb.pageManager.openPageByName.bind(wemb.pageManager);
+this.appendElement.addEventListener('click', () => openPage('openPageTarget'));`
+      : `// TC-LC-005: ${instanceName} register
+window.lifecycleLog.push({ type: 'component', name: '${instanceName}', phase: 'register', timestamp: Date.now() });
+console.log('[LC-005] ${instanceName} register');`;
+
+    await compCodeBox.keyboard.type(registerLogCode);
+
+    // beforeDestroy 탭 클릭 및 코드 입력
+    await compCodeBox.locator('#allEditArea .el-tabs__item:has-text("beforeDestroy")').click();
+    const beforeDestroyEditorSel = '#allEditArea #pane-2 > div > div > div.overflow-guard > div.monaco-scrollable-element.editor-scrollable.vs-dark > div.lines-content.monaco-editor-background > div.view-lines.monaco-mouse-cursor-text';
+    await compCodeBox.locator(beforeDestroyEditorSel).waitFor({ state: 'visible' });
+    await compCodeBox.locator(beforeDestroyEditorSel).click();
+    await compCodeBox.keyboard.press('Control+a');
+    await compCodeBox.keyboard.press('Backspace');
+
+    const beforeDestroyLogCode = `// TC-LC-005: ${instanceName} beforeDestroy
+window.lifecycleLog.push({ type: 'component', name: '${instanceName}', phase: 'beforeDestroy', timestamp: Date.now() });
+console.log('[LC-005] ${instanceName} beforeDestroy');`;
+
+    await compCodeBox.keyboard.type(beforeDestroyLogCode);
+
+    // Apply 버튼 클릭
+    await compCodeBox.locator('.apply-btn').click();
+
+    // visual.do 탭으로 돌아가기
+    await page.bringToFront();
+
+    console.log(`✓ ${instanceName} 라이프사이클 로깅 코드 입력 완료`);
+  }
+
+  // 저장
+  await page.keyboard.press('Control+s');
+  await page.waitForTimeout(1000);
+
+  // 캔버스 빈 영역 클릭하여 컴포넌트 선택 해제 (페이지 스크립트 열기 위해)
+  await page.locator('#app-main').click();
+  await page.waitForTimeout(300);
+
+  // 페이지 라이프사이클에 로깅 코드 추가 (기존 CodeBox 탭 사용 또는 새로 열기)
+  let pageCodeBox = page.context().pages().find(p => p.url().includes('#/codeBox'));
+
+  if (!pageCodeBox) {
+    const [newCodeBox] = await Promise.all([
+      page.context().waitForEvent('page'),
+      page.locator('.bi-code-slash').click()
+    ]);
+    pageCodeBox = newCodeBox;
+  } else {
+    // 기존 CodeBox 탭에서 페이지 스크립트로 전환
+    await page.locator('.bi-code-slash').click();
+    await pageCodeBox.bringToFront();
+  }
+
+  await pageCodeBox.waitForLoadState();
+  await pageCodeBox.locator('.script-edit-main').waitFor({ state: 'visible' });
+
+  // beforeLoad 탭 - window.lifecycleLog 초기화 및 로깅
+  await pageCodeBox.locator('#cssJsEditArea .el-tabs__item:has-text("beforeLoad")').click();
+  const beforeLoadEditorSel = '#cssJsEditArea #pane-0 > div > div > div.overflow-guard > div.monaco-scrollable-element.editor-scrollable.vs-dark > div.lines-content.monaco-editor-background > div.view-lines.monaco-mouse-cursor-text';
+  await pageCodeBox.locator(beforeLoadEditorSel).waitFor({ state: 'visible' });
+  await pageCodeBox.locator(beforeLoadEditorSel).click();
+  await pageCodeBox.keyboard.press('Control+a');
+  await pageCodeBox.keyboard.press('Backspace');
+
+  const beforeLoadCode = `// TC-LC-005: 페이지 beforeLoad - lifecycleLog 초기화
+window.lifecycleLog = [];
+window.lifecycleLog.push({ type: 'page', phase: 'before_load', timestamp: Date.now() });
+console.log('[LC-005] Page before_load');`;
+
+  await pageCodeBox.keyboard.type(beforeLoadCode);
+
+  // loaded 탭 - 로깅 + 3초 후 페이지 이동
+  await pageCodeBox.locator('#cssJsEditArea .el-tabs__item:has-text("loaded")').click();
+  const loadedEditorSel = '#cssJsEditArea #pane-1 > div > div > div.overflow-guard > div.monaco-scrollable-element.editor-scrollable.vs-dark > div.lines-content.monaco-editor-background > div.view-lines.monaco-mouse-cursor-text';
+  await pageCodeBox.locator(loadedEditorSel).waitFor({ state: 'visible' });
+  await pageCodeBox.locator(loadedEditorSel).click();
+  await pageCodeBox.keyboard.press('Control+a');
+  await pageCodeBox.keyboard.press('Backspace');
+
+  const loadedCode = `// TC-LC-005: 페이지 loaded
+window.lifecycleLog.push({ type: 'page', phase: 'loaded', timestamp: Date.now() });
+console.log('[LC-005] Page loaded');`;
+
+  await pageCodeBox.keyboard.type(loadedCode);
+
+  // beforeUnLoad 탭 - 로깅
+  await pageCodeBox.locator('#cssJsEditArea .el-tabs__item:has-text("beforeUnLoad")').click();
+  const beforeUnLoadEditorSel = '#cssJsEditArea #pane-2 > div > div > div.overflow-guard > div.monaco-scrollable-element.editor-scrollable.vs-dark > div.lines-content.monaco-editor-background > div.view-lines.monaco-mouse-cursor-text';
+  await pageCodeBox.locator(beforeUnLoadEditorSel).waitFor({ state: 'visible' });
+  await pageCodeBox.locator(beforeUnLoadEditorSel).click();
+  await pageCodeBox.keyboard.press('Control+a');
+  await pageCodeBox.keyboard.press('Backspace');
+
+  const beforeUnLoadCode = `// TC-LC-005: 페이지 beforeUnLoad
+window.lifecycleLog.push({ type: 'page', phase: 'before_unload', timestamp: Date.now() });
+console.log('[LC-005] Page before_unload');`;
+
+  await pageCodeBox.keyboard.type(beforeUnLoadCode);
+
+  // Apply 버튼 클릭
+  await pageCodeBox.locator('.apply-btn').click();
+
+  // visual.do 탭으로 돌아가기
+  await page.bringToFront();
+
+  // 저장
+  await page.keyboard.press('Control+s');
+  await page.waitForTimeout(1000);
+
+  console.log('✓ 페이지 라이프사이클 로깅 코드 입력 완료');
+
+  // 캔버스 영역 클릭하여 포커스
+  await page.locator('#app-main').click();
+
+  // 콘솔 로그 수집
+  const lc005Logs: string[] = [];
+
+  // Ctrl+Enter로 미리보기 실행
+  const [lc005PreviewPage] = await Promise.all([
+    page.context().waitForEvent('page'),
+    page.keyboard.press('Control+Enter')
+  ]);
+
+  // 콘솔 리스너 등록
+  lc005PreviewPage.on('console', (msg) => {
+    if (msg.text().includes('[LC-005]')) {
+      lc005Logs.push(msg.text());
+    }
+  });
+
+  // 뷰어 탭 로드 대기
+  await lc005PreviewPage.waitForLoadState();
+  await expect(lc005PreviewPage).toHaveURL(/visualViewer\.do/);
+
+  // 컴포넌트 로딩 대기
+  await lc005PreviewPage.locator('.badge_1').waitFor({ state: 'visible', timeout: 30000 });
+
+  // badge_1 클릭하여 페이지 이동
+  await lc005PreviewPage.locator('.badge_1').click();
+  await lc005PreviewPage.waitForTimeout(1000);
+
+  // openPageTarget 페이지로 이동 확인
+  const lc005TargetPage = lc005PreviewPage.locator('.ViewerPageComponent_ViewerPageComponent.openPageTarget');
+  await expect(lc005TargetPage).toBeVisible();
+
+  console.log('✓ openPageTarget 페이지 이동 완료');
+
+  // 콘솔 로그 출력
+  console.log('=== TC-LC-005 라이프사이클 로그 ===');
+  lc005Logs.forEach((log) => console.log(log));
+
+  // window.lifecycleLog 데이터 가져오기
+  const lifecycleData = await lc005PreviewPage.evaluate(() => {
+    return (window as any).lifecycleLog || [];
+  });
+
+  console.log('=== window.lifecycleLog 데이터 ===');
+  console.log(JSON.stringify(lifecycleData, null, 2));
+
+  // validateLifecycleOrder 실행 (evaluate 내부에서 함수 정의 및 실행)
+  const validationResult = await lc005PreviewPage.evaluate(() => {
+    const log = (window as any).lifecycleLog;
+    const pageBeforeLoad = log.find((l: any) => l.type === 'page' && l.phase === 'before_load');
+    const pageLoaded = log.find((l: any) => l.type === 'page' && l.phase === 'loaded');
+    const pageBeforeUnload = log.find((l: any) => l.type === 'page' && l.phase === 'before_unload');
+    const componentRegisters = log.filter((l: any) => l.type === 'component' && l.phase === 'register');
+    const componentDestroys = log.filter((l: any) => l.type === 'component' && l.phase === 'beforeDestroy');
+    const allRegistersAfterBeforeLoad = componentRegisters.every((r: any) => r.timestamp > pageBeforeLoad.timestamp);
+    const loadedAfterAllRegisters = componentRegisters.every((r: any) => r.timestamp < pageLoaded.timestamp);
+    const allDestroysAfterBeforeUnload = componentDestroys.every((d: any) => d.timestamp > pageBeforeUnload.timestamp);
+    return { allRegistersAfterBeforeLoad, loadedAfterAllRegisters, allDestroysAfterBeforeUnload };
+  });
+
+  console.log('=== validateLifecycleOrder 결과 ===');
+  console.log(JSON.stringify(validationResult, null, 2));
+
+  // 검증
+  expect(validationResult.allRegistersAfterBeforeLoad).toBe(true);
+  expect(validationResult.loadedAfterAllRegisters).toBe(true);
+  expect(validationResult.allDestroysAfterBeforeUnload).toBe(true);
+
+  console.log('✓ TC-LC-005: 다중 컴포넌트 라이프사이클 순서 검증 완료');
 });
