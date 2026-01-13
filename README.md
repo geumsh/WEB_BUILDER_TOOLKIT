@@ -140,7 +140,7 @@ Figma Desktop이 실행 중인 상태에서:
 
 ```bash
 # Figma MCP 서버 등록
-claude mcp add figma-desktop --transport http --url http://127.0.0.1:3845/mcp
+claude mcp add --transport http figma-desktop http://127.0.0.1:3845/mcp
 
 # 등록 확인
 claude mcp list
@@ -265,7 +265,7 @@ claude mcp list
 
 # 3. 연결 안 되면 재등록
 claude mcp remove figma-desktop
-claude mcp add figma-desktop --transport http --url http://127.0.0.1:3845/mcp
+claude mcp add --transport http figma-desktop http://127.0.0.1:3845/mcp
 ```
 
 ### Playwright 스크린샷 실패
