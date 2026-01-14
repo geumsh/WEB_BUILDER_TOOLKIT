@@ -670,11 +670,55 @@ function setLocale({ response }) {
 // ======================
 // ROW CLICK HANDLER
 // ======================
-function onRowClick(asset) {
+
+/**
+ * 지원하는 자산 타입별 API 매핑
+ * key: 자산 타입 (API 응답의 type 필드)
+ * value: datasetList.json의 dataset name
+ */
+const ASSET_TYPE_API_MAP = {
+    ups: 'ups',
+    pdu: 'pdu',
+    crac: 'crac',
+    sensor: 'sensor'
+};
+
+/**
+ * 테이블 행 클릭 시 자산 타입별 API 호출
+ */
+async function onRowClick(asset) {
+    const { id, type, name } = asset;
+    const datasetName = ASSET_TYPE_API_MAP[type];
+
+    // 이벤트 발행 (기존 동작 유지)
     Weventbus.emit('@assetSelected', {
         event: { asset },
         targetInstance: this
     });
+
+    // 지원하지 않는 타입
+    if (!datasetName) {
+        console.warn(`[AssetList] No API available for asset type: "${type}" (${name})`);
+        return;
+    }
+
+    // 타입별 API 호출
+    try {
+        console.log(`[AssetList] Fetching ${datasetName} API for: ${id}`);
+        const result = await fetchData(this.page, datasetName, { assetId: id });
+        const data = result?.response?.data;
+
+        if (data) {
+            console.log(`[AssetList] ${type.toUpperCase()} data:`, data);
+            // 상세 데이터 이벤트 발행 (3D 컴포넌트 등에서 사용 가능)
+            Weventbus.emit('@assetDetailLoaded', {
+                event: { asset, detail: data },
+                targetInstance: this
+            });
+        }
+    } catch (error) {
+        console.error(`[AssetList] Failed to fetch ${datasetName} API for ${id}:`, error);
+    }
 }
 
 // ======================
