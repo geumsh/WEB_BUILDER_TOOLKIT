@@ -684,7 +684,42 @@ const ASSET_TYPE_API_MAP = {
 };
 
 /**
- * 테이블 행 클릭 시 자산 타입별 API 호출
+ * 타입별 표시할 필드 설정
+ */
+const ASSET_TYPE_FIELDS = {
+    ups: [
+        { key: 'load', label: 'Load', suffix: '%' },
+        { key: 'batteryLevel', label: 'Battery', suffix: '%' },
+        { key: 'inputVoltage', label: 'Input', suffix: 'V' },
+        { key: 'outputVoltage', label: 'Output', suffix: 'V' },
+        { key: 'runtime', label: 'Runtime', suffix: 'min' },
+        { key: 'mode', label: 'Mode' }
+    ],
+    pdu: [
+        { key: 'totalPower', label: 'Power', suffix: 'kW' },
+        { key: 'totalCurrent', label: 'Current', suffix: 'A' },
+        { key: 'voltage', label: 'Voltage', suffix: 'V' },
+        { key: 'activeCircuits', label: 'Active Circuits' },
+        { key: 'circuitCount', label: 'Total Circuits' },
+        { key: 'powerFactor', label: 'Power Factor' }
+    ],
+    crac: [
+        { key: 'supplyTemp', label: 'Supply Temp', suffix: '°C' },
+        { key: 'returnTemp', label: 'Return Temp', suffix: '°C' },
+        { key: 'setpoint', label: 'Setpoint', suffix: '°C' },
+        { key: 'humidity', label: 'Humidity', suffix: '%' },
+        { key: 'fanSpeed', label: 'Fan Speed', suffix: '%' },
+        { key: 'mode', label: 'Mode' }
+    ],
+    sensor: [
+        { key: 'temperature', label: 'Temperature', suffix: '°C' },
+        { key: 'humidity', label: 'Humidity', suffix: '%' },
+        { key: 'dewpoint', label: 'Dewpoint', suffix: '°C' }
+    ]
+};
+
+/**
+ * 테이블 행 클릭 시 자산 타입별 API 호출 및 Modal 표시
  */
 async function onRowClick(asset) {
     const { id, type, name } = asset;
@@ -696,8 +731,12 @@ async function onRowClick(asset) {
         targetInstance: this
     });
 
+    // Modal 열기 (로딩 상태)
+    showModal.call(this, { asset, loading: true });
+
     // 지원하지 않는 타입
     if (!datasetName) {
+        showModal.call(this, { asset, noApi: true });
         console.warn(`[AssetList] No API available for asset type: "${type}" (${name})`);
         return;
     }
@@ -710,6 +749,10 @@ async function onRowClick(asset) {
 
         if (data) {
             console.log(`[AssetList] ${type.toUpperCase()} data:`, data);
+
+            // Modal에 데이터 표시
+            showModal.call(this, { asset, detail: data });
+
             // 상세 데이터 이벤트 발행 (3D 컴포넌트 등에서 사용 가능)
             Weventbus.emit('@assetDetailLoaded', {
                 event: { asset, detail: data },
@@ -718,6 +761,86 @@ async function onRowClick(asset) {
         }
     } catch (error) {
         console.error(`[AssetList] Failed to fetch ${datasetName} API for ${id}:`, error);
+        showModal.call(this, { asset, error: true });
+    }
+}
+
+// ======================
+// MODAL
+// ======================
+
+/**
+ * Modal 표시
+ */
+function showModal({ asset, detail, loading, noApi, error }) {
+    const modal = this.appendElement.querySelector('.asset-modal');
+    if (!modal) return;
+
+    const { id, name, type, typeLabel, status, statusLabel } = asset;
+
+    // 헤더 업데이트
+    modal.querySelector('.modal-title').textContent = name || id;
+    modal.querySelector('.modal-subtitle').textContent = `${typeLabel || type} · ${id}`;
+    const statusEl = modal.querySelector('.modal-status');
+    statusEl.textContent = statusLabel || status;
+    statusEl.dataset.status = status;
+
+    // 바디 업데이트
+    const grid = modal.querySelector('.modal-info-grid');
+
+    if (loading) {
+        grid.innerHTML = '<div class="modal-loading"></div>';
+    } else if (noApi) {
+        grid.innerHTML = `
+            <div class="modal-no-api wide">
+                <div class="modal-no-api-icon">📋</div>
+                <div class="modal-no-api-text">No detailed API available for "${typeLabel || type}"</div>
+            </div>
+        `;
+    } else if (error) {
+        grid.innerHTML = `
+            <div class="modal-no-api wide">
+                <div class="modal-no-api-icon">⚠️</div>
+                <div class="modal-no-api-text">Failed to load data</div>
+            </div>
+        `;
+    } else if (detail) {
+        const fields = ASSET_TYPE_FIELDS[type] || [];
+        grid.innerHTML = fields.map(({ key, label, suffix }) => {
+            const value = detail[key];
+            const displayValue = value !== undefined
+                ? (suffix ? `${value}${suffix}` : value)
+                : '-';
+            return `
+                <div class="modal-info-item">
+                    <div class="modal-info-label">${label}</div>
+                    <div class="modal-info-value">${displayValue}</div>
+                </div>
+            `;
+        }).join('');
+    }
+
+    // Modal 표시
+    modal.hidden = false;
+
+    // 닫기 이벤트 (한 번만 등록)
+    if (!this._modalCloseHandler) {
+        this._modalCloseHandler = (e) => {
+            if (e.target.closest('.modal-close-btn') || e.target.classList.contains('modal-overlay')) {
+                hideModal.call(this);
+            }
+        };
+        modal.addEventListener('click', this._modalCloseHandler);
+    }
+}
+
+/**
+ * Modal 닫기
+ */
+function hideModal() {
+    const modal = this.appendElement.querySelector('.asset-modal');
+    if (modal) {
+        modal.hidden = true;
     }
 }
 
