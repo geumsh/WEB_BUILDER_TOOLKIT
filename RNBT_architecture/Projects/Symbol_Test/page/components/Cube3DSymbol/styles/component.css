@@ -1,25 +1,83 @@
-/* Cube3DSymbol - Symbol State Component */
-/* 상태별 전체 SVG 교체 방식 */
+/* Cube3DSymbol Component Styles */
+/* ServerIcon2 방식: CSS selector + data-status 속성으로 색상 제어 */
 
 #cube3d-symbol-container {
     width: 73px;
     height: 54px;
     position: relative;
     overflow: hidden;
-
-    .symbol-container {
-        width: 100%;
-        height: 100%;
-    }
-
-    .symbol-svg {
-        display: block;
-        width: 100%;
-        height: 100%;
-    }
 }
 
-/* 상태 전환 애니메이션 */
 #cube3d-symbol-container .symbol-container {
-    transition: opacity 0.2s ease;
+    width: 100%;
+    height: 100%;
+}
+
+#cube3d-symbol-container .symbol-svg {
+    display: block;
+    width: 100%;
+    height: 100%;
+}
+
+/* ========================================
+   GREEN 상태 (정상)
+   ======================================== */
+.symbol-container[data-status="green"] {
+    .layer-grad0 { fill: url(#paint0-green); }
+    .layer-grad1 { fill: url(#paint1-green); }
+    .layer-grad2 { fill: url(#paint2-green); }
+    .layer-grad3 { fill: url(#paint3-green); }
+    .layer-grad4 { fill: url(#paint4-green); }
+    .layer-grad5 { fill: url(#paint5-green); }
+    .layer-grad6 { fill: url(#paint6-green); }
+    .layer-grad7 { fill: url(#paint7-green); }
+    .layer-grad8 { fill: url(#paint8-green); }
+    .layer-grad9 { fill: url(#paint9-green); }
+    .layer-fill-primary { fill: #4ADE80; }
+    .layer-fill-secondary { fill: #86EFAC; }
+    .layer-fill-tertiary { fill: #D1FAE5; }
+    .layer-stroke { stroke: #16A34A; }
+    .layer-stroke-border { stroke: #16A34A; }
+}
+
+/* ========================================
+   YELLOW 상태 (경고)
+   ======================================== */
+.symbol-container[data-status="yellow"] {
+    .layer-grad0 { fill: url(#paint0-yellow); }
+    .layer-grad1 { fill: url(#paint1-yellow); }
+    .layer-grad2 { fill: url(#paint2-yellow); }
+    .layer-grad3 { fill: url(#paint3-yellow); }
+    .layer-grad4 { fill: url(#paint4-yellow); }
+    .layer-grad5 { fill: url(#paint5-yellow); }
+    .layer-grad6 { fill: url(#paint6-yellow); }
+    .layer-grad7 { fill: url(#paint7-yellow); }
+    .layer-grad8 { fill: url(#paint8-yellow); }
+    .layer-grad9 { fill: url(#paint9-yellow); }
+    .layer-fill-primary { fill: #FACC15; }
+    .layer-fill-secondary { fill: #FEF08A; }
+    .layer-fill-tertiary { fill: #FEF9C3; }
+    .layer-stroke { stroke: #CA8A04; }
+    .layer-stroke-border { stroke: #CA8A04; }
+}
+
+/* ========================================
+   RED 상태 (위험)
+   ======================================== */
+.symbol-container[data-status="red"] {
+    .layer-grad0 { fill: url(#paint0-red); }
+    .layer-grad1 { fill: url(#paint1-red); }
+    .layer-grad2 { fill: url(#paint2-red); }
+    .layer-grad3 { fill: url(#paint3-red); }
+    .layer-grad4 { fill: url(#paint4-red); }
+    .layer-grad5 { fill: url(#paint5-red); }
+    .layer-grad6 { fill: url(#paint6-red); }
+    .layer-grad7 { fill: url(#paint7-red); }
+    .layer-grad8 { fill: url(#paint8-red); }
+    .layer-grad9 { fill: url(#paint9-red); }
+    .layer-fill-primary { fill: #EF4444; }
+    .layer-fill-secondary { fill: #FECACA; }
+    .layer-fill-tertiary { fill: #FEE2E2; }
+    .layer-stroke { stroke: #DC2626; }
+    .layer-stroke-border { stroke: #DC2626; }
 }
