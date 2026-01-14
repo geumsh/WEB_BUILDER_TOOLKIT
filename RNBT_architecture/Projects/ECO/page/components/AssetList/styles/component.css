@@ -562,4 +562,74 @@
             color: #7ee787;
         }
     }
+
+    /* ======================
+     * Tabulator Pagination (Dark Theme)
+     * ====================== */
+    .tabulator-footer {
+        background: #161b22 !important;
+        border-top: 1px solid #21262d !important;
+        color: #8b949e !important;
+        padding: 8px 12px !important;
+    }
+
+    .tabulator-paginator {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        color: #8b949e !important;
+    }
+
+    .tabulator-page-size {
+        background: #21262d !important;
+        border: 1px solid #30363d !important;
+        border-radius: 4px !important;
+        color: #e0e6ed !important;
+        padding: 4px 8px !important;
+        font-size: 12px !important;
+        cursor: pointer;
+
+        &:focus {
+            outline: none;
+            border-color: #58a6ff !important;
+        }
+    }
+
+    .tabulator-pages {
+        display: flex;
+        gap: 4px;
+    }
+
+    .tabulator-page {
+        background: #21262d !important;
+        border: 1px solid #30363d !important;
+        border-radius: 4px !important;
+        color: #8b949e !important;
+        padding: 4px 10px !important;
+        font-size: 12px !important;
+        cursor: pointer;
+        transition: all 0.15s;
+
+        &:hover:not(.active):not([disabled]) {
+            background: #30363d !important;
+            color: #e0e6ed !important;
+        }
+
+        &.active {
+            background: #238636 !important;
+            border-color: #238636 !important;
+            color: #fff !important;
+        }
+
+        &[disabled] {
+            opacity: 0.4;
+            cursor: not-allowed;
+        }
+    }
+
+    .tabulator-page-counter {
+        color: #8b949e !important;
+        font-size: 12px !important;
+        margin-left: auto;
+    }
 }

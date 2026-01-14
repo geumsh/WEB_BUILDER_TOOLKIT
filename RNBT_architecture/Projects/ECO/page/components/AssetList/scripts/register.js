@@ -56,6 +56,11 @@ function initComponent() {
         height: '100%',
         placeholder: 'Select a location from the tree',
         selectable: 1,
+        // Pagination
+        pagination: true,
+        paginationSize: 50,
+        paginationSizeSelector: [25, 50, 100, 200],
+        paginationCounter: 'rows',
         columns: [
             { title: 'ID', field: 'id', widthGrow: 1, headerSort: true },
             { title: 'Name', field: 'name', widthGrow: 2, headerSort: true },
