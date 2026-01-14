@@ -15,7 +15,7 @@ Figma 디자인을 **정적 HTML/CSS**로 변환하는 Skill입니다.
 - Figma MCP 서버 등록됨
 
 ```bash
-claude mcp add figma-desktop --transport http --url http://127.0.0.1:3845/mcp
+claude mcp add --transport http figma-desktop http://127.0.0.1:3845/mcp
 ```
 
 ---
