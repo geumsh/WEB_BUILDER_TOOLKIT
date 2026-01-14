@@ -297,7 +297,7 @@ function findInstanceByAssetId(assetId) {
 ```bash
 cd mock_server
 npm install
-npm start  # port 3004
+npm start  # port 4004
 ```
 
 ## API 엔드포인트

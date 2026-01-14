@@ -58,7 +58,7 @@ function initComponent() {
         xKey: 'timestamps',
         series: [
             { yKey: 'temperatures', name: 'Temperature', color: '#3b82f6', yAxisIndex: 0 },
-            { yKey: 'humidities', name: 'Humidity', color: '#22c55e', yAxisIndex: 1 }
+            { yKey: 'humidity', name: 'Humidity', color: '#22c55e', yAxisIndex: 1 }
         ],
         yAxis: [
             { name: '°C', position: 'left' },

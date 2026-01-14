@@ -1,6 +1,6 @@
 # ECO API 명세
 
-**Base URL**: `http://localhost:4004`
+**Base URL**: `{baseUrl}` (datasetList.json의 rest_api URL 참조)
 
 **프로젝트 설명**: 데이터센터 전력/냉방 장비 모니터링 대시보드
 
