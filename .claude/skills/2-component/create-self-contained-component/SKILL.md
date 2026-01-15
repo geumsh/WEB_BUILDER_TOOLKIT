@@ -551,7 +551,7 @@ this.templateConfig = {
 
 ## CSS 원칙
 
-**[CODING_STYLE.md](../../guides/CODING_STYLE.md)의 CSS 원칙 섹션 참조**
+**[CODING_STYLE.md](../../../guides/CODING_STYLE.md)의 CSS 원칙 섹션 참조**
 
 핵심 요약:
 - **px 단위 사용** (rem/em 금지) - 팝업 크기 예측 가능성 보장
@@ -692,7 +692,7 @@ this.templateConfig = {
 
 | 문서 | 내용 |
 |------|------|
-| [CODING_STYLE.md](../../guides/CODING_STYLE.md) | 함수형 코딩 지침 (필수 참고) |
+| [CODING_STYLE.md](../../../guides/CODING_STYLE.md) | 함수형 코딩 지침 (필수 참고) |
 
 ---
 

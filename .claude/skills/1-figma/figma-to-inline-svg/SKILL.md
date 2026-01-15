@@ -140,7 +140,7 @@ Figma_Conversion/Static_Components/
 
 ### 3. CSS 원칙
 
-**[CODING_STYLE.md](../../guides/CODING_STYLE.md)의 CSS 원칙 섹션 참조**
+**[CODING_STYLE.md](../../../guides/CODING_STYLE.md)의 CSS 원칙 섹션 참조**
 
 핵심 요약:
 - **px 단위 사용** (rem/em 금지) - RNBT 런타임 호환성 보장
@@ -326,7 +326,7 @@ create-symbol-state-component (동적)
 
 | 문서 | 참고 시점 | 내용 |
 |------|----------|------|
-| [CODING_STYLE.md](../../guides/CODING_STYLE.md) | 코드 작성 시 | CSS 원칙 |
+| [CODING_STYLE.md](../../../guides/CODING_STYLE.md) | 코드 작성 시 | CSS 원칙 |
 | [figma-to-html/SKILL.md](../figma-to-html/SKILL.md) | MCP 사용법 참고 시 | 기본 워크플로우 |
 
 ## 참고 예제

@@ -739,7 +739,7 @@ console.log('[ComponentName] Destroyed');
 
 ## CSS 원칙
 
-**[CODING_STYLE.md](../../guides/CODING_STYLE.md)의 CSS 원칙 섹션 참조**
+**[CODING_STYLE.md](../../../guides/CODING_STYLE.md)의 CSS 원칙 섹션 참조**
 
 핵심 요약:
 - **px 단위 사용** (rem/em 금지)
@@ -932,7 +932,7 @@ function renderChart(config, { response }) {
 
 | 문서 | 참고 시점 | 내용 |
 |------|----------|------|
-| [CODING_STYLE.md](../../guides/CODING_STYLE.md) | **코드 작성 시 (필수)** | 함수형 코딩 지침, 안티패턴, 권장 패턴 |
+| [CODING_STYLE.md](../../../guides/CODING_STYLE.md) | **코드 작성 시 (필수)** | 함수형 코딩 지침, 안티패턴, 권장 패턴 |
 | `discussions/2025-12-30_component_standalone.md` | API/Figma 없이 컴포넌트 개발 시 | 미리 완성 가능한 것 vs TBD 항목 구분 |
 | `discussions/2025-12-31_config_pattern_catalog.md` | Config 구조 설계 시 | Field, Chart, Table 등 Config 패턴 카탈로그 |
 

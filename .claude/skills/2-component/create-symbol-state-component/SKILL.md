@@ -581,4 +581,4 @@ console.log('[ComponentName] Destroyed');
 
 | 문서 | 내용 |
 |------|------|
-| [CODING_STYLE.md](../../guides/CODING_STYLE.md) | 함수형 코딩 지침 |
+| [CODING_STYLE.md](../../../guides/CODING_STYLE.md) | 함수형 코딩 지침 |
