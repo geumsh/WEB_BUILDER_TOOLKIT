@@ -1167,80 +1167,6 @@ app.get('/api/hierarchy/:nodeId/assets', (req, res) => {
 });
 
 // ======================
-// API ENDPOINTS - Assets (Updated)
-// ======================
-
-app.get('/api/assets/summary', (req, res) => {
-    if (!HIERARCHY_CACHE) initializeHierarchy();
-    const summary = generateAssetsSummary(ALL_ASSETS);
-    console.log(`[${new Date().toISOString()}] GET /api/assets/summary`);
-    res.json({ data: { summary } });
-});
-
-app.get('/api/assets', (req, res) => {
-    if (!HIERARCHY_CACHE) initializeHierarchy();
-
-    const { type, parentId, canHaveChildren } = req.query;
-    let filteredAssets = [...ALL_ASSETS];
-
-    if (type) {
-        const types = type.split(',');
-        filteredAssets = filteredAssets.filter(asset => types.includes(asset.type));
-    }
-
-    if (parentId) {
-        filteredAssets = filteredAssets.filter(asset => asset.parentId === parentId);
-    }
-
-    if (canHaveChildren !== undefined) {
-        const isContainer = canHaveChildren === 'true';
-        filteredAssets = filteredAssets.filter(asset => asset.canHaveChildren === isContainer);
-    }
-
-    const summary = generateAssetsSummary(filteredAssets);
-    console.log(`[${new Date().toISOString()}] GET /api/assets - ${filteredAssets.length} assets`);
-    res.json({ data: { assets: filteredAssets, summary } });
-});
-
-app.get('/api/asset/:id', (req, res) => {
-    if (!HIERARCHY_CACHE) initializeHierarchy();
-
-    const { id } = req.params;
-    const asset = ALL_ASSETS.find(a => a.id === id);
-
-    console.log(`[${new Date().toISOString()}] GET /api/asset/${id} - ${asset ? 'found' : 'not found'}`);
-
-    if (!asset) {
-        return res.status(404).json({ error: 'Asset not found', id });
-    }
-    res.json({ data: asset });
-});
-
-app.post('/api/assets/validate', (req, res) => {
-    if (!HIERARCHY_CACHE) initializeHierarchy();
-
-    const { ids } = req.body;
-
-    if (!ids || !Array.isArray(ids)) {
-        return res.status(400).json({ error: 'ids array is required' });
-    }
-
-    const validIds = [];
-    const invalidIds = [];
-
-    ids.forEach(id => {
-        if (ALL_ASSETS.find(a => a.id === id)) {
-            validIds.push(id);
-        } else {
-            invalidIds.push(id);
-        }
-    });
-
-    console.log(`[${new Date().toISOString()}] POST /api/assets/validate - ${ids.length} ids, ${validIds.length} valid`);
-    res.json({ data: { validIds, invalidIds } });
-});
-
-// ======================
 // API ENDPOINTS - UPS
 // ======================
 
@@ -1353,16 +1279,17 @@ app.listen(PORT, () => {
     console.log(`  Terminals: ${HIERARCHY_CACHE.summary.terminals}`);
     console.log(`  By Type:`, HIERARCHY_CACHE.summary.byType);
     console.log(`\nAvailable endpoints:`);
-    console.log(`  GET /api/hierarchy?depth=n           - Hierarchy tree (depth limited, containers only)`);
-    console.log(`  GET /api/hierarchy/:nodeId/children  - Node children (Lazy Loading, containers only)`);
+    console.log(`  GET /api/hierarchy?depth=n&locale=ko - Hierarchy tree (depth limited)`);
+    console.log(`  GET /api/hierarchy/:nodeId/children  - Node children (Lazy Loading)`);
     console.log(`  GET /api/hierarchy/:nodeId/assets    - All assets under node (for Table)`);
-    console.log(`  GET /api/assets                      - All assets`);
-    console.log(`  GET /api/assets?type=ups             - Filter by type`);
-    console.log(`  GET /api/asset/:id                   - Single asset`);
-    console.log(`  POST /api/assets/validate            - Batch validate`);
-    console.log(`  GET /api/ups/:id                     - UPS status`);
-    console.log(`  GET /api/pdu/:id                     - PDU status`);
-    console.log(`  GET /api/crac/:id                    - CRAC status`);
-    console.log(`  GET /api/sensor/:id                  - Sensor status`);
+    console.log(`  GET /api/ups/:id?locale=ko           - UPS status with fields metadata`);
+    console.log(`  GET /api/ups/:id/history             - UPS load/battery history`);
+    console.log(`  GET /api/pdu/:id?locale=ko           - PDU status with fields metadata`);
+    console.log(`  GET /api/pdu/:id/circuits            - PDU circuit list`);
+    console.log(`  GET /api/pdu/:id/history             - PDU power/current history`);
+    console.log(`  GET /api/crac/:id?locale=ko          - CRAC status with fields metadata`);
+    console.log(`  GET /api/crac/:id/history            - CRAC temperature/humidity history`);
+    console.log(`  GET /api/sensor/:id?locale=ko        - Sensor status with fields metadata`);
+    console.log(`  GET /api/sensor/:id/history          - Sensor temperature/humidity history`);
     console.log(`\n`);
 });

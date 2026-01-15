@@ -83,21 +83,6 @@
       "datasource": "",
       "mode": "0",
       "delivery_type": "0",
-      "param_info": [],
-      "data_type": "1",
-      "interval": "0",
-      "page_id": "PAGE",
-      "query": "",
-      "query_type": "",
-      "description": "All ECO assets list",
-      "dataset_id": "assets-001",
-      "name": "assets",
-      "rest_api": "{\"url\":\"http://10.23.128.125:4004/api/assets\",\"method\":\"GET\",\"headers\":{},\"body\":\"\"}"
-    },
-    {
-      "datasource": "",
-      "mode": "0",
-      "delivery_type": "0",
       "param_info": [
         {
           "param_name": "assetId",

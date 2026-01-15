@@ -47,14 +47,6 @@ this.globalDataMappings = [
             param: { locale: 'ko' }
         },
         refreshInterval: null  // locale 변경 알림용
-    },
-    {
-        topic: 'assets',
-        datasetInfo: {
-            datasetName: 'assets',
-            param: {}
-        },
-        refreshInterval: null  // 수동 갱신만 (refresh 버튼)
     }
 ];
 

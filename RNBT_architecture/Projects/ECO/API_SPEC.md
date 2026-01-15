@@ -101,18 +101,17 @@
 
 | API | 호출 시점 | 컴포넌트 | 기능 |
 |-----|----------|----------|------|
-| `GET /api/hierarchy?depth=n` | 페이지 로드 | AssetList | 계층 트리 초기 렌더링 |
-| `GET /api/hierarchy/:nodeId/children` | 트리 노드 펼침 | AssetList | Lazy Loading |
-| `GET /api/hierarchy/:nodeId/assets` | 트리 노드 클릭 | AssetList | 선택 노드의 자산 목록 표시 |
-| `GET /api/assets` | 새로고침 | AssetList | 전체 자산 목록 조회 |
-| `GET /api/ups/:id` | 행 클릭 / 3D 클릭 | UPS | UPS 현재 상태 표시 |
+| `GET /api/hierarchy?depth=n&locale=ko` | 페이지 로드 | AssetList | 계층 트리 초기 렌더링 |
+| `GET /api/hierarchy/:nodeId/children?locale=ko` | 트리 노드 펼침 | AssetList | Lazy Loading |
+| `GET /api/hierarchy/:nodeId/assets?locale=ko` | 트리 노드 클릭 | AssetList | 선택 노드의 자산 목록 표시 |
+| `GET /api/ups/:id?locale=ko` | 행 클릭 / 3D 클릭 | UPS | UPS 현재 상태 + fields 메타데이터 |
 | `GET /api/ups/:id/history` | 행 클릭 / 3D 클릭 | UPS | 부하/배터리 차트 렌더링 |
-| `GET /api/pdu/:id` | 행 클릭 / 3D 클릭 | PDU | PDU 현재 상태 표시 |
+| `GET /api/pdu/:id?locale=ko` | 행 클릭 / 3D 클릭 | PDU | PDU 현재 상태 + fields 메타데이터 |
 | `GET /api/pdu/:id/circuits` | 행 클릭 / 3D 클릭 | PDU | 회로 테이블 렌더링 |
 | `GET /api/pdu/:id/history` | 행 클릭 / 3D 클릭 | PDU | 전력 사용량 차트 렌더링 |
-| `GET /api/crac/:id` | 행 클릭 / 3D 클릭 | CRAC | CRAC 현재 상태 표시 |
+| `GET /api/crac/:id?locale=ko` | 행 클릭 / 3D 클릭 | CRAC | CRAC 현재 상태 + fields 메타데이터 |
 | `GET /api/crac/:id/history` | 행 클릭 / 3D 클릭 | CRAC | 온습도 차트 렌더링 |
-| `GET /api/sensor/:id` | 행 클릭 / 3D 클릭 | TempHumiditySensor | 센서 현재 상태 표시 |
+| `GET /api/sensor/:id?locale=ko` | 행 클릭 / 3D 클릭 | TempHumiditySensor | 센서 현재 상태 + fields 메타데이터 |
 | `GET /api/sensor/:id/history` | 행 클릭 / 3D 클릭 | TempHumiditySensor | 온습도 차트 렌더링 |
 
 ---
@@ -382,53 +381,7 @@ GET /api/hierarchy/:nodeId/assets?locale={locale}
 
 ---
 
-## 4. 전체 자산 조회
-
-### Request
-
-```
-GET /api/assets
-GET /api/assets?type=ups
-GET /api/assets?type=ups,pdu
-GET /api/assets?parentId=room-001-01-01
-GET /api/assets?canHaveChildren=true
-```
-
-### Response
-
-```json
-{
-  "data": {
-    "assets": [
-      {
-        "id": "ups-001",
-        "name": "UPS 001",
-        "type": "ups",
-        "canHaveChildren": false,
-        "parentId": "room-001-01-02",
-        "status": "normal"
-      }
-    ],
-    "summary": {
-      "total": 45,
-      "byType": { "building": 3, "floor": 6, "room": 6, "rack": 4, "server": 6, "ups": 4, "pdu": 5, "crac": 4, "sensor": 8 },
-      "byStatus": { "normal": 35, "warning": 8, "critical": 2 }
-    }
-  }
-}
-```
-
-### Query Parameters
-
-| Parameter | Type | Description |
-|-----------|------|-------------|
-| type | string | 자산 타입 필터 (쉼표로 복수 지정 가능) |
-| parentId | string | 부모 자산 ID 필터 |
-| canHaveChildren | boolean | 컨테이너/말단 필터 |
-
----
-
-## 5. UPS 현재 상태 조회
+## 4. UPS 현재 상태 조회
 
 ### Request
 
@@ -491,7 +444,7 @@ otherwise                           → status: "normal"
 
 ---
 
-## 6. UPS 히스토리 조회
+## 5. UPS 히스토리 조회
 
 ### Request
 
@@ -520,7 +473,7 @@ GET /api/ups/:id/history?period=7d
 
 ---
 
-## 7. PDU 현재 상태 조회
+## 6. PDU 현재 상태 조회
 
 ### Request
 
@@ -554,7 +507,7 @@ GET /api/pdu/:id
 
 ---
 
-## 8. PDU 회로 목록 조회
+## 7. PDU 회로 목록 조회
 
 ### Request
 
@@ -585,7 +538,7 @@ GET /api/pdu/:id/circuits
 
 ---
 
-## 9. PDU 히스토리 조회
+## 8. PDU 히스토리 조회
 
 ### Request
 
@@ -609,7 +562,7 @@ GET /api/pdu/:id/history
 
 ---
 
-## 10. CRAC 현재 상태 조회
+## 9. CRAC 현재 상태 조회
 
 ### Request
 
@@ -648,7 +601,7 @@ GET /api/crac/:id
 
 ---
 
-## 11. CRAC 히스토리 조회
+## 10. CRAC 히스토리 조회
 
 ### Request
 
@@ -673,7 +626,7 @@ GET /api/crac/:id/history
 
 ---
 
-## 12. 온습도 센서 현재 상태 조회
+## 11. 온습도 센서 현재 상태 조회
 
 ### Request
 
@@ -714,7 +667,7 @@ otherwise                                                 → status: "normal"
 
 ---
 
-## 13. 온습도 센서 히스토리 조회
+## 12. 온습도 센서 히스토리 조회
 
 ### Request
 
@@ -813,16 +766,18 @@ Asset Summary:
   By Type: { building: 3, floor: 6, room: 6, rack: 4, ... }
 
 Available endpoints:
-  GET /api/hierarchy?depth=n           - Hierarchy tree (depth limited)
-  GET /api/hierarchy/:nodeId/children  - Node children (Lazy Loading)
-  GET /api/hierarchy/:nodeId/assets    - All assets under node (for Table)
-  GET /api/assets                      - All assets
-  GET /api/assets?type=ups             - Filter by type
-  GET /api/asset/:id                   - Single asset
-  GET /api/ups/:id                     - UPS status
-  GET /api/pdu/:id                     - PDU status
-  GET /api/crac/:id                    - CRAC status
-  GET /api/sensor/:id                  - Sensor status
+  GET /api/hierarchy?depth=n&locale=ko       - Hierarchy tree (depth limited, i18n)
+  GET /api/hierarchy/:nodeId/children        - Node children (Lazy Loading)
+  GET /api/hierarchy/:nodeId/assets          - All assets under node (for Table)
+  GET /api/ups/:id?locale=ko                 - UPS status + fields metadata
+  GET /api/ups/:id/history                   - UPS load/battery history
+  GET /api/pdu/:id?locale=ko                 - PDU status + fields metadata
+  GET /api/pdu/:id/circuits                  - PDU circuit list
+  GET /api/pdu/:id/history                   - PDU power history
+  GET /api/crac/:id?locale=ko                - CRAC status + fields metadata
+  GET /api/crac/:id/history                  - CRAC temperature history
+  GET /api/sensor/:id?locale=ko              - Sensor status + fields metadata
+  GET /api/sensor/:id/history                - Sensor temperature history
 ```
 
 ---
@@ -910,3 +865,5 @@ GET /api/i18n/locales
 | 2026-01-14 | 독립 공간(케이스 4: root-level room) 문서화 |
 | 2026-01-14 | 개발 검토 필요 사항 추가 - 서버 측 검색 API |
 | 2026-01-15 | 자산 상세 API의 roomId → parentId 변경 (일관성 개선) |
+| 2026-01-15 | 미사용 API 제거 (`/api/assets`, `/api/asset/:id`) |
+| 2026-01-15 | 자산 상세 API에 fields 메타데이터 추가 (하드코딩 제거) |
