@@ -683,43 +683,12 @@ const ASSET_TYPE_API_MAP = {
     sensor: 'sensor'
 };
 
-/**
- * 타입별 표시할 필드 설정
- */
-const ASSET_TYPE_FIELDS = {
-    ups: [
-        { key: 'load', label: 'Load', suffix: '%' },
-        { key: 'batteryLevel', label: 'Battery', suffix: '%' },
-        { key: 'inputVoltage', label: 'Input', suffix: 'V' },
-        { key: 'outputVoltage', label: 'Output', suffix: 'V' },
-        { key: 'runtime', label: 'Runtime', suffix: 'min' },
-        { key: 'mode', label: 'Mode' }
-    ],
-    pdu: [
-        { key: 'totalPower', label: 'Power', suffix: 'kW' },
-        { key: 'totalCurrent', label: 'Current', suffix: 'A' },
-        { key: 'voltage', label: 'Voltage', suffix: 'V' },
-        { key: 'activeCircuits', label: 'Active Circuits' },
-        { key: 'circuitCount', label: 'Total Circuits' },
-        { key: 'powerFactor', label: 'Power Factor' }
-    ],
-    crac: [
-        { key: 'supplyTemp', label: 'Supply Temp', suffix: '°C' },
-        { key: 'returnTemp', label: 'Return Temp', suffix: '°C' },
-        { key: 'setpoint', label: 'Setpoint', suffix: '°C' },
-        { key: 'humidity', label: 'Humidity', suffix: '%' },
-        { key: 'fanSpeed', label: 'Fan Speed', suffix: '%' },
-        { key: 'mode', label: 'Mode' }
-    ],
-    sensor: [
-        { key: 'temperature', label: 'Temperature', suffix: '°C' },
-        { key: 'humidity', label: 'Humidity', suffix: '%' },
-        { key: 'dewpoint', label: 'Dewpoint', suffix: '°C' }
-    ]
-};
+// ASSET_TYPE_FIELDS 하드코딩 제거
+// API 응답의 fields 배열을 직접 사용하도록 변경됨
 
 /**
  * 테이블 행 클릭 시 자산 타입별 API 호출 및 Modal 표시
+ * API 응답의 fields 배열을 직접 사용 (하드코딩 제거)
  */
 async function onRowClick(asset) {
     const { id, type, name } = asset;
@@ -741,16 +710,19 @@ async function onRowClick(asset) {
         return;
     }
 
-    // 타입별 API 호출
+    // 타입별 API 호출 (locale 파라미터 추가)
     try {
-        console.log(`[AssetList] Fetching ${datasetName} API for: ${id}`);
-        const result = await fetchData(this.page, datasetName, { assetId: id });
+        console.log(`[AssetList] Fetching ${datasetName} API for: ${id} (locale: ${this._locale})`);
+        const result = await fetchData(this.page, datasetName, {
+            assetId: id,
+            locale: this._locale
+        });
         const data = result?.response?.data;
 
         if (data) {
             console.log(`[AssetList] ${type.toUpperCase()} data:`, data);
 
-            // Modal에 데이터 표시
+            // Modal에 데이터 표시 (API 응답의 fields 배열 사용)
             showModal.call(this, { asset, detail: data });
         }
     } catch (error) {
@@ -765,6 +737,7 @@ async function onRowClick(asset) {
 
 /**
  * Modal 표시
+ * API 응답의 fields 배열을 직접 사용 (하드코딩 제거)
  */
 function showModal({ asset, detail, loading, noApi, error }) {
     const modal = this.appendElement.querySelector('.asset-modal');
@@ -772,12 +745,16 @@ function showModal({ asset, detail, loading, noApi, error }) {
 
     const { id, name, type, typeLabel, status, statusLabel } = asset;
 
-    // 헤더 업데이트
-    modal.querySelector('.modal-title').textContent = name || id;
-    modal.querySelector('.modal-subtitle').textContent = `${typeLabel || type} · ${id}`;
+    // 헤더 업데이트 (API 응답의 typeLabel, statusLabel 우선 사용)
+    const displayTypeLabel = detail?.typeLabel || typeLabel || type;
+    const displayStatusLabel = detail?.statusLabel || statusLabel || status;
+    const displayStatus = detail?.status || status;
+
+    modal.querySelector('.modal-title').textContent = detail?.name || name || id;
+    modal.querySelector('.modal-subtitle').textContent = `${displayTypeLabel} · ${id}`;
     const statusEl = modal.querySelector('.modal-status');
-    statusEl.textContent = statusLabel || status;
-    statusEl.dataset.status = status;
+    statusEl.textContent = displayStatusLabel;
+    statusEl.dataset.status = displayStatus;
 
     // 바디 업데이트
     const grid = modal.querySelector('.modal-info-grid');
@@ -788,7 +765,7 @@ function showModal({ asset, detail, loading, noApi, error }) {
         grid.innerHTML = `
             <div class="modal-no-api wide">
                 <div class="modal-no-api-icon">📋</div>
-                <div class="modal-no-api-text">No detailed API available for "${typeLabel || type}"</div>
+                <div class="modal-no-api-text">No detailed API available for "${displayTypeLabel}"</div>
             </div>
         `;
     } else if (error) {
@@ -799,19 +776,33 @@ function showModal({ asset, detail, loading, noApi, error }) {
             </div>
         `;
     } else if (detail) {
-        const fields = ASSET_TYPE_FIELDS[type] || [];
-        grid.innerHTML = fields.map(({ key, label, suffix }) => {
-            const value = detail[key];
-            const displayValue = value !== undefined
-                ? (suffix ? `${value}${suffix}` : value)
-                : '-';
-            return `
-                <div class="modal-info-item">
-                    <div class="modal-info-label">${label}</div>
-                    <div class="modal-info-value">${displayValue}</div>
+        // API 응답의 fields 배열을 직접 사용 (하드코딩 제거)
+        const fields = detail.fields || [];
+
+        if (fields.length === 0) {
+            grid.innerHTML = `
+                <div class="modal-no-api wide">
+                    <div class="modal-no-api-icon">📋</div>
+                    <div class="modal-no-api-text">No field data available</div>
                 </div>
             `;
-        }).join('');
+        } else {
+            // fields 배열을 order 순으로 정렬 후 렌더링
+            const sortedFields = [...fields].sort((a, b) => (a.order || 0) - (b.order || 0));
+
+            grid.innerHTML = sortedFields.map(({ label, value, unit, valueLabel }) => {
+                // valueLabel이 있으면 사용 (enum 타입), 없으면 value + unit
+                const displayValue = valueLabel
+                    ? valueLabel
+                    : (unit ? `${value}${unit}` : value);
+                return `
+                    <div class="modal-info-item">
+                        <div class="modal-info-label">${label}</div>
+                        <div class="modal-info-value">${displayValue ?? '-'}</div>
+                    </div>
+                `;
+            }).join('');
+        }
     }
 
     // Modal 표시

@@ -432,7 +432,7 @@ function getNodeAssets(nodeId) {
 // UPS MOCK DATA GENERATORS
 // ======================
 
-function generateUPS(id) {
+function generateUPS(id, locale = 'ko') {
     const load = Math.round((30 + Math.random() * 50 + (Math.random() > 0.9 ? 30 : 0)) * 10) / 10;
     const batteryLevel = Math.round((80 + Math.random() * 20) * 10) / 10;
     const batteryHealth = Math.round((85 + Math.random() * 15) * 10) / 10;
@@ -442,23 +442,36 @@ function generateUPS(id) {
     else if (load >= 70 || batteryLevel <= 30) status = 'warning';
 
     const modes = ['online', 'online', 'online', 'bypass', 'battery'];
+    const mode = modes[Math.floor(Math.random() * modes.length)];
 
     // Find parentId from ALL_ASSETS
     const asset = ALL_ASSETS.find(a => a.id === id);
 
-    return {
-        id,
-        name: `UPS ${id.split('-')[1]}`,
-        parentId: asset?.parentId || null,
-        inputVoltage: Math.round((218 + Math.random() * 4) * 10) / 10,
-        outputVoltage: Math.round((219 + Math.random() * 2) * 10) / 10,
+    // 필드 데이터 (fields 배열 생성용)
+    const fieldData = {
         load,
         batteryLevel,
         batteryHealth,
+        inputVoltage: Math.round((218 + Math.random() * 4) * 10) / 10,
+        outputVoltage: Math.round((219 + Math.random() * 2) * 10) / 10,
         runtime: Math.floor(batteryLevel * 0.6),
         temperature: Math.round((28 + Math.random() * 10) * 10) / 10,
+        mode
+    };
+
+    // 상태 라벨
+    const statusLabels = I18N_DATA.statuses[locale] || I18N_DATA.statuses['ko'];
+    const typeLabels = I18N_DATA.types[locale] || I18N_DATA.types['ko'];
+
+    return {
+        id,
+        name: `UPS ${id.split('-')[1]}`,
+        type: 'ups',
+        typeLabel: typeLabels['ups'],
+        parentId: asset?.parentId || null,
         status,
-        mode: modes[Math.floor(Math.random() * modes.length)],
+        statusLabel: statusLabels[status],
+        fields: buildFieldsArray('ups', fieldData, locale),
         threshold: {
             loadWarning: 70,
             loadCritical: 90,
@@ -508,7 +521,7 @@ function generateUPSHistory(upsId, period = '24h') {
 // PDU MOCK DATA GENERATORS
 // ======================
 
-function generatePDU(id) {
+function generatePDU(id, locale = 'ko') {
     const totalPower = Math.round((8 + Math.random() * 10) * 10) / 10;
     const voltage = 220;
     const totalCurrent = Math.round((totalPower * 1000 / voltage) * 10) / 10;
@@ -521,17 +534,29 @@ function generatePDU(id) {
 
     const asset = ALL_ASSETS.find(a => a.id === id);
 
-    return {
-        id,
-        name: `PDU ${id.split('-')[1]}`,
-        parentId: asset?.parentId || null,
+    // 필드 데이터 (fields 배열 생성용)
+    const fieldData = {
         totalPower,
         totalCurrent,
         voltage,
         circuitCount,
         activeCircuits,
-        powerFactor: Math.round((0.9 + Math.random() * 0.1) * 100) / 100,
+        powerFactor: Math.round((0.9 + Math.random() * 0.1) * 100) / 100
+    };
+
+    // 상태 라벨
+    const statusLabels = I18N_DATA.statuses[locale] || I18N_DATA.statuses['ko'];
+    const typeLabels = I18N_DATA.types[locale] || I18N_DATA.types['ko'];
+
+    return {
+        id,
+        name: `PDU ${id.split('-')[1]}`,
+        type: 'pdu',
+        typeLabel: typeLabels['pdu'],
+        parentId: asset?.parentId || null,
         status,
+        statusLabel: statusLabels[status],
+        fields: buildFieldsArray('pdu', fieldData, locale),
         threshold: {
             powerWarning: 15,
             powerCritical: 18
@@ -607,7 +632,7 @@ function generatePDUHistory(pduId, period = '24h') {
 // CRAC MOCK DATA GENERATORS
 // ======================
 
-function generateCRAC(id) {
+function generateCRAC(id, locale = 'ko') {
     const supplyTemp = Math.round((16 + Math.random() * 4) * 10) / 10;
     const returnTemp = Math.round((22 + Math.random() * 6) * 10) / 10;
     const humidity = Math.round((40 + Math.random() * 20) * 10) / 10;
@@ -618,23 +643,37 @@ function generateCRAC(id) {
 
     const modes = ['cooling', 'cooling', 'cooling', 'heating', 'dehumidifying', 'standby'];
     const compressorStates = ['running', 'running', 'running', 'idle', 'fault'];
+    const mode = modes[Math.floor(Math.random() * modes.length)];
+    const compressorStatus = compressorStates[Math.floor(Math.random() * compressorStates.length)];
 
     const asset = ALL_ASSETS.find(a => a.id === id);
 
-    return {
-        id,
-        name: `CRAC ${id.split('-')[1]}`,
-        parentId: asset?.parentId || null,
+    // 필드 데이터 (fields 배열 생성용)
+    const fieldData = {
         supplyTemp,
         returnTemp,
         setpoint: 18.0,
         humidity,
         humiditySetpoint: 50,
         fanSpeed: Math.round((60 + Math.random() * 40) * 10) / 10,
-        compressorStatus: compressorStates[Math.floor(Math.random() * compressorStates.length)],
+        compressorStatus,
         coolingCapacity: Math.round((70 + Math.random() * 30) * 10) / 10,
+        mode
+    };
+
+    // 상태 라벨
+    const statusLabels = I18N_DATA.statuses[locale] || I18N_DATA.statuses['ko'];
+    const typeLabels = I18N_DATA.types[locale] || I18N_DATA.types['ko'];
+
+    return {
+        id,
+        name: `CRAC ${id.split('-')[1]}`,
+        type: 'crac',
+        typeLabel: typeLabels['crac'],
+        parentId: asset?.parentId || null,
         status,
-        mode: modes[Math.floor(Math.random() * modes.length)],
+        statusLabel: statusLabels[status],
+        fields: buildFieldsArray('crac', fieldData, locale),
         threshold: {
             tempWarning: 28,
             tempCritical: 32,
@@ -683,7 +722,7 @@ function generateCRACHistory(cracId, period = '24h') {
 // SENSOR MOCK DATA GENERATORS
 // ======================
 
-function generateSensor(id) {
+function generateSensor(id, locale = 'ko') {
     const temperature = Math.round((20 + Math.random() * 10) * 10) / 10;
     const humidity = Math.round((35 + Math.random() * 30) * 10) / 10;
     const dewpoint = Math.round((temperature - ((100 - humidity) / 5)) * 10) / 10;
@@ -694,14 +733,26 @@ function generateSensor(id) {
 
     const asset = ALL_ASSETS.find(a => a.id === id);
 
+    // 필드 데이터 (fields 배열 생성용)
+    const fieldData = {
+        temperature,
+        humidity,
+        dewpoint
+    };
+
+    // 상태 라벨
+    const statusLabels = I18N_DATA.statuses[locale] || I18N_DATA.statuses['ko'];
+    const typeLabels = I18N_DATA.types[locale] || I18N_DATA.types['ko'];
+
     return {
         id,
         name: `Sensor ${id.split('-')[1]}`,
+        type: 'sensor',
+        typeLabel: typeLabels['sensor'],
         parentId: asset?.parentId || null,
-        temperature,
-        humidity,
-        dewpoint,
         status,
+        statusLabel: statusLabels[status],
+        fields: buildFieldsArray('sensor', fieldData, locale),
         threshold: {
             tempWarning: 28,
             tempCritical: 32,
@@ -739,6 +790,153 @@ function generateSensorHistory(sensorId, period = '24h') {
         temperatures,
         humidity: humidityData
     };
+}
+
+// ======================
+// I18N FIELD LABELS (필드 메타데이터)
+// ======================
+
+const I18N_FIELD_LABELS = {
+    ups: {
+        load: { ko: '부하율', en: 'Load', ja: '負荷率' },
+        batteryLevel: { ko: '배터리 잔량', en: 'Battery Level', ja: 'バッテリー残量' },
+        batteryHealth: { ko: '배터리 상태', en: 'Battery Health', ja: 'バッテリー状態' },
+        inputVoltage: { ko: '입력 전압', en: 'Input Voltage', ja: '入力電圧' },
+        outputVoltage: { ko: '출력 전압', en: 'Output Voltage', ja: '出力電圧' },
+        runtime: { ko: '예상 런타임', en: 'Est. Runtime', ja: '予想稼働時間' },
+        temperature: { ko: '온도', en: 'Temperature', ja: '温度' },
+        mode: { ko: '운전 모드', en: 'Mode', ja: '運転モード' }
+    },
+    pdu: {
+        totalPower: { ko: '총 전력', en: 'Total Power', ja: '総電力' },
+        totalCurrent: { ko: '총 전류', en: 'Total Current', ja: '総電流' },
+        voltage: { ko: '전압', en: 'Voltage', ja: '電圧' },
+        circuitCount: { ko: '회로 수', en: 'Circuit Count', ja: '回路数' },
+        activeCircuits: { ko: '활성 회로', en: 'Active Circuits', ja: 'アクティブ回路' },
+        powerFactor: { ko: '역률', en: 'Power Factor', ja: '力率' }
+    },
+    crac: {
+        supplyTemp: { ko: '공급 온도', en: 'Supply Temp', ja: '供給温度' },
+        returnTemp: { ko: '환기 온도', en: 'Return Temp', ja: '還気温度' },
+        setpoint: { ko: '설정 온도', en: 'Setpoint', ja: '設定温度' },
+        humidity: { ko: '습도', en: 'Humidity', ja: '湿度' },
+        humiditySetpoint: { ko: '습도 설정', en: 'Humidity Setpoint', ja: '湿度設定' },
+        fanSpeed: { ko: '팬 속도', en: 'Fan Speed', ja: 'ファン速度' },
+        compressorStatus: { ko: '압축기 상태', en: 'Compressor', ja: 'コンプレッサー' },
+        coolingCapacity: { ko: '냉각 용량', en: 'Cooling Capacity', ja: '冷却能力' },
+        mode: { ko: '운전 모드', en: 'Mode', ja: '運転モード' }
+    },
+    sensor: {
+        temperature: { ko: '온도', en: 'Temperature', ja: '温度' },
+        humidity: { ko: '습도', en: 'Humidity', ja: '湿度' },
+        dewpoint: { ko: '이슬점', en: 'Dewpoint', ja: '露点' }
+    }
+};
+
+// 필드 단위 정의
+const FIELD_UNITS = {
+    ups: {
+        load: '%',
+        batteryLevel: '%',
+        batteryHealth: '%',
+        inputVoltage: 'V',
+        outputVoltage: 'V',
+        runtime: 'min',
+        temperature: '°C',
+        mode: null
+    },
+    pdu: {
+        totalPower: 'kW',
+        totalCurrent: 'A',
+        voltage: 'V',
+        circuitCount: null,
+        activeCircuits: null,
+        powerFactor: null
+    },
+    crac: {
+        supplyTemp: '°C',
+        returnTemp: '°C',
+        setpoint: '°C',
+        humidity: '%',
+        humiditySetpoint: '%',
+        fanSpeed: '%',
+        compressorStatus: null,
+        coolingCapacity: '%',
+        mode: null
+    },
+    sensor: {
+        temperature: '°C',
+        humidity: '%',
+        dewpoint: '°C'
+    }
+};
+
+// 모드 값 라벨 (enum 타입용)
+const I18N_MODE_LABELS = {
+    ups: {
+        mode: {
+            online: { ko: '온라인', en: 'Online', ja: 'オンライン' },
+            bypass: { ko: '바이패스', en: 'Bypass', ja: 'バイパス' },
+            battery: { ko: '배터리', en: 'Battery', ja: 'バッテリー' }
+        }
+    },
+    crac: {
+        mode: {
+            cooling: { ko: '냉방', en: 'Cooling', ja: '冷房' },
+            heating: { ko: '난방', en: 'Heating', ja: '暖房' },
+            dehumidifying: { ko: '제습', en: 'Dehumidifying', ja: '除湿' },
+            standby: { ko: '대기', en: 'Standby', ja: '待機' }
+        },
+        compressorStatus: {
+            running: { ko: '가동중', en: 'Running', ja: '稼働中' },
+            idle: { ko: '대기중', en: 'Idle', ja: '待機中' },
+            fault: { ko: '고장', en: 'Fault', ja: '故障' }
+        }
+    }
+};
+
+/**
+ * 필드 메타데이터를 포함한 fields 배열 생성
+ * @param {string} assetType - 자산 유형 (ups, pdu, crac, sensor)
+ * @param {Object} data - 원본 데이터 객체
+ * @param {string} locale - 언어 코드 (ko, en, ja)
+ * @returns {Array} 필드 메타데이터 배열
+ */
+function buildFieldsArray(assetType, data, locale = 'ko') {
+    const fieldLabels = I18N_FIELD_LABELS[assetType] || {};
+    const fieldUnits = FIELD_UNITS[assetType] || {};
+    const modeLabels = I18N_MODE_LABELS[assetType] || {};
+
+    const fields = [];
+    let order = 1;
+
+    for (const key of Object.keys(fieldLabels)) {
+        if (!(key in data)) continue;
+
+        const value = data[key];
+        const label = fieldLabels[key]?.[locale] || fieldLabels[key]?.['ko'] || key;
+        const unit = fieldUnits[key] || null;
+
+        const field = {
+            key,
+            label,
+            value,
+            order: order++
+        };
+
+        if (unit) {
+            field.unit = unit;
+        }
+
+        // enum 타입 값의 라벨 처리
+        if (modeLabels[key] && modeLabels[key][value]) {
+            field.valueLabel = modeLabels[key][value][locale] || modeLabels[key][value]['ko'] || value;
+        }
+
+        fields.push(field);
+    }
+
+    return fields;
 }
 
 // ======================
@@ -1049,9 +1247,10 @@ app.post('/api/assets/validate', (req, res) => {
 app.get('/api/ups/:id', (req, res) => {
     if (!HIERARCHY_CACHE) initializeHierarchy();
     const { id } = req.params;
-    const ups = generateUPS(id);
-    console.log(`[${new Date().toISOString()}] GET /api/ups/${id}`);
-    res.json({ data: ups });
+    const locale = req.query.locale || 'ko';
+    const ups = generateUPS(id, locale);
+    console.log(`[${new Date().toISOString()}] GET /api/ups/${id}?locale=${locale}`);
+    res.json({ data: ups, meta: { locale } });
 });
 
 app.get('/api/ups/:id/history', (req, res) => {
@@ -1069,9 +1268,10 @@ app.get('/api/ups/:id/history', (req, res) => {
 app.get('/api/pdu/:id', (req, res) => {
     if (!HIERARCHY_CACHE) initializeHierarchy();
     const { id } = req.params;
-    const pdu = generatePDU(id);
-    console.log(`[${new Date().toISOString()}] GET /api/pdu/${id}`);
-    res.json({ data: pdu });
+    const locale = req.query.locale || 'ko';
+    const pdu = generatePDU(id, locale);
+    console.log(`[${new Date().toISOString()}] GET /api/pdu/${id}?locale=${locale}`);
+    res.json({ data: pdu, meta: { locale } });
 });
 
 app.get('/api/pdu/:id/circuits', (req, res) => {
@@ -1096,9 +1296,10 @@ app.get('/api/pdu/:id/history', (req, res) => {
 app.get('/api/crac/:id', (req, res) => {
     if (!HIERARCHY_CACHE) initializeHierarchy();
     const { id } = req.params;
-    const crac = generateCRAC(id);
-    console.log(`[${new Date().toISOString()}] GET /api/crac/${id}`);
-    res.json({ data: crac });
+    const locale = req.query.locale || 'ko';
+    const crac = generateCRAC(id, locale);
+    console.log(`[${new Date().toISOString()}] GET /api/crac/${id}?locale=${locale}`);
+    res.json({ data: crac, meta: { locale } });
 });
 
 app.get('/api/crac/:id/history', (req, res) => {
@@ -1116,9 +1317,10 @@ app.get('/api/crac/:id/history', (req, res) => {
 app.get('/api/sensor/:id', (req, res) => {
     if (!HIERARCHY_CACHE) initializeHierarchy();
     const { id } = req.params;
-    const sensor = generateSensor(id);
-    console.log(`[${new Date().toISOString()}] GET /api/sensor/${id}`);
-    res.json({ data: sensor });
+    const locale = req.query.locale || 'ko';
+    const sensor = generateSensor(id, locale);
+    console.log(`[${new Date().toISOString()}] GET /api/sensor/${id}?locale=${locale}`);
+    res.json({ data: sensor, meta: { locale } });
 });
 
 app.get('/api/sensor/:id/history', (req, res) => {

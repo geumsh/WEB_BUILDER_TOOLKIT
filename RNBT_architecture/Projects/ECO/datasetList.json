@@ -103,6 +103,11 @@
           "param_name": "assetId",
           "param_type": "string",
           "default_value": "ups-001"
+        },
+        {
+          "param_name": "locale",
+          "param_type": "string",
+          "default_value": "ko"
         }
       ],
       "data_type": "1",
@@ -110,10 +115,10 @@
       "page_id": "PAGE",
       "query": "",
       "query_type": "",
-      "description": "UPS current status (on-demand)",
+      "description": "UPS current status with field metadata (i18n supported)",
       "dataset_id": "ups-001",
       "name": "ups",
-      "rest_api": "{\"url\":\"http://10.23.128.125:4004/api/ups/#{assetId}\",\"method\":\"GET\",\"headers\":{},\"body\":\"\"}"
+      "rest_api": "{\"url\":\"http://10.23.128.125:4004/api/ups/#{assetId}?locale=#{locale}\",\"method\":\"GET\",\"headers\":{},\"body\":\"\"}"
     },
     {
       "datasource": "",
@@ -145,6 +150,11 @@
           "param_name": "assetId",
           "param_type": "string",
           "default_value": "pdu-001"
+        },
+        {
+          "param_name": "locale",
+          "param_type": "string",
+          "default_value": "ko"
         }
       ],
       "data_type": "1",
@@ -152,10 +162,10 @@
       "page_id": "PAGE",
       "query": "",
       "query_type": "",
-      "description": "PDU current status (on-demand)",
+      "description": "PDU current status with field metadata (i18n supported)",
       "dataset_id": "pdu-001",
       "name": "pdu",
-      "rest_api": "{\"url\":\"http://10.23.128.125:4004/api/pdu/#{assetId}\",\"method\":\"GET\",\"headers\":{},\"body\":\"\"}"
+      "rest_api": "{\"url\":\"http://10.23.128.125:4004/api/pdu/#{assetId}?locale=#{locale}\",\"method\":\"GET\",\"headers\":{},\"body\":\"\"}"
     },
     {
       "datasource": "",
@@ -208,6 +218,11 @@
           "param_name": "assetId",
           "param_type": "string",
           "default_value": "crac-001"
+        },
+        {
+          "param_name": "locale",
+          "param_type": "string",
+          "default_value": "ko"
         }
       ],
       "data_type": "1",
@@ -215,10 +230,10 @@
       "page_id": "PAGE",
       "query": "",
       "query_type": "",
-      "description": "CRAC current status (on-demand)",
+      "description": "CRAC current status with field metadata (i18n supported)",
       "dataset_id": "crac-001",
       "name": "crac",
-      "rest_api": "{\"url\":\"http://10.23.128.125:4004/api/crac/#{assetId}\",\"method\":\"GET\",\"headers\":{},\"body\":\"\"}"
+      "rest_api": "{\"url\":\"http://10.23.128.125:4004/api/crac/#{assetId}?locale=#{locale}\",\"method\":\"GET\",\"headers\":{},\"body\":\"\"}"
     },
     {
       "datasource": "",
@@ -250,6 +265,11 @@
           "param_name": "assetId",
           "param_type": "string",
           "default_value": "sensor-001"
+        },
+        {
+          "param_name": "locale",
+          "param_type": "string",
+          "default_value": "ko"
         }
       ],
       "data_type": "1",
@@ -257,10 +277,10 @@
       "page_id": "PAGE",
       "query": "",
       "query_type": "",
-      "description": "Temperature/Humidity sensor current status (on-demand)",
+      "description": "Temperature/Humidity sensor current status with field metadata (i18n supported)",
       "dataset_id": "sensor-001",
       "name": "sensor",
-      "rest_api": "{\"url\":\"http://10.23.128.125:4004/api/sensor/#{assetId}\",\"method\":\"GET\",\"headers\":{},\"body\":\"\"}"
+      "rest_api": "{\"url\":\"http://10.23.128.125:4004/api/sensor/#{assetId}?locale=#{locale}\",\"method\":\"GET\",\"headers\":{},\"body\":\"\"}"
     },
     {
       "datasource": "",
