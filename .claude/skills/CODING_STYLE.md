@@ -131,20 +131,35 @@ function applyTheme(element, theme) {
 
 ## 핵심 규칙
 
-### 1. each/map 안에 5줄 이상이면 함수로 분리
+### 1. 콜백 안의 로직이 복잡하면 함수로 분리
+
+**분리 기준 (줄 수가 아닌 의도 기반)**:
+- 콜백 안에서 **여러 단계의 작업**이 수행될 때
+- 같은 로직이 **재사용**될 때
+- 로직이 **독립적으로 테스트**가 필요할 때
+
+**분리하지 않아도 되는 경우**:
+- 한 가지 일을 순차적으로 수행하는 경우 (줄 수와 무관)
+- 해당 위치에서만 사용되고 맥락이 명확한 경우
 
 ```javascript
-// ❌ each 안에 긴 로직
-fx.each(item => {
-    // 10줄의 코드...
-}, items)
-
-// ✅ 함수로 분리
+// ✅ 분리 O: 여러 단계 작업 + 재사용 가능
 fx.each(processItem, items)
 
 function processItem(item) {
-    // 로직
+    // 데이터 변환 + DOM 생성 + 이벤트 바인딩 등 여러 단계
 }
+
+// ✅ 분리 X: 한 가지 일을 순차적으로 (7줄이어도 OK)
+fx.each(item => {
+    const el = template.content.cloneNode(true);
+    el.querySelector('.name').textContent = item.name;
+    el.querySelector('.value').textContent = item.value;
+    el.querySelector('.status').textContent = item.status;
+    el.querySelector('.date').textContent = formatDate(item.date);
+    el.dataset.id = item.id;
+    container.appendChild(el);
+}, items)
 ```
 
 ### 2. 변환 단계는 파이프라인으로 표현
@@ -355,12 +370,13 @@ function handleClick(event) {
 코드 작성 시 다음을 확인:
 
 ```
-□ each/map 안에 5줄 이상인가? → 함수로 분리
+□ 콜백 안에서 여러 단계의 작업을 하는가? → 함수로 분리
+□ 같은 로직이 재사용되는가? → 함수로 분리
 □ 중간 변수가 3개 이상인가? → 파이프라인으로 변환
 □ 데이터 변환인가? → fx.map, fx.filter, fx.reduce 사용
 □ DOM 생성인가? → 요소를 반환하는 순수 함수로 분리
 □ 부수효과인가? → 파이프라인 마지막에 배치
-□ 단순한 2-3줄인가? → 명령형 OK
+□ 한 가지 일을 순차적으로 하는가? → 인라인 OK (줄 수 무관)
 ```
 
 ---
