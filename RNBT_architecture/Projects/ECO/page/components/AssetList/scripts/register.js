@@ -425,7 +425,7 @@ function toggleNode(nodeId, nodeEl) {
         if (needsLazyLoad && !this._loadedNodes.has(nodeId)) {
             // Lazy Loading 요청 이벤트 발행 (locale 포함)
             Weventbus.emit('@hierarchyChildrenRequested', {
-                event: { nodeId, locale: this._locale },
+                event: { assetId: nodeId, locale: this._locale },
                 targetInstance: this
             });
         }
@@ -448,7 +448,7 @@ function selectNode(nodeId) {
     // 페이지에 노드 선택 이벤트 발행 → 페이지가 hierarchyAssets 데이터 요청
     const node = findNodeById.call(this, nodeId);
     Weventbus.emit('@hierarchyNodeSelected', {
-        event: { nodeId, node, locale: this._locale },
+        event: { assetId: nodeId, node, locale: this._locale },
         targetInstance: this
     });
 }
@@ -527,7 +527,7 @@ async function expandAllRecursive(items) {
 async function loadChildrenForNode(node) {
     try {
         const result = await fetchData(this.page, 'hierarchyChildren', {
-            nodeId: node.id,
+            assetId: node.id,
             locale: this._locale
         });
 

@@ -34,25 +34,25 @@ this.eventBusHandlers = {
 
     // 트리 노드 선택 → 해당 노드의 자산 목록 요청
     '@hierarchyNodeSelected': ({ event }) => {
-        const { nodeId, locale } = event;
-        console.log('[Page] Hierarchy node selected:', nodeId);
+        const { assetId, locale } = event;
+        console.log('[Page] Hierarchy node selected:', assetId);
 
         this.currentParams = this.currentParams || {};
-        this.currentParams['hierarchyAssets'] = { nodeId, locale };
+        this.currentParams['hierarchyAssets'] = { assetId, locale };
 
-        GlobalDataPublisher.fetchAndPublish('hierarchyAssets', this, { nodeId, locale })
+        GlobalDataPublisher.fetchAndPublish('hierarchyAssets', this, { assetId, locale })
             .catch(err => console.error('[fetchAndPublish:hierarchyAssets]', err));
     },
 
     // Lazy Loading 요청 → hierarchyChildren 데이터 요청
     '@hierarchyChildrenRequested': ({ event }) => {
-        const { nodeId, locale } = event;
-        console.log('[Page] Hierarchy children requested:', nodeId);
+        const { assetId, locale } = event;
+        console.log('[Page] Hierarchy children requested:', assetId);
 
         this.currentParams = this.currentParams || {};
-        this.currentParams['hierarchyChildren'] = { nodeId, locale };
+        this.currentParams['hierarchyChildren'] = { assetId, locale };
 
-        GlobalDataPublisher.fetchAndPublish('hierarchyChildren', this, { nodeId, locale })
+        GlobalDataPublisher.fetchAndPublish('hierarchyChildren', this, { assetId, locale })
             .catch(err => console.error('[fetchAndPublish:hierarchyChildren]', err));
     },
 

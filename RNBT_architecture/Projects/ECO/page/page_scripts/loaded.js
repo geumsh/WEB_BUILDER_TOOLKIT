@@ -28,7 +28,7 @@ this.globalDataMappings = [
         topic: 'hierarchyChildren',
         datasetInfo: {
             datasetName: 'hierarchyChildren',
-            param: { nodeId: '', locale: 'ko' }
+            param: { assetId: '', locale: 'ko' }
         },
         refreshInterval: null  // Lazy Loading용
     },
@@ -36,7 +36,7 @@ this.globalDataMappings = [
         topic: 'hierarchyAssets',
         datasetInfo: {
             datasetName: 'hierarchyAssets',
-            param: { nodeId: '', locale: 'ko' }
+            param: { assetId: '', locale: 'ko' }
         },
         refreshInterval: null
     },
