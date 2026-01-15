@@ -443,13 +443,13 @@ function generateUPS(id) {
 
     const modes = ['online', 'online', 'online', 'bypass', 'battery'];
 
-    // Find roomId from ALL_ASSETS
+    // Find parentId from ALL_ASSETS
     const asset = ALL_ASSETS.find(a => a.id === id);
 
     return {
         id,
         name: `UPS ${id.split('-')[1]}`,
-        roomId: asset?.roomId || null,
+        parentId: asset?.parentId || null,
         inputVoltage: Math.round((218 + Math.random() * 4) * 10) / 10,
         outputVoltage: Math.round((219 + Math.random() * 2) * 10) / 10,
         load,
@@ -524,7 +524,7 @@ function generatePDU(id) {
     return {
         id,
         name: `PDU ${id.split('-')[1]}`,
-        roomId: asset?.roomId || null,
+        parentId: asset?.parentId || null,
         totalPower,
         totalCurrent,
         voltage,
@@ -624,7 +624,7 @@ function generateCRAC(id) {
     return {
         id,
         name: `CRAC ${id.split('-')[1]}`,
-        roomId: asset?.roomId || null,
+        parentId: asset?.parentId || null,
         supplyTemp,
         returnTemp,
         setpoint: 18.0,
@@ -697,7 +697,7 @@ function generateSensor(id) {
     return {
         id,
         name: `Sensor ${id.split('-')[1]}`,
-        roomId: asset?.roomId || null,
+        parentId: asset?.parentId || null,
         temperature,
         humidity,
         dewpoint,

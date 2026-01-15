@@ -443,7 +443,7 @@ GET /api/ups/:id
   "data": {
     "id": "ups-001",
     "name": "UPS 001",
-    "roomId": "room-001-01-01",
+    "parentId": "room-001-01-01",
     "inputVoltage": 220.5,
     "outputVoltage": 220.0,
     "load": 65.2,
@@ -470,7 +470,7 @@ GET /api/ups/:id
 |-------|------|-------------|
 | id | string | UPS ID |
 | name | string | UPS 이름 |
-| roomId | string | 소속 방 ID |
+| parentId | string | 부모 자산 ID (Room, Rack 등) |
 | inputVoltage | number | 입력 전압 (V) |
 | outputVoltage | number | 출력 전압 (V) |
 | load | number | 부하율 (%) |
@@ -535,7 +535,7 @@ GET /api/pdu/:id
   "data": {
     "id": "pdu-001",
     "name": "PDU 001",
-    "roomId": "room-001-01-01",
+    "parentId": "room-001-01-01",
     "totalPower": 12.5,
     "totalCurrent": 56.8,
     "voltage": 220.0,
@@ -624,7 +624,7 @@ GET /api/crac/:id
   "data": {
     "id": "crac-001",
     "name": "CRAC 001",
-    "roomId": "room-001-01-01",
+    "parentId": "room-001-01-01",
     "supplyTemp": 18.5,
     "returnTemp": 24.8,
     "setpoint": 18.0,
@@ -688,7 +688,7 @@ GET /api/sensor/:id
   "data": {
     "id": "sensor-001",
     "name": "Sensor 001",
-    "roomId": "room-001-01-01",
+    "parentId": "room-001-01-01",
     "temperature": 24.5,
     "humidity": 45,
     "dewpoint": 12.3,
@@ -908,4 +908,5 @@ GET /api/i18n/locales
 | 2026-01-14 | AssetPanelAPI.md 내용 통합 |
 | 2026-01-14 | 다국어(i18n) 지원 추가 - locale 파라미터, typeLabel/statusLabel 필드 |
 | 2026-01-14 | 독립 공간(케이스 4: root-level room) 문서화 |
-| 2026-01-14 | 개발 검토 필요 사항 추가 - 서버 측 검색 API
+| 2026-01-14 | 개발 검토 필요 사항 추가 - 서버 측 검색 API |
+| 2026-01-15 | 자산 상세 API의 roomId → parentId 변경 (일관성 개선) |
