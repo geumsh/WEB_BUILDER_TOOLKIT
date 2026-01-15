@@ -1170,20 +1170,20 @@ app.get('/api/hierarchy/:assetId/assets', (req, res) => {
 // API ENDPOINTS - UPS
 // ======================
 
-app.get('/api/ups/:id', (req, res) => {
+app.get('/api/ups/:assetId', (req, res) => {
     if (!HIERARCHY_CACHE) initializeHierarchy();
-    const { id } = req.params;
+    const { assetId } = req.params;
     const locale = req.query.locale || 'ko';
-    const ups = generateUPS(id, locale);
-    console.log(`[${new Date().toISOString()}] GET /api/ups/${id}?locale=${locale}`);
+    const ups = generateUPS(assetId, locale);
+    console.log(`[${new Date().toISOString()}] GET /api/ups/${assetId}?locale=${locale}`);
     res.json({ data: ups, meta: { locale } });
 });
 
-app.get('/api/ups/:id/history', (req, res) => {
-    const { id } = req.params;
+app.get('/api/ups/:assetId/history', (req, res) => {
+    const { assetId } = req.params;
     const { period = '24h' } = req.query;
-    const history = generateUPSHistory(id, period);
-    console.log(`[${new Date().toISOString()}] GET /api/ups/${id}/history?period=${period}`);
+    const history = generateUPSHistory(assetId, period);
+    console.log(`[${new Date().toISOString()}] GET /api/ups/${assetId}/history?period=${period}`);
     res.json({ data: history });
 });
 
@@ -1191,27 +1191,27 @@ app.get('/api/ups/:id/history', (req, res) => {
 // API ENDPOINTS - PDU
 // ======================
 
-app.get('/api/pdu/:id', (req, res) => {
+app.get('/api/pdu/:assetId', (req, res) => {
     if (!HIERARCHY_CACHE) initializeHierarchy();
-    const { id } = req.params;
+    const { assetId } = req.params;
     const locale = req.query.locale || 'ko';
-    const pdu = generatePDU(id, locale);
-    console.log(`[${new Date().toISOString()}] GET /api/pdu/${id}?locale=${locale}`);
+    const pdu = generatePDU(assetId, locale);
+    console.log(`[${new Date().toISOString()}] GET /api/pdu/${assetId}?locale=${locale}`);
     res.json({ data: pdu, meta: { locale } });
 });
 
-app.get('/api/pdu/:id/circuits', (req, res) => {
-    const { id } = req.params;
-    const circuits = generatePDUCircuits(id);
-    console.log(`[${new Date().toISOString()}] GET /api/pdu/${id}/circuits`);
+app.get('/api/pdu/:assetId/circuits', (req, res) => {
+    const { assetId } = req.params;
+    const circuits = generatePDUCircuits(assetId);
+    console.log(`[${new Date().toISOString()}] GET /api/pdu/${assetId}/circuits`);
     res.json({ data: circuits });
 });
 
-app.get('/api/pdu/:id/history', (req, res) => {
-    const { id } = req.params;
+app.get('/api/pdu/:assetId/history', (req, res) => {
+    const { assetId } = req.params;
     const { period = '24h' } = req.query;
-    const history = generatePDUHistory(id, period);
-    console.log(`[${new Date().toISOString()}] GET /api/pdu/${id}/history?period=${period}`);
+    const history = generatePDUHistory(assetId, period);
+    console.log(`[${new Date().toISOString()}] GET /api/pdu/${assetId}/history?period=${period}`);
     res.json({ data: history });
 });
 
@@ -1219,20 +1219,20 @@ app.get('/api/pdu/:id/history', (req, res) => {
 // API ENDPOINTS - CRAC
 // ======================
 
-app.get('/api/crac/:id', (req, res) => {
+app.get('/api/crac/:assetId', (req, res) => {
     if (!HIERARCHY_CACHE) initializeHierarchy();
-    const { id } = req.params;
+    const { assetId } = req.params;
     const locale = req.query.locale || 'ko';
-    const crac = generateCRAC(id, locale);
-    console.log(`[${new Date().toISOString()}] GET /api/crac/${id}?locale=${locale}`);
+    const crac = generateCRAC(assetId, locale);
+    console.log(`[${new Date().toISOString()}] GET /api/crac/${assetId}?locale=${locale}`);
     res.json({ data: crac, meta: { locale } });
 });
 
-app.get('/api/crac/:id/history', (req, res) => {
-    const { id } = req.params;
+app.get('/api/crac/:assetId/history', (req, res) => {
+    const { assetId } = req.params;
     const { period = '24h' } = req.query;
-    const history = generateCRACHistory(id, period);
-    console.log(`[${new Date().toISOString()}] GET /api/crac/${id}/history?period=${period}`);
+    const history = generateCRACHistory(assetId, period);
+    console.log(`[${new Date().toISOString()}] GET /api/crac/${assetId}/history?period=${period}`);
     res.json({ data: history });
 });
 
@@ -1240,20 +1240,20 @@ app.get('/api/crac/:id/history', (req, res) => {
 // API ENDPOINTS - Sensor
 // ======================
 
-app.get('/api/sensor/:id', (req, res) => {
+app.get('/api/sensor/:assetId', (req, res) => {
     if (!HIERARCHY_CACHE) initializeHierarchy();
-    const { id } = req.params;
+    const { assetId } = req.params;
     const locale = req.query.locale || 'ko';
-    const sensor = generateSensor(id, locale);
-    console.log(`[${new Date().toISOString()}] GET /api/sensor/${id}?locale=${locale}`);
+    const sensor = generateSensor(assetId, locale);
+    console.log(`[${new Date().toISOString()}] GET /api/sensor/${assetId}?locale=${locale}`);
     res.json({ data: sensor, meta: { locale } });
 });
 
-app.get('/api/sensor/:id/history', (req, res) => {
-    const { id } = req.params;
+app.get('/api/sensor/:assetId/history', (req, res) => {
+    const { assetId } = req.params;
     const { period = '24h' } = req.query;
-    const history = generateSensorHistory(id, period);
-    console.log(`[${new Date().toISOString()}] GET /api/sensor/${id}/history?period=${period}`);
+    const history = generateSensorHistory(assetId, period);
+    console.log(`[${new Date().toISOString()}] GET /api/sensor/${assetId}/history?period=${period}`);
     res.json({ data: history });
 });
 

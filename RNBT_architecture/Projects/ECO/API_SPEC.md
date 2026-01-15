@@ -818,17 +818,17 @@ Asset Summary:
 
 Available endpoints:
   GET /api/hierarchy?depth=n&locale=ko       - Hierarchy tree (depth limited, i18n)
-  GET /api/hierarchy/:assetId/children        - Node children (Lazy Loading)
-  GET /api/hierarchy/:assetId/assets          - All assets under node (for Table)
-  GET /api/ups/:id?locale=ko                 - UPS status + fields metadata
-  GET /api/ups/:assetId/history                   - UPS load/battery history
-  GET /api/pdu/:id?locale=ko                 - PDU status + fields metadata
-  GET /api/pdu/:assetId/circuits                  - PDU circuit list
-  GET /api/pdu/:assetId/history                   - PDU power history
-  GET /api/crac/:id?locale=ko                - CRAC status + fields metadata
-  GET /api/crac/:assetId/history                  - CRAC temperature history
-  GET /api/sensor/:id?locale=ko              - Sensor status + fields metadata
-  GET /api/sensor/:assetId/history                - Sensor temperature history
+  GET /api/hierarchy/:assetId/children       - Node children (Lazy Loading)
+  GET /api/hierarchy/:assetId/assets         - All assets under node (for Table)
+  GET /api/ups/:assetId?locale=ko            - UPS status + fields metadata
+  GET /api/ups/:assetId/history              - UPS load/battery history
+  GET /api/pdu/:assetId?locale=ko            - PDU status + fields metadata
+  GET /api/pdu/:assetId/circuits             - PDU circuit list
+  GET /api/pdu/:assetId/history              - PDU power history
+  GET /api/crac/:assetId?locale=ko           - CRAC status + fields metadata
+  GET /api/crac/:assetId/history             - CRAC temperature history
+  GET /api/sensor/:assetId?locale=ko         - Sensor status + fields metadata
+  GET /api/sensor/:assetId/history           - Sensor temperature history
 ```
 
 ---
