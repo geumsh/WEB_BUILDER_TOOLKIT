@@ -817,7 +817,7 @@ Page 레이어:
 
 ## CSS 원칙
 
-**[CODING_STYLE.md](../guides/CODING_STYLE.md)의 CSS 원칙 섹션 참조**
+**[CODING_STYLE.md](../../guides/CODING_STYLE.md)의 CSS 원칙 섹션 참조**
 
 핵심 요약:
 - **px 단위 사용** (rem/em 금지) - 1920x1080 고정 레이아웃에서 정확한 픽셀 배치 필수
@@ -1003,7 +1003,7 @@ open preview.html
 
 | 문서 | 내용 |
 |------|------|
-| [CODING_STYLE.md](../guides/CODING_STYLE.md) | 함수형 코딩 지침 (필수 참고) |
+| [CODING_STYLE.md](../../guides/CODING_STYLE.md) | 함수형 코딩 지침 (필수 참고) |
 | [create-component/SKILL.md](./create-component/SKILL.md) | 컴포넌트 생성 지침 (컴포넌트 작성 시 참고) |
 
 ---

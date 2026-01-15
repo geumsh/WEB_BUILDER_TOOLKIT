@@ -98,7 +98,7 @@ Figma_Conversion/Static_Components/
 
 ### 1. CSS 원칙
 
-**[CODING_STYLE.md](../guides/CODING_STYLE.md)의 CSS 원칙 섹션 참조**
+**[CODING_STYLE.md](../../guides/CODING_STYLE.md)의 CSS 원칙 섹션 참조**
 
 핵심 요약:
 - **px 단위 사용** (rem/em 금지) - RNBT 런타임 호환성 보장
