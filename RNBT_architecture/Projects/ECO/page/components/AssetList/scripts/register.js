@@ -15,7 +15,7 @@
 
 const { subscribe } = GlobalDataPublisher;
 const { bindEvents, fetchData } = Wkit;
-const { each, go, map, filter, find } = fx;
+const { each, go, map, filter } = fx;
 
 initComponent.call(this);
 
@@ -138,57 +138,61 @@ function setupInternalHandlers() {
     const root = this.appendElement;
     const ctx = this;
 
-    // 테이블 검색 입력 핸들러
-    this._internalHandlers.searchInput = (e) => ctx.search(e.target.value);
-
-    // 타입 필터 핸들러
-    this._internalHandlers.typeChange = (e) => ctx.filterByType(e.target.value);
-
-    // 상태 필터 핸들러
-    this._internalHandlers.statusChange = (e) => ctx.filterByStatus(e.target.value);
-
-    // 트리 검색 핸들러
-    this._internalHandlers.treeSearchInput = (e) => {
-        ctx._treeSearchTerm = e.target.value;
-        if (ctx._treeData) {
-            renderTreeNodes.call(ctx, ctx._treeData, ctx._treeSearchTerm);
-        }
+    // 핸들러 정의
+    this._internalHandlers = {
+        searchInput: (e) => ctx.search(e.target.value),
+        typeChange: (e) => ctx.filterByType(e.target.value),
+        statusChange: (e) => ctx.filterByStatus(e.target.value),
+        treeSearchInput: (e) => {
+            ctx._treeSearchTerm = e.target.value;
+            if (ctx._treeData) {
+                renderTreeNodes.call(ctx, ctx._treeData, ctx._treeSearchTerm);
+            }
+        },
+        expandAll: () => ctx.expandAll(),
+        collapseAll: () => ctx.collapseAll(),
+        treeClick: (e) => handleTreeClick.call(ctx, e)
     };
 
-    // 전체 펼침 버튼
-    this._internalHandlers.expandAll = () => ctx.expandAll();
+    // 이벤트 바인딩 (선언적 배열)
+    const bindings = [
+        ['.search-input', 'input', 'searchInput'],
+        ['.type-filter', 'change', 'typeChange'],
+        ['.status-filter', 'change', 'statusChange'],
+        ['.tree-search-input', 'input', 'treeSearchInput'],
+        ['.btn-expand-all', 'click', 'expandAll'],
+        ['.btn-collapse-all', 'click', 'collapseAll'],
+        ['.tree-container', 'click', 'treeClick']
+    ];
 
-    // 전체 접힘 버튼
-    this._internalHandlers.collapseAll = () => ctx.collapseAll();
+    go(
+        bindings,
+        each(([selector, event, handler]) => {
+            const el = root.querySelector(selector);
+            if (el) el.addEventListener(event, this._internalHandlers[handler]);
+        })
+    );
+}
 
-    // 트리 노드 클릭 (이벤트 위임)
-    this._internalHandlers.treeClick = (e) => {
-        const nodeContent = e.target.closest('.node-content');
-        if (!nodeContent) return;
+/**
+ * 트리 노드 클릭 핸들러 (이벤트 위임)
+ */
+function handleTreeClick(e) {
+    const nodeContent = e.target.closest('.node-content');
+    if (!nodeContent) return;
 
-        const nodeEl = nodeContent.closest('.tree-node');
-        if (!nodeEl) return;
+    const nodeEl = nodeContent.closest('.tree-node');
+    if (!nodeEl) return;
 
-        const nodeId = nodeEl.dataset.nodeId;
-        const toggle = nodeContent.querySelector('.node-toggle');
+    const nodeId = nodeEl.dataset.nodeId;
+    const toggle = nodeContent.querySelector('.node-toggle');
+    const isToggleClick = e.target.closest('.node-toggle') && !toggle.classList.contains('leaf');
 
-        // 토글 영역 클릭 → 펼침/접힘
-        if (e.target.closest('.node-toggle') && !toggle.classList.contains('leaf')) {
-            ctx.toggleNode(nodeId, nodeEl);
-        } else {
-            // 나머지 영역 클릭 → 노드 선택
-            ctx.selectNode(nodeId);
-        }
-    };
-
-    // 이벤트 등록
-    root.querySelector('.search-input')?.addEventListener('input', this._internalHandlers.searchInput);
-    root.querySelector('.type-filter')?.addEventListener('change', this._internalHandlers.typeChange);
-    root.querySelector('.status-filter')?.addEventListener('change', this._internalHandlers.statusChange);
-    root.querySelector('.tree-search-input')?.addEventListener('input', this._internalHandlers.treeSearchInput);
-    root.querySelector('.btn-expand-all')?.addEventListener('click', this._internalHandlers.expandAll);
-    root.querySelector('.btn-collapse-all')?.addEventListener('click', this._internalHandlers.collapseAll);
-    root.querySelector('.tree-container')?.addEventListener('click', this._internalHandlers.treeClick);
+    if (isToggleClick) {
+        this.toggleNode(nodeId, nodeEl);
+    } else {
+        this.selectNode(nodeId);
+    }
 }
 
 // ======================
@@ -268,7 +272,7 @@ function appendChildren({ response }) {
 }
 
 /**
- * 트리 데이터에서 특정 노드를 찾아 children 추가
+ * 트리 데이터에서 특정 노드를 찾아 children 추가 (순수 함수)
  */
 function addChildrenToNode(items, parentId, children) {
     if (!items) return false;
@@ -278,8 +282,8 @@ function addChildrenToNode(items, parentId, children) {
             item.children = children;
             return true;
         }
-        if (item.children && item.children.length > 0) {
-            if (addChildrenToNode.call(this, item.children, parentId, children)) {
+        if (item.children?.length > 0) {
+            if (addChildrenToNode(item.children, parentId, children)) {
                 return true;
             }
         }
@@ -456,7 +460,7 @@ function selectNode(nodeId) {
     if (nodeEl) nodeEl.classList.add('selected');
 
     // 페이지에 노드 선택 이벤트 발행 → 페이지가 hierarchyAssets 데이터 요청
-    const node = findNodeById.call(this, nodeId);
+    const node = findNodeById(this._treeData, nodeId);
     Weventbus.emit('@hierarchyNodeSelected', {
         event: { assetId: nodeId, node, locale: this._locale },
         targetInstance: this
@@ -558,18 +562,20 @@ function collapseAll() {
     }
 }
 
-function findNodeById(nodeId) {
-    function searchNode(items) {
-        for (const item of items || []) {
-            if (item.id === nodeId) return item;
-            if (item.children) {
-                const found = searchNode(item.children);
-                if (found) return found;
-            }
+/**
+ * 트리에서 노드 ID로 검색 (순수 함수)
+ */
+function findNodeById(items, nodeId) {
+    if (!items) return null;
+
+    for (const item of items) {
+        if (item.id === nodeId) return item;
+        if (item.children) {
+            const found = findNodeById(item.children, nodeId);
+            if (found) return found;
         }
-        return null;
     }
-    return searchNode(this._treeData);
+    return null;
 }
 
 function updateNodeVisuals(nodeId) {
