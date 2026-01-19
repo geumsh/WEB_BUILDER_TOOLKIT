@@ -53,16 +53,16 @@ function initComponent() {
     // 동적 필드 컨테이너 selector
     this.fieldsContainerSelector = '.fields-container';
 
+    // chartConfig: API fields를 활용한 동적 렌더링
+    // - series 정보는 API response의 fields 배열에서 가져옴
+    // - 색상, yAxisIndex 등 스타일 정보만 로컬에서 정의
     this.chartConfig = {
         xKey: 'timestamps',
-        series: [
-            { yKey: 'temperatures', name: 'Temperature', color: '#3b82f6', yAxisIndex: 0 },
-            { yKey: 'humidity', name: 'Humidity', color: '#22c55e', yAxisIndex: 1 }
-        ],
-        yAxis: [
-            { name: '°C', position: 'left' },
-            { name: '%', position: 'right' }
-        ],
+        valuesKey: 'values',
+        styleMap: {
+            temperature: { color: '#3b82f6', yAxisIndex: 0 },
+            humidity: { color: '#22c55e', yAxisIndex: 1 }
+        },
         optionBuilder: getDualAxisChartOption
     };
 
@@ -168,7 +168,31 @@ function renderChart(data) {
 // CHART OPTION BUILDER
 // ======================
 function getDualAxisChartOption(config, data) {
-    const { xKey, series: seriesConfig, yAxis: yAxisConfig } = config;
+    const { xKey, valuesKey, styleMap } = config;
+    const { fields } = data;
+    const values = data[valuesKey];
+
+    // API fields를 기반으로 series 생성
+    const seriesData = fields.map(field => {
+        const style = styleMap[field.key] || {};
+        return {
+            key: field.key,
+            name: field.label,
+            unit: field.unit,
+            ...style
+        };
+    });
+
+    // yAxis 설정: fields의 unit 정보 활용
+    const yAxisUnits = [...new Set(seriesData.map(s => s.unit))];
+    const yAxes = yAxisUnits.map((unit, idx) => ({
+        type: 'value',
+        name: unit,
+        position: idx === 0 ? 'left' : 'right',
+        axisLine: { show: true, lineStyle: { color: '#333' } },
+        axisLabel: { color: '#888', fontSize: 10 },
+        splitLine: { lineStyle: { color: idx === 0 ? '#333' : 'transparent' } }
+    }));
 
     return {
         tooltip: {
@@ -178,7 +202,7 @@ function getDualAxisChartOption(config, data) {
             textStyle: { color: '#e0e6ed', fontSize: 12 }
         },
         legend: {
-            data: seriesConfig.map(s => s.name),
+            data: seriesData.map(s => s.name),
             top: 8,
             textStyle: { color: '#8892a0', fontSize: 11 }
         },
@@ -194,22 +218,15 @@ function getDualAxisChartOption(config, data) {
             axisLine: { lineStyle: { color: '#333' } },
             axisLabel: { color: '#888', fontSize: 10 }
         },
-        yAxis: yAxisConfig.map((axis, index) => ({
-            type: 'value',
-            name: axis.name,
-            position: axis.position,
-            axisLine: { show: true, lineStyle: { color: '#333' } },
-            axisLabel: { color: '#888', fontSize: 10 },
-            splitLine: { lineStyle: { color: index === 0 ? '#333' : 'transparent' } }
-        })),
-        series: seriesConfig.map(({ yKey, name, color, yAxisIndex }) => ({
-            name: name,
+        yAxis: yAxes,
+        series: seriesData.map(({ key, name, color, yAxisIndex = 0 }) => ({
+            name,
             type: 'line',
-            yAxisIndex: yAxisIndex,
-            data: data[yKey],
+            yAxisIndex,
+            data: values[key],
             smooth: true,
             symbol: 'none',
-            lineStyle: { color: color, width: 2 },
+            lineStyle: { color, width: 2 },
             areaStyle: {
                 color: {
                     type: 'linear',

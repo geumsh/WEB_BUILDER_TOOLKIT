@@ -94,13 +94,16 @@ function initComponent() {
 
     // ======================
     // 4. Chart Config - ECharts 옵션 빌더
+    // - series 정보는 API response의 fields 배열에서 가져옴
+    // - 색상, yAxisIndex 등 스타일 정보만 로컬에서 정의
     // ======================
     this.chartConfig = {
         xKey: 'timestamps',
-        series: [
-            { yKey: 'power', name: 'Power (kW)', color: '#3b82f6', smooth: true, areaStyle: true },
-            { yKey: 'current', name: 'Current (A)', color: '#f59e0b', smooth: true, yAxisIndex: 1 }
-        ],
+        valuesKey: 'values',
+        styleMap: {
+            power: { color: '#3b82f6', smooth: true, areaStyle: true, yAxisIndex: 0 },
+            current: { color: '#f59e0b', smooth: true, yAxisIndex: 1 }
+        },
         optionBuilder: getDualAxisChartOption
     };
 
@@ -288,12 +291,36 @@ function getTableOption(columns) {
 // ======================
 
 function getDualAxisChartOption(config, data) {
-    const { xKey, series: seriesConfig } = config;
+    const { xKey, valuesKey, styleMap } = config;
+    const { fields } = data;
+    const values = data[valuesKey];
+
+    // API fields를 기반으로 series 생성
+    const seriesData = fields.map(field => {
+        const style = styleMap[field.key] || {};
+        return {
+            key: field.key,
+            name: field.label,
+            unit: field.unit,
+            ...style
+        };
+    });
+
+    // yAxis 설정: fields의 unit 정보 활용
+    const yAxisUnits = [...new Set(seriesData.map(s => s.unit))];
+    const yAxes = yAxisUnits.map((unit, idx) => ({
+        type: 'value',
+        name: unit,
+        position: idx === 0 ? 'left' : 'right',
+        axisLine: { show: true, lineStyle: { color: seriesData.find(s => s.unit === unit)?.color || '#888' } },
+        axisLabel: { color: '#888', fontSize: 10 },
+        splitLine: idx === 0 ? { lineStyle: { color: '#333' } } : { show: false }
+    }));
 
     return {
         grid: { left: 50, right: 50, top: 35, bottom: 24 },
         legend: {
-            data: seriesConfig.map(s => s.name),
+            data: seriesData.map(s => s.name),
             top: 0,
             textStyle: { color: '#8892a0', fontSize: 11 }
         },
@@ -309,29 +336,12 @@ function getDualAxisChartOption(config, data) {
             axisLine: { lineStyle: { color: '#333' } },
             axisLabel: { color: '#888', fontSize: 10 }
         },
-        yAxis: [
-            {
-                type: 'value',
-                name: 'kW',
-                position: 'left',
-                axisLine: { show: true, lineStyle: { color: '#3b82f6' } },
-                axisLabel: { color: '#888', fontSize: 10 },
-                splitLine: { lineStyle: { color: '#333' } }
-            },
-            {
-                type: 'value',
-                name: 'A',
-                position: 'right',
-                axisLine: { show: true, lineStyle: { color: '#f59e0b' } },
-                axisLabel: { color: '#888', fontSize: 10 },
-                splitLine: { show: false }
-            }
-        ],
-        series: seriesConfig.map(({ yKey, name, color, smooth, areaStyle, yAxisIndex = 0 }) => ({
+        yAxis: yAxes,
+        series: seriesData.map(({ key, name, color, smooth, areaStyle, yAxisIndex = 0 }) => ({
             name,
             type: 'line',
             yAxisIndex,
-            data: data[yKey],
+            data: values[key],
             smooth,
             symbol: 'none',
             lineStyle: { color, width: 2 },

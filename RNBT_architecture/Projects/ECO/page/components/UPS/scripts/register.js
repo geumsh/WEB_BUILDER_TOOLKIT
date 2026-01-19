@@ -52,12 +52,16 @@ function initComponent() {
     // 동적 필드 컨테이너 selector
     this.fieldsContainerSelector = '.fields-container';
 
+    // chartConfig: API fields를 활용한 동적 렌더링
+    // - series 정보는 API response의 fields 배열에서 가져옴
+    // - 색상 등 스타일 정보만 로컬에서 정의
     this.chartConfig = {
         xKey: 'timestamps',
-        series: [
-            { yKey: 'load', name: 'Load', color: '#3b82f6', smooth: true, areaStyle: true },
-            { yKey: 'battery', name: 'Battery', color: '#22c55e', smooth: true }
-        ],
+        valuesKey: 'values',
+        styleMap: {
+            load: { color: '#3b82f6', smooth: true, areaStyle: true },
+            battery: { color: '#22c55e', smooth: true }
+        },
         optionBuilder: getMultiLineChartOption
     };
 
@@ -181,12 +185,25 @@ function hideDetail() {
 // ======================
 
 function getMultiLineChartOption(config, data) {
-    const { xKey, series: seriesConfig } = config;
+    const { xKey, valuesKey, styleMap } = config;
+    const { fields } = data;
+    const values = data[valuesKey];
+
+    // API fields를 기반으로 series 생성
+    const seriesData = fields.map(field => {
+        const style = styleMap[field.key] || {};
+        return {
+            key: field.key,
+            name: field.label,
+            unit: field.unit,
+            ...style
+        };
+    });
 
     return {
         grid: { left: 45, right: 16, top: 30, bottom: 24 },
         legend: {
-            data: seriesConfig.map(s => s.name),
+            data: seriesData.map(s => s.name),
             top: 0,
             textStyle: { color: '#8892a0', fontSize: 11 }
         },
@@ -210,10 +227,10 @@ function getMultiLineChartOption(config, data) {
             axisLabel: { color: '#888', fontSize: 10, formatter: '{value}%' },
             splitLine: { lineStyle: { color: '#333' } }
         },
-        series: seriesConfig.map(({ yKey, name, color, smooth, areaStyle }) => ({
+        series: seriesData.map(({ key, name, color, smooth, areaStyle }) => ({
             name,
             type: 'line',
-            data: data[yKey],
+            data: values[key],
             smooth,
             symbol: 'none',
             lineStyle: { color, width: 2 },
