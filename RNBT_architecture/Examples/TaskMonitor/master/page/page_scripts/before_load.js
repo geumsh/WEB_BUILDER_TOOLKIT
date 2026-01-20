@@ -15,12 +15,30 @@ const { onEventBusHandlers } = Wkit;
 
 this.eventBusHandlers = {
     /**
-     * Sidebar 필터 변경 이벤트
-     * Master에서 받아 Page로 전달
+     * Sidebar 필터 적용 이벤트
      */
-    '@filterApplied': ({ event }) => {
-        console.log('[Master] Filter applied:', event.filters);
-        // Page에서 이 이벤트를 구독하여 처리
+    '@filterApplied': ({ targetInstance }) => {
+        const filters = targetInstance._currentFilters;
+        console.log('[Master] Filter applied:', filters);
+
+        this.currentParams.tasks = { ...filters };
+        GlobalDataPublisher.fetchAndPublish('tasks', this, this.currentParams.tasks);
+    },
+
+    /**
+     * Sidebar 필터 리셋 이벤트
+     */
+    '@filterReset': () => {
+        console.log('[Master] Filter reset');
+
+        this.currentParams.tasks = {
+            status: 'all',
+            priority: 'all',
+            type: 'all',
+            assignee: 'all'
+        };
+
+        GlobalDataPublisher.fetchAndPublish('tasks', this, this.currentParams.tasks);
     },
 
     /**
@@ -28,7 +46,11 @@ this.eventBusHandlers = {
      */
     '@refreshAllClicked': () => {
         console.log('[Master] Refresh all clicked');
-        Weventbus.emit('@forceRefresh', {});
+
+        // 모든 topic 재발행
+        GlobalDataPublisher.fetchAndPublish('tasks', this, this.currentParams.tasks);
+        GlobalDataPublisher.fetchAndPublish('statusSummary', this);
+        GlobalDataPublisher.fetchAndPublish('activity', this, this.currentParams.activity);
     }
 };
 

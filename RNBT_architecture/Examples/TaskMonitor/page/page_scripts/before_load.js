@@ -25,58 +25,10 @@ this.currentParams = {
 
 this.eventBusHandlers = {
     /**
-     * Sidebar 필터 적용 이벤트
-     */
-    '@filterApplied': ({ event }) => {
-        const { filters } = event;
-        console.log('[Page] Filter applied:', filters);
-
-        this.currentParams.tasks = { ...filters };
-
-        GlobalDataPublisher.fetchAndPublish(
-            'tasks',
-            this,
-            this.currentParams.tasks
-        );
-    },
-
-    /**
-     * Sidebar 필터 리셋 이벤트
-     */
-    '@filterReset': () => {
-        console.log('[Page] Filter reset');
-
-        this.currentParams.tasks = {
-            status: 'all',
-            priority: 'all',
-            type: 'all',
-            assignee: 'all'
-        };
-
-        GlobalDataPublisher.fetchAndPublish(
-            'tasks',
-            this,
-            this.currentParams.tasks
-        );
-    },
-
-    /**
      * TaskList 행 클릭 이벤트
      */
-    '@taskClicked': ({ event, data }) => {
+    '@taskClicked': ({ data }) => {
         console.log('[Page] Task clicked:', data);
-    },
-
-    /**
-     * Header 전체 새로고침 이벤트
-     */
-    '@forceRefresh': () => {
-        console.log('[Page] Force refresh triggered');
-
-        // 모든 topic 재발행
-        GlobalDataPublisher.fetchAndPublish('tasks', this, this.currentParams.tasks);
-        GlobalDataPublisher.fetchAndPublish('statusSummary', this);
-        GlobalDataPublisher.fetchAndPublish('activity', this, this.currentParams.activity);
     }
 };
 
