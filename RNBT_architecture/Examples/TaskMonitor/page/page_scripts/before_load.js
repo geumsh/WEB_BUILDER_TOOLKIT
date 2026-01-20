@@ -11,15 +11,6 @@
 const { onEventBusHandlers } = Wkit;
 
 // ======================
-// CURRENT PARAMS STATE
-// ======================
-
-this.currentParams = {
-    tasks: { status: 'all', priority: 'all', type: 'all', assignee: 'all' },
-    activity: { limit: 10 }
-};
-
-// ======================
 // EVENT BUS HANDLERS
 // ======================
 

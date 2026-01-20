@@ -15,6 +15,8 @@ const { each } = fx;
 // DATA MAPPINGS
 // ======================
 
+this.currentParams = {};
+
 this.globalDataMappings = [
     {
         topic: 'tasks',
@@ -49,11 +51,11 @@ this.globalDataMappings = [
 fx.go(
     this.globalDataMappings,
     each(GlobalDataPublisher.registerMapping),
-    each(({ topic }) => {
-        const params = this.currentParams?.[topic] || {};
-        GlobalDataPublisher.fetchAndPublish(topic, this, params)
-            .catch(err => console.error(`[fetchAndPublish:${topic}]`, err));
-    })
+    each(({ topic }) => this.currentParams[topic] = {}),
+    each(({ topic }) =>
+        GlobalDataPublisher.fetchAndPublish(topic, this)
+            .catch(err => console.error(`[fetchAndPublish:${topic}]`, err))
+    )
 );
 
 // ======================
