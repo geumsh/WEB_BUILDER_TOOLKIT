@@ -14,7 +14,7 @@
       "description": "User information API (Master/Header) - static",
       "dataset_id": "user-001",
       "name": "userApi",
-      "rest_api": "{\"url\":\"http://localhost:3004/api/user\",\"method\":\"GET\",\"headers\":{},\"body\":\"\"}"
+      "rest_api": "{\"url\":\"http://10.23.128.125:4006/api/user\",\"method\":\"GET\",\"headers\":{},\"body\":\"\"}"
     },
     {
       "datasource": "",
@@ -29,7 +29,7 @@
       "description": "Navigation menu API (Master/Sidebar) - static",
       "dataset_id": "menu-001",
       "name": "menuApi",
-      "rest_api": "{\"url\":\"http://localhost:3004/api/menu\",\"method\":\"GET\",\"headers\":{},\"body\":\"\"}"
+      "rest_api": "{\"url\":\"http://10.23.128.125:4006/api/menu\",\"method\":\"GET\",\"headers\":{},\"body\":\"\"}"
     },
     {
       "datasource": "",
@@ -44,7 +44,7 @@
       "description": "Equipment status API (Page/Equipment3D) - refresh every 5s",
       "dataset_id": "equipment-001",
       "name": "equipmentStatusApi",
-      "rest_api": "{\"url\":\"http://localhost:3004/api/equipment/status\",\"method\":\"GET\",\"headers\":{},\"body\":\"\"}"
+      "rest_api": "{\"url\":\"http://10.23.128.125:4006/api/equipment/status\",\"method\":\"GET\",\"headers\":{},\"body\":\"\"}"
     },
     {
       "datasource": "",
@@ -65,7 +65,7 @@
       "description": "Equipment detail API (3D click handler) - on demand",
       "dataset_id": "equipment-002",
       "name": "equipmentDetailApi",
-      "rest_api": "{\"url\":\"http://localhost:3004/api/equipment/#{id}\",\"method\":\"GET\",\"headers\":{},\"body\":\"\"}"
+      "rest_api": "{\"url\":\"http://10.23.128.125:4006/api/equipment/#{id}\",\"method\":\"GET\",\"headers\":{},\"body\":\"\"}"
     }
   ],
   "datasource": []
