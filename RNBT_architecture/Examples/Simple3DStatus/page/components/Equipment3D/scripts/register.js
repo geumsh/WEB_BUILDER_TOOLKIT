@@ -47,12 +47,6 @@ this.meshStatusConfig = [
  */
 this._originalMaterials = new Map();
 
-/**
- * 현재 장비 상태 캐시
- * Map<equipmentId, { status, color }>
- */
-this._equipmentStatusCache = new Map();
-
 // ======================
 // BINDINGS
 // ======================
@@ -131,15 +125,6 @@ function updateMeshStatus(meshStatusConfig, { response }) {
         console.warn('[Equipment3D] MainGroup not found');
         return;
     }
-
-    // 상태 캐시 업데이트
-    fx.go(
-        data,
-        fx.each(eq => this._equipmentStatusCache.set(eq.id, {
-            status: eq.status,
-            color: eq.color
-        }))
-    );
 
     // 파이프라인: config → 데이터 매칭 → mesh 찾기 → color 업데이트
     fx.go(

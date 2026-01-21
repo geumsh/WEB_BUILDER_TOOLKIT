@@ -38,7 +38,6 @@ if (this._originalMaterials && this.appendElement) {
 }
 
 this._originalMaterials = null;
-this._equipmentStatusCache = null;
 
 // ======================
 // HANDLER CLEANUP
