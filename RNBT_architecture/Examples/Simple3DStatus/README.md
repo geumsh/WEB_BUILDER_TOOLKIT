@@ -1,0 +1,162 @@
+# Simple3DStatus
+
+3D 컴포넌트에서 장비 상태를 mesh의 material color로 표시하는 RNBT 예제 프로젝트입니다.
+
+## 핵심 개념
+
+**Config 기반 Mesh-상태 매핑**: mesh 이름과 장비 ID를 config로 연결하여, 데이터 변경 시 자동으로 material color 업데이트
+
+```javascript
+// Equipment3D/scripts/register.js
+const meshStatusConfig = [
+    { meshName: 'Rack_A', equipmentId: 'eq-001' },
+    { meshName: 'Cooling_01', equipmentId: 'eq-003' },
+    // ...
+];
+```
+
+## 구조
+
+```
+Simple3DStatus/
+├── mock_server/                    # Express API 서버
+│   ├── server.js
+│   └── package.json
+│
+├── master/                         # MASTER 레이어 (앱 전역)
+│   └── page/
+│       ├── page_scripts/
+│       │   ├── before_load.js
+│       │   ├── loaded.js
+│       │   └── before_unload.js
+│       ├── page_styles/container.css
+│       └── components/
+│           ├── Header/             # 사용자 정보 헤더
+│           └── Sidebar/            # 네비게이션 + 상태 범례
+│
+├── page/                           # PAGE 레이어 (페이지별)
+│   ├── page_scripts/
+│   │   ├── before_load.js          # 3D raycasting 초기화
+│   │   ├── loaded.js               # 장비 상태 데이터 발행
+│   │   └── before_unload.js        # 3D 리소스 정리
+│   ├── page_styles/container.css
+│   └── components/
+│       └── Equipment3D/            # 3D 장비 상태 컴포넌트
+│
+├── datasetList.json                # API 엔드포인트 정의
+├── preview.html                    # 전체 레이아웃 프리뷰
+└── README.md
+```
+
+## 실행 방법
+
+### 1. Mock Server 실행
+
+```bash
+cd mock_server
+npm install
+npm start
+```
+
+서버가 http://localhost:3004 에서 실행됩니다.
+
+### 2. Preview 확인
+
+`preview.html`을 브라우저에서 열어 레이아웃을 확인합니다.
+
+> Note: preview.html은 정적 미리보기입니다. 실제 3D 렌더링은 런타임에서 Three.js로 수행됩니다.
+
+## API 엔드포인트
+
+| Endpoint | Layer | Component | 설명 |
+|----------|-------|-----------|------|
+| GET /api/user | MASTER | Header | 사용자 정보 |
+| GET /api/menu | MASTER | Sidebar | 네비게이션 메뉴 |
+| GET /api/equipment/status | PAGE | Equipment3D | 전체 장비 상태 (5초 갱신) |
+| GET /api/equipment/:id | PAGE | 클릭 핸들러 | 장비 상세 정보 |
+
+## 상태 타입
+
+| Status | Color | 의미 |
+|--------|-------|------|
+| normal | #4CAF50 (Green) | 정상 |
+| warning | #FF9800 (Orange) | 경고 |
+| error | #F44336 (Red) | 오류 |
+| offline | #9E9E9E (Gray) | 오프라인 |
+
+## Equipment3D 컴포넌트 패턴
+
+### 1. Mesh Status Config
+
+```javascript
+const meshStatusConfig = [
+    { meshName: 'Rack_A', equipmentId: 'eq-001' },
+    // meshName: Three.js Object3D.name
+    // equipmentId: API 응답의 id 필드
+];
+```
+
+### 2. Material Color 업데이트
+
+```javascript
+function updateMeshStatus(config, { response }) {
+    const { data } = response;
+
+    config.forEach(({ meshName, equipmentId }) => {
+        const equipment = data.find(eq => eq.id === equipmentId);
+        const mesh = mainGroup.getObjectByName(meshName);
+
+        if (mesh && equipment) {
+            mesh.material.color.set(equipment.color);
+        }
+    });
+}
+```
+
+### 3. 3D 이벤트 처리
+
+```javascript
+// 컴포넌트: 이벤트 발행
+this.customEvents = {
+    click: '@3dObjectClicked'
+};
+
+// 페이지: 이벤트 핸들러
+'@3dObjectClicked': async ({ event, targetInstance }) => {
+    const clickedObject = event.intersects[0].object;
+    // 상세 데이터 fetch 및 처리
+}
+```
+
+## 라이프사이클
+
+```
+[페이지 로드]
+  MASTER before_load → 이벤트 핸들러 등록
+    ↓
+  PAGE before_load → 3D raycasting 초기화
+    ↓
+  컴포넌트 register → Equipment3D subscribe(equipmentStatus)
+    ↓
+  PAGE loaded → equipmentStatus 발행 시작 (5초 interval)
+    ↓
+  Equipment3D.updateMeshStatus() → mesh color 업데이트
+
+[3D 클릭]
+  canvas click → raycasting → @3dObjectClicked
+    ↓
+  페이지 핸들러 → fetchData(equipmentDetailApi) → 상세 처리
+
+[페이지 언로드]
+  PAGE before_unload
+    → stopAllIntervals()
+    → raycasting cleanup
+    → disposeAllThreeResources()
+```
+
+## 확장 포인트
+
+1. **상세 팝업**: `@3dObjectClicked` 핸들러에서 PopupMixin 패턴으로 상세 정보 표시
+2. **호버 효과**: `mousemove` 이벤트 추가하여 호버 시 하이라이트
+3. **필터링**: 상태별 필터 UI 추가하여 특정 상태만 강조
+4. **애니메이션**: 상태 변경 시 tween 애니메이션으로 색상 전환

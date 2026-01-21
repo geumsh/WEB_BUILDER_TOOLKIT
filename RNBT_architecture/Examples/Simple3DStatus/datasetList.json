@@ -1,0 +1,72 @@
+{
+  "version": "3.2.0",
+  "data": [
+    {
+      "datasource": "",
+      "mode": "0",
+      "delivery_type": "0",
+      "param_info": [],
+      "data_type": "1",
+      "interval": "0",
+      "page_id": "MASTER",
+      "query": "",
+      "query_type": "",
+      "description": "User information API (Master/Header) - static",
+      "dataset_id": "user-001",
+      "name": "userApi",
+      "rest_api": "{\"url\":\"http://localhost:3004/api/user\",\"method\":\"GET\",\"headers\":{},\"body\":\"\"}"
+    },
+    {
+      "datasource": "",
+      "mode": "0",
+      "delivery_type": "0",
+      "param_info": [],
+      "data_type": "1",
+      "interval": "0",
+      "page_id": "MASTER",
+      "query": "",
+      "query_type": "",
+      "description": "Navigation menu API (Master/Sidebar) - static",
+      "dataset_id": "menu-001",
+      "name": "menuApi",
+      "rest_api": "{\"url\":\"http://localhost:3004/api/menu\",\"method\":\"GET\",\"headers\":{},\"body\":\"\"}"
+    },
+    {
+      "datasource": "",
+      "mode": "0",
+      "delivery_type": "0",
+      "param_info": [],
+      "data_type": "1",
+      "interval": "5000",
+      "page_id": "PAGE",
+      "query": "",
+      "query_type": "",
+      "description": "Equipment status API (Page/Equipment3D) - refresh every 5s",
+      "dataset_id": "equipment-001",
+      "name": "equipmentStatusApi",
+      "rest_api": "{\"url\":\"http://localhost:3004/api/equipment/status\",\"method\":\"GET\",\"headers\":{},\"body\":\"\"}"
+    },
+    {
+      "datasource": "",
+      "mode": "0",
+      "delivery_type": "0",
+      "param_info": [
+        {
+          "param_name": "id",
+          "param_type": "string",
+          "default_value": ""
+        }
+      ],
+      "data_type": "1",
+      "interval": "0",
+      "page_id": "PAGE",
+      "query": "",
+      "query_type": "",
+      "description": "Equipment detail API (3D click handler) - on demand",
+      "dataset_id": "equipment-002",
+      "name": "equipmentDetailApi",
+      "rest_api": "{\"url\":\"http://localhost:3004/api/equipment/#{id}\",\"method\":\"GET\",\"headers\":{},\"body\":\"\"}"
+    }
+  ],
+  "datasource": []
+}

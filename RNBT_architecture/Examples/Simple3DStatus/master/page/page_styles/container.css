@@ -1,0 +1,13 @@
+/* Master Container Styles */
+/* 페이지 크기: 1920 x 1080 */
+#master-container {
+    position: absolute;
+    inset: 0;
+    width: 1920px;
+    height: 1080px;
+    pointer-events: none;
+}
+
+#master-container > * {
+    pointer-events: auto;
+}

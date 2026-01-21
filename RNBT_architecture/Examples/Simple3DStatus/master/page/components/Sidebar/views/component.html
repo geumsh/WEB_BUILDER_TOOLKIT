@@ -1,0 +1,42 @@
+<div class="sidebar">
+    <!-- Header -->
+    <div class="sidebar-header">
+        <h3 class="sidebar-title">Navigation</h3>
+    </div>
+
+    <!-- Navigation Menu (Dynamic) -->
+    <nav class="sidebar-nav">
+        <ul class="nav-list"></ul>
+    </nav>
+
+    <!-- Status Legend -->
+    <div class="status-legend">
+        <h4 class="legend-title">Status Legend</h4>
+        <div class="legend-items">
+            <div class="legend-item">
+                <span class="legend-color" style="background: #4CAF50;"></span>
+                <span class="legend-label">Normal</span>
+            </div>
+            <div class="legend-item">
+                <span class="legend-color" style="background: #FF9800;"></span>
+                <span class="legend-label">Warning</span>
+            </div>
+            <div class="legend-item">
+                <span class="legend-color" style="background: #F44336;"></span>
+                <span class="legend-label">Error</span>
+            </div>
+            <div class="legend-item">
+                <span class="legend-color" style="background: #9E9E9E;"></span>
+                <span class="legend-label">Offline</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Templates -->
+    <template id="nav-item-template">
+        <li class="nav-item" data-menu-id="">
+            <span class="nav-icon"></span>
+            <span class="nav-label"></span>
+        </li>
+    </template>
+</div>

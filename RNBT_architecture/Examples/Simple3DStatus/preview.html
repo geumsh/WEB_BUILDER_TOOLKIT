@@ -1,0 +1,485 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=1920, height=1080">
+    <title>Simple3DStatus - Preview</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #0f172a;
+            overflow: hidden;
+        }
+
+        /* ======================
+         * Page Root
+         * ====================== */
+        #page-root {
+            position: relative;
+            width: 1920px;
+            height: 1080px;
+            overflow: hidden;
+        }
+
+        /* ======================
+         * Page Container (3D viewport area)
+         * ====================== */
+        #page-container {
+            position: absolute;
+            inset: 0;
+            width: 1920px;
+            height: 1080px;
+            padding-top: 60px;
+            padding-left: 240px;
+            overflow: hidden;
+        }
+
+        /* 3D Viewport Placeholder */
+        #equipment3d-container {
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+        }
+
+        .viewport-placeholder {
+            text-align: center;
+            color: #64748b;
+        }
+
+        .viewport-placeholder h2 {
+            font-size: 24px;
+            margin-bottom: 16px;
+            color: #94a3b8;
+        }
+
+        .viewport-placeholder p {
+            font-size: 14px;
+            margin-bottom: 24px;
+        }
+
+        /* Mock 3D Objects */
+        .mock-3d-scene {
+            display: flex;
+            gap: 32px;
+            flex-wrap: wrap;
+            justify-content: center;
+            max-width: 1000px;
+        }
+
+        .mock-equipment {
+            width: 140px;
+            height: 180px;
+            background: #334155;
+            border-radius: 8px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 16px;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+            border: 2px solid transparent;
+        }
+
+        .mock-equipment:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+        }
+
+        .mock-equipment.normal { border-color: #4CAF50; }
+        .mock-equipment.warning { border-color: #FF9800; }
+        .mock-equipment.error { border-color: #F44336; }
+        .mock-equipment.offline { border-color: #9E9E9E; }
+
+        .equipment-icon {
+            width: 80px;
+            height: 80px;
+            border-radius: 8px;
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 32px;
+        }
+
+        .mock-equipment.normal .equipment-icon { background: #4CAF50; }
+        .mock-equipment.warning .equipment-icon { background: #FF9800; }
+        .mock-equipment.error .equipment-icon { background: #F44336; }
+        .mock-equipment.offline .equipment-icon { background: #9E9E9E; }
+
+        .equipment-name {
+            font-size: 12px;
+            color: #e2e8f0;
+            text-align: center;
+            font-weight: 500;
+        }
+
+        .equipment-status {
+            font-size: 11px;
+            color: #94a3b8;
+            text-transform: uppercase;
+            margin-top: 4px;
+        }
+
+        /* ======================
+         * Master Container
+         * ====================== */
+        #master-container {
+            position: absolute;
+            inset: 0;
+            width: 1920px;
+            height: 1080px;
+            pointer-events: none;
+        }
+
+        #master-container > * {
+            pointer-events: auto;
+        }
+
+        /* ======================
+         * Header Styles
+         * ====================== */
+        #header-container {
+            flex-shrink: 0;
+            width: 1920px;
+            height: 60px;
+            position: absolute;
+            top: 0;
+            left: 0;
+        }
+
+        #header-container .header {
+            width: 100%;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 24px;
+            background: #1e293b;
+            color: #f8fafc;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        #header-container .header-logo {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        #header-container .logo-icon {
+            width: 36px;
+            height: 36px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: #10b981;
+            border-radius: 8px;
+            font-weight: 700;
+            font-size: 14px;
+        }
+
+        #header-container .logo-text {
+            font-size: 20px;
+            font-weight: 600;
+        }
+
+        #header-container .header-user {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        #header-container .user-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: #475569;
+            border: 2px solid #10b981;
+        }
+
+        #header-container .user-info {
+            display: flex;
+            flex-direction: column;
+        }
+
+        #header-container .user-name {
+            font-size: 14px;
+            font-weight: 600;
+        }
+
+        #header-container .user-role {
+            font-size: 12px;
+            color: #94a3b8;
+        }
+
+        #header-container .user-menu-btn {
+            background: none;
+            border: none;
+            color: #94a3b8;
+            cursor: pointer;
+            padding: 8px;
+            font-size: 12px;
+        }
+
+        /* ======================
+         * Sidebar Styles
+         * ====================== */
+        #sidebar-container {
+            position: absolute;
+            top: 60px;
+            left: 0;
+            width: 240px;
+            height: 1020px;
+        }
+
+        #sidebar-container .sidebar {
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            background: #f8fafc;
+            border-right: 1px solid #e2e8f0;
+        }
+
+        #sidebar-container .sidebar-header {
+            padding: 16px 20px;
+            border-bottom: 1px solid #e2e8f0;
+            background: linear-gradient(135deg, #1e293b 0%, #334155 100%);
+        }
+
+        #sidebar-container .sidebar-title {
+            margin: 0;
+            font-size: 14px;
+            font-weight: 600;
+            color: #f8fafc;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        #sidebar-container .sidebar-nav {
+            flex: 1;
+            padding: 8px;
+            overflow-y: auto;
+        }
+
+        #sidebar-container .nav-list {
+            list-style: none;
+            margin: 0;
+            padding: 0;
+        }
+
+        #sidebar-container .nav-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px 16px;
+            margin-bottom: 4px;
+            border-radius: 8px;
+            color: #475569;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        #sidebar-container .nav-item:hover {
+            background: #e2e8f0;
+            color: #1e293b;
+        }
+
+        #sidebar-container .nav-item.active {
+            background: #10b981;
+            color: white;
+        }
+
+        #sidebar-container .nav-icon {
+            font-size: 20px;
+            opacity: 0.8;
+        }
+
+        #sidebar-container .nav-label {
+            font-size: 14px;
+            font-weight: 500;
+        }
+
+        /* Status Legend */
+        #sidebar-container .status-legend {
+            padding: 16px;
+            border-top: 1px solid #e2e8f0;
+            background: #f1f5f9;
+        }
+
+        #sidebar-container .legend-title {
+            margin: 0 0 12px 0;
+            font-size: 12px;
+            font-weight: 600;
+            color: #64748b;
+            text-transform: uppercase;
+        }
+
+        #sidebar-container .legend-items {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        #sidebar-container .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        #sidebar-container .legend-color {
+            width: 16px;
+            height: 16px;
+            border-radius: 4px;
+        }
+
+        #sidebar-container .legend-label {
+            font-size: 13px;
+            color: #475569;
+        }
+    </style>
+</head>
+<body>
+    <div id="page-root">
+        <!-- Page Container (3D Viewport) -->
+        <div id="page-container">
+            <div id="equipment3d-container">
+                <div class="viewport-placeholder">
+                    <h2>3D Equipment Status Viewer</h2>
+                    <p>Equipment status is displayed via mesh material colors</p>
+                </div>
+
+                <!-- Mock 3D Objects (실제로는 Three.js 렌더링) -->
+                <div class="mock-3d-scene">
+                    <div class="mock-equipment normal" data-mesh="Rack_A" data-id="eq-001">
+                        <div class="equipment-icon">🖥️</div>
+                        <span class="equipment-name">Server Rack A</span>
+                        <span class="equipment-status">Normal</span>
+                    </div>
+                    <div class="mock-equipment warning" data-mesh="Rack_B" data-id="eq-002">
+                        <div class="equipment-icon">🖥️</div>
+                        <span class="equipment-name">Server Rack B</span>
+                        <span class="equipment-status">Warning</span>
+                    </div>
+                    <div class="mock-equipment normal" data-mesh="Cooling_01" data-id="eq-003">
+                        <div class="equipment-icon">❄️</div>
+                        <span class="equipment-name">Cooling Unit 1</span>
+                        <span class="equipment-status">Normal</span>
+                    </div>
+                    <div class="mock-equipment error" data-mesh="Cooling_02" data-id="eq-004">
+                        <div class="equipment-icon">❄️</div>
+                        <span class="equipment-name">Cooling Unit 2</span>
+                        <span class="equipment-status">Error</span>
+                    </div>
+                    <div class="mock-equipment normal" data-mesh="Power_Main" data-id="eq-005">
+                        <div class="equipment-icon">⚡</div>
+                        <span class="equipment-name">Power Unit</span>
+                        <span class="equipment-status">Normal</span>
+                    </div>
+                    <div class="mock-equipment offline" data-mesh="UPS_01" data-id="eq-006">
+                        <div class="equipment-icon">🔋</div>
+                        <span class="equipment-name">UPS System</span>
+                        <span class="equipment-status">Offline</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Master Container -->
+        <div id="master-container">
+            <!-- Header -->
+            <div id="header-container">
+                <div class="header">
+                    <div class="header-logo">
+                        <span class="logo-icon">3D</span>
+                        <span class="logo-text">Simple3DStatus</span>
+                    </div>
+                    <div class="header-user">
+                        <div class="user-avatar"></div>
+                        <div class="user-info">
+                            <span class="user-name">Admin User</span>
+                            <span class="user-role">Administrator</span>
+                        </div>
+                        <button class="user-menu-btn">▼</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Sidebar -->
+            <div id="sidebar-container">
+                <div class="sidebar">
+                    <div class="sidebar-header">
+                        <h3 class="sidebar-title">Navigation</h3>
+                    </div>
+                    <nav class="sidebar-nav">
+                        <ul class="nav-list">
+                            <li class="nav-item active" data-menu-id="menu-1">
+                                <span class="nav-icon">🎲</span>
+                                <span class="nav-label">3D Status</span>
+                            </li>
+                            <li class="nav-item" data-menu-id="menu-2">
+                                <span class="nav-icon">📋</span>
+                                <span class="nav-label">Equipment List</span>
+                            </li>
+                            <li class="nav-item" data-menu-id="menu-3">
+                                <span class="nav-icon">⚠️</span>
+                                <span class="nav-label">Alerts</span>
+                            </li>
+                            <li class="nav-item" data-menu-id="menu-4">
+                                <span class="nav-icon">⚙️</span>
+                                <span class="nav-label">Settings</span>
+                            </li>
+                        </ul>
+                    </nav>
+                    <div class="status-legend">
+                        <h4 class="legend-title">Status Legend</h4>
+                        <div class="legend-items">
+                            <div class="legend-item">
+                                <span class="legend-color" style="background: #4CAF50;"></span>
+                                <span class="legend-label">Normal</span>
+                            </div>
+                            <div class="legend-item">
+                                <span class="legend-color" style="background: #FF9800;"></span>
+                                <span class="legend-label">Warning</span>
+                            </div>
+                            <div class="legend-item">
+                                <span class="legend-color" style="background: #F44336;"></span>
+                                <span class="legend-label">Error</span>
+                            </div>
+                            <div class="legend-item">
+                                <span class="legend-color" style="background: #9E9E9E;"></span>
+                                <span class="legend-label">Offline</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Mock: 클릭 이벤트 시뮬레이션
+        document.querySelectorAll('.mock-equipment').forEach(el => {
+            el.addEventListener('click', () => {
+                const meshName = el.dataset.mesh;
+                const equipmentId = el.dataset.id;
+                console.log(`[Preview] Clicked: ${meshName} (${equipmentId})`);
+                alert(`Equipment: ${el.querySelector('.equipment-name').textContent}\nStatus: ${el.querySelector('.equipment-status').textContent}\nMesh: ${meshName}`);
+            });
+        });
+
+        console.log('[Preview] Simple3DStatus preview loaded');
+        console.log('[Preview] Note: This is a static preview. Actual 3D rendering uses Three.js.');
+    </script>
+</body>
+</html>
