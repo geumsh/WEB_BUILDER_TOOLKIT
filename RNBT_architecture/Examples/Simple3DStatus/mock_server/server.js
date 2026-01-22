@@ -33,12 +33,12 @@ const STATUS_COLORS = {
 
 // Mock 장비 데이터
 const equipments = [
-    { id: 'eq-001', name: 'Server Rack A', meshName: 'Rack_A', status: STATUS_TYPES.NORMAL },
-    { id: 'eq-002', name: 'Server Rack B', meshName: 'Rack_B', status: STATUS_TYPES.WARNING },
-    { id: 'eq-003', name: 'Cooling Unit 1', meshName: 'Cooling_01', status: STATUS_TYPES.NORMAL },
-    { id: 'eq-004', name: 'Cooling Unit 2', meshName: 'Cooling_02', status: STATUS_TYPES.ERROR },
-    { id: 'eq-005', name: 'Power Unit', meshName: 'Power_Main', status: STATUS_TYPES.NORMAL },
-    { id: 'eq-006', name: 'UPS System', meshName: 'UPS_01', status: STATUS_TYPES.OFFLINE }
+    { id: 'eq-001', label: 'Server Rack A', status: STATUS_TYPES.NORMAL },
+    { id: 'eq-002', label: 'Server Rack B', status: STATUS_TYPES.WARNING },
+    { id: 'eq-003', label: 'Cooling Unit 1', status: STATUS_TYPES.NORMAL },
+    { id: 'eq-004', label: 'Cooling Unit 2', status: STATUS_TYPES.ERROR },
+    { id: 'eq-005', label: 'Power Unit', status: STATUS_TYPES.NORMAL },
+    { id: 'eq-006', label: 'UPS System', status: STATUS_TYPES.OFFLINE }
 ];
 
 // ======================
@@ -93,8 +93,6 @@ app.get('/api/equipment/status', (req, res) => {
 
         return {
             id: eq.id,
-            name: eq.name,
-            meshName: eq.meshName,
             status: eq.status,
             color: STATUS_COLORS[eq.status]
         };

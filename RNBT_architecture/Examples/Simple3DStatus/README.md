@@ -2,18 +2,41 @@
 
 3D 컴포넌트에서 장비 상태를 mesh의 material color로 표시하는 RNBT 예제 프로젝트입니다.
 
-## 핵심 개념
+## 설계 의도: 서버-모델링 분리
 
-**Config 기반 Mesh-상태 매핑**: mesh 이름과 장비 ID를 config로 연결하여, 데이터 변경 시 자동으로 material color 업데이트
+### 문제
+
+- 서버는 클라이언트의 3D 모델링 상황을 모릅니다
+- 모델링의 mesh 이름은 모델러가 결정하며, 서버와 무관합니다
+- 둘을 직접 연결하면 결합도가 높아져 변경이 어렵습니다
+
+### 해결: Config 기반 매핑
+
+```
+서버 (id, status, color)
+        ↓ ID
+Config (id ↔ meshName 매핑)  ← 변화 가능 영역
+        ↓ meshName
+모델링 (mesh)
+```
+
+- **연결 키**: ID (서버와 모델링의 유일한 접점)
+- **매핑 제공**: Configuration 또는 별도 API
+- **결과**: 서버는 모델링을 모르고, 모델링은 서버를 모릅니다
+
+### 구현
 
 ```javascript
 // Equipment3D/scripts/register.js
-const meshStatusConfig = [
+this.meshStatusConfig = [
     { meshName: 'Rack_A', equipmentId: 'eq-001' },
     { meshName: 'Cooling_01', equipmentId: 'eq-003' },
-    // ...
+    // meshName: 클라이언트 3D 모델의 mesh 이름 (모델러가 결정)
+    // equipmentId: 서버 데이터의 ID
 ];
 ```
+
+config만 수정하면 다른 모델링이나 다른 서버에도 적용 가능합니다.
 
 ## 구조
 
@@ -58,7 +81,7 @@ npm install
 npm start
 ```
 
-서버가 http://localhost:3004 에서 실행됩니다.
+서버가 http://localhost:4006 에서 실행됩니다.
 
 ### 2. Preview 확인
 
