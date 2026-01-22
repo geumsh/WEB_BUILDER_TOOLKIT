@@ -37,11 +37,11 @@
       "delivery_type": "0",
       "param_info": [],
       "data_type": "1",
-      "interval": "5000",
+      "interval": "0",
       "page_id": "PAGE",
       "query": "",
       "query_type": "",
-      "description": "Equipment status API (Page/Equipment3D) - refresh every 5s",
+      "description": "Equipment status API (Page/Equipment3D)",
       "dataset_id": "equipment-001",
       "name": "equipmentStatusApi",
       "rest_api": "{\"url\":\"http://10.23.128.125:4006/api/equipment/status\",\"method\":\"GET\",\"headers\":{},\"body\":\"\"}"
