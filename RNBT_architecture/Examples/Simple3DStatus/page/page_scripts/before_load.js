@@ -24,11 +24,12 @@ this.eventBusHandlers = Object.assign(this.eventBusHandlers || {}, {
     '@3dObjectClicked': async ({ event: { intersects }, targetInstance: { datasetInfo, meshStatusConfig } }) => {
         go(
             intersects,
-            fx.filter(intersect => fx.find(c => c.meshName === intersect.object.name, meshStatusConfig)),
+            fx.L.filter(intersect => fx.find(c => c.meshName === intersect.object.name, meshStatusConfig)),
+            fx.take(1),
             fx.each(target => fx.go(
                 datasetInfo,
-                fx.map((info) => ({ datasetName: info.datasetName, param: info.getParam(target.object, meshStatusConfig) })),
-                fx.filter(({ param }) => param),
+                fx.L.map((info) => ({ datasetName: info.datasetName, param: info.getParam(target.object, meshStatusConfig) })),
+                fx.L.filter(({ param }) => param),
                 fx.each(({ datasetName, param }) => Wkit.fetchData(this, datasetName, param).then(console.log).catch(console.error))
             ))
         )
