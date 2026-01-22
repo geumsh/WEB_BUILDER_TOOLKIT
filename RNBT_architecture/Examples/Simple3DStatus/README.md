@@ -190,33 +190,6 @@ this.customEvents = {
     → disposeAllThreeResources()
 ```
 
-## 설계 분석: datasetInfo 확장
-
-### 자유로운 메소드 구현
-
-datasetInfo에 필요한 메소드를 자유롭게 추가할 수 있습니다:
-
-```javascript
-this.datasetInfo = [
-    {
-        datasetName: 'equipmentDetailApi',
-        getParam: (obj, config) => { ... },  // 이 예제의 방식
-        validate: (obj) => { ... },          // 필요하면 추가 가능
-    }
-];
-```
-
-### param key가 필수인 경우
-
-런타임 API가 `param` key를 직접 참조할 때:
-
-```javascript
-// fetchAndPublish 내부에서 datasetInfo[0].param을 사용하는 경우
-fetchAndPublish(this, datasetName, datasetInfo[0].param);
-```
-
-이 예제에서는 `getParam` 함수로 param을 생성한 후 전달하므로 `param` key 불필요
-
 ## 확장 포인트
 
 1. **상세 팝업**: `@3dObjectClicked` 핸들러에서 PopupMixin 패턴으로 상세 정보 표시
