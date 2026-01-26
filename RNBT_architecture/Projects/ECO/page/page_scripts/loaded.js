@@ -7,46 +7,34 @@
  * - Param 관리 (currentParams)
  * - GlobalDataPublisher로 데이터 발행
  * - 구독자(컴포넌트)에게 데이터 전파
+ *
+ * Asset API v1:
+ * - assetList: POST /api/v1/ast/l (자산 전체 목록)
+ * - relationList: POST /api/v1/rel/l (관계 전체 목록)
  */
 
 const { each } = fx;
 
 // ======================
-// DATA MAPPINGS
+// DATA MAPPINGS (Asset API v1)
 // ======================
 
 this.globalDataMappings = [
     {
-        topic: 'hierarchy',
+        topic: 'assetList',
         datasetInfo: {
-            datasetName: 'hierarchy',
-            param: { depth: 1, locale: 'ko' }
+            datasetName: 'assetList',
+            param: {}
         },
         refreshInterval: null  // 수동 갱신만
     },
     {
-        topic: 'hierarchyChildren',
+        topic: 'relationList',
         datasetInfo: {
-            datasetName: 'hierarchyChildren',
-            param: { assetId: '', locale: 'ko' }
+            datasetName: 'relationList',
+            param: {}
         },
-        refreshInterval: null  // Lazy Loading용
-    },
-    {
-        topic: 'hierarchyAssets',
-        datasetInfo: {
-            datasetName: 'hierarchyAssets',
-            param: { assetId: '', locale: 'ko' }
-        },
-        refreshInterval: null
-    },
-    {
-        topic: 'locale',
-        datasetInfo: {
-            datasetName: 'locale',
-            param: { locale: 'ko' }
-        },
-        refreshInterval: null  // locale 변경 알림용
+        refreshInterval: null  // 트리 구조 빌드용
     }
 ];
 
@@ -65,9 +53,11 @@ fx.go(
     })
 );
 
-// 초기 데이터 발행 (hierarchy - depth=1로 트리 루트 노드만)
-GlobalDataPublisher.fetchAndPublish('hierarchy', this, this.currentParams['hierarchy'])
-    .catch(err => console.error('[fetchAndPublish:hierarchy]', err));
+// 초기 데이터 발행 (Asset API v1 - 자산 목록 + 관계 목록)
+Promise.all([
+    GlobalDataPublisher.fetchAndPublish('assetList', this, this.currentParams['assetList']),
+    GlobalDataPublisher.fetchAndPublish('relationList', this, this.currentParams['relationList'])
+]).catch(err => console.error('[fetchAndPublish:initial]', err));
 
 // ======================
 // EVENT HANDLERS
@@ -107,4 +97,4 @@ this.stopAllIntervals = () => {
 // 현재는 수동 갱신만 사용하므로 interval 시작하지 않음
 // this.startAllIntervals();
 
-console.log('[Page] loaded - ECO Dashboard data mappings registered, event handlers attached');
+console.log('[Page] loaded - ECO Dashboard (Asset API v1) data mappings registered');
