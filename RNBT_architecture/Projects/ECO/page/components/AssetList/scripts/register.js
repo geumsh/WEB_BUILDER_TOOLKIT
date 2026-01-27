@@ -755,20 +755,20 @@ async function onRowClick(asset) {
   // Modal 열기 (로딩 상태)
   showModal.call(this, { asset, loading: true });
 
-  // assetDetail API 호출
+  // assetDetailUnified API 호출 (통합 API: asset + properties)
   try {
-    console.log(`[AssetList] Fetching assetDetail for: ${assetKey}`);
-    const result = await fetchData(this.page, 'assetDetail', { assetKey });
+    console.log(`[AssetList] Fetching assetDetailUnified for: ${assetKey}`);
+    const result = await fetchData(this.page, 'assetDetailUnified', { assetKey, locale: 'ko' });
     const data = result?.response?.data;
 
-    if (data) {
-      console.log(`[AssetList] Asset detail:`, data);
-      showModal.call(this, { asset: data, detail: data });
+    if (data && data.asset) {
+      console.log(`[AssetList] Asset detail (unified):`, data);
+      showModal.call(this, { asset: data.asset, properties: data.properties || [] });
     } else {
       showModal.call(this, { asset, error: true });
     }
   } catch (error) {
-    console.error(`[AssetList] Failed to fetch assetDetail for ${assetKey}:`, error);
+    console.error(`[AssetList] Failed to fetch assetDetailUnified for ${assetKey}:`, error);
     showModal.call(this, { asset, error: true });
   }
 }
@@ -777,7 +777,7 @@ async function onRowClick(asset) {
 // MODAL
 // ======================
 
-function showModal({ asset, detail, loading, error }) {
+function showModal({ asset, properties, loading, error }) {
   const modal = this.appendElement.querySelector('.asset-modal');
   if (!modal) return;
 
@@ -792,7 +792,7 @@ function showModal({ asset, detail, loading, error }) {
 
   // 바디 업데이트
   const grid = modal.querySelector('.modal-info-grid');
-  renderModalBody(grid, { loading, error, detail });
+  renderModalBody(grid, { loading, error, properties });
 
   // Modal 표시
   modal.hidden = false;
@@ -808,7 +808,7 @@ function showModal({ asset, detail, loading, error }) {
   }
 }
 
-function renderModalBody(grid, { loading, error, detail }) {
+function renderModalBody(grid, { loading, error, properties }) {
   if (loading) {
     grid.innerHTML = '<div class="modal-loading"></div>';
     return;
@@ -824,31 +824,28 @@ function renderModalBody(grid, { loading, error, detail }) {
     return;
   }
 
-  if (detail) {
-    grid.innerHTML = renderAssetDetailGrid(detail);
+  if (properties && properties.length > 0) {
+    grid.innerHTML = renderPropertiesGrid(properties);
+  } else {
+    grid.innerHTML = `
+      <div class="modal-no-api wide">
+        <div class="modal-no-api-text">No properties available</div>
+      </div>
+    `;
   }
 }
 
 /**
- * Asset API v1 응답을 HTML 그리드로 변환
+ * 통합 API properties[] 배열을 HTML 그리드로 변환
  */
-function renderAssetDetailGrid(data) {
-  const fields = [
-    { key: 'assetKey', label: 'Asset Key' },
-    { key: 'assetType', label: 'Type' },
-    { key: 'assetCategoryType', label: 'Category' },
-    { key: 'serviceType', label: 'Service' },
-    { key: 'serialNumber', label: 'Serial No.' },
-    { key: 'locationLabel', label: 'Location' },
-    { key: 'installDate', label: 'Install Date' },
-    { key: 'description', label: 'Description' },
-  ];
+function renderPropertiesGrid(properties) {
+  // displayOrder로 정렬
+  const sortedProperties = [...properties].sort((a, b) => (a.displayOrder || 0) - (b.displayOrder || 0));
 
-  return fields
-    .map(({ key, label }) => {
-      const value = data[key];
+  return sortedProperties
+    .map(({ label, value, helpText }) => {
       return `
-        <div class="modal-info-item">
+        <div class="modal-info-item" title="${helpText || ''}">
           <div class="modal-info-label">${label}</div>
           <div class="modal-info-value">${value ?? '-'}</div>
         </div>
