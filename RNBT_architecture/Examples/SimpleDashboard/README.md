@@ -89,12 +89,15 @@ const tableConfig = {
 };
 ```
 
-### TrendChart - Chart Config + ECharts
+### TrendChart - Chart Config + ECharts (styleMap 패턴)
 
 ```javascript
 const chartConfig = {
     xKey: 'labels',
-    seriesKey: 'series',
+    styleMap: {
+        Revenue: { label: 'Revenue' },
+        Orders: { label: 'Orders' }
+    },
     optionBuilder: getChartOptions
 };
 ```

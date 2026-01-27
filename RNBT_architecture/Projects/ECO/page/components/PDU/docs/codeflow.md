@@ -268,7 +268,8 @@ function renderCircuitTable(config, { response }) {
 ```javascript
 function renderPowerChart(config, { response }) {
     const { data } = response;
-    if (!data || !data.fields || !data[config.valuesKey]) return;
+    if (!data) return;
+    if (!data[config.xKey]) return;  // flat 구조: data.timestamps 등
     const option = config.optionBuilder(config, data);
     this.updateChart('.chart-container', option);
 }

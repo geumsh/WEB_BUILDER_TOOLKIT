@@ -242,7 +242,8 @@ function renderError(message) {
 ```javascript
 function renderChart(config, { response }) {
     const { data } = response;
-    if (!data || !data.fields || !data[config.valuesKey]) return;
+    if (!data) return;
+    if (!data[config.xKey]) return;  // flat 구조: data.timestamps 등
 
     const { optionBuilder, ...chartConfig } = config;
     const option = optionBuilder(chartConfig, data);
