@@ -263,7 +263,7 @@ function createErrorResponse(key, message, path) {
 }
 
 // ======================
-// PROPERTY META & FIELD LABEL DATA (for /api/v1/ast/detail)
+// PROPERTY META & FIELD LABEL DATA (for /api/v1/ast/gx)
 // ======================
 
 const PROPERTY_META_DATA = [
@@ -457,12 +457,12 @@ app.post('/api/v1/rel/g', (req, res) => {
 });
 
 /**
- * POST /api/v1/ast/detail - 자산 상세 조회 (통합 API)
+ * POST /api/v1/ast/gx - 자산 상세 조회 (통합 API)
  * Request: { assetKey, locale }
  * Response: { asset, properties[] }
  */
-app.post('/api/v1/ast/detail', (req, res) => {
-    console.log(`[${new Date().toISOString()}] POST /api/v1/ast/detail`);
+app.post('/api/v1/ast/gx', (req, res) => {
+    console.log(`[${new Date().toISOString()}] POST /api/v1/ast/gx`);
 
     const { assetKey, locale = 'ko' } = req.body;
 
@@ -470,7 +470,7 @@ app.post('/api/v1/ast/detail', (req, res) => {
         return res.status(400).json(createErrorResponse(
             'INVALID_REQUEST',
             'assetKey is required',
-            '/api/v1/ast/detail'
+            '/api/v1/ast/gx'
         ));
     }
 
@@ -482,7 +482,7 @@ app.post('/api/v1/ast/detail', (req, res) => {
         return res.status(404).json(createErrorResponse(
             'ASSET_NOT_FOUND',
             `Asset not found: ${assetKey}`,
-            '/api/v1/ast/detail'
+            '/api/v1/ast/gx'
         ));
     }
 
@@ -539,7 +539,7 @@ app.post('/api/v1/ast/detail', (req, res) => {
         properties: properties
     };
 
-    res.json(createSingleResponse(responseData, '/api/v1/ast/detail'));
+    res.json(createSingleResponse(responseData, '/api/v1/ast/gx'));
 });
 
 // ======================
@@ -558,7 +558,7 @@ app.listen(PORT, () => {
     console.log(`  POST /api/v1/ast/l      - Asset list (all)`);
     console.log(`  POST /api/v1/ast/la     - Asset list (paged)`);
     console.log(`  POST /api/v1/ast/g      - Asset single`);
-    console.log(`  POST /api/v1/ast/detail - Asset detail (unified API)`);
+    console.log(`  POST /api/v1/ast/gx     - Asset detail (unified API)`);
     console.log(`  POST /api/v1/rel/l      - Relation list (all)`);
     console.log(`  POST /api/v1/rel/la     - Relation list (paged)`);
     console.log(`  POST /api/v1/rel/g      - Relation single`);

@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>UPS - Preview (register.js 구조)</title>
+    <title>UPS - Preview (통합 API 구조)</title>
     <script src="https://cdn.jsdelivr.net/npm/echarts@5.5.0/dist/echarts.min.js"></script>
     <style>
         * {
@@ -298,39 +298,52 @@
             }
         };
 
-        // Mock data - Asset API v1 응답 구조에 맞춤
+        // Mock data - 통합 API 응답 구조 (assetDetailUnified)
+        // register.js의 renderAssetInfo + renderProperties와 일치
         const mockUPSData = {
             normal: {
-                name: 'UPS-A01', locationLabel: 'Zone-A', statusType: 'ACTIVE',
-                fields: [
-                    { key: 'load', label: 'Load', value: 45, unit: '%', order: 1 },
-                    { key: 'battery', label: 'Battery', value: 100, unit: '%', order: 2 },
-                    { key: 'inputVoltage', label: 'Input', value: 220, unit: 'V', order: 3 },
-                    { key: 'outputVoltage', label: 'Output', value: 220, unit: 'V', order: 4 },
-                    { key: 'runtime', label: 'Runtime', value: 120, unit: 'min', order: 5 },
-                    { key: 'mode', label: 'Mode', valueLabel: 'Online', order: 6 }
+                asset: {
+                    name: 'UPS-A01',
+                    locationLabel: 'Zone-A',
+                    statusType: 'ACTIVE'
+                },
+                properties: [
+                    { label: 'Load', value: '45%', helpText: 'Current load percentage', displayOrder: 1 },
+                    { label: 'Battery', value: '100%', helpText: 'Battery charge level', displayOrder: 2 },
+                    { label: 'Input', value: '220V', helpText: 'Input voltage', displayOrder: 3 },
+                    { label: 'Output', value: '220V', helpText: 'Output voltage', displayOrder: 4 },
+                    { label: 'Runtime', value: '120min', helpText: 'Estimated runtime', displayOrder: 5 },
+                    { label: 'Mode', value: 'Online', helpText: 'Operating mode', displayOrder: 6 }
                 ]
             },
             warning: {
-                name: 'UPS-B02', locationLabel: 'Zone-B', statusType: 'WARNING',
-                fields: [
-                    { key: 'load', label: 'Load', value: 78, unit: '%', order: 1 },
-                    { key: 'battery', label: 'Battery', value: 65, unit: '%', order: 2 },
-                    { key: 'inputVoltage', label: 'Input', value: 218, unit: 'V', order: 3 },
-                    { key: 'outputVoltage', label: 'Output', value: 220, unit: 'V', order: 4 },
-                    { key: 'runtime', label: 'Runtime', value: 45, unit: 'min', order: 5 },
-                    { key: 'mode', label: 'Mode', valueLabel: 'Online', order: 6 }
+                asset: {
+                    name: 'UPS-B02',
+                    locationLabel: 'Zone-B',
+                    statusType: 'WARNING'
+                },
+                properties: [
+                    { label: 'Load', value: '78%', helpText: 'Current load percentage', displayOrder: 1 },
+                    { label: 'Battery', value: '65%', helpText: 'Battery charge level', displayOrder: 2 },
+                    { label: 'Input', value: '218V', helpText: 'Input voltage', displayOrder: 3 },
+                    { label: 'Output', value: '220V', helpText: 'Output voltage', displayOrder: 4 },
+                    { label: 'Runtime', value: '45min', helpText: 'Estimated runtime', displayOrder: 5 },
+                    { label: 'Mode', value: 'Online', helpText: 'Operating mode', displayOrder: 6 }
                 ]
             },
             critical: {
-                name: 'UPS-C03', locationLabel: 'Zone-C', statusType: 'CRITICAL',
-                fields: [
-                    { key: 'load', label: 'Load', value: 95, unit: '%', order: 1 },
-                    { key: 'battery', label: 'Battery', value: 15, unit: '%', order: 2 },
-                    { key: 'inputVoltage', label: 'Input', value: 0, unit: 'V', order: 3 },
-                    { key: 'outputVoltage', label: 'Output', value: 220, unit: 'V', order: 4 },
-                    { key: 'runtime', label: 'Runtime', value: 8, unit: 'min', order: 5 },
-                    { key: 'mode', label: 'Mode', valueLabel: 'Battery', order: 6 }
+                asset: {
+                    name: 'UPS-C03',
+                    locationLabel: 'Zone-C',
+                    statusType: 'CRITICAL'
+                },
+                properties: [
+                    { label: 'Load', value: '95%', helpText: 'Current load percentage', displayOrder: 1 },
+                    { label: 'Battery', value: '15%', helpText: 'Battery charge level', displayOrder: 2 },
+                    { label: 'Input', value: '0V', helpText: 'Input voltage - Power Failure', displayOrder: 3 },
+                    { label: 'Output', value: '220V', helpText: 'Output voltage', displayOrder: 4 },
+                    { label: 'Runtime', value: '8min', helpText: 'Estimated runtime', displayOrder: 5 },
+                    { label: 'Mode', value: 'Battery', helpText: 'Operating mode', displayOrder: 6 }
                 ]
             }
         };
@@ -364,7 +377,7 @@
 
         function getMockData(datasetName) {
             switch (datasetName) {
-                case 'ups': return mockUPSData[currentStatus];
+                case 'assetDetailUnified': return mockUPSData[currentStatus];
                 case 'upsHistory': return generateHistoryData();
                 default: return {};
             }
@@ -510,14 +523,16 @@
             const { bind3DEvents, fetchData } = Wkit;
             const { applyShadowPopupMixin, applyEChartsMixin } = PopupMixin;
 
-            // register.js와 동일한 구조 (Asset API v1)
+            // register.js와 동일한 구조 (통합 API)
             this._defaultAssetKey = this.setter?.assetInfo?.assetKey || this.id;
 
+            // 현재 활성화된 데이터셋 (통합 API 사용)
             this.datasetInfo = [
-                { datasetName: 'ups', render: ['renderUPSInfo'] },
-                { datasetName: 'upsHistory', render: ['renderChart'] }
+                { datasetName: 'assetDetailUnified', render: ['renderAssetInfo', 'renderProperties'] },  // 통합 API: asset + properties
+                // { datasetName: 'upsHistory', render: ['renderChart'] },  // 차트 (추후 활성화)
             ];
 
+            // 헤더 영역 고정 필드
             this.baseInfoConfig = [
                 { key: 'name', selector: '.ups-name' },
                 { key: 'locationLabel', selector: '.ups-zone' },
@@ -539,8 +554,11 @@
                 optionBuilder: getMultiLineChartOption
             };
 
-            this.renderUPSInfo = renderUPSInfo.bind(this);
+            // 렌더링 함수 바인딩 (register.js와 동일)
+            this.renderAssetInfo = renderAssetInfo.bind(this);      // 자산 기본 정보 (asset 객체)
+            this.renderProperties = renderProperties.bind(this);    // 동적 프로퍼티 (properties 배열)
             this.renderChart = renderChart.bind(this, this.chartConfig);
+            this.renderError = renderError.bind(this);              // 에러 상태 렌더링
             this.showDetail = showDetail.bind(this);
             this.hideDetail = hideDetail.bind(this);
 
@@ -575,27 +593,73 @@
                 this.datasetInfo,
                 fx.each(({ datasetName, render }) =>
                     fx.go(
-                        Wkit.fetchData(this.page, datasetName, { assetKey: this._defaultAssetKey }),
-                        response => response && fx.each(fn => this[fn](response), render)
+                        Wkit.fetchData(this.page, datasetName, { assetKey: this._defaultAssetKey, locale: 'ko' }),
+                        (response) => {
+                            // response가 없거나 response.response가 없는 경우 에러 표시
+                            if (!response || !response.response) {
+                                this.renderError('데이터를 불러올 수 없습니다.');
+                                return;
+                            }
+                            // response.response.data가 null/undefined인 경우 에러 표시
+                            if (response.response.data === null || response.response.data === undefined) {
+                                this.renderError('자산 정보가 존재하지 않습니다.');
+                                return;
+                            }
+                            fx.each((fn) => this[fn](response), render);
+                        }
                     )
                 )
             ).catch(e => {
                 console.error('[UPS]', e);
-                this.hidePopup();
+                this.renderError('데이터 로드 중 오류가 발생했습니다.');
             });
         }
 
-        function renderUPSInfo({ response }) {
-            const { data } = response;
-            if (!data) return;
+        // 에러 상태 렌더링
+        function renderError(message) {
+            // 헤더 영역에 에러 표시
+            const nameEl = this.popupQuery('.ups-name');
+            const zoneEl = this.popupQuery('.ups-zone');
+            const statusEl = this.popupQuery('.ups-status');
 
-            // 기본 정보 렌더링 (Asset API v1)
+            if (nameEl) nameEl.textContent = '데이터 없음';
+            if (zoneEl) zoneEl.textContent = message;
+            if (statusEl) {
+                statusEl.textContent = 'Error';
+                statusEl.dataset.status = 'critical';
+            }
+
+            // fields-container에 에러 메시지 표시
+            const container = this.popupQuery(this.fieldsContainerSelector);
+            if (container) {
+                container.innerHTML = `
+                    <div class="value-card" style="grid-column: 1 / -1; text-align: center;">
+                        <div class="value-label">오류</div>
+                        <div class="value-data" style="font-size: 14px; color: #ef4444;">${message}</div>
+                    </div>
+                `;
+            }
+
+            console.warn('[UPS] renderError:', message);
+        }
+
+        // 자산 기본 정보 렌더링 (통합 API - data.asset)
+        function renderAssetInfo({ response }) {
+            const { data } = response;
+            if (!data || !data.asset) {
+                renderError.call(this, '자산 데이터가 없습니다.');
+                return;
+            }
+
+            const asset = data.asset;
+
+            // 헤더 영역 고정 필드 렌더링
             fx.go(
                 this.baseInfoConfig,
                 fx.each(({ key, selector, dataAttr, transform }) => {
                     const el = this.popupQuery(selector);
                     if (!el) return;
-                    let value = data[key];
+                    let value = asset[key];
                     if (transform) value = transform(value);
                     if (dataAttr) {
                         el.dataset[dataAttr] = value;
@@ -604,19 +668,36 @@
                     }
                 })
             );
+        }
 
-            // 동적 필드 렌더링 (API fields 배열 사용)
+        // 동적 프로퍼티 렌더링 (통합 API - data.properties[])
+        function renderProperties({ response }) {
+            const { data } = response;
             const container = this.popupQuery(this.fieldsContainerSelector);
-            if (!container || !data.fields) return;
+            if (!container) return;
 
-            const sortedFields = [...data.fields].sort((a, b) => (a.order || 0) - (b.order || 0));
-            container.innerHTML = sortedFields.map(({ label, value, unit, valueLabel }) => {
-                const displayValue = valueLabel ? valueLabel : (unit ? `${value}${unit}` : value);
-                return `<div class="value-card">
-                    <div class="value-label">${label}</div>
-                    <div class="value-data">${displayValue ?? '-'}</div>
-                </div>`;
-            }).join('');
+            // properties가 없거나 빈 배열인 경우
+            if (!data?.properties || data.properties.length === 0) {
+                container.innerHTML = `
+                    <div class="value-card" style="grid-column: 1 / -1; text-align: center;">
+                        <div class="value-label">알림</div>
+                        <div class="value-data" style="font-size: 14px; color: #6b7280;">프로퍼티 정보가 없습니다</div>
+                    </div>
+                `;
+                return;
+            }
+
+            // displayOrder로 정렬된 properties 배열을 카드로 렌더링
+            const sortedProperties = [...data.properties].sort((a, b) => (a.displayOrder || 0) - (b.displayOrder || 0));
+
+            container.innerHTML = sortedProperties
+                .map(({ label, value, helpText }) => {
+                    return `<div class="value-card" title="${helpText || ''}">
+                        <div class="value-label">${label}</div>
+                        <div class="value-data">${value ?? '-'}</div>
+                    </div>`;
+                })
+                .join('');
         }
 
         function renderChart(config, { response }) {

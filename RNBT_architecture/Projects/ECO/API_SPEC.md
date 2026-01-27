@@ -17,7 +17,7 @@ ECO 프로젝트는 Asset API v1만 사용합니다. 모든 API는 POST 메서�
 | `/api/v1/ast/l` | POST | 자산 전체 목록 조회 |
 | `/api/v1/ast/la` | POST | 자산 목록 조회 (페이징) |
 | `/api/v1/ast/g` | POST | 자산 단건 조회 |
-| `/api/v1/ast/detail` | POST | 자산 상세 조회 (통합 API) |
+| `/api/v1/ast/gx` | POST | 자산 상세 조회 (통합 API) |
 | `/api/v1/rel/l` | POST | 관계 전체 목록 조회 |
 | `/api/v1/rel/la` | POST | 관계 목록 조회 (페이징) |
 | `/api/v1/rel/g` | POST | 관계 단건 조회 |
@@ -303,7 +303,7 @@ Asset 기본 정보와 카테고리별 속성을 한 번에 조회합니다.
 ### Request
 
 ```
-POST /api/v1/ast/detail
+POST /api/v1/ast/gx
 Content-Type: application/json
 ```
 
@@ -366,7 +366,7 @@ Content-Type: application/json
   },
   "error": null,
   "timestamp": "2026-01-27T12:00:00Z",
-  "path": "/api/v1/ast/detail"
+  "path": "/api/v1/ast/gx"
 }
 ```
 
@@ -412,10 +412,10 @@ Content-Type: application/json
 
 | 컴포넌트 | 사용 데이터셋 | API |
 |----------|--------------|-----|
-| UPS | assetDetail | POST /api/v1/ast/detail |
-| PDU | assetDetail | POST /api/v1/ast/detail |
-| CRAC | assetDetail | POST /api/v1/ast/detail |
-| TempHumiditySensor | assetDetail | POST /api/v1/ast/detail |
+| UPS | assetDetail | POST /api/v1/ast/gx |
+| PDU | assetDetail | POST /api/v1/ast/gx |
+| CRAC | assetDetail | POST /api/v1/ast/gx |
+| TempHumiditySensor | assetDetail | POST /api/v1/ast/gx |
 
 ### 컴포넌트 데이터 흐름
 
@@ -465,7 +465,7 @@ Available endpoints:
   POST /api/v1/ast/l      - Asset list (all)
   POST /api/v1/ast/la     - Asset list (paged)
   POST /api/v1/ast/g      - Asset single
-  POST /api/v1/ast/detail - Asset detail (unified API)
+  POST /api/v1/ast/gx     - Asset detail (unified API)
   POST /api/v1/rel/l      - Relation list (all)
   POST /api/v1/rel/la     - Relation list (paged)
   POST /api/v1/rel/g      - Relation single
@@ -479,4 +479,4 @@ Available endpoints:
 |------|------|
 | 2025-12-22 | 초안 작성 - 기본 API 정의 |
 | 2026-01-26 | Asset API v1으로 전면 개편, 레거시 API 제거 |
-| 2026-01-27 | /api/v1/ast/detail (자산 상세 조회 통합 API) 문서 추가 |
+| 2026-01-27 | /api/v1/ast/gx (자산 상세 조회 통합 API) 문서 추가 |

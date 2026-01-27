@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>PDU - Preview (register.js 구조)</title>
+    <title>PDU - Preview (통합 API 구조)</title>
     <script src="https://cdn.jsdelivr.net/npm/echarts@5.5.0/dist/echarts.min.js"></script>
     <link href="https://unpkg.com/tabulator-tables@6.3.1/dist/css/tabulator_midnight.min.css" rel="stylesheet">
     <script src="https://unpkg.com/tabulator-tables@6.3.1/dist/js/tabulator.min.js"></script>
@@ -211,36 +211,49 @@
             }
         };
 
-        // Mock data - Asset API v1 응답 구조에 맞춤
+        // Mock data - 통합 API 응답 구조 (assetDetailUnified)
+        // register.js의 renderAssetInfo + renderProperties와 일치
         const mockPDUData = {
             normal: {
-                name: 'PDU-A01', locationLabel: 'Server Room A', statusType: 'ACTIVE',
-                fields: [
-                    { key: 'power', label: 'Power', value: 45.2, unit: 'kW', order: 1 },
-                    { key: 'current', label: 'Current', value: 65.5, unit: 'A', order: 2 },
-                    { key: 'voltage', label: 'Voltage', value: 220, unit: 'V', order: 3 },
-                    { key: 'activeCircuits', label: 'Active', valueLabel: '18/24', order: 4 },
-                    { key: 'pf', label: 'PF', value: 0.95, order: 5 }
+                asset: {
+                    name: 'PDU-A01',
+                    locationLabel: 'Server Room A',
+                    statusType: 'ACTIVE'
+                },
+                properties: [
+                    { label: 'Power', value: '45.2kW', helpText: 'Total power consumption', displayOrder: 1 },
+                    { label: 'Current', value: '65.5A', helpText: 'Total current draw', displayOrder: 2 },
+                    { label: 'Voltage', value: '220V', helpText: 'Input voltage', displayOrder: 3 },
+                    { label: 'Active', value: '18/24', helpText: 'Active circuits', displayOrder: 4 },
+                    { label: 'PF', value: '0.95', helpText: 'Power factor', displayOrder: 5 }
                 ]
             },
             warning: {
-                name: 'PDU-B02', locationLabel: 'Server Room B', statusType: 'WARNING',
-                fields: [
-                    { key: 'power', label: 'Power', value: 72.8, unit: 'kW', order: 1 },
-                    { key: 'current', label: 'Current', value: 105.2, unit: 'A', order: 2 },
-                    { key: 'voltage', label: 'Voltage', value: 218, unit: 'V', order: 3 },
-                    { key: 'activeCircuits', label: 'Active', valueLabel: '22/24', order: 4 },
-                    { key: 'pf', label: 'PF', value: 0.92, order: 5 }
+                asset: {
+                    name: 'PDU-B02',
+                    locationLabel: 'Server Room B',
+                    statusType: 'WARNING'
+                },
+                properties: [
+                    { label: 'Power', value: '72.8kW', helpText: 'Total power consumption', displayOrder: 1 },
+                    { label: 'Current', value: '105.2A', helpText: 'Total current draw', displayOrder: 2 },
+                    { label: 'Voltage', value: '218V', helpText: 'Input voltage', displayOrder: 3 },
+                    { label: 'Active', value: '22/24', helpText: 'Active circuits', displayOrder: 4 },
+                    { label: 'PF', value: '0.92', helpText: 'Power factor', displayOrder: 5 }
                 ]
             },
             critical: {
-                name: 'PDU-C03', locationLabel: 'Server Room C', statusType: 'CRITICAL',
-                fields: [
-                    { key: 'power', label: 'Power', value: 85.5, unit: 'kW', order: 1 },
-                    { key: 'current', label: 'Current', value: 125.8, unit: 'A', order: 2 },
-                    { key: 'voltage', label: 'Voltage', value: 215, unit: 'V', order: 3 },
-                    { key: 'activeCircuits', label: 'Active', valueLabel: '24/24', order: 4 },
-                    { key: 'pf', label: 'PF', value: 0.88, order: 5 }
+                asset: {
+                    name: 'PDU-C03',
+                    locationLabel: 'Server Room C',
+                    statusType: 'CRITICAL'
+                },
+                properties: [
+                    { label: 'Power', value: '85.5kW', helpText: 'Total power consumption - OVERLOAD', displayOrder: 1 },
+                    { label: 'Current', value: '125.8A', helpText: 'Total current draw - HIGH', displayOrder: 2 },
+                    { label: 'Voltage', value: '215V', helpText: 'Input voltage - LOW', displayOrder: 3 },
+                    { label: 'Active', value: '24/24', helpText: 'Active circuits - FULL', displayOrder: 4 },
+                    { label: 'PF', value: '0.88', helpText: 'Power factor - LOW', displayOrder: 5 }
                 ]
             }
         };
@@ -283,7 +296,7 @@
 
         function getMockData(datasetName) {
             switch (datasetName) {
-                case 'pdu': return mockPDUData[currentStatus];
+                case 'assetDetailUnified': return mockPDUData[currentStatus];
                 case 'pduCircuits': return { circuits: mockCircuitData };
                 case 'pduHistory': return generateHistoryData();
                 default: return {};
@@ -456,15 +469,17 @@
             const { bind3DEvents, fetchData } = Wkit;
             const { applyShadowPopupMixin, applyEChartsMixin, applyTabulatorMixin } = PopupMixin;
 
-            // register.js와 동일한 구조 (Asset API v1)
+            // register.js와 동일한 구조 (통합 API)
             this._defaultAssetKey = this.setter?.assetInfo?.assetKey || this.id;
 
+            // 현재 활성화된 데이터셋 (통합 API 사용)
             this.datasetInfo = [
-                { datasetName: 'pdu', render: ['renderPDUInfo'] },
-                { datasetName: 'pduCircuits', render: ['renderCircuitTable'] },
-                { datasetName: 'pduHistory', render: ['renderPowerChart'] }
+                { datasetName: 'assetDetailUnified', render: ['renderAssetInfo', 'renderProperties'] },  // 통합 API: asset + properties
+                // { datasetName: 'pduCircuits', render: ['renderCircuitTable'] },
+                // { datasetName: 'pduHistory', render: ['renderPowerChart'] },
             ];
 
+            // 헤더 영역 고정 필드
             this.baseInfoConfig = [
                 { key: 'name', selector: '.pdu-name' },
                 { key: 'locationLabel', selector: '.pdu-zone' },
@@ -513,9 +528,12 @@
                 optionBuilder: getDualAxisChartOption
             };
 
-            this.renderPDUInfo = renderPDUInfo.bind(this);
+            // 렌더링 함수 바인딩 (register.js와 동일)
+            this.renderAssetInfo = renderAssetInfo.bind(this);      // 자산 기본 정보 (asset 객체)
+            this.renderProperties = renderProperties.bind(this);    // 동적 프로퍼티 (properties 배열)
             this.renderCircuitTable = renderCircuitTable.bind(this, this.tableConfig);
             this.renderPowerChart = renderPowerChart.bind(this, this.chartConfig);
+            this.renderError = renderError.bind(this);              // 에러 상태 렌더링
 
             this.showDetail = showDetail.bind(this);
             this.hideDetail = hideDetail.bind(this);
@@ -561,17 +579,57 @@
                 this.datasetInfo,
                 fx.each(({ datasetName, render }) =>
                     fx.go(
-                        Wkit.fetchData(this.page, datasetName, { assetKey: this._defaultAssetKey }),
-                        response => response && fx.each(fn => this[fn](response), render)
+                        Wkit.fetchData(this.page, datasetName, { assetKey: this._defaultAssetKey, locale: 'ko' }),
+                        (response) => {
+                            // response가 없거나 response.response가 없는 경우 에러 표시
+                            if (!response || !response.response) {
+                                this.renderError('데이터를 불러올 수 없습니다.');
+                                return;
+                            }
+                            // response.response.data가 null/undefined인 경우 에러 표시
+                            if (response.response.data === null || response.response.data === undefined) {
+                                this.renderError('자산 정보가 존재하지 않습니다.');
+                                return;
+                            }
+                            fx.each((fn) => this[fn](response), render);
+                        }
                     )
                 )
             ).catch(e => {
                 console.error('[PDU]', e);
-                this.hidePopup();
+                this.renderError('데이터 로드 중 오류가 발생했습니다.');
             });
         }
 
         function hideDetail() { this.hidePopup(); }
+
+        // 에러 상태 렌더링
+        function renderError(message) {
+            // 헤더 영역에 에러 표시
+            const nameEl = this.popupQuery('.pdu-name');
+            const zoneEl = this.popupQuery('.pdu-zone');
+            const statusEl = this.popupQuery('.pdu-status');
+
+            if (nameEl) nameEl.textContent = '데이터 없음';
+            if (zoneEl) zoneEl.textContent = message;
+            if (statusEl) {
+                statusEl.textContent = 'Error';
+                statusEl.dataset.status = 'critical';
+            }
+
+            // summary-bar에 에러 메시지 표시
+            const container = this.popupQuery(this.fieldsContainerSelector);
+            if (container) {
+                container.innerHTML = `
+                    <div class="summary-item" style="grid-column: 1 / -1; text-align: center;">
+                        <span class="summary-label">오류</span>
+                        <span class="summary-value" style="color: #ef4444;">${message}</span>
+                    </div>
+                `;
+            }
+
+            console.warn('[PDU] renderError:', message);
+        }
 
         function switchTab(tabName) {
             const buttons = this.popupQueryAll('.tab-btn');
@@ -591,17 +649,23 @@
             }
         }
 
-        function renderPDUInfo({ response }) {
+        // 자산 기본 정보 렌더링 (통합 API - data.asset)
+        function renderAssetInfo({ response }) {
             const { data } = response;
-            if (!data) return;
+            if (!data || !data.asset) {
+                renderError.call(this, '자산 데이터가 없습니다.');
+                return;
+            }
 
-            // 기본 정보 렌더링 (Asset API v1)
+            const asset = data.asset;
+
+            // 헤더 영역 고정 필드 렌더링
             fx.go(
                 this.baseInfoConfig,
                 fx.each(({ key, selector, dataAttr, transform }) => {
                     const el = this.popupQuery(selector);
                     if (!el) return;
-                    let value = data[key];
+                    let value = asset[key];
                     if (transform) value = transform(value);
                     if (dataAttr) {
                         el.dataset[dataAttr] = value;
@@ -610,19 +674,36 @@
                     }
                 })
             );
+        }
 
-            // 동적 필드 렌더링 (API fields 배열 사용 - Summary Bar)
+        // 동적 프로퍼티 렌더링 (통합 API - data.properties[])
+        function renderProperties({ response }) {
+            const { data } = response;
             const container = this.popupQuery(this.fieldsContainerSelector);
-            if (!container || !data.fields) return;
+            if (!container) return;
 
-            const sortedFields = [...data.fields].sort((a, b) => (a.order || 0) - (b.order || 0));
-            container.innerHTML = sortedFields.map(({ label, value, unit, valueLabel }) => {
-                const displayValue = valueLabel ? valueLabel : (unit ? `${value}${unit}` : value);
-                return `<div class="summary-item">
-                    <span class="summary-label">${label}</span>
-                    <span class="summary-value">${displayValue ?? '-'}</span>
-                </div>`;
-            }).join('');
+            // properties가 없거나 빈 배열인 경우
+            if (!data?.properties || data.properties.length === 0) {
+                container.innerHTML = `
+                    <div class="summary-item" style="grid-column: 1 / -1; text-align: center;">
+                        <span class="summary-label">알림</span>
+                        <span class="summary-value" style="color: #6b7280;">프로퍼티 정보가 없습니다</span>
+                    </div>
+                `;
+                return;
+            }
+
+            // displayOrder로 정렬된 properties 배열을 카드로 렌더링
+            const sortedProperties = [...data.properties].sort((a, b) => (a.displayOrder || 0) - (b.displayOrder || 0));
+
+            container.innerHTML = sortedProperties
+                .map(({ label, value, helpText }) => {
+                    return `<div class="summary-item" title="${helpText || ''}">
+                        <span class="summary-label">${label}</span>
+                        <span class="summary-value">${value ?? '-'}</span>
+                    </div>`;
+                })
+                .join('');
         }
 
         function renderCircuitTable(config, { response }) {
