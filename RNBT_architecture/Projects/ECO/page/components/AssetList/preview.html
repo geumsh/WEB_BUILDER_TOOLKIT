@@ -654,7 +654,8 @@
 
                     if (data && data.asset) {
                         console.log(`[AssetList] Asset detail (unified):`, data);
-                        showModal({ asset: data.asset, properties: data.properties || [] });
+                        // 원본 asset 정보(assetKey, assetType)와 API 응답(name, statusType) 병합
+                        showModal({ asset: { ...asset, ...data.asset }, properties: data.properties || [] });
                     } else {
                         showModal({ asset, error: true });
                     }
