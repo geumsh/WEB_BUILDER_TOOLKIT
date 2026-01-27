@@ -27,6 +27,18 @@ this.eventBusHandlers = {
         console.log('[Page] Asset clicked:', targetInstance.name, targetInstance.id);
         targetInstance.showDetail();
     },
+
+    // ─────────────────────────────────────────
+    // AssetList 이벤트
+    // ─────────────────────────────────────────
+
+    '@assetSelected': ({ event, targetInstance }) => {
+        console.log('[Page] @assetSelected:', { event, targetInstance });
+    },
+
+    '@assetNodeSelected': ({ event, targetInstance }) => {
+        console.log('[Page] @assetNodeSelected:', { event, targetInstance });
+    },
 };
 
 onEventBusHandlers(this.eventBusHandlers);
