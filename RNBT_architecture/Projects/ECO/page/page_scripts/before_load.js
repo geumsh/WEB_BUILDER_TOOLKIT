@@ -8,8 +8,7 @@
  *
  * 이벤트 핸들러:
  * - 3D 클릭: @assetClicked (모든 3D 팝업 컴포넌트 공통)
- * - AssetList: @hierarchyNodeSelected, @hierarchyChildrenRequested, @assetSelected, @refreshClicked
- * - i18n: @localeChanged
+ * - AssetList: @assetSelected, @assetNodeSelected
  */
 
 const { onEventBusHandlers, initThreeRaycasting, withSelector, makeIterator, getInstanceById, getInstanceByName } = Wkit;

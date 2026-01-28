@@ -307,7 +307,7 @@ function renderChart(config, { response }) {
 │ 3D Click │────▶│ showDetail│────▶│ fetchData()  │────▶│ Mock Server│
 └──────────┘     └───────────┘     └──────────────┘     └────────────┘
                                           │                    │
-                                          │  /api/v1/ast/detail│
+                                          │  /api/v1/ast/gx    │
                                           │◀───────────────────┘
                                           │
                                    ┌──────▼──────┐

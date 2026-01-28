@@ -1,6 +1,6 @@
 # ECO API 명세 (Asset API v1)
 
-**Base URL**: `http://10.23.128.125:4004`
+**Base URL**: `http://10.23.128.140:8811`
 
 **프로젝트 설명**: 데이터센터 전력/냉방 장비 모니터링 대시보드
 
@@ -412,10 +412,10 @@ Content-Type: application/json
 
 | 컴포넌트 | 사용 데이터셋 | API |
 |----------|--------------|-----|
-| UPS | assetDetail | POST /api/v1/ast/gx |
-| PDU | assetDetail | POST /api/v1/ast/gx |
-| CRAC | assetDetail | POST /api/v1/ast/gx |
-| TempHumiditySensor | assetDetail | POST /api/v1/ast/gx |
+| UPS | assetDetailUnified | POST /api/v1/ast/gx |
+| PDU | assetDetailUnified | POST /api/v1/ast/gx |
+| CRAC | assetDetailUnified | POST /api/v1/ast/gx |
+| TempHumiditySensor | assetDetailUnified | POST /api/v1/ast/gx |
 
 ### 컴포넌트 데이터 흐름
 
@@ -424,7 +424,7 @@ Content-Type: application/json
     │
     ├─→ showDetail() 호출
     │
-    ├─→ fetchData('assetDetail', { assetKey: this._defaultAssetKey, locale: 'ko' })
+    ├─→ fetchData('assetDetailUnified', { assetKey: this._defaultAssetKey, locale: 'ko' })
     │
     └─→ renderBaseInfo(asset) + renderProperties(properties) → 팝업에 자산 정보 표시
 ```
