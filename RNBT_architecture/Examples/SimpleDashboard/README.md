@@ -104,28 +104,30 @@ const chartConfig = {
 
 ## 라이프사이클
 
+각 단계마다 MASTER → PAGE 순서로 교차 실행됩니다.
+
 ```
-앱 시작
-  ↓
-[MASTER] before_load.js     → 이벤트 핸들러 등록
-  ↓
-[MASTER] 컴포넌트 register   → Header, Sidebar 초기화
-  ↓
-[MASTER] loaded.js          → userInfo, menuList 발행
-  ↓
-페이지 진입
-  ↓
-[PAGE] before_load.js       → 이벤트 핸들러, currentParams 초기화
-  ↓
-[PAGE] 컴포넌트 register     → StatsCards, DataTable, TrendChart 초기화
-  ↓
-[PAGE] loaded.js            → stats, tableData, chartData 발행 + interval 시작
-  ↓
+페이지 로드
+  │
+  ├─[1] before_load 단계
+  │    [MASTER] before_load.js     → 이벤트 핸들러 등록
+  │    [PAGE] before_load.js       → 이벤트 핸들러, currentParams 초기화
+  │
+  ├─[2] 컴포넌트 register 단계
+  │    [MASTER] 컴포넌트 register   → Header, Sidebar 초기화
+  │    [PAGE] 컴포넌트 register     → StatsCards, DataTable, TrendChart 초기화
+  │
+  ├─[3] loaded 단계
+  │    [MASTER] loaded.js          → userInfo, menuList 발행
+  │    [PAGE] loaded.js            → stats, tableData, chartData 발행 + interval 시작
+  │
 페이지 이탈
-  ↓
-[PAGE] before_unload.js     → interval 정지, 이벤트 해제, 매핑 해제
-  ↓
-[PAGE] 컴포넌트 beforeDestroy → 리소스 정리
+  │
+  ├─[4] before_unload 단계
+  │    [MASTER] before_unload.js   → MASTER 이벤트 해제
+  │    [PAGE] before_unload.js     → interval 정지, 이벤트 해제, 매핑 해제
+  │
+  └─[5] 컴포넌트 beforeDestroy
 ```
 
 ## 이벤트 흐름

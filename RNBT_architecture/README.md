@@ -68,7 +68,7 @@ RENOBIT에서 컴포넌트는 클래스다. 클래스는 data와 data를 다루�
     ↓
   리소스 로딩 → 컴포넌트 completed
     ↓
-  PAGE loaded → MASTER loaded
+  MASTER loaded → PAGE loaded
     → 데이터셋 정의 (globalDataMappings)
     → currentParams 초기화
     → GlobalDataPublisher.registerMapping()
