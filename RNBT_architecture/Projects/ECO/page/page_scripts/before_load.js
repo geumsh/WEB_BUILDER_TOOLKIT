@@ -11,7 +11,7 @@
  * - AssetList: @assetSelected, @assetNodeSelected
  */
 
-const { onEventBusHandlers, initThreeRaycasting, withSelector, makeIterator, getInstanceById, getInstanceByName } = Wkit;
+const { onEventBusHandlers, initThreeRaycasting, withSelector } = Wkit;
 
 // ======================
 // EVENT BUS HANDLERS
