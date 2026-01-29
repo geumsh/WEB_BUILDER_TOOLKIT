@@ -12,7 +12,7 @@
       "query": "",
       "query_type": "",
       "description": "User information API (Master/Header) - static",
-      "dataset_id": "user-001",
+      "dataset_id": "sd-user-001",
       "name": "simpleDashboard_userApi",
       "rest_api": "{\"url\":\"http://10.23.128.125:4005/api/user\",\"method\":\"GET\",\"headers\":{},\"body\":\"\"}"
     },
@@ -27,7 +27,7 @@
       "query": "",
       "query_type": "",
       "description": "Navigation menu API (Master/Sidebar) - static",
-      "dataset_id": "menu-001",
+      "dataset_id": "sd-menu-001",
       "name": "simpleDashboard_menuApi",
       "rest_api": "{\"url\":\"http://10.23.128.125:4005/api/menu\",\"method\":\"GET\",\"headers\":{},\"body\":\"\"}"
     },
@@ -42,7 +42,7 @@
       "query": "",
       "query_type": "",
       "description": "Statistics cards API (Page/StatsCards) - refresh every 10s",
-      "dataset_id": "stats-001",
+      "dataset_id": "sd-stats-001",
       "name": "simpleDashboard_statsApi",
       "rest_api": "{\"url\":\"http://10.23.128.125:4005/api/stats\",\"method\":\"GET\",\"headers\":{},\"body\":\"\"}"
     },
@@ -63,7 +63,7 @@
       "query": "",
       "query_type": "",
       "description": "Sales table API (Page/DataTable) - refresh every 30s",
-      "dataset_id": "table-001",
+      "dataset_id": "sd-table-001",
       "name": "simpleDashboard_tableApi",
       "rest_api": "{\"url\":\"http://10.23.128.125:4005/api/sales?category=#{category}\",\"method\":\"GET\",\"headers\":{},\"body\":\"\"}"
     },
@@ -84,7 +84,7 @@
       "query": "",
       "query_type": "",
       "description": "Trend chart API (Page/TrendChart) - refresh every 15s",
-      "dataset_id": "chart-001",
+      "dataset_id": "sd-chart-001",
       "name": "simpleDashboard_chartApi",
       "rest_api": "{\"url\":\"http://10.23.128.125:4005/api/trend?period=#{period}\",\"method\":\"GET\",\"headers\":{},\"body\":\"\"}"
     }
