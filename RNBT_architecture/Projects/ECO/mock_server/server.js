@@ -546,36 +546,83 @@ app.post('/api/v1/ast/gx', (req, res) => {
 // METRIC API v1 DATA
 // ======================
 
-// 센서 메트릭 mock 데이터 생성 함수
-function generateSensorMetrics(assetKey) {
+// 자산 타입별 메트릭 mock 데이터 생성
+function generateMetricsByAssetType(assetKey) {
     const now = new Date();
     const eventedAt = now.toISOString();
 
-    // 센서 타입에 따라 다른 메트릭 생성
+    if (assetKey.startsWith('crac')) return generateCRACMetrics(eventedAt);
+    if (assetKey.startsWith('ups')) return generateUPSMetricsData(eventedAt);
+    if (assetKey.startsWith('pdu')) return generateDISTMetrics(eventedAt);
+    // sensor (default)
+    return [
+        { metricCode: 'SENSOR.TEMP', eventedAt, valueType: 'NUMBER', valueNumber: 20 + Math.round(Math.random() * 10 * 10) / 10 },
+        { metricCode: 'SENSOR.HUMIDITY', eventedAt, valueType: 'NUMBER', valueNumber: 40 + Math.round(Math.random() * 30 * 10) / 10 },
+    ];
+}
+
+function generateCRACMetrics(eventedAt) {
+    return [
+        { metricCode: 'CRAC.UNIT_STATUS', eventedAt, valueType: 'BOOL', valueBool: Math.random() > 0.1 },
+        { metricCode: 'CRAC.FAN_STATUS', eventedAt, valueType: 'BOOL', valueBool: Math.random() > 0.1 },
+        { metricCode: 'CRAC.COOL_STATUS', eventedAt, valueType: 'BOOL', valueBool: Math.random() > 0.3 },
+        { metricCode: 'CRAC.HEAT_STATUS', eventedAt, valueType: 'BOOL', valueBool: Math.random() > 0.7 },
+        { metricCode: 'CRAC.HUMIDIFY_STATUS', eventedAt, valueType: 'BOOL', valueBool: Math.random() > 0.6 },
+        { metricCode: 'CRAC.DEHUMIDIFY_STATUS', eventedAt, valueType: 'BOOL', valueBool: Math.random() > 0.7 },
+        { metricCode: 'CRAC.LEAK_STATUS', eventedAt, valueType: 'BOOL', valueBool: Math.random() > 0.95 },
+        { metricCode: 'CRAC.RETURN_TEMP', eventedAt, valueType: 'NUMBER', valueNumber: 220 + Math.round(Math.random() * 80) },
+        { metricCode: 'CRAC.RETURN_HUMIDITY', eventedAt, valueType: 'NUMBER', valueNumber: 400 + Math.round(Math.random() * 300) },
+        { metricCode: 'CRAC.TEMP_SET', eventedAt, valueType: 'NUMBER', valueNumber: 240 },
+        { metricCode: 'CRAC.HUMIDITY_SET', eventedAt, valueType: 'NUMBER', valueNumber: 500 },
+        { metricCode: 'CRAC.SUPPLY_TEMP', eventedAt, valueType: 'NUMBER', valueNumber: 150 + Math.round(Math.random() * 50) },
+    ];
+}
+
+function generateUPSMetricsData(eventedAt) {
     const metrics = [];
-
-    // assetKey에서 센서 유형 추출 (sensor- prefix 확인)
-    if (assetKey.includes('sensor') || assetKey.includes('TEMP') || assetKey.includes('SENSOR')) {
-        // 온도 메트릭
-        metrics.push({
-            metricCode: 'SENSOR.TEMP',
-            eventedAt: eventedAt,
-            valueType: 'NUMBER',
-            valueNumber: 20 + Math.round(Math.random() * 10 * 10) / 10, // 20.0 ~ 30.0
-            extra: JSON.stringify({ tags: { profileId: 'SENSOR_V1', endpointId: 1 } })
-        });
-
-        // 습도 메트릭
-        metrics.push({
-            metricCode: 'SENSOR.HUMIDITY',
-            eventedAt: eventedAt,
-            valueType: 'NUMBER',
-            valueNumber: 40 + Math.round(Math.random() * 30 * 10) / 10, // 40.0 ~ 70.0
-            extra: JSON.stringify({ tags: { profileId: 'SENSOR_V1' } })
-        });
+    for (let i = 1; i <= 3; i++) {
+        metrics.push({ metricCode: `UPS.INPUT_V_${i}`, eventedAt, valueType: 'NUMBER', valueNumber: 2180 + Math.round(Math.random() * 40) });
+        metrics.push({ metricCode: `UPS.INPUT_F_${i}`, eventedAt, valueType: 'NUMBER', valueNumber: 599 + Math.round(Math.random() * 2) });
+        metrics.push({ metricCode: `UPS.INPUT_A_${i}`, eventedAt, valueType: 'NUMBER', valueNumber: 50 + Math.round(Math.random() * 100) });
     }
-
+    for (let i = 1; i <= 3; i++) {
+        metrics.push({ metricCode: `UPS.OUTPUT_V_${i}`, eventedAt, valueType: 'NUMBER', valueNumber: 2200 + Math.round(Math.random() * 10) });
+        metrics.push({ metricCode: `UPS.OUTPUT_F_${i}`, eventedAt, valueType: 'NUMBER', valueNumber: 600 });
+        metrics.push({ metricCode: `UPS.OUTPUT_A_${i}`, eventedAt, valueType: 'NUMBER', valueNumber: 40 + Math.round(Math.random() * 80) });
+    }
+    metrics.push({ metricCode: 'UPS.BATT_V', eventedAt, valueType: 'NUMBER', valueNumber: 4800 + Math.round(Math.random() * 200) });
+    metrics.push({ metricCode: 'UPS.BATT_A', eventedAt, valueType: 'NUMBER', valueNumber: 10 + Math.round(Math.random() * 50) });
+    metrics.push({ metricCode: 'UPS.INPUT_BAD_STATE', eventedAt, valueType: 'BOOL', valueBool: Math.random() > 0.95 });
+    metrics.push({ metricCode: 'UPS.BATT_CHARGING', eventedAt, valueType: 'BOOL', valueBool: Math.random() > 0.5 });
+    metrics.push({ metricCode: 'UPS.OUTPUT_ON_BATTERY', eventedAt, valueType: 'BOOL', valueBool: Math.random() > 0.9 });
+    metrics.push({ metricCode: 'UPS.INVERTER_OFF', eventedAt, valueType: 'BOOL', valueBool: Math.random() > 0.95 });
+    metrics.push({ metricCode: 'UPS.ON_BYPASS', eventedAt, valueType: 'BOOL', valueBool: Math.random() > 0.9 });
+    metrics.push({ metricCode: 'UPS.BATT_FAULT', eventedAt, valueType: 'BOOL', valueBool: Math.random() > 0.95 });
+    metrics.push({ metricCode: 'UPS.OUTPUT_OVERLOAD', eventedAt, valueType: 'BOOL', valueBool: Math.random() > 0.95 });
     return metrics;
+}
+
+function generateDISTMetrics(eventedAt) {
+    return [
+        { metricCode: 'DIST.V_LN_AVG', eventedAt, valueType: 'NUMBER', valueNumber: 220 + Math.round(Math.random() * 5) },
+        { metricCode: 'DIST.V_LL_AVG', eventedAt, valueType: 'NUMBER', valueNumber: 380 + Math.round(Math.random() * 5) },
+        { metricCode: 'DIST.V_FUND_AVG', eventedAt, valueType: 'NUMBER', valueNumber: 219 + Math.round(Math.random() * 3) },
+        { metricCode: 'DIST.FREQUENCY_HZ', eventedAt, valueType: 'NUMBER', valueNumber: 60 },
+        { metricCode: 'DIST.TEMP_C', eventedAt, valueType: 'NUMBER', valueNumber: 25 + Math.round(Math.random() * 10) },
+        { metricCode: 'DIST.CURRENT_AVG_A', eventedAt, valueType: 'NUMBER', valueNumber: 30 + Math.round(Math.random() * 20) },
+        { metricCode: 'DIST.CURRENT_FUND_AVG_A', eventedAt, valueType: 'NUMBER', valueNumber: 28 + Math.round(Math.random() * 15) },
+        { metricCode: 'DIST.ACTIVE_POWER_TOTAL_KW', eventedAt, valueType: 'NUMBER', valueNumber: 10 + Math.round(Math.random() * 20 * 10) / 10 },
+        { metricCode: 'DIST.REACTIVE_POWER_TOTAL_KVAR', eventedAt, valueType: 'NUMBER', valueNumber: 2 + Math.round(Math.random() * 5 * 10) / 10 },
+        { metricCode: 'DIST.APPARENT_POWER_TOTAL_KVA', eventedAt, valueType: 'NUMBER', valueNumber: 12 + Math.round(Math.random() * 20 * 10) / 10 },
+        { metricCode: 'DIST.ACTIVE_ENERGY_RECEIVED_KWH', eventedAt, valueType: 'NUMBER', valueNumber: 10000 + Math.round(Math.random() * 5000) },
+        { metricCode: 'DIST.ACTIVE_ENERGY_DELIVERED_KWH', eventedAt, valueType: 'NUMBER', valueNumber: Math.round(Math.random() * 100) },
+        { metricCode: 'DIST.ACTIVE_ENERGY_SUM_KWH', eventedAt, valueType: 'NUMBER', valueNumber: 10000 + Math.round(Math.random() * 5000) },
+        { metricCode: 'DIST.REACTIVE_ENERGY_RECEIVED_KVARH', eventedAt, valueType: 'NUMBER', valueNumber: 2000 + Math.round(Math.random() * 1000) },
+        { metricCode: 'DIST.REACTIVE_ENERGY_DELIVERED_KVARH', eventedAt, valueType: 'NUMBER', valueNumber: Math.round(Math.random() * 50) },
+        { metricCode: 'DIST.REACTIVE_ENERGY_SUM_KVARH', eventedAt, valueType: 'NUMBER', valueNumber: 2000 + Math.round(Math.random() * 1000) },
+        { metricCode: 'DIST.APPARENT_ENERGY_KVAH', eventedAt, valueType: 'NUMBER', valueNumber: 12000 + Math.round(Math.random() * 5000) },
+        { metricCode: 'DIST.POWER_FACTOR_TOTAL', eventedAt, valueType: 'NUMBER', valueNumber: 0.85 + Math.round(Math.random() * 0.1 * 100) / 100 },
+    ];
 }
 
 /**
@@ -603,7 +650,7 @@ app.post('/api/v1/mh/gl', (req, res) => {
     }
 
     // 메트릭 데이터 생성
-    const metrics = generateSensorMetrics(assetKey);
+    const metrics = generateMetricsByAssetType(assetKey);
 
     res.json({
         data: metrics,

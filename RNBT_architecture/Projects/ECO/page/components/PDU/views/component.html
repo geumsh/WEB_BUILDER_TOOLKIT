@@ -1,5 +1,12 @@
 <!--
   PDU - Shadow DOM Popup Template
+  PDU(분전반) 상세 팝업
+
+  섹션 구조:
+  1. Header - 자산 기본 정보 (assetDetailUnified.asset)
+  2. Realtime Metrics - 실시간 전력계측 (metricLatest + metricConfig, DIST.*)
+  3. Properties - 정적 속성 (assetDetailUnified.properties)
+  4. Tab [Circuits | Power] - 회로/차트 (추후)
 -->
 <template id="popup-pdu">
     <div class="popup-overlay">
@@ -20,31 +27,50 @@
                 </div>
             </div>
 
-            <!-- Summary Bar (동적 생성 - API fields 배열 사용) -->
-            <div class="summary-bar">
-                <!-- JS에서 API 응답의 fields 배열을 기반으로 동적 생성 -->
-            </div>
-
-            <!-- Tab Header -->
-            <div class="tab-header">
-                <button class="tab-btn active" data-tab="circuits">Circuits</button>
-                <button class="tab-btn" data-tab="power">Power History</button>
-            </div>
-
-            <!-- Tab Content -->
-            <div class="tab-content">
-                <div class="tab-panel active" data-panel="circuits">
-                    <div class="panel-header">
-                        <span class="panel-title">Circuit Status</span>
+            <!-- Body -->
+            <div class="popup-body">
+                <!-- Section 1: Realtime Metrics (metricLatest API) -->
+                <div class="section metrics-section">
+                    <div class="section-header">
+                        <span class="section-title">실시간 전력계측</span>
+                        <span class="section-timestamp"></span>
                     </div>
-                    <div class="table-container"></div>
+                    <div class="metrics-container">
+                        <!-- JS에서 metricLatest + metricConfig 기반으로 동적 생성 -->
+                    </div>
                 </div>
 
-                <div class="tab-panel" data-panel="power">
-                    <div class="panel-header">
-                        <span class="panel-title">Power & Current History</span>
+                <!-- Section 2: Properties (assetDetailUnified.properties) -->
+                <div class="section properties-section">
+                    <div class="section-header">
+                        <span class="section-title">속성 정보</span>
                     </div>
-                    <div class="chart-container"></div>
+                    <div class="properties-container">
+                        <!-- JS에서 assetDetailUnified.properties 기반으로 동적 생성 -->
+                    </div>
+                </div>
+
+                <!-- Tab Header -->
+                <div class="tab-header">
+                    <button class="tab-btn active" data-tab="circuits">Circuits</button>
+                    <button class="tab-btn" data-tab="power">Power History</button>
+                </div>
+
+                <!-- Tab Content -->
+                <div class="tab-content">
+                    <div class="tab-panel active" data-panel="circuits">
+                        <div class="panel-header">
+                            <span class="panel-title">Circuit Status</span>
+                        </div>
+                        <div class="table-container"></div>
+                    </div>
+
+                    <div class="tab-panel" data-panel="power">
+                        <div class="panel-header">
+                            <span class="panel-title">Power & Current History</span>
+                        </div>
+                        <div class="chart-container"></div>
+                    </div>
                 </div>
             </div>
         </div>

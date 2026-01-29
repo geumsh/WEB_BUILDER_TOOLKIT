@@ -1,17 +1,10 @@
 /*
  * PDU - 3D Popup Component (Tabbed UI)
  *
- * applyShadowPopupMixin을 사용한 탭 팝업 컴포넌트
- *
- * 핵심 구조:
- * 1. datasetInfo - 데이터 정의 (assetDetail, circuits, history)
- * 2. Data Config - API 필드 매핑
- * 3. Chart Config - ECharts 옵션 빌더
- * 4. 렌더링 함수 바인딩
- * 5. Public Methods - Page에서 호출
- * 6. customEvents - 이벤트 발행
- * 7. Template Data - HTML/CSS (publishCode에서 로드)
- * 8. Popup - template 기반 탭 Shadow DOM 팝업
+ * PDU(분전반) 컴포넌트
+ * - 실시간 전력계측 표시 (metricLatest API, DIST.* 메트릭)
+ * - 자산 속성 정보 (assetDetailUnified API)
+ * - 회로 테이블 + 전력 히스토리 차트 (추후)
  */
 
 const { bind3DEvents, fetchData } = Wkit;
@@ -36,6 +29,30 @@ function hexToRgba(hex, alpha) {
   return `rgba(${r}, ${g}, ${b}, ${alpha})`;
 }
 
+// ======================
+// METRIC CONFIG (metricConfig.json 인라인 - DIST.*)
+// ======================
+const METRIC_CONFIG = {
+  'DIST.V_LN_AVG': { label: '평균선간전압L-N', valueType: 'NUMBER', unit: 'V', scale: 1.0 },
+  'DIST.V_LL_AVG': { label: '평균상간전압L-L', valueType: 'NUMBER', unit: 'V', scale: 1.0 },
+  'DIST.V_FUND_AVG': { label: '기본파전압평균', valueType: 'NUMBER', unit: 'V', scale: 1.0 },
+  'DIST.FREQUENCY_HZ': { label: '주파수', valueType: 'NUMBER', unit: 'Hz', scale: 1.0 },
+  'DIST.TEMP_C': { label: '온도', valueType: 'NUMBER', unit: '°C', scale: 1.0 },
+  'DIST.CURRENT_AVG_A': { label: '평균전류', valueType: 'NUMBER', unit: 'A', scale: 1.0 },
+  'DIST.CURRENT_FUND_AVG_A': { label: '기본파전류평균', valueType: 'NUMBER', unit: 'A', scale: 1.0 },
+  'DIST.ACTIVE_POWER_TOTAL_KW': { label: '유효전력합', valueType: 'NUMBER', unit: 'kW', scale: 1.0 },
+  'DIST.REACTIVE_POWER_TOTAL_KVAR': { label: '무효전력합', valueType: 'NUMBER', unit: 'kVAR', scale: 1.0 },
+  'DIST.APPARENT_POWER_TOTAL_KVA': { label: '피상전력합', valueType: 'NUMBER', unit: 'kVA', scale: 1.0 },
+  'DIST.ACTIVE_ENERGY_RECEIVED_KWH': { label: '수전유효전력량', valueType: 'NUMBER', unit: 'kWh', scale: 1.0 },
+  'DIST.ACTIVE_ENERGY_DELIVERED_KWH': { label: '송전유효전력량', valueType: 'NUMBER', unit: 'kWh', scale: 1.0 },
+  'DIST.ACTIVE_ENERGY_SUM_KWH': { label: '유효전력량합', valueType: 'NUMBER', unit: 'kWh', scale: 1.0 },
+  'DIST.REACTIVE_ENERGY_RECEIVED_KVARH': { label: '수전무효전력량', valueType: 'NUMBER', unit: 'kVARh', scale: 1.0 },
+  'DIST.REACTIVE_ENERGY_DELIVERED_KVARH': { label: '송전무효전력량', valueType: 'NUMBER', unit: 'kVARh', scale: 1.0 },
+  'DIST.REACTIVE_ENERGY_SUM_KVARH': { label: '무효전력량합', valueType: 'NUMBER', unit: 'kVARh', scale: 1.0 },
+  'DIST.APPARENT_ENERGY_KVAH': { label: '피상전력량', valueType: 'NUMBER', unit: 'kVAh', scale: 1.0 },
+  'DIST.POWER_FACTOR_TOTAL': { label: '역률합', valueType: 'NUMBER', unit: '', scale: 1.0 },
+};
+
 initComponent.call(this);
 
 function initComponent() {
@@ -44,9 +61,10 @@ function initComponent() {
   // ======================
   this._defaultAssetKey = this.setter?.assetInfo?.assetKey || this.id;
 
-  // 현재 활성화된 데이터셋 (통합 API 사용)
+  // 데이터셋 정의
   this.datasetInfo = [
-    { datasetName: 'assetDetailUnified', render: ['renderAssetInfo', 'renderProperties'] },  // 통합 API: asset + properties
+    { datasetName: 'assetDetailUnified', render: ['renderAssetInfo', 'renderProperties'] },
+    { datasetName: 'metricLatest', render: ['renderMetrics'] },
     // { datasetName: 'pduCircuits', render: ['renderCircuitTable'] },
     // { datasetName: 'pduHistory', render: ['renderPowerChart'] },
   ];
@@ -57,11 +75,11 @@ function initComponent() {
   this.statusTypeToLabel = statusTypeToLabel.bind(this);
   this.statusTypeToDataAttr = statusTypeToDataAttr.bind(this);
   this.formatDate = formatDate.bind(this);
+  this.formatTimestamp = formatTimestamp.bind(this);
 
   // ======================
-  // 3. Data Config (Asset API v1 필드만 사용)
+  // 3. Data Config
   // ======================
-  // 헤더 영역 고정 필드
   this.baseInfoConfig = [
     { key: 'name', selector: '.pdu-name' },
     { key: 'locationLabel', selector: '.pdu-zone' },
@@ -69,13 +87,16 @@ function initComponent() {
     { key: 'statusType', selector: '.pdu-status', dataAttr: 'status', transform: this.statusTypeToDataAttr },
   ];
 
-  // 동적 필드 컨테이너 selector (Summary Bar)
-  this.fieldsContainerSelector = '.summary-bar';
+  // 컨테이너 selector
+  this.propertiesContainerSelector = '.properties-container';
+  this.metricsContainerSelector = '.metrics-container';
+  this.timestampSelector = '.section-timestamp';
 
-  // assetFieldsConfig 제거됨 - 통합 API의 properties 배열에서 동적으로 렌더링
+  // Metric Config 참조
+  this.metricConfig = METRIC_CONFIG;
 
   // ======================
-  // 4. Table Config - Tabulator 옵션 빌더
+  // 4. Table Config
   // ======================
   this.tableConfig = {
     selector: '.table-container',
@@ -105,9 +126,7 @@ function initComponent() {
   };
 
   // ======================
-  // 5. Chart Config - ECharts 옵션 빌더
-  // - xKey: X축 데이터 키
-  // - styleMap: 시리즈별 메타데이터 + 스타일 (키는 API 응답 필드명)
+  // 5. Chart Config
   // ======================
   this.chartConfig = {
     xKey: 'timestamps',
@@ -121,21 +140,30 @@ function initComponent() {
   // ======================
   // 6. 렌더링 함수 바인딩
   // ======================
-  this.renderAssetInfo = renderAssetInfo.bind(this);    // 자산 기본 정보 (통합 API - data.asset)
-  this.renderProperties = renderProperties.bind(this);  // 동적 프로퍼티 (통합 API - data.properties[])
+  this.renderAssetInfo = renderAssetInfo.bind(this);
+  this.renderProperties = renderProperties.bind(this);
+  this.renderMetrics = renderMetrics.bind(this);
   this.renderCircuitTable = renderCircuitTable.bind(this, this.tableConfig);
   this.renderPowerChart = renderPowerChart.bind(this, this.chartConfig);
-  this.renderError = renderError.bind(this);            // 에러 상태 렌더링
+  this.renderError = renderError.bind(this);
 
   // ======================
-  // 7. Public Methods
+  // 7. Refresh Config
+  // ======================
+  this.refreshInterval = 5000;
+  this._refreshIntervalId = null;
+
+  // ======================
+  // 8. Public Methods
   // ======================
   this.showDetail = showDetail.bind(this);
   this.hideDetail = hideDetail.bind(this);
+  this.refreshMetrics = refreshMetrics.bind(this);
+  this.stopRefresh = stopRefresh.bind(this);
   this._switchTab = switchTab.bind(this);
 
   // ======================
-  // 8. 이벤트 발행
+  // 9. 이벤트 발행
   // ======================
   this.customEvents = {
     click: '@assetClicked',
@@ -144,7 +172,7 @@ function initComponent() {
   bind3DEvents(this, this.customEvents);
 
   // ======================
-  // 9. Template Config
+  // 10. Template Config
   // ======================
   this.templateConfig = {
     popup: 'popup-pdu',
@@ -162,7 +190,7 @@ function initComponent() {
   };
 
   // ======================
-  // 10. Popup Setup
+  // 11. Popup Setup
   // ======================
   const { htmlCode, cssCode } = this.properties.publishCode || {};
 
@@ -196,13 +224,12 @@ function showDetail() {
       fx.go(
         fetchData(this.page, datasetName, { baseUrl: BASE_URL, assetKey: this._defaultAssetKey, locale: 'ko' }),
         (response) => {
-          // response가 없거나 response.response가 없는 경우 에러 표시
           if (!response || !response.response) {
             this.renderError('데이터를 불러올 수 없습니다.');
             return;
           }
-          // response.response.data가 null/undefined인 경우 에러 표시
-          if (response.response.data === null || response.response.data === undefined) {
+          const data = response.response.data;
+          if (data === null || data === undefined) {
             this.renderError('자산 정보가 존재하지 않습니다.');
             return;
           }
@@ -214,38 +241,38 @@ function showDetail() {
     console.error('[PDU]', e);
     this.renderError('데이터 로드 중 오류가 발생했습니다.');
   });
-}
 
-// 에러 상태 렌더링
-function renderError(message) {
-  // 헤더 영역에 에러 표시
-  const nameEl = this.popupQuery('.pdu-name');
-  const zoneEl = this.popupQuery('.pdu-zone');
-  const statusEl = this.popupQuery('.pdu-status');
-
-  if (nameEl) nameEl.textContent = '데이터 없음';
-  if (zoneEl) zoneEl.textContent = message;
-  if (statusEl) {
-    statusEl.textContent = 'Error';
-    statusEl.dataset.status = 'critical';
-  }
-
-  // summary-bar에 에러 메시지 표시
-  const container = this.popupQuery(this.fieldsContainerSelector);
-  if (container) {
-    container.innerHTML = `
-      <div class="summary-item" style="grid-column: 1 / -1; text-align: center;">
-        <span class="summary-label">오류</span>
-        <span class="summary-value" style="color: #ef4444;">${message}</span>
-      </div>
-    `;
-  }
-
-  console.warn('[PDU] renderError:', message);
+  // 5초 주기로 메트릭 갱신 시작
+  this.stopRefresh();
+  this._refreshIntervalId = setInterval(() => this.refreshMetrics(), this.refreshInterval);
+  console.log('[PDU] Metric refresh started (5s interval)');
 }
 
 function hideDetail() {
+  this.stopRefresh();
   this.hidePopup();
+}
+
+function refreshMetrics() {
+  fx.go(
+    fetchData(this.page, 'metricLatest', { baseUrl: BASE_URL, assetKey: this._defaultAssetKey }),
+    (response) => {
+      if (!response || !response.response) return;
+      const data = response.response.data;
+      if (data === null || data === undefined) return;
+      this.renderMetrics(response);
+    }
+  ).catch((e) => {
+    console.warn('[PDU] Metric refresh failed:', e);
+  });
+}
+
+function stopRefresh() {
+  if (this._refreshIntervalId) {
+    clearInterval(this._refreshIntervalId);
+    this._refreshIntervalId = null;
+    console.log('[PDU] Metric refresh stopped');
+  }
 }
 
 function switchTab(tabName) {
@@ -255,12 +282,10 @@ function switchTab(tabName) {
   fx.go(buttons, fx.each((btn) => btn.classList.toggle('active', btn.dataset.tab === tabName)));
   fx.go(panels, fx.each((panel) => panel.classList.toggle('active', panel.dataset.panel === tabName)));
 
-  // 탭 전환 시 차트/테이블 리사이즈 (초기화 완료된 경우만)
   if (tabName === 'power') {
     const chart = this.getChart('.chart-container');
     if (chart) setTimeout(() => chart.resize(), 10);
   } else if (tabName === 'circuits') {
-    // Tabulator 초기화 완료 확인
     if (this.isTableReady('.table-container')) {
       const table = this.getTable('.table-container');
       setTimeout(() => table.redraw(true), 10);
@@ -286,7 +311,6 @@ function onPopupCreated(popupConfig, tableConfig) {
 // RENDER FUNCTIONS
 // ======================
 
-// 자산 기본 정보 렌더링 (통합 API - data.asset)
 function renderAssetInfo({ response }) {
   const { data } = response;
   if (!data || !data.asset) {
@@ -296,7 +320,6 @@ function renderAssetInfo({ response }) {
 
   const asset = data.asset;
 
-  // 헤더 영역 고정 필드 렌더링
   fx.go(
     this.baseInfoConfig,
     fx.each(({ key, selector, dataAttr, transform }) => {
@@ -313,45 +336,79 @@ function renderAssetInfo({ response }) {
   );
 }
 
-// 동적 프로퍼티 렌더링 (통합 API - data.properties[])
 function renderProperties({ response }) {
   const { data } = response;
-  const container = this.popupQuery(this.fieldsContainerSelector);
+  const container = this.popupQuery(this.propertiesContainerSelector);
   if (!container) return;
 
-  // properties가 없거나 빈 배열인 경우
   if (!data?.properties || data.properties.length === 0) {
-    container.innerHTML = `
-      <div class="summary-item" style="grid-column: 1 / -1; text-align: center;">
-        <span class="summary-label">알림</span>
-        <span class="summary-value" style="color: #6b7280;">프로퍼티 정보가 없습니다</span>
-      </div>
-    `;
+    container.innerHTML = '<div class="empty-state">속성 정보가 없습니다</div>';
     return;
   }
 
-  // displayOrder로 정렬된 properties 배열을 카드로 렌더링
   const sortedProperties = [...data.properties].sort((a, b) => (a.displayOrder || 0) - (b.displayOrder || 0));
 
   container.innerHTML = sortedProperties
     .map(({ label, value, helpText }) => {
-      return `<div class="summary-item" title="${helpText || ''}">
-        <span class="summary-label">${label}</span>
-        <span class="summary-value">${value ?? '-'}</span>
+      return `<div class="property-card" title="${helpText || ''}">
+        <div class="property-label">${label}</div>
+        <div class="property-value">${value ?? '-'}</div>
       </div>`;
     })
     .join('');
 }
 
-// 날짜 포맷 함수
-function formatDate(dateStr) {
-  if (!dateStr) return '-';
-  try {
-    const date = new Date(dateStr);
-    return date.toLocaleDateString('ko-KR', { year: 'numeric', month: '2-digit', day: '2-digit' });
-  } catch {
-    return dateStr;
+function renderMetrics({ response }) {
+  const { data } = response;
+  const container = this.popupQuery(this.metricsContainerSelector);
+  const timestampEl = this.popupQuery(this.timestampSelector);
+
+  if (!container) return;
+
+  if (!data || !Array.isArray(data) || data.length === 0) {
+    container.innerHTML = '<div class="empty-state">측정 데이터가 없습니다</div>';
+    return;
   }
+
+  if (timestampEl && data[0]?.eventedAt) {
+    timestampEl.textContent = this.formatTimestamp(data[0].eventedAt);
+  }
+
+  container.innerHTML = data
+    .map((metric) => {
+      const config = this.metricConfig[metric.metricCode];
+      if (!config) return '';
+
+      const value = metric.valueNumber;
+      const displayValue = config.scale && config.scale !== 1.0 ? (value * config.scale).toFixed(1) : value;
+      return `
+        <div class="metric-card">
+          <div class="metric-label">${config.label}</div>
+          <div class="metric-value">${displayValue}<span class="metric-unit">${config.unit}</span></div>
+        </div>
+      `;
+    })
+    .join('');
+}
+
+function renderError(message) {
+  const nameEl = this.popupQuery('.pdu-name');
+  const zoneEl = this.popupQuery('.pdu-zone');
+  const statusEl = this.popupQuery('.pdu-status');
+
+  if (nameEl) nameEl.textContent = '데이터 없음';
+  if (zoneEl) zoneEl.textContent = message;
+  if (statusEl) {
+    statusEl.textContent = 'Error';
+    statusEl.dataset.status = 'critical';
+  }
+
+  const metricsContainer = this.popupQuery(this.metricsContainerSelector);
+  if (metricsContainer) {
+    metricsContainer.innerHTML = `<div class="error-state">${message}</div>`;
+  }
+
+  console.warn('[PDU] renderError:', message);
 }
 
 function renderCircuitTable(config, { response }) {
@@ -379,7 +436,7 @@ function renderPowerChart(config, { response }) {
 }
 
 // ======================
-// STATUS TRANSFORM
+// TRANSFORM FUNCTIONS
 // ======================
 
 function statusTypeToLabel(statusType) {
@@ -404,6 +461,26 @@ function statusTypeToDataAttr(statusType) {
   return map[statusType] || 'normal';
 }
 
+function formatDate(dateStr) {
+  if (!dateStr) return '-';
+  try {
+    const date = new Date(dateStr);
+    return date.toLocaleDateString('ko-KR', { year: 'numeric', month: '2-digit', day: '2-digit' });
+  } catch {
+    return dateStr;
+  }
+}
+
+function formatTimestamp(isoString) {
+  if (!isoString) return '';
+  try {
+    const date = new Date(isoString);
+    return date.toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+  } catch {
+    return '';
+  }
+}
+
 // ======================
 // TABLE OPTION BUILDER
 // ======================
@@ -425,7 +502,6 @@ function getTableOption(columns) {
 function getDualAxisChartOption(config, data) {
   const { xKey, styleMap } = config;
 
-  // styleMap 기반으로 series 생성
   const seriesData = Object.entries(styleMap).map(([key, style]) => ({
     key,
     name: style.label,
@@ -436,7 +512,6 @@ function getDualAxisChartOption(config, data) {
     yAxisIndex: style.yAxisIndex,
   }));
 
-  // yAxis 설정: styleMap의 unit 정보 활용
   const yAxisUnits = [...new Set(seriesData.map((s) => s.unit))];
   const yAxes = yAxisUnits.map((unit, idx) => ({
     type: 'value',

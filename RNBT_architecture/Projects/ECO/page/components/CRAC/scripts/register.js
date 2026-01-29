@@ -2,8 +2,9 @@
  * CRAC (Computer Room Air Conditioning) - 3D Popup Component
  *
  * 항온항습기 컴포넌트
- * - 급기/환기 온도, 습도 실시간 표시
- * - 온습도 히스토리 차트 (듀얼 Y축: 온도/습도)
+ * - 실시간 상태/온습도 표시 (metricLatest API)
+ * - 자산 속성 정보 (assetDetailUnified API)
+ * - 온습도 히스토리 차트 (추후)
  */
 
 const { bind3DEvents, fetchData } = Wkit;
@@ -28,6 +29,24 @@ function hexToRgba(hex, alpha) {
   return `rgba(${r}, ${g}, ${b}, ${alpha})`;
 }
 
+// ======================
+// METRIC CONFIG (metricConfig.json 인라인)
+// ======================
+const METRIC_CONFIG = {
+  'CRAC.UNIT_STATUS': { label: '가동상태', valueType: 'BOOL', unit: '', scale: 1.0 },
+  'CRAC.FAN_STATUS': { label: '팬상태', valueType: 'BOOL', unit: '', scale: 1.0 },
+  'CRAC.COOL_STATUS': { label: '냉방동작상태', valueType: 'BOOL', unit: '', scale: 1.0 },
+  'CRAC.HEAT_STATUS': { label: '난방동작상태', valueType: 'BOOL', unit: '', scale: 1.0 },
+  'CRAC.HUMIDIFY_STATUS': { label: '가습상태', valueType: 'BOOL', unit: '', scale: 1.0 },
+  'CRAC.DEHUMIDIFY_STATUS': { label: '제습상태', valueType: 'BOOL', unit: '', scale: 1.0 },
+  'CRAC.LEAK_STATUS': { label: '누수상태', valueType: 'BOOL', unit: '', scale: 1.0 },
+  'CRAC.RETURN_TEMP': { label: '인입온도', valueType: 'NUMBER', unit: '°C', scale: 0.1 },
+  'CRAC.RETURN_HUMIDITY': { label: '인입습도', valueType: 'NUMBER', unit: '%RH', scale: 0.1 },
+  'CRAC.TEMP_SET': { label: '온도설정값', valueType: 'NUMBER', unit: '°C', scale: 0.1 },
+  'CRAC.HUMIDITY_SET': { label: '습도설정값', valueType: 'NUMBER', unit: '%RH', scale: 0.1 },
+  'CRAC.SUPPLY_TEMP': { label: '공급온도', valueType: 'NUMBER', unit: '°C', scale: 0.1 },
+};
+
 initComponent.call(this);
 
 function initComponent() {
@@ -36,9 +55,10 @@ function initComponent() {
   // ======================
   this._defaultAssetKey = this.setter?.assetInfo?.assetKey || this.id;
 
-  // 현재 활성화된 데이터셋 (통합 API 사용)
+  // 데이터셋 정의: 2개 API 병렬 호출
   this.datasetInfo = [
-    { datasetName: 'assetDetailUnified', render: ['renderAssetInfo', 'renderProperties'] },  // 통합 API: asset + properties
+    { datasetName: 'assetDetailUnified', render: ['renderAssetInfo', 'renderProperties'] },
+    { datasetName: 'metricLatest', render: ['renderMetrics'] },
     // { datasetName: 'cracHistory', render: ['renderChart'] },    // 차트 (추후 활성화)
   ];
 
@@ -48,11 +68,11 @@ function initComponent() {
   this.statusTypeToLabel = statusTypeToLabel.bind(this);
   this.statusTypeToDataAttr = statusTypeToDataAttr.bind(this);
   this.formatDate = formatDate.bind(this);
+  this.formatTimestamp = formatTimestamp.bind(this);
 
   // ======================
-  // 3. Data Config (Asset API v1 필드만 사용)
+  // 3. Data Config
   // ======================
-  // 헤더 영역 고정 필드
   this.baseInfoConfig = [
     { key: 'name', selector: '.crac-name' },
     { key: 'locationLabel', selector: '.crac-zone' },
@@ -60,14 +80,15 @@ function initComponent() {
     { key: 'statusType', selector: '.crac-status', dataAttr: 'status', transform: this.statusTypeToDataAttr },
   ];
 
-  // 동적 필드 컨테이너 selector
-  this.fieldsContainerSelector = '.fields-container';
+  // 컨테이너 selector
+  this.metricsContainerSelector = '.metrics-container';
+  this.propertiesContainerSelector = '.properties-container';
+  this.timestampSelector = '.section-timestamp';
 
-  // assetFieldsConfig 제거됨 - 통합 API의 properties 배열에서 동적으로 렌더링
+  // Metric Config 참조
+  this.metricConfig = METRIC_CONFIG;
 
   // chartConfig: 차트 렌더링 설정
-  // - xKey: X축 데이터 키
-  // - styleMap: 시리즈별 메타데이터 + 스타일 (키는 API 응답 필드명)
   this.chartConfig = {
     xKey: 'timestamps',
     styleMap: {
@@ -81,19 +102,28 @@ function initComponent() {
   // ======================
   // 4. 렌더링 함수 바인딩
   // ======================
-  this.renderAssetInfo = renderAssetInfo.bind(this);    // 자산 기본 정보 (통합 API - data.asset)
-  this.renderProperties = renderProperties.bind(this);  // 동적 프로퍼티 (통합 API - data.properties[])
+  this.renderAssetInfo = renderAssetInfo.bind(this);
+  this.renderProperties = renderProperties.bind(this);
+  this.renderMetrics = renderMetrics.bind(this);
   this.renderChart = renderChart.bind(this, this.chartConfig);
-  this.renderError = renderError.bind(this);            // 에러 상태 렌더링
+  this.renderError = renderError.bind(this);
 
   // ======================
-  // 5. Public Methods
+  // 5. Refresh Config
+  // ======================
+  this.refreshInterval = 5000;
+  this._refreshIntervalId = null;
+
+  // ======================
+  // 6. Public Methods
   // ======================
   this.showDetail = showDetail.bind(this);
   this.hideDetail = hideDetail.bind(this);
+  this.refreshMetrics = refreshMetrics.bind(this);
+  this.stopRefresh = stopRefresh.bind(this);
 
   // ======================
-  // 6. 이벤트 발행
+  // 7. 이벤트 발행
   // ======================
   this.customEvents = {
     click: '@assetClicked',
@@ -102,14 +132,14 @@ function initComponent() {
   bind3DEvents(this, this.customEvents);
 
   // ======================
-  // 7. Template Config
+  // 8. Template Config
   // ======================
   this.templateConfig = {
     popup: 'popup-crac',
   };
 
   // ======================
-  // 8. Popup (template 기반)
+  // 9. Popup (template 기반)
   // ======================
   this.popupCreatedConfig = {
     chartSelector: '.chart-container',
@@ -148,13 +178,12 @@ function showDetail() {
       fx.go(
         fetchData(this.page, datasetName, { baseUrl: BASE_URL, assetKey: this._defaultAssetKey, locale: 'ko' }),
         (response) => {
-          // response가 없거나 response.response가 없는 경우 에러 표시
           if (!response || !response.response) {
             this.renderError('데이터를 불러올 수 없습니다.');
             return;
           }
-          // response.response.data가 null/undefined인 경우 에러 표시
-          if (response.response.data === null || response.response.data === undefined) {
+          const data = response.response.data;
+          if (data === null || data === undefined) {
             this.renderError('자산 정보가 존재하지 않습니다.');
             return;
           }
@@ -166,37 +195,44 @@ function showDetail() {
     console.error('[CRAC]', e);
     this.renderError('데이터 로드 중 오류가 발생했습니다.');
   });
+
+  // 5초 주기로 메트릭 갱신 시작
+  this.stopRefresh();
+  this._refreshIntervalId = setInterval(() => this.refreshMetrics(), this.refreshInterval);
+  console.log('[CRAC] Metric refresh started (5s interval)');
 }
 
-// 에러 상태 렌더링
-function renderError(message) {
-  // 헤더 영역에 에러 표시
-  const nameEl = this.popupQuery('.crac-name');
-  const zoneEl = this.popupQuery('.crac-zone');
-  const statusEl = this.popupQuery('.crac-status');
-
-  if (nameEl) nameEl.textContent = '데이터 없음';
-  if (zoneEl) zoneEl.textContent = message;
-  if (statusEl) {
-    statusEl.textContent = 'Error';
-    statusEl.dataset.status = 'critical';
-  }
-
-  // fields-container에 에러 메시지 표시
-  const container = this.popupQuery(this.fieldsContainerSelector);
-  if (container) {
-    container.innerHTML = `
-      <div class="value-card" style="grid-column: 1 / -1; text-align: center;">
-        <div class="value-label">오류</div>
-        <div class="value-data" style="font-size: 14px; color: #ef4444;">${message}</div>
-      </div>
-    `;
-  }
-
-  console.warn('[CRAC] renderError:', message);
+function hideDetail() {
+  this.stopRefresh();
+  this.hidePopup();
 }
 
-// 자산 기본 정보 렌더링 (통합 API - data.asset)
+function refreshMetrics() {
+  fx.go(
+    fetchData(this.page, 'metricLatest', { baseUrl: BASE_URL, assetKey: this._defaultAssetKey }),
+    (response) => {
+      if (!response || !response.response) return;
+      const data = response.response.data;
+      if (data === null || data === undefined) return;
+      this.renderMetrics(response);
+    }
+  ).catch((e) => {
+    console.warn('[CRAC] Metric refresh failed:', e);
+  });
+}
+
+function stopRefresh() {
+  if (this._refreshIntervalId) {
+    clearInterval(this._refreshIntervalId);
+    this._refreshIntervalId = null;
+    console.log('[CRAC] Metric refresh stopped');
+  }
+}
+
+// ======================
+// RENDER FUNCTIONS
+// ======================
+
 function renderAssetInfo({ response }) {
   const { data } = response;
   if (!data || !data.asset) {
@@ -206,7 +242,6 @@ function renderAssetInfo({ response }) {
 
   const asset = data.asset;
 
-  // 헤더 영역 고정 필드 렌더링
   fx.go(
     this.baseInfoConfig,
     fx.each(({ key, selector, dataAttr, transform }) => {
@@ -223,45 +258,92 @@ function renderAssetInfo({ response }) {
   );
 }
 
-// 동적 프로퍼티 렌더링 (통합 API - data.properties[])
-function renderProperties({ response }) {
+function renderMetrics({ response }) {
   const { data } = response;
-  const container = this.popupQuery(this.fieldsContainerSelector);
+  const container = this.popupQuery(this.metricsContainerSelector);
+  const timestampEl = this.popupQuery(this.timestampSelector);
+
   if (!container) return;
 
-  // properties가 없거나 빈 배열인 경우
-  if (!data?.properties || data.properties.length === 0) {
-    container.innerHTML = `
-      <div class="value-card" style="grid-column: 1 / -1; text-align: center;">
-        <div class="value-label">알림</div>
-        <div class="value-data" style="font-size: 14px; color: #6b7280;">프로퍼티 정보가 없습니다</div>
-      </div>
-    `;
+  if (!data || !Array.isArray(data) || data.length === 0) {
+    container.innerHTML = '<div class="empty-state">측정 데이터가 없습니다</div>';
     return;
   }
 
-  // displayOrder로 정렬된 properties 배열을 카드로 렌더링
-  const sortedProperties = [...data.properties].sort((a, b) => (a.displayOrder || 0) - (b.displayOrder || 0));
+  if (timestampEl && data[0]?.eventedAt) {
+    timestampEl.textContent = this.formatTimestamp(data[0].eventedAt);
+  }
 
-  container.innerHTML = sortedProperties
-    .map(({ label, value, helpText }) => {
-      return `<div class="value-card" title="${helpText || ''}">
-        <div class="value-label">${label}</div>
-        <div class="value-data">${value ?? '-'}</div>
-      </div>`;
+  container.innerHTML = data
+    .map((metric) => {
+      const config = this.metricConfig[metric.metricCode];
+      if (!config) return '';
+
+      if (config.valueType === 'BOOL') {
+        const isOn = metric.valueBool;
+        return `
+          <div class="metric-card metric-bool ${isOn ? 'bool-on' : 'bool-off'}">
+            <div class="metric-label">${config.label}</div>
+            <div class="metric-value-bool">${isOn ? 'ON' : 'OFF'}</div>
+          </div>
+        `;
+      }
+
+      const value = metric.valueNumber;
+      const displayValue = config.scale ? (value * config.scale).toFixed(1) : value;
+      return `
+        <div class="metric-card">
+          <div class="metric-label">${config.label}</div>
+          <div class="metric-value">${displayValue}<span class="metric-unit">${config.unit}</span></div>
+        </div>
+      `;
     })
     .join('');
 }
 
-// 날짜 포맷 함수
-function formatDate(dateStr) {
-  if (!dateStr) return '-';
-  try {
-    const date = new Date(dateStr);
-    return date.toLocaleDateString('ko-KR', { year: 'numeric', month: '2-digit', day: '2-digit' });
-  } catch {
-    return dateStr;
+function renderProperties({ response }) {
+  const { data } = response;
+  const container = this.popupQuery(this.propertiesContainerSelector);
+
+  if (!container) return;
+
+  if (!data?.properties || data.properties.length === 0) {
+    container.innerHTML = '<div class="empty-state">속성 정보가 없습니다</div>';
+    return;
   }
+
+  const sortedProperties = [...data.properties].sort((a, b) => (a.displayOrder || 0) - (b.displayOrder || 0));
+
+  container.innerHTML = sortedProperties
+    .map(({ label, value, helpText }) => {
+      return `
+        <div class="property-card" title="${helpText || ''}">
+          <div class="property-label">${label}</div>
+          <div class="property-value">${value ?? '-'}</div>
+        </div>
+      `;
+    })
+    .join('');
+}
+
+function renderError(message) {
+  const nameEl = this.popupQuery('.crac-name');
+  const zoneEl = this.popupQuery('.crac-zone');
+  const statusEl = this.popupQuery('.crac-status');
+
+  if (nameEl) nameEl.textContent = '데이터 없음';
+  if (zoneEl) zoneEl.textContent = message;
+  if (statusEl) {
+    statusEl.textContent = 'Error';
+    statusEl.dataset.status = 'critical';
+  }
+
+  const metricsContainer = this.popupQuery(this.metricsContainerSelector);
+  if (metricsContainer) {
+    metricsContainer.innerHTML = `<div class="error-state">${message}</div>`;
+  }
+
+  console.warn('[CRAC] renderError:', message);
 }
 
 function renderChart(config, { response }) {
@@ -279,12 +361,8 @@ function renderChart(config, { response }) {
   this.updateChart('.chart-container', option);
 }
 
-function hideDetail() {
-  this.hidePopup();
-}
-
 // ======================
-// STATUS TRANSFORM
+// TRANSFORM FUNCTIONS
 // ======================
 
 function statusTypeToLabel(statusType) {
@@ -309,6 +387,26 @@ function statusTypeToDataAttr(statusType) {
   return map[statusType] || 'normal';
 }
 
+function formatDate(dateStr) {
+  if (!dateStr) return '-';
+  try {
+    const date = new Date(dateStr);
+    return date.toLocaleDateString('ko-KR', { year: 'numeric', month: '2-digit', day: '2-digit' });
+  } catch {
+    return dateStr;
+  }
+}
+
+function formatTimestamp(isoString) {
+  if (!isoString) return '';
+  try {
+    const date = new Date(isoString);
+    return date.toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+  } catch {
+    return '';
+  }
+}
+
 // ======================
 // CHART OPTION BUILDER
 // ======================
@@ -316,7 +414,6 @@ function statusTypeToDataAttr(statusType) {
 function getDualAxisChartOption(config, data) {
   const { xKey, styleMap } = config;
 
-  // styleMap 기반으로 series 생성
   const seriesData = Object.entries(styleMap).map(([key, style]) => ({
     key,
     name: style.label,
@@ -325,7 +422,6 @@ function getDualAxisChartOption(config, data) {
     yAxisIndex: style.yAxisIndex,
   }));
 
-  // yAxis 설정: styleMap의 unit 정보 활용
   const yAxisUnits = [...new Set(seriesData.map((s) => s.unit))];
   const yAxes = yAxisUnits.map((unit, idx) => ({
     type: 'value',

@@ -105,43 +105,21 @@
     padding: 24px;
     display: flex;
     flex-direction: column;
-    gap: 24px;
+    gap: 20px;
+    max-height: calc(90vh - 80px);
+    overflow-y: auto;
 }
 
-/* Current Values - 동적 필드 컨테이너 */
-.current-values {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 12px;
-}
-
-.value-card {
-    background: #252b3b;
-    border-radius: 8px;
-    padding: 12px;
-}
-
-.value-label {
-    font-size: 11px;
-    color: #8892a0;
-    margin-bottom: 4px;
-    text-transform: uppercase;
-}
-
-.value-data {
-    font-size: 20px;
-    font-weight: 600;
-    color: #e0e6ed;
-}
-
-/* Chart Section */
-.chart-section {
+/* ======================
+   Section Common Styles
+   ====================== */
+.section {
     background: #252b3b;
     border-radius: 8px;
     overflow: hidden;
 }
 
-.chart-header {
+.section-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
@@ -149,13 +127,135 @@
     border-bottom: 1px solid #2a3142;
 }
 
-.chart-title {
+.section-title {
+    font-size: 13px;
+    font-weight: 500;
+    color: #8892a0;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.section-timestamp {
+    font-size: 11px;
+    color: #6b7280;
+}
+
+/* ======================
+   Metrics Section (실시간 측정값)
+   ====================== */
+.metrics-container {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1px;
+    background: #2a3142;
+    max-height: 320px;
+    overflow-y: auto;
+}
+
+.metric-card {
+    background: #252b3b;
+    padding: 20px 16px;
+    text-align: center;
+}
+
+.metric-label {
+    font-size: 11px;
+    color: #8892a0;
+    margin-bottom: 8px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.metric-value {
+    font-size: 32px;
+    font-weight: 600;
+    color: #e0e6ed;
+    line-height: 1;
+}
+
+.metric-unit {
+    font-size: 14px;
+    font-weight: 400;
+    color: #8892a0;
+    margin-left: 2px;
+}
+
+/* BOOL Metric */
+.metric-bool {
+    padding: 16px;
+}
+
+.metric-value-bool {
+    font-size: 18px;
+    font-weight: 700;
+    letter-spacing: 1px;
+}
+
+.metric-bool.bool-on .metric-value-bool {
+    color: #22c55e;
+}
+
+.metric-bool.bool-off .metric-value-bool {
+    color: #6b7280;
+}
+
+/* Metric 상태별 색상 */
+.metric-card[data-status="normal"] .metric-value { color: #22c55e; }
+.metric-card[data-status="warning"] .metric-value { color: #eab308; }
+.metric-card[data-status="critical"] .metric-value { color: #ef4444; }
+
+/* ======================
+   Properties Section (정적 속성)
+   ====================== */
+.properties-container {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1px;
+    background: #2a3142;
+}
+
+.property-card {
+    background: #252b3b;
+    padding: 12px 16px;
+}
+
+.property-label {
+    font-size: 11px;
+    color: #8892a0;
+    margin-bottom: 4px;
+}
+
+.property-value {
     font-size: 14px;
     font-weight: 500;
     color: #e0e6ed;
 }
 
-.chart-container {
+/* ======================
+   Chart Section (히스토리)
+   ====================== */
+.chart-section .chart-container {
     width: 100%;
-    height: 200px;
+    height: 180px;
+}
+
+.chart-section.hidden {
+    display: none;
+}
+
+/* ======================
+   Empty/Error States
+   ====================== */
+.empty-state {
+    padding: 24px 16px;
+    text-align: center;
+    color: #6b7280;
+    font-size: 13px;
+}
+
+.error-state {
+    padding: 24px 16px;
+    text-align: center;
+    color: #ef4444;
+    font-size: 13px;
 }

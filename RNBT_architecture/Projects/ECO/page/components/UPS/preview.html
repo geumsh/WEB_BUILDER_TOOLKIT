@@ -3,14 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>UPS - Preview (통합 API 구조)</title>
+    <title>UPS - Preview (Metric API 연동)</title>
     <script src="https://cdn.jsdelivr.net/npm/echarts@5.5.0/dist/echarts.min.js"></script>
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
 
         body {
             font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, sans-serif;
@@ -23,10 +19,7 @@
             gap: 20px;
         }
 
-        .preview-controls {
-            display: flex;
-            gap: 12px;
-        }
+        .preview-controls { display: flex; gap: 12px; }
 
         .preview-btn {
             padding: 10px 20px;
@@ -39,32 +32,13 @@
             transition: background 0.15s;
         }
 
-        .preview-btn:hover {
-            background: #2563eb;
-        }
+        .preview-btn:hover { background: #2563eb; }
+        .preview-btn.warning { background: #eab308; color: #000; }
+        .preview-btn.critical { background: #ef4444; }
+        .preview-btn.destroy { background: #6b7280; }
+        .preview-btn.destroy:hover { background: #4b5563; }
 
-        .preview-btn.warning {
-            background: #eab308;
-            color: #000;
-        }
-
-        .preview-btn.critical {
-            background: #ef4444;
-        }
-
-        .preview-btn.destroy {
-            background: #6b7280;
-        }
-
-        .preview-btn.destroy:hover {
-            background: #4b5563;
-        }
-
-        .instance-info {
-            font-size: 12px;
-            color: #6b7280;
-            margin-top: 8px;
-        }
+        .instance-info { font-size: 12px; color: #6b7280; margin-top: 8px; }
     </style>
 </head>
 <body>
@@ -80,13 +54,12 @@
 
     <script>
         // ======================
-        // TEMPLATE DATA (publishCode에서 로드되는 것과 동일)
+        // TEMPLATE DATA (새로운 섹션 구조)
         // ======================
         const htmlCode = `
             <template id="popup-ups">
                 <div class="popup-overlay">
                     <div class="popup-content">
-                        <!-- Header -->
                         <div class="popup-header">
                             <div class="header-info">
                                 <h2 class="ups-name">-</h2>
@@ -101,18 +74,27 @@
                                 </button>
                             </div>
                         </div>
-
-                        <!-- Body -->
                         <div class="popup-body">
-                            <!-- Dynamic Fields Container -->
-                            <div class="fields-container"></div>
-
-                            <!-- Chart -->
-                            <div class="chart-section">
-                                <div class="chart-header">
-                                    <span class="chart-title">Load & Battery History</span>
+                            <div class="section metrics-section">
+                                <div class="section-header">
+                                    <span class="section-title">실시간 측정값</span>
+                                    <span class="section-timestamp"></span>
                                 </div>
-                                <div class="chart-container"></div>
+                                <div class="metrics-container"></div>
+                            </div>
+                            <div class="section properties-section">
+                                <div class="section-header">
+                                    <span class="section-title">속성 정보</span>
+                                </div>
+                                <div class="properties-container"></div>
+                            </div>
+                            <div class="section chart-section">
+                                <div class="section-header">
+                                    <span class="section-title">히스토리</span>
+                                </div>
+                                <div class="chart-container">
+                                    <div class="empty-state">히스토리 데이터가 없습니다</div>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -121,162 +103,78 @@
         `;
 
         const cssCode = `
-            .popup-overlay {
-                position: fixed;
-                top: 0;
-                left: 0;
-                width: 100vw;
-                height: 100vh;
-                background: rgba(0, 0, 0, 0.6);
-                display: flex;
-                align-items: center;
-                justify-content: center;
-                z-index: 1000;
-            }
-
-            .popup-content {
-                background: #1a1f2e;
-                border-radius: 12px;
-                width: 560px;
-                max-width: 90vw;
-                max-height: 90vh;
-                overflow: hidden;
-                box-shadow: 0 24px 48px rgba(0, 0, 0, 0.4);
-                border: 1px solid #2a3142;
-            }
-
-            .popup-header {
-                display: flex;
-                justify-content: space-between;
-                align-items: center;
-                padding: 20px 24px;
-                border-bottom: 1px solid #2a3142;
-            }
-
-            .header-info {
-                display: flex;
-                flex-direction: column;
-                gap: 4px;
-            }
-
-            .ups-name {
-                margin: 0;
-                font-size: 18px;
-                font-weight: 600;
-                color: #e0e6ed;
-            }
-
-            .ups-zone {
-                font-size: 13px;
-                color: #8892a0;
-            }
-
-            .header-actions {
-                display: flex;
-                align-items: center;
-                gap: 12px;
-            }
-
-            .ups-status {
-                padding: 4px 12px;
-                border-radius: 12px;
-                font-size: 12px;
-                font-weight: 500;
-                text-transform: capitalize;
-            }
-
-            .ups-status[data-status="normal"] {
-                background: rgba(34, 197, 94, 0.15);
-                color: #22c55e;
-            }
-
-            .ups-status[data-status="warning"] {
-                background: rgba(234, 179, 8, 0.15);
-                color: #eab308;
-            }
-
-            .ups-status[data-status="critical"] {
-                background: rgba(239, 68, 68, 0.15);
-                color: #ef4444;
-            }
-
-            .close-btn {
-                display: flex;
-                align-items: center;
-                justify-content: center;
-                width: 32px;
-                height: 32px;
-                padding: 0;
-                background: transparent;
-                border: none;
-                border-radius: 6px;
-                color: #8892a0;
-                cursor: pointer;
-                transition: background 0.15s, color 0.15s;
-            }
-
-            .close-btn:hover {
-                background: #2a3142;
-                color: #e0e6ed;
-            }
-
-            .popup-body {
-                padding: 24px;
-                display: flex;
-                flex-direction: column;
-                gap: 24px;
-            }
-
-            .fields-container {
-                display: grid;
-                grid-template-columns: repeat(3, 1fr);
-                gap: 12px;
-            }
-
-            .value-card {
-                background: #252b3b;
-                border-radius: 8px;
-                padding: 12px;
-            }
-
-            .value-label {
-                font-size: 11px;
-                color: #8892a0;
-                margin-bottom: 4px;
-                text-transform: uppercase;
-            }
-
-            .value-data {
-                font-size: 20px;
-                font-weight: 600;
-                color: #e0e6ed;
-            }
-
-            .chart-section {
-                background: #252b3b;
-                border-radius: 8px;
-                overflow: hidden;
-            }
-
-            .chart-header {
-                display: flex;
-                justify-content: space-between;
-                align-items: center;
-                padding: 12px 16px;
-                border-bottom: 1px solid #2a3142;
-            }
-
-            .chart-title {
-                font-size: 14px;
-                font-weight: 500;
-                color: #e0e6ed;
-            }
-
-            .chart-container {
-                width: 100%;
-                height: 200px;
-            }
+            .popup-overlay { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.6); display: flex; align-items: center; justify-content: center; z-index: 1000; }
+            .popup-content { background: #1a1f2e; border-radius: 12px; width: 560px; max-width: 90vw; max-height: 90vh; overflow: hidden; box-shadow: 0 24px 48px rgba(0,0,0,0.4); border: 1px solid #2a3142; }
+            .popup-header { display: flex; justify-content: space-between; align-items: center; padding: 20px 24px; border-bottom: 1px solid #2a3142; }
+            .header-info { display: flex; flex-direction: column; gap: 4px; }
+            .ups-name { margin: 0; font-size: 18px; font-weight: 600; color: #e0e6ed; }
+            .ups-zone { font-size: 13px; color: #8892a0; }
+            .header-actions { display: flex; align-items: center; gap: 12px; }
+            .ups-status { padding: 4px 12px; border-radius: 12px; font-size: 12px; font-weight: 500; text-transform: capitalize; }
+            .ups-status[data-status="normal"] { background: rgba(34,197,94,0.15); color: #22c55e; }
+            .ups-status[data-status="warning"] { background: rgba(234,179,8,0.15); color: #eab308; }
+            .ups-status[data-status="critical"] { background: rgba(239,68,68,0.15); color: #ef4444; }
+            .close-btn { display: flex; align-items: center; justify-content: center; width: 32px; height: 32px; padding: 0; background: transparent; border: none; border-radius: 6px; color: #8892a0; cursor: pointer; transition: background 0.15s, color 0.15s; }
+            .close-btn:hover { background: #2a3142; color: #e0e6ed; }
+            .popup-body { padding: 24px; display: flex; flex-direction: column; gap: 20px; max-height: calc(90vh - 80px); overflow-y: auto; }
+            .section { background: #252b3b; border-radius: 8px; overflow: hidden; }
+            .section-header { display: flex; justify-content: space-between; align-items: center; padding: 12px 16px; border-bottom: 1px solid #2a3142; }
+            .section-title { font-size: 13px; font-weight: 500; color: #8892a0; text-transform: uppercase; letter-spacing: 0.5px; }
+            .section-timestamp { font-size: 11px; color: #6b7280; }
+            .metrics-container { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 1px; background: #2a3142; max-height: 400px; overflow-y: auto; }
+            .metric-card { background: #252b3b; padding: 16px 12px; text-align: center; }
+            .metric-label { font-size: 10px; color: #8892a0; margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.5px; }
+            .metric-value { font-size: 24px; font-weight: 600; color: #e0e6ed; line-height: 1; }
+            .metric-unit { font-size: 12px; font-weight: 400; color: #8892a0; margin-left: 2px; }
+            .metric-bool { padding: 12px; }
+            .metric-value-bool { font-size: 16px; font-weight: 700; letter-spacing: 1px; }
+            .metric-bool.bool-on .metric-value-bool { color: #22c55e; }
+            .metric-bool.bool-off .metric-value-bool { color: #6b7280; }
+            .metric-card[data-status="normal"] .metric-value { color: #22c55e; }
+            .metric-card[data-status="warning"] .metric-value { color: #eab308; }
+            .metric-card[data-status="critical"] .metric-value { color: #ef4444; }
+            .properties-container { display: grid; grid-template-columns: 1fr 1fr; gap: 1px; background: #2a3142; }
+            .property-card { background: #252b3b; padding: 12px 16px; }
+            .property-label { font-size: 11px; color: #8892a0; margin-bottom: 4px; }
+            .property-value { font-size: 14px; font-weight: 500; color: #e0e6ed; }
+            .chart-section .chart-container { width: 100%; height: 200px; }
+            .chart-section.hidden { display: none; }
+            .empty-state { padding: 24px 16px; text-align: center; color: #6b7280; font-size: 13px; }
+            .error-state { padding: 24px 16px; text-align: center; color: #ef4444; font-size: 13px; }
         `;
+
+        // ======================
+        // METRIC CONFIG (25 metrics from register.js)
+        // ======================
+        const METRIC_CONFIG = {
+            'UPS.INPUT_V_1': { label: '입력전압 R', valueType: 'NUMBER', unit: 'V', scale: 0.1 },
+            'UPS.INPUT_V_2': { label: '입력전압 S', valueType: 'NUMBER', unit: 'V', scale: 0.1 },
+            'UPS.INPUT_V_3': { label: '입력전압 T', valueType: 'NUMBER', unit: 'V', scale: 0.1 },
+            'UPS.INPUT_F_1': { label: '입력주파수 R', valueType: 'NUMBER', unit: 'Hz', scale: 0.1 },
+            'UPS.INPUT_F_2': { label: '입력주파수 S', valueType: 'NUMBER', unit: 'Hz', scale: 0.1 },
+            'UPS.INPUT_F_3': { label: '입력주파수 T', valueType: 'NUMBER', unit: 'Hz', scale: 0.1 },
+            'UPS.INPUT_A_1': { label: '입력전류 R', valueType: 'NUMBER', unit: 'A', scale: 0.1 },
+            'UPS.INPUT_A_2': { label: '입력전류 S', valueType: 'NUMBER', unit: 'A', scale: 0.1 },
+            'UPS.INPUT_A_3': { label: '입력전류 T', valueType: 'NUMBER', unit: 'A', scale: 0.1 },
+            'UPS.OUTPUT_V_1': { label: '출력전압 R', valueType: 'NUMBER', unit: 'V', scale: 0.1 },
+            'UPS.OUTPUT_V_2': { label: '출력전압 S', valueType: 'NUMBER', unit: 'V', scale: 0.1 },
+            'UPS.OUTPUT_V_3': { label: '출력전압 T', valueType: 'NUMBER', unit: 'V', scale: 0.1 },
+            'UPS.OUTPUT_F_1': { label: '출력주파수 R', valueType: 'NUMBER', unit: 'Hz', scale: 0.1 },
+            'UPS.OUTPUT_F_2': { label: '출력주파수 S', valueType: 'NUMBER', unit: 'Hz', scale: 0.1 },
+            'UPS.OUTPUT_F_3': { label: '출력주파수 T', valueType: 'NUMBER', unit: 'Hz', scale: 0.1 },
+            'UPS.OUTPUT_A_1': { label: '출력전류 R', valueType: 'NUMBER', unit: 'A', scale: 0.1 },
+            'UPS.OUTPUT_A_2': { label: '출력전류 S', valueType: 'NUMBER', unit: 'A', scale: 0.1 },
+            'UPS.OUTPUT_A_3': { label: '출력전류 T', valueType: 'NUMBER', unit: 'A', scale: 0.1 },
+            'UPS.BATT_V': { label: '배터리전압', valueType: 'NUMBER', unit: 'V', scale: 0.1 },
+            'UPS.BATT_A': { label: '배터리전류', valueType: 'NUMBER', unit: 'A', scale: 0.1 },
+            'UPS.INPUT_BAD_STATE': { label: '입력전력이상', valueType: 'BOOL', unit: '', scale: 1.0 },
+            'UPS.BATT_CHARGING': { label: '배터리충전중', valueType: 'BOOL', unit: '', scale: 1.0 },
+            'UPS.OUTPUT_ON_BATTERY': { label: '배터리출력중', valueType: 'BOOL', unit: '', scale: 1.0 },
+            'UPS.INVERTER_OFF': { label: '인버터정지', valueType: 'BOOL', unit: '', scale: 1.0 },
+            'UPS.ON_BYPASS': { label: '바이패스운전', valueType: 'BOOL', unit: '', scale: 1.0 },
+            'UPS.BATT_FAULT': { label: '배터리Fault', valueType: 'BOOL', unit: '', scale: 1.0 },
+            'UPS.OUTPUT_OVERLOAD': { label: '출력과부하', valueType: 'BOOL', unit: '', scale: 1.0 },
+        };
 
         // ======================
         // MOCK IMPLEMENTATIONS
@@ -298,57 +196,130 @@
             }
         };
 
-        // Mock data - 통합 API 응답 구조 (assetDetailUnified)
-        // register.js의 renderAssetInfo + renderProperties와 일치
+        // Mock data
+        let currentStatus = 'normal';
+
+        // assetDetailUnified 응답
         const mockUPSData = {
             normal: {
-                asset: {
-                    name: 'UPS-A01',
-                    locationLabel: 'Zone-A',
-                    statusType: 'ACTIVE'
-                },
+                asset: { name: 'UPS-A01', locationLabel: 'Zone-A', statusType: 'ACTIVE' },
                 properties: [
-                    { label: 'Load', value: '45%', helpText: 'Current load percentage', displayOrder: 1 },
-                    { label: 'Battery', value: '100%', helpText: 'Battery charge level', displayOrder: 2 },
-                    { label: 'Input', value: '220V', helpText: 'Input voltage', displayOrder: 3 },
-                    { label: 'Output', value: '220V', helpText: 'Output voltage', displayOrder: 4 },
-                    { label: 'Runtime', value: '120min', helpText: 'Estimated runtime', displayOrder: 5 },
-                    { label: 'Mode', value: 'Online', helpText: 'Operating mode', displayOrder: 6 }
+                    { label: '용량', value: '100kVA', helpText: 'UPS 정격 용량', displayOrder: 1 },
+                    { label: '모델', value: 'GE LP33', helpText: 'UPS 모델명', displayOrder: 2 },
+                    { label: '설치일', value: '2023-03-15', helpText: '설치 날짜', displayOrder: 3 },
+                    { label: '운전모드', value: 'Online', helpText: '현재 운전 모드', displayOrder: 4 }
                 ]
             },
             warning: {
-                asset: {
-                    name: 'UPS-B02',
-                    locationLabel: 'Zone-B',
-                    statusType: 'WARNING'
-                },
+                asset: { name: 'UPS-B02', locationLabel: 'Zone-B', statusType: 'WARNING' },
                 properties: [
-                    { label: 'Load', value: '78%', helpText: 'Current load percentage', displayOrder: 1 },
-                    { label: 'Battery', value: '65%', helpText: 'Battery charge level', displayOrder: 2 },
-                    { label: 'Input', value: '218V', helpText: 'Input voltage', displayOrder: 3 },
-                    { label: 'Output', value: '220V', helpText: 'Output voltage', displayOrder: 4 },
-                    { label: 'Runtime', value: '45min', helpText: 'Estimated runtime', displayOrder: 5 },
-                    { label: 'Mode', value: 'Online', helpText: 'Operating mode', displayOrder: 6 }
+                    { label: '용량', value: '80kVA', helpText: 'UPS 정격 용량', displayOrder: 1 },
+                    { label: '모델', value: 'Eaton 9PX', helpText: 'UPS 모델명', displayOrder: 2 },
+                    { label: '설치일', value: '2022-08-10', helpText: '설치 날짜', displayOrder: 3 },
+                    { label: '운전모드', value: 'Online', helpText: '현재 운전 모드', displayOrder: 4 }
                 ]
             },
             critical: {
-                asset: {
-                    name: 'UPS-C03',
-                    locationLabel: 'Zone-C',
-                    statusType: 'CRITICAL'
-                },
+                asset: { name: 'UPS-C03', locationLabel: 'Zone-C', statusType: 'CRITICAL' },
                 properties: [
-                    { label: 'Load', value: '95%', helpText: 'Current load percentage', displayOrder: 1 },
-                    { label: 'Battery', value: '15%', helpText: 'Battery charge level', displayOrder: 2 },
-                    { label: 'Input', value: '0V', helpText: 'Input voltage - Power Failure', displayOrder: 3 },
-                    { label: 'Output', value: '220V', helpText: 'Output voltage', displayOrder: 4 },
-                    { label: 'Runtime', value: '8min', helpText: 'Estimated runtime', displayOrder: 5 },
-                    { label: 'Mode', value: 'Battery', helpText: 'Operating mode', displayOrder: 6 }
+                    { label: '용량', value: '60kVA', helpText: 'UPS 정격 용량', displayOrder: 1 },
+                    { label: '모델', value: 'APC SRT', helpText: 'UPS 모델명', displayOrder: 2 },
+                    { label: '설치일', value: '2021-11-01', helpText: '설치 날짜', displayOrder: 3 },
+                    { label: '운전모드', value: 'Battery', helpText: '현재 운전 모드', displayOrder: 4 }
                 ]
             }
         };
 
-        let currentStatus = 'normal';
+        // metricLatest 응답 (실시간 측정값 - raw int, scale 0.1 적용 필요)
+        const mockMetricData = {
+            normal: [
+                { metricCode: 'UPS.INPUT_V_1', eventedAt: new Date().toISOString(), valueType: 'NUMBER', valueNumber: 2200 },
+                { metricCode: 'UPS.INPUT_V_2', eventedAt: new Date().toISOString(), valueType: 'NUMBER', valueNumber: 2210 },
+                { metricCode: 'UPS.INPUT_V_3', eventedAt: new Date().toISOString(), valueType: 'NUMBER', valueNumber: 2195 },
+                { metricCode: 'UPS.INPUT_F_1', eventedAt: new Date().toISOString(), valueType: 'NUMBER', valueNumber: 600 },
+                { metricCode: 'UPS.INPUT_F_2', eventedAt: new Date().toISOString(), valueType: 'NUMBER', valueNumber: 600 },
+                { metricCode: 'UPS.INPUT_F_3', eventedAt: new Date().toISOString(), valueType: 'NUMBER', valueNumber: 600 },
+                { metricCode: 'UPS.INPUT_A_1', eventedAt: new Date().toISOString(), valueType: 'NUMBER', valueNumber: 150 },
+                { metricCode: 'UPS.INPUT_A_2', eventedAt: new Date().toISOString(), valueType: 'NUMBER', valueNumber: 148 },
+                { metricCode: 'UPS.INPUT_A_3', eventedAt: new Date().toISOString(), valueType: 'NUMBER', valueNumber: 152 },
+                { metricCode: 'UPS.OUTPUT_V_1', eventedAt: new Date().toISOString(), valueType: 'NUMBER', valueNumber: 2200 },
+                { metricCode: 'UPS.OUTPUT_V_2', eventedAt: new Date().toISOString(), valueType: 'NUMBER', valueNumber: 2200 },
+                { metricCode: 'UPS.OUTPUT_V_3', eventedAt: new Date().toISOString(), valueType: 'NUMBER', valueNumber: 2200 },
+                { metricCode: 'UPS.OUTPUT_F_1', eventedAt: new Date().toISOString(), valueType: 'NUMBER', valueNumber: 600 },
+                { metricCode: 'UPS.OUTPUT_F_2', eventedAt: new Date().toISOString(), valueType: 'NUMBER', valueNumber: 600 },
+                { metricCode: 'UPS.OUTPUT_F_3', eventedAt: new Date().toISOString(), valueType: 'NUMBER', valueNumber: 600 },
+                { metricCode: 'UPS.OUTPUT_A_1', eventedAt: new Date().toISOString(), valueType: 'NUMBER', valueNumber: 145 },
+                { metricCode: 'UPS.OUTPUT_A_2', eventedAt: new Date().toISOString(), valueType: 'NUMBER', valueNumber: 143 },
+                { metricCode: 'UPS.OUTPUT_A_3', eventedAt: new Date().toISOString(), valueType: 'NUMBER', valueNumber: 147 },
+                { metricCode: 'UPS.BATT_V', eventedAt: new Date().toISOString(), valueType: 'NUMBER', valueNumber: 5400 },
+                { metricCode: 'UPS.BATT_A', eventedAt: new Date().toISOString(), valueType: 'NUMBER', valueNumber: 20 },
+                { metricCode: 'UPS.INPUT_BAD_STATE', eventedAt: new Date().toISOString(), valueType: 'BOOL', valueNumber: 0 },
+                { metricCode: 'UPS.BATT_CHARGING', eventedAt: new Date().toISOString(), valueType: 'BOOL', valueNumber: 1 },
+                { metricCode: 'UPS.OUTPUT_ON_BATTERY', eventedAt: new Date().toISOString(), valueType: 'BOOL', valueNumber: 0 },
+                { metricCode: 'UPS.INVERTER_OFF', eventedAt: new Date().toISOString(), valueType: 'BOOL', valueNumber: 0 },
+                { metricCode: 'UPS.ON_BYPASS', eventedAt: new Date().toISOString(), valueType: 'BOOL', valueNumber: 0 },
+                { metricCode: 'UPS.BATT_FAULT', eventedAt: new Date().toISOString(), valueType: 'BOOL', valueNumber: 0 },
+                { metricCode: 'UPS.OUTPUT_OVERLOAD', eventedAt: new Date().toISOString(), valueType: 'BOOL', valueNumber: 0 }
+            ],
+            warning: [
+                { metricCode: 'UPS.INPUT_V_1', eventedAt: new Date().toISOString(), valueType: 'NUMBER', valueNumber: 2150 },
+                { metricCode: 'UPS.INPUT_V_2', eventedAt: new Date().toISOString(), valueType: 'NUMBER', valueNumber: 2080 },
+                { metricCode: 'UPS.INPUT_V_3', eventedAt: new Date().toISOString(), valueType: 'NUMBER', valueNumber: 2170 },
+                { metricCode: 'UPS.INPUT_F_1', eventedAt: new Date().toISOString(), valueType: 'NUMBER', valueNumber: 598 },
+                { metricCode: 'UPS.INPUT_F_2', eventedAt: new Date().toISOString(), valueType: 'NUMBER', valueNumber: 595 },
+                { metricCode: 'UPS.INPUT_F_3', eventedAt: new Date().toISOString(), valueType: 'NUMBER', valueNumber: 599 },
+                { metricCode: 'UPS.INPUT_A_1', eventedAt: new Date().toISOString(), valueType: 'NUMBER', valueNumber: 180 },
+                { metricCode: 'UPS.INPUT_A_2', eventedAt: new Date().toISOString(), valueType: 'NUMBER', valueNumber: 185 },
+                { metricCode: 'UPS.INPUT_A_3', eventedAt: new Date().toISOString(), valueType: 'NUMBER', valueNumber: 178 },
+                { metricCode: 'UPS.OUTPUT_V_1', eventedAt: new Date().toISOString(), valueType: 'NUMBER', valueNumber: 2190 },
+                { metricCode: 'UPS.OUTPUT_V_2', eventedAt: new Date().toISOString(), valueType: 'NUMBER', valueNumber: 2185 },
+                { metricCode: 'UPS.OUTPUT_V_3', eventedAt: new Date().toISOString(), valueType: 'NUMBER', valueNumber: 2195 },
+                { metricCode: 'UPS.OUTPUT_F_1', eventedAt: new Date().toISOString(), valueType: 'NUMBER', valueNumber: 600 },
+                { metricCode: 'UPS.OUTPUT_F_2', eventedAt: new Date().toISOString(), valueType: 'NUMBER', valueNumber: 600 },
+                { metricCode: 'UPS.OUTPUT_F_3', eventedAt: new Date().toISOString(), valueType: 'NUMBER', valueNumber: 600 },
+                { metricCode: 'UPS.OUTPUT_A_1', eventedAt: new Date().toISOString(), valueType: 'NUMBER', valueNumber: 175 },
+                { metricCode: 'UPS.OUTPUT_A_2', eventedAt: new Date().toISOString(), valueType: 'NUMBER', valueNumber: 180 },
+                { metricCode: 'UPS.OUTPUT_A_3', eventedAt: new Date().toISOString(), valueType: 'NUMBER', valueNumber: 173 },
+                { metricCode: 'UPS.BATT_V', eventedAt: new Date().toISOString(), valueType: 'NUMBER', valueNumber: 5100 },
+                { metricCode: 'UPS.BATT_A', eventedAt: new Date().toISOString(), valueType: 'NUMBER', valueNumber: 35 },
+                { metricCode: 'UPS.INPUT_BAD_STATE', eventedAt: new Date().toISOString(), valueType: 'BOOL', valueNumber: 1 },
+                { metricCode: 'UPS.BATT_CHARGING', eventedAt: new Date().toISOString(), valueType: 'BOOL', valueNumber: 1 },
+                { metricCode: 'UPS.OUTPUT_ON_BATTERY', eventedAt: new Date().toISOString(), valueType: 'BOOL', valueNumber: 0 },
+                { metricCode: 'UPS.INVERTER_OFF', eventedAt: new Date().toISOString(), valueType: 'BOOL', valueNumber: 0 },
+                { metricCode: 'UPS.ON_BYPASS', eventedAt: new Date().toISOString(), valueType: 'BOOL', valueNumber: 0 },
+                { metricCode: 'UPS.BATT_FAULT', eventedAt: new Date().toISOString(), valueType: 'BOOL', valueNumber: 0 },
+                { metricCode: 'UPS.OUTPUT_OVERLOAD', eventedAt: new Date().toISOString(), valueType: 'BOOL', valueNumber: 0 }
+            ],
+            critical: [
+                { metricCode: 'UPS.INPUT_V_1', eventedAt: new Date().toISOString(), valueType: 'NUMBER', valueNumber: 0 },
+                { metricCode: 'UPS.INPUT_V_2', eventedAt: new Date().toISOString(), valueType: 'NUMBER', valueNumber: 0 },
+                { metricCode: 'UPS.INPUT_V_3', eventedAt: new Date().toISOString(), valueType: 'NUMBER', valueNumber: 0 },
+                { metricCode: 'UPS.INPUT_F_1', eventedAt: new Date().toISOString(), valueType: 'NUMBER', valueNumber: 0 },
+                { metricCode: 'UPS.INPUT_F_2', eventedAt: new Date().toISOString(), valueType: 'NUMBER', valueNumber: 0 },
+                { metricCode: 'UPS.INPUT_F_3', eventedAt: new Date().toISOString(), valueType: 'NUMBER', valueNumber: 0 },
+                { metricCode: 'UPS.INPUT_A_1', eventedAt: new Date().toISOString(), valueType: 'NUMBER', valueNumber: 0 },
+                { metricCode: 'UPS.INPUT_A_2', eventedAt: new Date().toISOString(), valueType: 'NUMBER', valueNumber: 0 },
+                { metricCode: 'UPS.INPUT_A_3', eventedAt: new Date().toISOString(), valueType: 'NUMBER', valueNumber: 0 },
+                { metricCode: 'UPS.OUTPUT_V_1', eventedAt: new Date().toISOString(), valueType: 'NUMBER', valueNumber: 2180 },
+                { metricCode: 'UPS.OUTPUT_V_2', eventedAt: new Date().toISOString(), valueType: 'NUMBER', valueNumber: 2175 },
+                { metricCode: 'UPS.OUTPUT_V_3', eventedAt: new Date().toISOString(), valueType: 'NUMBER', valueNumber: 2170 },
+                { metricCode: 'UPS.OUTPUT_F_1', eventedAt: new Date().toISOString(), valueType: 'NUMBER', valueNumber: 599 },
+                { metricCode: 'UPS.OUTPUT_F_2', eventedAt: new Date().toISOString(), valueType: 'NUMBER', valueNumber: 599 },
+                { metricCode: 'UPS.OUTPUT_F_3', eventedAt: new Date().toISOString(), valueType: 'NUMBER', valueNumber: 599 },
+                { metricCode: 'UPS.OUTPUT_A_1', eventedAt: new Date().toISOString(), valueType: 'NUMBER', valueNumber: 200 },
+                { metricCode: 'UPS.OUTPUT_A_2', eventedAt: new Date().toISOString(), valueType: 'NUMBER', valueNumber: 205 },
+                { metricCode: 'UPS.OUTPUT_A_3', eventedAt: new Date().toISOString(), valueType: 'NUMBER', valueNumber: 198 },
+                { metricCode: 'UPS.BATT_V', eventedAt: new Date().toISOString(), valueType: 'NUMBER', valueNumber: 3200 },
+                { metricCode: 'UPS.BATT_A', eventedAt: new Date().toISOString(), valueType: 'NUMBER', valueNumber: 85 },
+                { metricCode: 'UPS.INPUT_BAD_STATE', eventedAt: new Date().toISOString(), valueType: 'BOOL', valueNumber: 1 },
+                { metricCode: 'UPS.BATT_CHARGING', eventedAt: new Date().toISOString(), valueType: 'BOOL', valueNumber: 0 },
+                { metricCode: 'UPS.OUTPUT_ON_BATTERY', eventedAt: new Date().toISOString(), valueType: 'BOOL', valueNumber: 1 },
+                { metricCode: 'UPS.INVERTER_OFF', eventedAt: new Date().toISOString(), valueType: 'BOOL', valueNumber: 0 },
+                { metricCode: 'UPS.ON_BYPASS', eventedAt: new Date().toISOString(), valueType: 'BOOL', valueNumber: 0 },
+                { metricCode: 'UPS.BATT_FAULT', eventedAt: new Date().toISOString(), valueType: 'BOOL', valueNumber: 1 },
+                { metricCode: 'UPS.OUTPUT_OVERLOAD', eventedAt: new Date().toISOString(), valueType: 'BOOL', valueNumber: 1 }
+            ]
+        };
 
         function generateHistoryData() {
             const timestamps = [];
@@ -364,7 +335,6 @@
                 battery.push(Math.round((95 + (Math.random() - 0.5) * 10) * 10) / 10);
             }
 
-            // API fields 구조에 맞춤
             return {
                 timestamps,
                 values: { load, battery },
@@ -378,6 +348,7 @@
         function getMockData(datasetName) {
             switch (datasetName) {
                 case 'assetDetailUnified': return mockUPSData[currentStatus];
+                case 'metricLatest': return mockMetricData[currentStatus];
                 case 'upsHistory': return generateHistoryData();
                 default: return {};
             }
@@ -484,9 +455,7 @@
         let instance = null;
 
         function createInstance() {
-            if (instance) {
-                onInstanceUnLoad.call(instance);
-            }
+            if (instance) { onInstanceUnLoad.call(instance); }
 
             instance = {
                 id: 'preview-ups',
@@ -505,10 +474,9 @@
         }
 
         // ======================
-        // COMPONENT LIFECYCLE (register.js와 동일한 구조)
+        // COMPONENT LIFECYCLE
         // ======================
 
-        // Status transform functions (Asset API v1)
         function statusTypeToLabel(statusType) {
             const labels = { ACTIVE: 'Normal', WARNING: 'Warning', CRITICAL: 'Critical', INACTIVE: 'Inactive', MAINTENANCE: 'Maintenance' };
             return labels[statusType] || statusType;
@@ -519,22 +487,28 @@
             return map[statusType] || 'normal';
         }
 
+        function formatTimestamp(isoString) {
+            if (!isoString) return '';
+            try {
+                const date = new Date(isoString);
+                return date.toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+            } catch { return ''; }
+        }
+
+        const BASE_URL = 'http://10.23.128.140:8811';
+
         function initComponent() {
             const { bind3DEvents, fetchData } = Wkit;
             const { applyShadowPopupMixin, applyEChartsMixin } = PopupMixin;
 
-            const BASE_URL = 'http://10.23.128.140:8811';
-
-            // register.js와 동일한 구조 (통합 API)
             this._defaultAssetKey = this.setter?.assetInfo?.assetKey || this.id;
 
-            // 현재 활성화된 데이터셋 (통합 API 사용)
+            // 데이터셋 정의
             this.datasetInfo = [
-                { datasetName: 'assetDetailUnified', render: ['renderAssetInfo', 'renderProperties'] },  // 통합 API: asset + properties
-                // { datasetName: 'upsHistory', render: ['renderChart'] },  // 차트 (추후 활성화)
+                { datasetName: 'assetDetailUnified', render: ['renderAssetInfo', 'renderProperties'] },
+                { datasetName: 'metricLatest', render: ['renderMetrics'] }
             ];
 
-            // 헤더 영역 고정 필드
             this.baseInfoConfig = [
                 { key: 'name', selector: '.ups-name' },
                 { key: 'locationLabel', selector: '.ups-zone' },
@@ -542,8 +516,27 @@
                 { key: 'statusType', selector: '.ups-status', dataAttr: 'status', transform: statusTypeToDataAttr }
             ];
 
-            // 동적 필드 컨테이너 selector
-            this.fieldsContainerSelector = '.fields-container';
+            this.metricsContainerSelector = '.metrics-container';
+            this.propertiesContainerSelector = '.properties-container';
+            this.propertiesSectionSelector = '.properties-section';
+            this.timestampSelector = '.section-timestamp';
+            this.metricConfig = METRIC_CONFIG;
+
+            this.formatTimestamp = formatTimestamp.bind(this);
+
+            this.renderAssetInfo = renderAssetInfo.bind(this);
+            this.renderProperties = renderProperties.bind(this);
+            this.renderMetrics = renderMetrics.bind(this);
+            this.renderError = renderError.bind(this);
+
+            // Refresh Config
+            this.refreshInterval = 5000; // 5초
+            this._refreshIntervalId = null;
+
+            this.showDetail = showDetail.bind(this);
+            this.hideDetail = hideDetail.bind(this);
+            this.refreshMetrics = refreshMetricsOnly.bind(this);
+            this.stopRefresh = stopRefresh.bind(this);
 
             // chartConfig: 차트 렌더링 설정
             this.chartConfig = {
@@ -555,13 +548,7 @@
                 optionBuilder: getMultiLineChartOption
             };
 
-            // 렌더링 함수 바인딩 (register.js와 동일)
-            this.renderAssetInfo = renderAssetInfo.bind(this);      // 자산 기본 정보 (asset 객체)
-            this.renderProperties = renderProperties.bind(this);    // 동적 프로퍼티 (properties 배열)
             this.renderChart = renderChart.bind(this, this.chartConfig);
-            this.renderError = renderError.bind(this);              // 에러 상태 렌더링
-            this.showDetail = showDetail.bind(this);
-            this.hideDetail = hideDetail.bind(this);
 
             this.customEvents = { click: '@assetClicked' };
             bind3DEvents(this, this.customEvents);
@@ -573,9 +560,14 @@
             };
 
             const { htmlCode, cssCode } = this.properties.publishCode || {};
-            this.getPopupHTML = () => extractTemplate(htmlCode || '', this.templateConfig.popup);
+            const ctx = this;
+            this.getPopupHTML = () => extractTemplate(htmlCode || '', ctx.templateConfig.popup);
             this.getPopupStyles = () => cssCode || '';
-            this.onPopupCreated = onPopupCreated.bind(this, this.popupCreatedConfig);
+            this.onPopupCreated = function() {
+                const { chartSelector, events } = ctx.popupCreatedConfig;
+                if (chartSelector) ctx.createChart(chartSelector);
+                if (events) ctx.bindPopupEvents(events);
+            };
 
             applyShadowPopupMixin(this, {
                 getHTML: this.getPopupHTML,
@@ -588,63 +580,6 @@
             console.log('[UPS] Registered:', this._defaultAssetKey);
         }
 
-        function showDetail() {
-            this.showPopup();
-            fx.go(
-                this.datasetInfo,
-                fx.each(({ datasetName, render }) =>
-                    fx.go(
-                        Wkit.fetchData(this.page, datasetName, { baseUrl: BASE_URL, assetKey: this._defaultAssetKey, locale: 'ko' }),
-                        (response) => {
-                            // response가 없거나 response.response가 없는 경우 에러 표시
-                            if (!response || !response.response) {
-                                this.renderError('데이터를 불러올 수 없습니다.');
-                                return;
-                            }
-                            // response.response.data가 null/undefined인 경우 에러 표시
-                            if (response.response.data === null || response.response.data === undefined) {
-                                this.renderError('자산 정보가 존재하지 않습니다.');
-                                return;
-                            }
-                            fx.each((fn) => this[fn](response), render);
-                        }
-                    )
-                )
-            ).catch(e => {
-                console.error('[UPS]', e);
-                this.renderError('데이터 로드 중 오류가 발생했습니다.');
-            });
-        }
-
-        // 에러 상태 렌더링
-        function renderError(message) {
-            // 헤더 영역에 에러 표시
-            const nameEl = this.popupQuery('.ups-name');
-            const zoneEl = this.popupQuery('.ups-zone');
-            const statusEl = this.popupQuery('.ups-status');
-
-            if (nameEl) nameEl.textContent = '데이터 없음';
-            if (zoneEl) zoneEl.textContent = message;
-            if (statusEl) {
-                statusEl.textContent = 'Error';
-                statusEl.dataset.status = 'critical';
-            }
-
-            // fields-container에 에러 메시지 표시
-            const container = this.popupQuery(this.fieldsContainerSelector);
-            if (container) {
-                container.innerHTML = `
-                    <div class="value-card" style="grid-column: 1 / -1; text-align: center;">
-                        <div class="value-label">오류</div>
-                        <div class="value-data" style="font-size: 14px; color: #ef4444;">${message}</div>
-                    </div>
-                `;
-            }
-
-            console.warn('[UPS] renderError:', message);
-        }
-
-        // 자산 기본 정보 렌더링 (통합 API - data.asset)
         function renderAssetInfo({ response }) {
             const { data } = response;
             if (!data || !data.asset) {
@@ -654,7 +589,6 @@
 
             const asset = data.asset;
 
-            // 헤더 영역 고정 필드 렌더링
             fx.go(
                 this.baseInfoConfig,
                 fx.each(({ key, selector, dataAttr, transform }) => {
@@ -671,34 +605,98 @@
             );
         }
 
-        // 동적 프로퍼티 렌더링 (통합 API - data.properties[])
-        function renderProperties({ response }) {
+        function renderMetrics({ response }) {
             const { data } = response;
-            const container = this.popupQuery(this.fieldsContainerSelector);
+            const container = this.popupQuery(this.metricsContainerSelector);
+            const timestampEl = this.popupQuery(this.timestampSelector);
+
             if (!container) return;
 
-            // properties가 없거나 빈 배열인 경우
-            if (!data?.properties || data.properties.length === 0) {
-                container.innerHTML = `
-                    <div class="value-card" style="grid-column: 1 / -1; text-align: center;">
-                        <div class="value-label">알림</div>
-                        <div class="value-data" style="font-size: 14px; color: #6b7280;">프로퍼티 정보가 없습니다</div>
-                    </div>
-                `;
+            if (!data || !Array.isArray(data) || data.length === 0) {
+                container.innerHTML = '<div class="empty-state">측정 데이터가 없습니다</div>';
                 return;
             }
 
-            // displayOrder로 정렬된 properties 배열을 카드로 렌더링
+            if (timestampEl && data[0]?.eventedAt) {
+                timestampEl.textContent = this.formatTimestamp(data[0].eventedAt);
+            }
+
+            container.innerHTML = data
+                .map((metric) => {
+                    const config = this.metricConfig[metric.metricCode];
+                    if (!config) return '';
+
+                    // BOOL type
+                    if (config.valueType === 'BOOL') {
+                        const isOn = metric.valueNumber === 1;
+                        const boolClass = isOn ? 'bool-on' : 'bool-off';
+                        const boolText = isOn ? 'ON' : 'OFF';
+                        return `
+                            <div class="metric-card metric-bool ${boolClass}">
+                                <div class="metric-label">${config.label}</div>
+                                <div class="metric-value-bool">${boolText}</div>
+                            </div>
+                        `;
+                    }
+
+                    // NUMBER type
+                    const value = metric.valueNumber;
+                    const displayValue = config.scale ? (value * config.scale).toFixed(1) : value;
+
+                    return `
+                        <div class="metric-card">
+                            <div class="metric-label">${config.label}</div>
+                            <div class="metric-value">${displayValue}<span class="metric-unit">${config.unit}</span></div>
+                        </div>
+                    `;
+                })
+                .join('');
+        }
+
+        function renderProperties({ response }) {
+            const { data } = response;
+            const container = this.popupQuery(this.propertiesContainerSelector);
+
+            if (!container) return;
+
+            // properties가 없거나 빈 배열인 경우 empty-state 표시
+            if (!data?.properties || data.properties.length === 0) {
+                container.innerHTML = '<div class="empty-state">속성 정보가 없습니다</div>';
+                return;
+            }
+
             const sortedProperties = [...data.properties].sort((a, b) => (a.displayOrder || 0) - (b.displayOrder || 0));
 
             container.innerHTML = sortedProperties
                 .map(({ label, value, helpText }) => {
-                    return `<div class="value-card" title="${helpText || ''}">
-                        <div class="value-label">${label}</div>
-                        <div class="value-data">${value ?? '-'}</div>
-                    </div>`;
+                    return `
+                        <div class="property-card" title="${helpText || ''}">
+                            <div class="property-label">${label}</div>
+                            <div class="property-value">${value ?? '-'}</div>
+                        </div>
+                    `;
                 })
                 .join('');
+        }
+
+        function renderError(message) {
+            const nameEl = this.popupQuery('.ups-name');
+            const zoneEl = this.popupQuery('.ups-zone');
+            const statusEl = this.popupQuery('.ups-status');
+
+            if (nameEl) nameEl.textContent = '데이터 없음';
+            if (zoneEl) zoneEl.textContent = message;
+            if (statusEl) {
+                statusEl.textContent = 'Error';
+                statusEl.dataset.status = 'critical';
+            }
+
+            const metricsContainer = this.popupQuery(this.metricsContainerSelector);
+            if (metricsContainer) {
+                metricsContainer.innerHTML = `<div class="error-state">${message}</div>`;
+            }
+
+            console.warn('[UPS] renderError:', message);
         }
 
         function renderChart(config, { response }) {
@@ -709,14 +707,68 @@
             this.updateChart('.chart-container', option);
         }
 
+        function showDetail() {
+            this.showPopup();
+            fx.go(
+                this.datasetInfo,
+                fx.each(({ datasetName, render }) =>
+                    fx.go(
+                        Wkit.fetchData(this.page, datasetName, { baseUrl: BASE_URL, assetKey: this._defaultAssetKey, locale: 'ko' }),
+                        (response) => {
+                            if (!response || !response.response) {
+                                this.renderError('데이터를 불러올 수 없습니다.');
+                                return;
+                            }
+                            const data = response.response.data;
+                            if (data === null || data === undefined) {
+                                this.renderError('자산 정보가 존재하지 않습니다.');
+                                return;
+                            }
+                            fx.each((fn) => this[fn](response), render);
+                        }
+                    )
+                )
+            ).catch(e => {
+                console.error('[UPS]', e);
+                this.renderError('데이터 로드 중 오류가 발생했습니다.');
+            });
+
+            // 5초 주기로 메트릭 갱신 시작
+            this.stopRefresh();
+            this._refreshIntervalId = setInterval(() => this.refreshMetrics(), this.refreshInterval);
+            console.log('[UPS] Metric refresh started (5s interval)');
+        }
+
         function hideDetail() {
+            this.stopRefresh();
             this.hidePopup();
+        }
+
+        function refreshMetricsOnly() {
+            fx.go(
+                Wkit.fetchData(this.page, 'metricLatest', { baseUrl: BASE_URL, assetKey: this._defaultAssetKey }),
+                (response) => {
+                    if (!response || !response.response) return;
+                    const data = response.response.data;
+                    if (data === null || data === undefined) return;
+                    this.renderMetrics(response);
+                }
+            ).catch(e => {
+                console.warn('[UPS] Metric refresh failed:', e);
+            });
+        }
+
+        function stopRefresh() {
+            if (this._refreshIntervalId) {
+                clearInterval(this._refreshIntervalId);
+                this._refreshIntervalId = null;
+                console.log('[UPS] Metric refresh stopped');
+            }
         }
 
         function getMultiLineChartOption(config, data) {
             const { xKey, styleMap } = config;
 
-            // styleMap 기반으로 series 생성
             const seriesData = Object.entries(styleMap).map(([key, style]) => ({
                 key,
                 name: style.label,
@@ -781,12 +833,8 @@
             return `rgba(${r}, ${g}, ${b}, ${alpha})`;
         }
 
-        function onPopupCreated({ chartSelector, events }) {
-            chartSelector && this.createChart(chartSelector);
-            events && this.bindPopupEvents(events);
-        }
-
         function onInstanceUnLoad() {
+            this.stopRefresh();
             this.destroyPopup();
             console.log('[UPS] Destroyed:', this.id);
         }

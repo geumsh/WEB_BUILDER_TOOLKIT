@@ -405,11 +405,11 @@
             } catch { return ''; }
         }
 
+        const BASE_URL = 'http://10.23.128.140:8811';
+
         function initComponent() {
             const { bind3DEvents, fetchData } = Wkit;
             const { applyShadowPopupMixin, applyEChartsMixin } = PopupMixin;
-
-            const BASE_URL = 'http://10.23.128.140:8811';
 
             this._defaultAssetKey = this.setter?.assetInfo?.assetKey || this.id;
 
