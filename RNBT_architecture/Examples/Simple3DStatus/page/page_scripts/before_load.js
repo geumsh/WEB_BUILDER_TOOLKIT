@@ -30,7 +30,9 @@ this.pageEventBusHandlers = {
                 datasetInfo,
                 fx.L.map((info) => ({ datasetName: info.datasetName, param: info.getParam(target.object, meshStatusConfig) })),
                 fx.L.filter(({ param }) => param),
-                fx.each(({ datasetName, param }) => Wkit.fetchData(this, datasetName, param).then(console.log).catch(console.error))
+                fx.L.map(({ datasetName, param }) => Wkit.fetchData(this, datasetName, param).catch((err) => (console.warn(err), { response: { data: {} } }))),
+                fx.each(({ response: { data } }) => showAlert(
+                    `Data ID : ${data.id}, Label : ${data.label}, Status: ${data.status}, Color: ${data.color}`))
             ))
         )
 
@@ -64,3 +66,40 @@ this.raycastingEvents = withSelector(this.appendElement, 'canvas', canvas =>
 );
 
 console.log('[Page] before_load - 3D event handlers and raycasting initialized');
+
+// ======================
+// SWEETALERT2 HELPERS
+// ======================
+
+async function loadSweetAlert() {
+    if (window.Swal) return;
+
+    await loadCSS('https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css');
+    await loadScript('https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.all.min.js');
+}
+
+async function showAlert(message) {
+    await loadSweetAlert();
+    Swal.fire(message);
+}
+
+function loadScript(src) {
+    return new Promise((resolve, reject) => {
+        const script = document.createElement('script');
+        script.src = src;
+        script.onload = resolve;
+        script.onerror = reject;
+        document.head.appendChild(script);
+    });
+}
+
+function loadCSS(href) {
+    return new Promise((resolve, reject) => {
+        const link = document.createElement('link');
+        link.rel = 'stylesheet';
+        link.href = href;
+        link.onload = resolve;
+        link.onerror = reject;
+        document.head.appendChild(link);
+    });
+}
