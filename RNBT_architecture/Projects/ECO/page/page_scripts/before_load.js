@@ -17,7 +17,7 @@ const { onEventBusHandlers, initThreeRaycasting, withSelector } = Wkit;
 // EVENT BUS HANDLERS
 // ======================
 
-this.eventBusHandlers = {
+this.pageEventBusHandlers = {
     // ─────────────────────────────────────────
     // 3D 클릭 이벤트 (3D 팝업 컴포넌트 공통)
     // ─────────────────────────────────────────
@@ -40,7 +40,7 @@ this.eventBusHandlers = {
     },
 };
 
-onEventBusHandlers(this.eventBusHandlers);
+onEventBusHandlers(this.pageEventBusHandlers);
 
 // ======================
 // 3D RAYCASTING SETUP

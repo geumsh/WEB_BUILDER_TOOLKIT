@@ -11,10 +11,10 @@
 const { onEventBusHandlers } = Wkit;
 
 // ======================
-// CURRENT PARAMS STATE
+// PAGE PARAMS STATE
 // ======================
 
-this.currentParams = {
+this.pageParams = {
     tableData: { category: 'all' },
     chartData: { period: '7d' }
 };
@@ -47,12 +47,12 @@ this.pageEventBusHandlers = {
         const category = event.target.value;
         console.log('[Page] Filter changed:', category);
 
-        this.currentParams.tableData = { category };
+        this.pageParams.tableData = { category };
 
         GlobalDataPublisher.fetchAndPublish(
             'tableData',
             this,
-            this.currentParams.tableData
+            this.pageParams.tableData
         );
     },
 
@@ -63,12 +63,12 @@ this.pageEventBusHandlers = {
         const period = event.target.value;
         console.log('[Page] Period changed:', period);
 
-        this.currentParams.chartData = { period };
+        this.pageParams.chartData = { period };
 
         GlobalDataPublisher.fetchAndPublish(
             'chartData',
             this,
-            this.currentParams.chartData
+            this.pageParams.chartData
         );
     }
 };

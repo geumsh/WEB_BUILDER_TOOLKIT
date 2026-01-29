@@ -50,7 +50,7 @@ fx.go(
     this.pageDataMappings,
     each(GlobalDataPublisher.registerMapping),
     each(({ topic }) => {
-        const params = this.currentParams?.[topic] || {};
+        const params = this.pageParams?.[topic] || {};
         GlobalDataPublisher.fetchAndPublish(topic, this, params)
             .catch(err => console.error(`[fetchAndPublish:${topic}]`, err));
     })
@@ -60,15 +60,15 @@ fx.go(
 // INTERVAL MANAGEMENT
 // ======================
 
-this.refreshIntervals = {};
+this.pageIntervals = {};
 
 this.startAllIntervals = () => {
     fx.go(
         this.pageDataMappings,
         each(({ topic, refreshInterval }) => {
             if (refreshInterval) {
-                this.refreshIntervals[topic] = setInterval(() => {
-                    const params = this.currentParams?.[topic] || {};
+                this.pageIntervals[topic] = setInterval(() => {
+                    const params = this.pageParams?.[topic] || {};
                     GlobalDataPublisher.fetchAndPublish(topic, this, params)
                         .catch(err => console.error(`[fetchAndPublish:${topic}]`, err));
                 }, refreshInterval);
@@ -80,7 +80,7 @@ this.startAllIntervals = () => {
 
 this.stopAllIntervals = () => {
     fx.go(
-        Object.values(this.refreshIntervals || {}),
+        Object.values(this.pageIntervals || {}),
         each(clearInterval)
     );
     console.log('[Page] Auto-refresh intervals stopped');

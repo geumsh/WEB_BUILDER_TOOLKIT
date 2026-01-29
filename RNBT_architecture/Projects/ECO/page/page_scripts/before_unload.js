@@ -28,14 +28,14 @@ function onPageUnLoad() {
 // ======================
 
 function clearGlobalDataPublisher() {
-    if (this.globalDataMappings) {
+    if (this.pageDataMappings) {
         go(
-            this.globalDataMappings,
+            this.pageDataMappings,
             each(({ topic }) => GlobalDataPublisher.unregisterMapping(topic))
         );
-        this.globalDataMappings = null;
+        this.pageDataMappings = null;
     }
-    this.currentParams = null;
+    this.pageParams = null;
 }
 
 // ======================
@@ -46,7 +46,7 @@ function clearIntervals() {
     if (this.stopAllIntervals) {
         this.stopAllIntervals();
     }
-    this.refreshIntervals = null;
+    this.pageIntervals = null;
 }
 
 // ======================
@@ -54,8 +54,8 @@ function clearIntervals() {
 // ======================
 
 function clearEventBus() {
-    offEventBusHandlers.call(this, this.eventBusHandlers);
-    this.eventBusHandlers = null;
+    offEventBusHandlers.call(this, this.pageEventBusHandlers);
+    this.pageEventBusHandlers = null;
 }
 
 // ======================

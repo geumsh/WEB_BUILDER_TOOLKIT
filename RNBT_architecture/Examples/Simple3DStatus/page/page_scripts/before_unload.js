@@ -21,7 +21,7 @@ const { each } = fx;
 if (this.stopAllIntervals) {
     this.stopAllIntervals();
 }
-this.refreshIntervals = null;
+this.pageIntervals = null;
 this.startAllIntervals = null;
 this.stopAllIntervals = null;
 
@@ -46,7 +46,7 @@ if (this.pageDataMappings) {
     this.pageDataMappings = null;
 }
 
-this.currentParams = null;
+this.pageParams = null;
 
 // ======================
 // 3D RAYCASTING CLEANUP

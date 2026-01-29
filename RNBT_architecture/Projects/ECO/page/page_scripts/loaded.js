@@ -3,8 +3,8 @@
  * ECO (Energy & Cooling Operations) Dashboard
  *
  * Responsibilities:
- * - 데이터셋 정의 (globalDataMappings)
- * - Param 관리 (currentParams)
+ * - 데이터셋 정의 (pageDataMappings)
+ * - Param 관리 (pageParams)
  * - GlobalDataPublisher로 데이터 발행
  * - 구독자(컴포넌트)에게 데이터 전파
  *
@@ -21,7 +21,7 @@ const BASE_URL = '10.23.128.125:4004';
 // DATA MAPPINGS (Asset API v1)
 // ======================
 
-this.globalDataMappings = [
+this.pageDataMappings = [
     {
         topic: 'assetList',
         datasetInfo: {
@@ -47,13 +47,13 @@ this.globalDataMappings = [
 // PARAM MANAGEMENT
 // ======================
 
-this.currentParams = {};
+this.pageParams = {};
 
 // 매핑 등록 + 초기 파라미터 설정 + 초기 데이터 발행
 fx.go(
-    this.globalDataMappings,
+    this.pageDataMappings,
     each(GlobalDataPublisher.registerMapping),
-    each(({ topic }) => this.currentParams[topic] = {}),
+    each(({ topic }) => this.pageParams[topic] = {}),
     each(({ topic }) =>
         GlobalDataPublisher.fetchAndPublish(topic, this)
             .catch(err => console.error(`[fetchAndPublish:${topic}]`, err))
@@ -70,17 +70,17 @@ fx.go(
 // ======================
 
 this.startAllIntervals = () => {
-    this.refreshIntervals = {};
+    this.pageIntervals = {};
 
     fx.go(
-        this.globalDataMappings,
+        this.pageDataMappings,
         each(({ topic, refreshInterval }) => {
             if (refreshInterval) {
-                this.refreshIntervals[topic] = setInterval(() => {
+                this.pageIntervals[topic] = setInterval(() => {
                     GlobalDataPublisher.fetchAndPublish(
                         topic,
                         this,
-                        this.currentParams[topic] || {}
+                        this.pageParams[topic] || {}
                     ).catch(err => console.error(`[fetchAndPublish:${topic}]`, err));
                 }, refreshInterval);
             }
@@ -90,7 +90,7 @@ this.startAllIntervals = () => {
 
 this.stopAllIntervals = () => {
     fx.go(
-        Object.values(this.refreshIntervals || {}),
+        Object.values(this.pageIntervals || {}),
         each(interval => clearInterval(interval))
     );
 };

@@ -49,6 +49,45 @@ each(GlobalDataPublisher.fetchAndPublish);   // 3개 전체를 다시 fetch
 // => userInfo, menuList가 2번 register + 2번 fetch됨
 ```
 
+### currentParams 덮어쓰기
+
+```javascript
+// Master before_load.js
+this.currentParams = {
+    tasks: { status: 'active' },
+    activity: { limit: 50 }
+};
+
+// Page loaded.js (Master 이후 실행)
+this.currentParams = {};  // ← Master의 tasks, activity 전부 소실
+this.currentParams.equipmentStatus = {};
+```
+
+Page가 `this.currentParams = {}`로 초기화하면 Master가 설정한 파라미터가 **전부 덮어쓰기**된다.
+Master의 `fetchAndPublish`가 빈 파라미터로 동작하여 잘못된 API 호출이 발생한다.
+
+### refreshIntervals 정리 누락
+
+```javascript
+// Master loaded.js
+this.refreshIntervals = {};
+this.refreshIntervals.userInfo = setInterval(() => {
+    GlobalDataPublisher.fetchAndPublish('userInfo', this, {});
+}, 30000);
+
+// Page loaded.js (Master 이후 실행)
+this.refreshIntervals = {};  // ← Master의 userInfo interval ID 소실
+this.refreshIntervals.equipmentStatus = setInterval(() => { ... }, 5000);
+
+// Page before_unload.js
+Object.values(this.refreshIntervals).forEach(clearInterval);
+// equipmentStatus만 정리됨
+// userInfo의 interval ID를 잃어 clearInterval 불가 → 페이지 이탈 후에도 계속 실행
+```
+
+Page가 `this.refreshIntervals = {}`로 초기화하면 Master의 interval ID가 유실되어 **clearInterval이 불가능**해진다.
+정리되지 않은 interval은 메모리 누수와 불필요한 API 호출을 유발한다.
+
 ---
 
 ## 해결: 속성 이름 분리
@@ -121,16 +160,62 @@ if (this.pageDataMappings) {
 }
 ```
 
+### currentParams
+
+```javascript
+// Master before_load.js
+this.masterParams = {
+    tasks: { status: 'active' },
+    activity: { limit: 50 }
+};
+
+// Page before_load.js
+this.pageParams = {
+    equipmentStatus: {}
+};
+```
+
+```javascript
+// Master before_unload.js
+this.masterParams = null;
+
+// Page before_unload.js
+this.pageParams = null;
+```
+
+### refreshIntervals
+
+```javascript
+// Master loaded.js
+this.masterIntervals = {};
+this.masterIntervals.userInfo = setInterval(() => { ... }, 30000);
+
+// Page loaded.js
+this.pageIntervals = {};
+this.pageIntervals.equipmentStatus = setInterval(() => { ... }, 5000);
+```
+
+```javascript
+// Master before_unload.js
+Object.values(this.masterIntervals || {}).forEach(clearInterval);
+this.masterIntervals = null;
+
+// Page before_unload.js
+Object.values(this.pageIntervals || {}).forEach(clearInterval);
+this.pageIntervals = null;
+```
+
 ---
 
 ## 네이밍 규칙
 
-| 스코프 | eventBusHandlers | globalDataMappings |
-|--------|------------------|--------------------|
-| Master | `masterEventBusHandlers` | `masterDataMappings` |
-| Page   | `pageEventBusHandlers`   | `pageDataMappings`   |
+| 스코프 | eventBusHandlers | globalDataMappings | currentParams | refreshIntervals |
+|--------|------------------|--------------------|---------------|------------------|
+| Master | `masterEventBusHandlers` | `masterDataMappings` | `masterParams` | `masterIntervals` |
+| Page   | `pageEventBusHandlers`   | `pageDataMappings`   | `pageParams`   | `pageIntervals`   |
 
-`currentParams`, `refreshIntervals` 등은 Master에서 사용하지 않으므로 이름 충돌이 없다. 분리 불필요.
+`currentParams`와 `refreshIntervals`도 Master와 Page가 모두 사용할 수 있다.
+예: Master에서 `this.currentParams = { tasks: {...} }`를 설정한 뒤, Page에서 `this.currentParams = {}`로 초기화하면 Master의 값이 덮어쓰기된다.
 
 ### 원칙
 
@@ -140,11 +225,18 @@ if (this.pageDataMappings) {
 
 ---
 
-## 왜 중복 등록이 문제인가
+## 왜 이름 충돌이 문제인가
 
-- `Weventbus.on(eventName, handler)`은 리스너 배열에 push하는 방식이다
-- 같은 이벤트에 같은 핸들러를 2번 `on`하면 **이벤트 발생 시 2번 실행**된다
+| 속성 | 충돌 유형 | 결과 |
+|------|----------|------|
+| `eventBusHandlers` | 이중 등록 | 같은 핸들러가 2번 실행 |
+| `globalDataMappings` | 이중 등록 | 같은 mapping이 2번 register + 2번 fetch |
+| `currentParams` | 덮어쓰기 | Master 파라미터 소실 → 잘못된 API 호출 |
+| `refreshIntervals` | 덮어쓰기 | Master interval ID 유실 → clearInterval 불가, 메모리 누수 |
+
+- `Weventbus.on(eventName, handler)`은 리스너 배열에 push하는 방식이므로, 같은 핸들러를 2번 `on`하면 **이벤트 발생 시 2번 실행**된다
 - `GlobalDataPublisher.registerMapping`도 동일하게 중복 등록되면 불필요한 fetch가 발생한다
+- `currentParams`, `refreshIntervals`는 `= {}`로 재초기화하면 기존 값이 **완전히 소실**된다
 
 ---
 
