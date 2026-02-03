@@ -83,13 +83,24 @@ function initComponent() {
   this.formatTimestamp = formatTimestamp.bind(this);
 
   // ======================
-  // 3. Data Config
+  // 3. Selectors
+  // ======================
+  this.selectors = {
+    name: '.crac-name',
+    zone: '.crac-zone',
+    status: '.crac-status',
+    timestamp: '.section-timestamp',
+    chartContainer: '.chart-container',
+  };
+
+  // ======================
+  // 4. Data Config
   // ======================
   this.baseInfoConfig = [
-    { key: 'name', selector: '.crac-name' },
-    { key: 'locationLabel', selector: '.crac-zone' },
-    { key: 'statusType', selector: '.crac-status', transform: this.statusTypeToLabel },
-    { key: 'statusType', selector: '.crac-status', dataAttr: 'status', transform: this.statusTypeToDataAttr },
+    { key: 'name', selector: this.selectors.name },
+    { key: 'locationLabel', selector: this.selectors.zone },
+    { key: 'statusType', selector: this.selectors.status, transform: this.statusTypeToLabel },
+    { key: 'statusType', selector: this.selectors.status, dataAttr: 'status', transform: this.statusTypeToDataAttr },
   ];
 
   this.infoTableConfig = [
@@ -101,11 +112,11 @@ function initComponent() {
     { key: 'installDate', selector: '.info-install-date', transform: this.formatDate },
   ];
 
-  this.timestampSelector = '.section-timestamp';
+  this.timestampSelector = this.selectors.timestamp;
   this.metricConfig = METRIC_CONFIG;
 
   // ======================
-  // 4. 렌더링 함수 바인딩
+  // 5. 렌더링 함수 바인딩
   // ======================
   this.renderBasicInfo = renderBasicInfo.bind(this);
   this.renderStatusCards = renderStatusCards.bind(this);
@@ -114,13 +125,13 @@ function initComponent() {
   this.renderError = renderError.bind(this);
 
   // ======================
-  // 5. Refresh Config
+  // 6. Refresh Config
   // ======================
   this.refreshInterval = 5000;
   this._refreshIntervalId = null;
 
   // ======================
-  // 6. Public Methods
+  // 7. Public Methods
   // ======================
   this.showDetail = showDetail.bind(this);
   this.hideDetail = hideDetail.bind(this);
@@ -128,7 +139,7 @@ function initComponent() {
   this.stopRefresh = stopRefresh.bind(this);
 
   // ======================
-  // 7. 이벤트 발행
+  // 8. 이벤트 발행
   // ======================
   this.customEvents = {
     click: '@assetClicked',
@@ -137,17 +148,17 @@ function initComponent() {
   bind3DEvents(this, this.customEvents);
 
   // ======================
-  // 8. Template Config
+  // 9. Template Config
   // ======================
   this.templateConfig = {
     popup: 'popup-crac',
   };
 
   // ======================
-  // 9. Popup (template 기반)
+  // 10. Popup (template 기반)
   // ======================
   this.popupCreatedConfig = {
-    chartSelector: '.chart-container',
+    chartSelector: this.selectors.chartContainer,
     events: {
       click: {
         '.close-btn': () => this.hideDetail(),
@@ -511,7 +522,7 @@ function renderTrendChart({ response }) {
     ],
   };
 
-  this.updateChart('.chart-container', option);
+  this.updateChart(this.selectors.chartContainer, option);
 }
 
 // ======================
@@ -519,9 +530,9 @@ function renderTrendChart({ response }) {
 // ======================
 
 function renderError(message) {
-  const nameEl = this.popupQuery('.crac-name');
-  const zoneEl = this.popupQuery('.crac-zone');
-  const statusEl = this.popupQuery('.crac-status');
+  const nameEl = this.popupQuery(this.selectors.name);
+  const zoneEl = this.popupQuery(this.selectors.zone);
+  const statusEl = this.popupQuery(this.selectors.status);
 
   if (nameEl) nameEl.textContent = '데이터 없음';
   if (zoneEl) zoneEl.textContent = message;

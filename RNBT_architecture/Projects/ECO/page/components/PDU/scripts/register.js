@@ -74,13 +74,23 @@ function initComponent() {
   this.formatDate = formatDate.bind(this);
 
   // ======================
-  // 3. Data Config
+  // 3. Selectors
+  // ======================
+  this.selectors = {
+    name: '.pdu-name',
+    zone: '.pdu-zone',
+    status: '.pdu-status',
+    chartContainer: '.chart-container',
+  };
+
+  // ======================
+  // 4. Data Config
   // ======================
   this.baseInfoConfig = [
-    { key: 'name', selector: '.pdu-name' },
-    { key: 'locationLabel', selector: '.pdu-zone' },
-    { key: 'statusType', selector: '.pdu-status', transform: this.statusTypeToLabel },
-    { key: 'statusType', selector: '.pdu-status', dataAttr: 'status', transform: this.statusTypeToDataAttr },
+    { key: 'name', selector: this.selectors.name },
+    { key: 'locationLabel', selector: this.selectors.zone },
+    { key: 'statusType', selector: this.selectors.status, transform: this.statusTypeToLabel },
+    { key: 'statusType', selector: this.selectors.status, dataAttr: 'status', transform: this.statusTypeToDataAttr },
   ];
 
   this.infoTableConfig = [
@@ -93,21 +103,21 @@ function initComponent() {
   ];
 
   // ======================
-  // 4. 렌더링 함수 바인딩
+  // 5. 렌더링 함수 바인딩
   // ======================
   this.renderBasicInfo = renderBasicInfo.bind(this);
   this.renderTrendChart = renderTrendChart.bind(this);
   this.renderError = renderError.bind(this);
 
   // ======================
-  // 5. Public Methods
+  // 6. Public Methods
   // ======================
   this.showDetail = showDetail.bind(this);
   this.hideDetail = hideDetail.bind(this);
   this._switchTab = switchTab.bind(this);
 
   // ======================
-  // 6. 이벤트 발행
+  // 7. 이벤트 발행
   // ======================
   this.customEvents = {
     click: '@assetClicked',
@@ -116,17 +126,17 @@ function initComponent() {
   bind3DEvents(this, this.customEvents);
 
   // ======================
-  // 7. Template Config
+  // 8. Template Config
   // ======================
   this.templateConfig = {
     popup: 'popup-pdu',
   };
 
   // ======================
-  // 8. Popup (template 기반)
+  // 9. Popup (template 기반)
   // ======================
   this.popupCreatedConfig = {
-    chartSelector: '.chart-container',
+    chartSelector: this.selectors.chartContainer,
     events: {
       click: {
         '.close-btn': () => this.hideDetail(),
@@ -391,7 +401,7 @@ function renderTrendChart({ response }) {
     ],
   };
 
-  this.updateChart('.chart-container', option);
+  this.updateChart(this.selectors.chartContainer, option);
 }
 
 // ======================
@@ -399,9 +409,9 @@ function renderTrendChart({ response }) {
 // ======================
 
 function renderError(message) {
-  const nameEl = this.popupQuery('.pdu-name');
-  const zoneEl = this.popupQuery('.pdu-zone');
-  const statusEl = this.popupQuery('.pdu-status');
+  const nameEl = this.popupQuery(this.selectors.name);
+  const zoneEl = this.popupQuery(this.selectors.zone);
+  const statusEl = this.popupQuery(this.selectors.status);
 
   if (nameEl) nameEl.textContent = '데이터 없음';
   if (zoneEl) zoneEl.textContent = message;

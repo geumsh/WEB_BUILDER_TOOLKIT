@@ -86,13 +86,24 @@ function initComponent() {
   this.formatTimestamp = formatTimestamp.bind(this);
 
   // ======================
-  // 3. Data Config
+  // 3. Selectors
+  // ======================
+  this.selectors = {
+    name: '.sensor-name',
+    zone: '.sensor-zone',
+    status: '.sensor-status',
+    timestamp: '.section-timestamp',
+    chartContainer: '.chart-container',
+  };
+
+  // ======================
+  // 4. Data Config
   // ======================
   this.baseInfoConfig = [
-    { key: 'name', selector: '.sensor-name' },
-    { key: 'locationLabel', selector: '.sensor-zone' },
-    { key: 'statusType', selector: '.sensor-status', transform: this.statusTypeToLabel },
-    { key: 'statusType', selector: '.sensor-status', dataAttr: 'status', transform: this.statusTypeToDataAttr },
+    { key: 'name', selector: this.selectors.name },
+    { key: 'locationLabel', selector: this.selectors.zone },
+    { key: 'statusType', selector: this.selectors.status, transform: this.statusTypeToLabel },
+    { key: 'statusType', selector: this.selectors.status, dataAttr: 'status', transform: this.statusTypeToDataAttr },
   ];
 
   this.infoTableConfig = [
@@ -105,7 +116,7 @@ function initComponent() {
   ];
 
   // ======================
-  // 4. 렌더링 함수 바인딩
+  // 5. 렌더링 함수 바인딩
   // ======================
   this.renderBasicInfo = renderBasicInfo.bind(this);
   this.renderStatusCards = renderStatusCards.bind(this);
@@ -113,13 +124,13 @@ function initComponent() {
   this.renderError = renderError.bind(this);
 
   // ======================
-  // 5. Refresh Config (5초 갱신)
+  // 6. Refresh Config (5초 갱신)
   // ======================
   this.refreshInterval = 5000;
   this._refreshIntervalId = null;
 
   // ======================
-  // 6. Public Methods
+  // 7. Public Methods
   // ======================
   this.showDetail = showDetail.bind(this);
   this.hideDetail = hideDetail.bind(this);
@@ -127,7 +138,7 @@ function initComponent() {
   this.stopRefresh = stopRefresh.bind(this);
 
   // ======================
-  // 7. 이벤트 발행
+  // 8. 이벤트 발행
   // ======================
   this.customEvents = {
     click: '@assetClicked',
@@ -136,17 +147,17 @@ function initComponent() {
   bind3DEvents(this, this.customEvents);
 
   // ======================
-  // 8. Template Config
+  // 9. Template Config
   // ======================
   this.templateConfig = {
     popup: 'popup-sensor',
   };
 
   // ======================
-  // 9. Popup (template 기반)
+  // 10. Popup (template 기반)
   // ======================
   this.popupCreatedConfig = {
-    chartSelector: '.chart-container',
+    chartSelector: this.selectors.chartContainer,
     events: {
       click: {
         '.close-btn': () => this.hideDetail(),
@@ -353,7 +364,7 @@ function renderBasicInfo({ response }) {
 
 function renderStatusCards({ response }) {
   const { data } = response;
-  const timestampEl = this.popupQuery('.section-timestamp');
+  const timestampEl = this.popupQuery(this.selectors.timestamp);
 
   if (!data || !Array.isArray(data) || data.length === 0) {
     console.warn('[TempHumiditySensor] renderStatusCards: no data');
@@ -491,7 +502,7 @@ function renderTrendChart({ response }) {
     ],
   };
 
-  this.updateChart('.chart-container', option);
+  this.updateChart(this.selectors.chartContainer, option);
 }
 
 // ======================
@@ -499,9 +510,9 @@ function renderTrendChart({ response }) {
 // ======================
 
 function renderError(message) {
-  const nameEl = this.popupQuery('.sensor-name');
-  const zoneEl = this.popupQuery('.sensor-zone');
-  const statusEl = this.popupQuery('.sensor-status');
+  const nameEl = this.popupQuery(this.selectors.name);
+  const zoneEl = this.popupQuery(this.selectors.zone);
+  const statusEl = this.popupQuery(this.selectors.status);
 
   if (nameEl) nameEl.textContent = '데이터 없음';
   if (zoneEl) zoneEl.textContent = message;
