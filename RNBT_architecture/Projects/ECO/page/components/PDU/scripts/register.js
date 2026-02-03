@@ -63,10 +63,10 @@ function initComponent() {
 
   // 데이터셋 정의
   this.datasetInfo = [
-    { datasetName: 'assetDetailUnified', render: ['renderAssetInfo', 'renderProperties'] },
-    { datasetName: 'metricLatest', render: ['renderMetrics'] },
-    // { datasetName: 'pduCircuits', render: ['renderCircuitTable'] },
-    // { datasetName: 'pduHistory', render: ['renderPowerChart'] },
+    { datasetName: 'assetDetailUnified', params: { baseUrl: BASE_URL, assetKey: this._defaultAssetKey, locale: 'ko' }, render: ['renderAssetInfo', 'renderProperties'] },
+    { datasetName: 'metricLatest', params: { baseUrl: BASE_URL, assetKey: this._defaultAssetKey }, render: ['renderMetrics'] },
+    // { datasetName: 'pduCircuits', params: { baseUrl: BASE_URL, assetKey: this._defaultAssetKey }, render: ['renderCircuitTable'] },
+    // { datasetName: 'pduHistory', params: { baseUrl: BASE_URL, assetKey: this._defaultAssetKey }, render: ['renderPowerChart'] },
   ];
 
   // ======================
@@ -226,9 +226,9 @@ function showDetail() {
 
   fx.go(
     this.datasetInfo,
-    fx.each(({ datasetName, render }) =>
+    fx.each(({ datasetName, params, render }) =>
       fx.go(
-        fetchData(this.page, datasetName, { baseUrl: BASE_URL, assetKey: this._defaultAssetKey, locale: 'ko' }),
+        fetchData(this.page, datasetName, params),
         (response) => {
           if (!response || !response.response) {
             this.renderError('데이터를 불러올 수 없습니다.');
@@ -260,8 +260,9 @@ function hideDetail() {
 }
 
 function refreshMetrics() {
+  const metricInfo = this.datasetInfo.find(d => d.datasetName === 'metricLatest');
   fx.go(
-    fetchData(this.page, 'metricLatest', { baseUrl: BASE_URL, assetKey: this._defaultAssetKey }),
+    fetchData(this.page, 'metricLatest', metricInfo.params),
     (response) => {
       if (!response || !response.response) return;
       const data = response.response.data;

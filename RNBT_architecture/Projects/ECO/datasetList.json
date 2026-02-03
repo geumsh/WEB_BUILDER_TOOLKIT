@@ -51,7 +51,7 @@
       "description": "Asset API v1 - 자산 목록 조회 (페이징)",
       "dataset_id": "ast-list-paged-001",
       "name": "assetListPaged",
-      "rest_api": "{\"url\":\"http://#{baseUrl}/api/v1/ast/la\",\"method\":\"POST\",\"headers\":{\"Content-Type\":\"application/json\"},\"body\":\"{\\\"page\\\":#{page},\\\"size\\\":#{size},\\\"filter\\\":{},\\\"sort\\\":[{\\\"field\\\":\\\"createdAt\\\",\\\"direction\\\":\\\"DESC\\\"}]}\"}"
+      "rest_api": "{\"url\":\"http://#{baseUrl}/api/v1/ast/la\",\"method\":\"POST\",\"headers\":{\"Content-Type\":\"application/json\"},\"body\":\"{\\\"page\\\":\\\"#{page}\\\",\\\"size\\\":\\\"#{size}\\\",\\\"filter\\\":{},\\\"sort\\\":[{\\\"field\\\":\\\"createdAt\\\",\\\"direction\\\":\\\"DESC\\\"}]}\"}"
     },
     {
       "datasource": "",

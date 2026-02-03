@@ -72,9 +72,9 @@ function initComponent() {
 
   // 데이터셋 정의: 2개 API 병렬 호출
   this.datasetInfo = [
-    { datasetName: 'assetDetailUnified', render: ['renderAssetInfo', 'renderProperties'] },
-    { datasetName: 'metricLatest', render: ['renderMetrics'] },
-    // { datasetName: 'upsHistory', render: ['renderChart'] },   // 차트 (추후 활성화)
+    { datasetName: 'assetDetailUnified', params: { baseUrl: BASE_URL, assetKey: this._defaultAssetKey, locale: 'ko' }, render: ['renderAssetInfo', 'renderProperties'] },
+    { datasetName: 'metricLatest', params: { baseUrl: BASE_URL, assetKey: this._defaultAssetKey }, render: ['renderMetrics'] },
+    // { datasetName: 'upsHistory', params: { baseUrl: BASE_URL, assetKey: this._defaultAssetKey }, render: ['renderChart'] },   // 차트 (추후 활성화)
   ];
 
   // ======================
@@ -195,9 +195,9 @@ function showDetail() {
   this.showPopup();
   fx.go(
     this.datasetInfo,
-    fx.each(({ datasetName, render }) =>
+    fx.each(({ datasetName, params, render }) =>
       fx.go(
-        fetchData(this.page, datasetName, { baseUrl: BASE_URL, assetKey: this._defaultAssetKey, locale: 'ko' }),
+        fetchData(this.page, datasetName, params),
         (response) => {
           if (!response || !response.response) {
             this.renderError('데이터를 불러올 수 없습니다.');
@@ -229,8 +229,9 @@ function hideDetail() {
 }
 
 function refreshMetrics() {
+  const metricInfo = this.datasetInfo.find(d => d.datasetName === 'metricLatest');
   fx.go(
-    fetchData(this.page, 'metricLatest', { baseUrl: BASE_URL, assetKey: this._defaultAssetKey }),
+    fetchData(this.page, 'metricLatest', metricInfo.params),
     (response) => {
       if (!response || !response.response) return;
       const data = response.response.data;
