@@ -168,13 +168,13 @@ POST /api/v1/mhs/l
 
 | 항목 | 유형 | 미제공 사유 | 대응 방안 |
 |------|------|-----------|----------|
-| 배터리 사용률 (SOC, State of Charge: 배터리 잔존 충전량 비율) | 메트릭 | metricConfig에 `UPS.BATT_SOC` 코드 미정의. 장비가 직접 보고하는 SOC 메트릭이 없음 | metricConfig에 `UPS.BATT_SOC` 추가 + mock server |
-| 배터리 잔여시간 | 메트릭 | metricConfig에 `UPS.BATT_REMAIN_TIME` 코드 미정의. 장비가 직접 보고하는 잔여시간 메트릭이 없음 | metricConfig에 `UPS.BATT_REMAIN_TIME` 추가 + mock server |
-| 부하율 | 메트릭 | metricConfig에 `UPS.LOAD_RATE` 코드 미정의. 장비가 직접 보고하는 부하율 메트릭이 없음 (프론트 계산은 이론상 가능: OUTPUT_V × OUTPUT_A / 정격용량) | metricConfig에 `UPS.LOAD_RATE` 추가 + mock server |
-| 용도 | 속성 | `ast/gx` properties에 용도 관련 필드 미존재 | PropertyMeta에 용도 속성 추가 또는 하드코딩 |
-| 출력 상 | 속성 | `ast/gx` properties에 출력 상 관련 필드 미존재. `mdl/g` specJson 미확인 | PropertyMeta에 출력 상 속성 추가 또는 specJson 활용 |
-| UPS 타입 | 속성 | `ast/gx` properties에 UPS 토폴로지 필드 미존재. assetType="UPS"만 존재하며 하위 분류 없음 | PropertyMeta에 UPS 토폴로지 속성 추가 |
-| 배터리 구성 | 속성 | `ast/gx` properties에 배터리 종류 필드 미존재 | PropertyMeta에 배터리 종류 속성 추가 |
+| 배터리 사용률 (SOC, State of Charge: 배터리 잔존 충전량 비율) | 메트릭 | metricConfig에 `UPS.BATT_SOC` 코드 미정의. 장비가 직접 보고하는 SOC 메트릭이 없음 | metricConfig에 `UPS.BATT_SOC` 추가 + mock server. **대체**: 배터리 전압(`UPS.BATT_V`)으로 표시 |
+| 배터리 잔여시간 | 메트릭 | metricConfig에 `UPS.BATT_REMAIN_TIME` 코드 미정의. 장비가 직접 보고하는 잔여시간 메트릭이 없음 | metricConfig에 `UPS.BATT_REMAIN_TIME` 추가 + mock server. **대체**: 배터리 상태(`UPS.BATT_CHARGING`, `UPS.OUTPUT_ON_BATTERY`)로 표시 |
+| 부하율 | 메트릭 | metricConfig에 `UPS.LOAD_RATE` 코드 미정의. 장비가 직접 보고하는 부하율 메트릭이 없음 (프론트 계산은 이론상 가능: OUTPUT_V × OUTPUT_A / 정격용량) | metricConfig에 `UPS.LOAD_RATE` 추가 + mock server. **대체**: 출력전류(`UPS.OUTPUT_A_1~3`)로 표시 |
+| 용도 | 속성 | `ast/gx` properties에 용도 관련 필드 미존재 | PropertyMeta에 용도 속성 추가 또는 하드코딩. **대체**: 설명(`asset.description`)으로 표시 |
+| 출력 상 | 속성 | `ast/gx` properties에 출력 상 관련 필드 미존재. `mdl/g` specJson 미확인 | PropertyMeta에 출력 상 속성 추가 또는 specJson 활용. **대체**: 입출력 메트릭이 R/S/T 3상 구조이므로 "3상" 고정 표시 |
+| UPS 타입 | 속성 | `ast/gx` properties에 UPS 토폴로지 필드 미존재. assetType="UPS"만 존재하며 하위 분류 없음 | PropertyMeta에 UPS 토폴로지 속성 추가. **대체 불가**: 제거 권장 |
+| 배터리 구성 | 속성 | `ast/gx` properties에 배터리 종류 필드 미존재 | PropertyMeta에 배터리 종류 속성 추가. **대체 불가**: 제거 권장 |
 
 ---
 
