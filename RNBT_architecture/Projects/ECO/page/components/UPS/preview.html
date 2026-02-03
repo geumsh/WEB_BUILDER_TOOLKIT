@@ -222,28 +222,8 @@
         `;
 
         // ======================
-        // POWER STATUS CONFIG
+        // CONFIG는 initComponent 내부에서 this.config로 통합
         // ======================
-        const POWER_STATUS_CONFIG = {
-            batterySoc:   { label: '배터리 사용률',   unit: '%', metricCode: 'UPS.BATT_PCT', scale: 1.0 },
-            batteryTime:  { label: '배터리 잔여시간', unit: 'h', metricCode: null,          scale: 1.0 },  // API 미지원
-            loadRate:     { label: '부하율',         unit: '%', metricCode: 'UPS.LOAD_PCT', scale: 1.0 },
-            batteryVolt:  { label: '배터리 출력전압', unit: 'V', metricCode: 'UPS.BATT_V',   scale: 0.1 },
-        };
-
-        // ======================
-        // TAB CONFIG
-        // ======================
-        const TAB_CONFIG = {
-            current:   { label: '입/출력 전류',   unit: 'A',  inputCode: 'UPS.INPUT_A_AVG',  outputCode: 'UPS.OUTPUT_A_AVG' },
-            voltage:   { label: '입/출력 전압',   unit: 'V',  inputCode: 'UPS.INPUT_V_AVG',  outputCode: 'UPS.OUTPUT_V_AVG' },
-            frequency: { label: '입/출력 주파수', unit: 'Hz', inputCode: 'UPS.INPUT_F_AVG',  outputCode: 'UPS.OUTPUT_F_AVG' },
-        };
-
-        const CHART_COLORS = {
-            input: '#f59e0b',
-            output: '#22c55e',
-        };
 
         // ======================
         // MOCK IMPLEMENTATIONS
@@ -319,15 +299,21 @@
             'vdr-eaton': { name: 'Eaton' },
         };
 
-        // metricLatest 응답 (UPS.BATT_V만 사용)
+        // metricLatest 응답 (전력현황 4카드)
         const mockMetricData = {
             normal: [
+                { metricCode: 'UPS.BATT_PCT', eventedAt: new Date().toISOString(), valueType: 'NUMBER', valueNumber: 85 },
+                { metricCode: 'UPS.LOAD_PCT', eventedAt: new Date().toISOString(), valueType: 'NUMBER', valueNumber: 45 },
                 { metricCode: 'UPS.BATT_V', eventedAt: new Date().toISOString(), valueType: 'NUMBER', valueNumber: 5400 },
             ],
             warning: [
+                { metricCode: 'UPS.BATT_PCT', eventedAt: new Date().toISOString(), valueType: 'NUMBER', valueNumber: 65 },
+                { metricCode: 'UPS.LOAD_PCT', eventedAt: new Date().toISOString(), valueType: 'NUMBER', valueNumber: 72 },
                 { metricCode: 'UPS.BATT_V', eventedAt: new Date().toISOString(), valueType: 'NUMBER', valueNumber: 5100 },
             ],
             critical: [
+                { metricCode: 'UPS.BATT_PCT', eventedAt: new Date().toISOString(), valueType: 'NUMBER', valueNumber: 25 },
+                { metricCode: 'UPS.LOAD_PCT', eventedAt: new Date().toISOString(), valueType: 'NUMBER', valueNumber: 95 },
                 { metricCode: 'UPS.BATT_V', eventedAt: new Date().toISOString(), valueType: 'NUMBER', valueNumber: 3200 },
             ]
         };
@@ -515,21 +501,128 @@
             const { bind3DEvents, fetchData } = Wkit;
             const { applyShadowPopupMixin, applyEChartsMixin } = PopupMixin;
 
+            // ======================
+            // 1. 내부 상태
+            // ======================
             this._defaultAssetKey = this.setter?.assetInfo?.assetKey || this.id;
             this._baseUrl = BASE_URL;
             this._trendData = null;
-            this._activeTab = 'current';
+            this._activeTab = 'voltage';
+            this._refreshIntervalId = null;
 
+            // ======================
+            // 2. 변환 함수 바인딩
+            // ======================
+            this.statusTypeToLabel = statusTypeToLabel.bind(this);
+            this.statusTypeToDataAttr = statusTypeToDataAttr.bind(this);
+            this.formatDate = formatDate.bind(this);
+            this.formatTimestamp = formatTimestamp.bind(this);
+
+            // ======================
+            // 3. Config 통합 (this.config로 모든 설정 접근)
+            // ======================
+            this.config = {
+                // 데이터셋 이름
+                datasetNames: {
+                    assetDetail: 'assetDetailUnified',
+                    metricLatest: 'metricLatest',
+                    metricHistory: 'metricHistoryStats',
+                    modelDetail: 'modelDetail',
+                    vendorDetail: 'vendorDetail',
+                },
+
+                // 템플릿
+                template: {
+                    popup: 'popup-ups',
+                },
+
+                // 이벤트
+                events: {
+                    click: '@assetClicked',
+                },
+
+                // 갱신 주기
+                refresh: {
+                    interval: 5000,
+                },
+
+                // ========================
+                // UI 영역별 설정
+                // ========================
+
+                // 팝업 헤더 영역
+                header: {
+                    fields: [
+                        { key: 'name', selector: '.ups-name' },
+                        { key: 'locationLabel', selector: '.ups-zone' },
+                        { key: 'statusType', selector: '.ups-status', transform: this.statusTypeToLabel },
+                        { key: 'statusType', selector: '.ups-status', dataAttr: 'status', transform: this.statusTypeToDataAttr },
+                    ],
+                },
+
+                // 기본정보 테이블 영역
+                infoTable: {
+                    fields: [
+                        { key: 'name', selector: '.info-name' },
+                        { key: 'assetType', selector: '.info-type' },
+                        { key: 'usageLabel', selector: '.info-usage', fallback: '-' },
+                        { key: 'locationLabel', selector: '.info-location' },
+                        { key: 'statusType', selector: '.info-status', transform: this.statusTypeToLabel },
+                        { key: 'installDate', selector: '.info-install-date', transform: this.formatDate },
+                    ],
+                    chain: {
+                        model: '.info-model',
+                        vendor: '.info-vendor',
+                    },
+                },
+
+                // 전력현황 영역 (4카드)
+                powerStatus: {
+                    metrics: {
+                        batterySoc:   { label: '배터리 사용률',   unit: '%', metricCode: 'UPS.BATT_PCT', scale: 1.0 },
+                        batteryTime:  { label: '배터리 잔여시간', unit: 'h', metricCode: null,          scale: 1.0 },  // API 미지원
+                        loadRate:     { label: '부하율',         unit: '%', metricCode: 'UPS.LOAD_PCT', scale: 1.0 },
+                        batteryVolt:  { label: '배터리 출력전압', unit: 'V', metricCode: 'UPS.BATT_V',   scale: 0.1 },
+                    },
+                    selectors: {
+                        card: '.power-card',
+                        value: '.power-card-value',
+                        timestamp: '.section-timestamp',
+                    },
+                },
+
+                // 트렌드 차트 영역 (3탭)
+                chart: {
+                    tabs: {
+                        current:   { label: '입/출력 전류',   unit: 'A',  inputCode: 'UPS.INPUT_A_AVG',  outputCode: 'UPS.OUTPUT_A_AVG' },
+                        voltage:   { label: '입/출력 전압',   unit: 'V',  inputCode: 'UPS.INPUT_V_AVG',  outputCode: 'UPS.OUTPUT_V_AVG' },
+                        frequency: { label: '입/출력 주파수', unit: 'Hz', inputCode: 'UPS.INPUT_F_AVG',  outputCode: 'UPS.OUTPUT_F_AVG' },
+                    },
+                    series: {
+                        input:  { label: '입력', color: '#f59e0b' },
+                        output: { label: '출력', color: '#22c55e' },
+                    },
+                    selectors: {
+                        container: '.chart-container',
+                        tabBtn: '.tab-btn',
+                    },
+                },
+            };
+
+            // ======================
+            // 4. 데이터셋 정의
+            // ======================
+            const { datasetNames } = this.config;
             this.datasetInfo = [
-                { datasetName: 'assetDetailUnified', param: { baseUrl: this._baseUrl, assetKey: this._defaultAssetKey, locale: 'ko' }, render: ['renderBasicInfo'] },
-                { datasetName: 'metricLatest', param: { baseUrl: this._baseUrl, assetKey: this._defaultAssetKey }, render: ['renderPowerStatus'] },
+                { datasetName: datasetNames.assetDetail, param: { baseUrl: this._baseUrl, assetKey: this._defaultAssetKey, locale: 'ko' }, render: ['renderBasicInfo'] },
+                { datasetName: datasetNames.metricLatest, param: { baseUrl: this._baseUrl, assetKey: this._defaultAssetKey }, render: ['renderPowerStatus'] },
                 {
-                    datasetName: 'metricHistoryStats',
+                    datasetName: datasetNames.metricHistory,
                     param: {
                         baseUrl: this._baseUrl,
                         assetKey: this._defaultAssetKey,
                         interval: '1h',
-                        timeRange: 24 * 60 * 60 * 1000, // 24시간 (ms)
+                        timeRange: 24 * 60 * 60 * 1000,
                         metricCodes: [
                             'UPS.INPUT_A_AVG', 'UPS.OUTPUT_A_AVG',
                             'UPS.INPUT_V_AVG', 'UPS.OUTPUT_V_AVG',
@@ -541,39 +634,32 @@
                 },
             ];
 
-            this.statusTypeToLabel = statusTypeToLabel.bind(this);
-            this.statusTypeToDataAttr = statusTypeToDataAttr.bind(this);
-            this.formatDate = formatDate.bind(this);
-            this.formatTimestamp = formatTimestamp.bind(this);
-
-            this.baseInfoConfig = [
-                { key: 'name', selector: '.ups-name' },
-                { key: 'locationLabel', selector: '.ups-zone' },
-                { key: 'statusType', selector: '.ups-status', transform: this.statusTypeToLabel },
-                { key: 'statusType', selector: '.ups-status', dataAttr: 'status', transform: this.statusTypeToDataAttr },
-            ];
-
+            // ======================
+            // 5. 렌더링 함수 바인딩
+            // ======================
             this.renderBasicInfo = renderBasicInfo.bind(this);
             this.renderPowerStatus = renderPowerStatus.bind(this);
             this.renderTrendChart = renderTrendChart.bind(this);
-            this.renderError = renderError.bind(this);
 
-            this.refreshInterval = 5000;
-            this._refreshIntervalId = null;
-
+            // ======================
+            // 6. Public Methods
+            // ======================
             this.showDetail = showDetail.bind(this);
             this.hideDetail = hideDetail.bind(this);
             this.refreshMetrics = refreshMetrics.bind(this);
             this.stopRefresh = stopRefresh.bind(this);
             this._switchTab = switchTab.bind(this);
 
-            this.customEvents = { click: '@assetClicked' };
-            bind3DEvents(this, this.customEvents);
+            // ======================
+            // 7. 이벤트 발행
+            // ======================
+            bind3DEvents(this, this.config.events);
 
-            this.templateConfig = { popup: 'popup-ups' };
-
-            this.popupCreatedConfig = {
-                chartSelector: '.chart-container',
+            // ======================
+            // 8. Popup (template 기반)
+            // ======================
+            const popupCreatedConfig = {
+                chartSelector: this.config.chart.selectors.container,
                 events: {
                     click: {
                         '.close-btn': () => this.hideDetail(),
@@ -584,10 +670,10 @@
 
             const { htmlCode, cssCode } = this.properties.publishCode || {};
             const ctx = this;
-            this.getPopupHTML = () => extractTemplate(htmlCode || '', ctx.templateConfig.popup);
+            this.getPopupHTML = () => extractTemplate(htmlCode || '', ctx.config.template.popup);
             this.getPopupStyles = () => cssCode || '';
             this.onPopupCreated = function() {
-                const { chartSelector, events } = ctx.popupCreatedConfig;
+                const { chartSelector, events } = popupCreatedConfig;
                 if (chartSelector) ctx.createChart(chartSelector);
                 if (events) ctx.bindPopupEvents(events);
             };
@@ -606,9 +692,12 @@
         function showDetail() {
             this.showPopup();
 
-            // metricHistoryStats는 fetchTrendData에서 직접 호출하므로 제외
+            const { datasetNames, refresh } = this.config;
+
+            // 1) assetDetailUnified + metricLatest 호출 (섹션별 독립 처리)
+            // metricHistoryStats는 fetchTrendData에서 fetch API로 직접 호출하므로 제외
             fx.go(
-                this.datasetInfo.filter(d => d.datasetName !== 'metricHistoryStats'),
+                this.datasetInfo.filter(d => d.datasetName !== datasetNames.metricHistory),
                 fx.each(({ datasetName, param, render }) =>
                     fx.go(
                         Wkit.fetchData(this.page, datasetName, param),
@@ -630,10 +719,12 @@
                 console.error('[UPS] Data load error:', e);
             });
 
+            // 2) 트렌드 차트 호출 (mhs/l)
             fetchTrendData.call(this);
 
+            // 3) 5초 주기로 메트릭 갱신 시작
             this.stopRefresh();
-            this._refreshIntervalId = setInterval(() => this.refreshMetrics(), this.refreshInterval);
+            this._refreshIntervalId = setInterval(() => this.refreshMetrics(), refresh.interval);
             console.log('[UPS] Metric refresh started (5s interval)');
         }
 
@@ -643,9 +734,10 @@
         }
 
         function refreshMetrics() {
-            const metricInfo = this.datasetInfo.find(d => d.datasetName === 'metricLatest');
+            const { datasetNames } = this.config;
+            const metricInfo = this.datasetInfo.find(d => d.datasetName === datasetNames.metricLatest);
             fx.go(
-                Wkit.fetchData(this.page, 'metricLatest', metricInfo.param),
+                Wkit.fetchData(this.page, datasetNames.metricLatest, metricInfo.param),
                 (response) => {
                     if (!response || !response.response) return;
                     const data = response.response.data;
@@ -666,22 +758,24 @@
         }
 
         function switchTab(tabName) {
-            if (!tabName || !TAB_CONFIG[tabName]) return;
+            const { chart } = this.config;
+            if (!tabName || !chart.tabs[tabName]) return;
             this._activeTab = tabName;
 
-            const buttons = this.popupQueryAll('.tab-btn');
+            const buttons = this.popupQueryAll(chart.selectors.tabBtn);
             if (buttons) {
                 buttons.forEach((btn) => btn.classList.toggle('active', btn.dataset.tab === tabName));
             }
 
+            // 이미 로드된 데이터로 차트 갱신
             if (this._trendData) {
                 this.renderTrendChart({ response: { data: this._trendData } });
             }
         }
 
         async function fetchTrendData() {
-            debugger
-            const trendInfo = this.datasetInfo.find(d => d.datasetName === 'metricHistoryStats');
+            const { datasetNames } = this.config;
+            const trendInfo = this.datasetInfo.find(d => d.datasetName === datasetNames.metricHistory);
             if (!trendInfo) return;
 
             const { baseUrl, assetKey, interval, timeRange, metricCodes, statsKeys } = trendInfo.param;
@@ -720,14 +814,16 @@
         function renderBasicInfo({ response }) {
             const { data } = response;
             if (!data || !data.asset) {
-                renderError.call(this, '자산 데이터가 없습니다.');
+                console.warn('[UPS] renderBasicInfo: no asset data');
                 return;
             }
 
             const asset = data.asset;
+            const { header, infoTable, datasetNames } = this.config;
 
+            // Header 영역
             fx.go(
-                this.baseInfoConfig,
+                header.fields,
                 fx.each(({ key, selector, dataAttr, transform }) => {
                     const el = this.popupQuery(selector);
                     if (!el) return;
@@ -741,32 +837,36 @@
                 })
             );
 
+            // 기본정보 테이블 (config 기반)
             const setCell = (selector, value) => {
                 const el = this.popupQuery(selector);
                 if (el) el.textContent = value ?? '-';
             };
 
-            setCell('.info-name', asset.name);
-            setCell('.info-type', asset.assetType);
-            setCell('.info-usage', asset.usageLabel || '-');
-            setCell('.info-location', asset.locationLabel);
-            setCell('.info-status', this.statusTypeToLabel(asset.statusType));
-            setCell('.info-install-date', this.formatDate(asset.installDate));
+            fx.go(
+                infoTable.fields,
+                fx.each(({ key, selector, transform, fallback }) => {
+                    let value = asset[key] ?? fallback ?? '-';
+                    if (transform) value = transform(value);
+                    setCell(selector, value);
+                })
+            );
 
+            // 제조사명/모델 체이닝: assetModelKey → mdl/g → vdr/g
             if (asset.assetModelKey) {
                 fx.go(
-                    Wkit.fetchData(this.page, 'modelDetail', { baseUrl: this._baseUrl, assetModelKey: asset.assetModelKey }),
+                    Wkit.fetchData(this.page, datasetNames.modelDetail, { baseUrl: this._baseUrl, assetModelKey: asset.assetModelKey }),
                     (modelResp) => {
                         if (!modelResp?.response?.data) return;
                         const model = modelResp.response.data;
-                        setCell('.info-model', model.name);
+                        setCell(infoTable.chain.model, model.name);
 
                         if (model.assetVendorKey) {
                             fx.go(
-                                Wkit.fetchData(this.page, 'vendorDetail', { baseUrl: this._baseUrl, assetVendorKey: model.assetVendorKey }),
+                                Wkit.fetchData(this.page, datasetNames.vendorDetail, { baseUrl: this._baseUrl, assetVendorKey: model.assetVendorKey }),
                                 (vendorResp) => {
                                     if (!vendorResp?.response?.data) return;
-                                    setCell('.info-vendor', vendorResp.response.data.name);
+                                    setCell(infoTable.chain.vendor, vendorResp.response.data.name);
                                 }
                             ).catch(() => {});
                         }
@@ -777,35 +877,42 @@
 
         function renderPowerStatus({ response }) {
             const { data } = response;
-            const timestampEl = this.popupQuery('.section-timestamp');
+            const { powerStatus } = this.config;
+            const { metrics, selectors } = powerStatus;
+            const timestampEl = this.popupQuery(selectors.timestamp);
 
             if (!data || !Array.isArray(data) || data.length === 0) {
                 console.warn('[UPS] renderPowerStatus: no data');
                 return;
             }
 
+            // 타임스탬프 표시
             if (timestampEl && data[0]?.eventedAt) {
                 timestampEl.textContent = this.formatTimestamp(data[0].eventedAt);
             }
 
+            // 메트릭 코드를 값으로 매핑
             const metricMap = {};
             data.forEach((metric) => {
                 const value = metric.valueType === 'NUMBER' ? metric.valueNumber : metric.valueString;
                 metricMap[metric.metricCode] = value;
             });
 
-            Object.entries(POWER_STATUS_CONFIG).forEach(([key, config]) => {
-                const card = this.popupQuery(`.power-card[data-metric="${key}"]`);
+            // 각 카드에 값 설정
+            Object.entries(metrics).forEach(([key, config]) => {
+                const card = this.popupQuery(`${selectors.card}[data-metric="${key}"]`);
                 if (!card) return;
 
-                const valueEl = card.querySelector('.power-card-value');
+                const valueEl = card.querySelector(selectors.value);
                 if (!valueEl) return;
 
+                // metricCode가 없으면 "-" 표시 (API 미지원)
                 if (!config.metricCode) {
                     valueEl.textContent = '-';
                     return;
                 }
 
+                // 값 표시
                 const rawValue = metricMap[config.metricCode];
                 if (rawValue != null) {
                     const displayValue = (rawValue * config.scale).toFixed(1);
@@ -823,9 +930,12 @@
                 return;
             }
 
-            const tabConfig = TAB_CONFIG[this._activeTab];
+            const { chart } = this.config;
+            const { tabs, series, selectors } = chart;
+            const tabConfig = tabs[this._activeTab];
             if (!tabConfig) return;
 
+            // 데이터를 시간별로 그룹핑
             const timeMap = {};
             data.forEach((row) => {
                 const hour = new Date(row.time).getHours() + '시';
@@ -843,6 +953,8 @@
                 return raw != null ? +(raw).toFixed(2) : null;
             });
 
+            const { input: inputSeries, output: outputSeries } = series;
+
             const option = {
                 tooltip: {
                     trigger: 'axis',
@@ -851,7 +963,7 @@
                     textStyle: { color: '#e0e6ed', fontSize: 12 },
                 },
                 legend: {
-                    data: ['입력', '출력'],
+                    data: [inputSeries.label, outputSeries.label],
                     top: 8,
                     textStyle: { color: '#8892a0', fontSize: 11 },
                 },
@@ -871,37 +983,37 @@
                 },
                 series: [
                     {
-                        name: '입력',
+                        name: inputSeries.label,
                         type: 'line',
                         data: inputValues,
                         smooth: true,
                         symbol: 'none',
-                        lineStyle: { color: CHART_COLORS.input, width: 2 },
+                        lineStyle: { color: inputSeries.color, width: 2 },
                         areaStyle: {
                             color: {
                                 type: 'linear',
                                 x: 0, y: 0, x2: 0, y2: 1,
                                 colorStops: [
-                                    { offset: 0, color: hexToRgba(CHART_COLORS.input, 0.2) },
-                                    { offset: 1, color: hexToRgba(CHART_COLORS.input, 0) },
+                                    { offset: 0, color: hexToRgba(inputSeries.color, 0.2) },
+                                    { offset: 1, color: hexToRgba(inputSeries.color, 0) },
                                 ],
                             },
                         },
                     },
                     {
-                        name: '출력',
+                        name: outputSeries.label,
                         type: 'line',
                         data: outputValues,
                         smooth: true,
                         symbol: 'none',
-                        lineStyle: { color: CHART_COLORS.output, width: 2 },
+                        lineStyle: { color: outputSeries.color, width: 2 },
                         areaStyle: {
                             color: {
                                 type: 'linear',
                                 x: 0, y: 0, x2: 0, y2: 1,
                                 colorStops: [
-                                    { offset: 0, color: hexToRgba(CHART_COLORS.output, 0.2) },
-                                    { offset: 1, color: hexToRgba(CHART_COLORS.output, 0) },
+                                    { offset: 0, color: hexToRgba(outputSeries.color, 0.2) },
+                                    { offset: 1, color: hexToRgba(outputSeries.color, 0) },
                                 ],
                             },
                         },
@@ -909,7 +1021,7 @@
                 ],
             };
 
-            this.updateChart('.chart-container', option);
+            this.updateChart(selectors.container, option);
         }
 
         function renderError(message) {

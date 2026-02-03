@@ -29,38 +29,6 @@ function hexToRgba(hex, alpha) {
   return `rgba(${r}, ${g}, ${b}, ${alpha})`;
 }
 
-// ======================
-// CONFIG (컴포넌트 외부 선언)
-// ======================
-const CONFIG = {
-  // 전력현황 4카드
-  powerStatus: {
-    batterySoc:   { label: '배터리 사용률',   unit: '%', metricCode: 'UPS.BATT_PCT', scale: 1.0 },
-    batteryTime:  { label: '배터리 잔여시간', unit: 'h', metricCode: null,          scale: 1.0 },  // API 미지원
-    loadRate:     { label: '부하율',         unit: '%', metricCode: 'UPS.LOAD_PCT', scale: 1.0 },
-    batteryVolt:  { label: '배터리 출력전압', unit: 'V', metricCode: 'UPS.BATT_V',   scale: 0.1 },
-  },
-  // 3탭 트렌드 차트
-  tab: {
-    current:   { label: '입/출력 전류',   unit: 'A',  inputCode: 'UPS.INPUT_A_AVG',  outputCode: 'UPS.OUTPUT_A_AVG' },
-    voltage:   { label: '입/출력 전압',   unit: 'V',  inputCode: 'UPS.INPUT_V_AVG',  outputCode: 'UPS.OUTPUT_V_AVG' },
-    frequency: { label: '입/출력 주파수', unit: 'Hz', inputCode: 'UPS.INPUT_F_AVG',  outputCode: 'UPS.OUTPUT_F_AVG' },
-  },
-  // 차트 시리즈 (입력/출력 듀얼 라인)
-  chartSeries: {
-    input:  { label: '입력', color: '#f59e0b' },
-    output: { label: '출력', color: '#22c55e' },
-  },
-  // 데이터셋 이름
-  datasetNames: {
-    assetDetail: 'assetDetailUnified',
-    metricLatest: 'metricLatest',
-    metricHistory: 'metricHistoryStats',
-    modelDetail: 'modelDetail',
-    vendorDetail: 'vendorDetail',
-  },
-};
-
 initComponent.call(this);
 
 function initComponent() {
@@ -85,40 +53,14 @@ function initComponent() {
   // 3. Config 통합 (this.config로 모든 설정 접근)
   // ======================
   this.config = {
-    // 외부 정의 config 병합
-    ...CONFIG,
-
-    // selectors
-    selectors: {
-      name: '.ups-name',
-      zone: '.ups-zone',
-      status: '.ups-status',
-      timestamp: '.section-timestamp',
-      chartContainer: '.chart-container',
-      powerCard: '.power-card',
-      powerCardValue: '.power-card-value',
-      tabBtn: '.tab-btn',
-      infoModel: '.info-model',
-      infoVendor: '.info-vendor',
+    // 데이터셋 이름
+    datasetNames: {
+      assetDetail: 'assetDetailUnified',
+      metricLatest: 'metricLatest',
+      metricHistory: 'metricHistoryStats',
+      modelDetail: 'modelDetail',
+      vendorDetail: 'vendorDetail',
     },
-
-    // 기본정보 헤더 매핑
-    baseInfo: [
-      { key: 'name', selector: '.ups-name' },
-      { key: 'locationLabel', selector: '.ups-zone' },
-      { key: 'statusType', selector: '.ups-status', transform: this.statusTypeToLabel },
-      { key: 'statusType', selector: '.ups-status', dataAttr: 'status', transform: this.statusTypeToDataAttr },
-    ],
-
-    // 기본정보 테이블 매핑
-    infoTable: [
-      { key: 'name', selector: '.info-name' },
-      { key: 'assetType', selector: '.info-type' },
-      { key: 'usageLabel', selector: '.info-usage', fallback: '-' },
-      { key: 'locationLabel', selector: '.info-location' },
-      { key: 'statusType', selector: '.info-status', transform: this.statusTypeToLabel },
-      { key: 'installDate', selector: '.info-install-date', transform: this.formatDate },
-    ],
 
     // 템플릿
     template: {
@@ -133,6 +75,68 @@ function initComponent() {
     // 갱신 주기
     refresh: {
       interval: 5000,
+    },
+
+    // ========================
+    // UI 영역별 설정
+    // ========================
+
+    // 팝업 헤더 영역
+    header: {
+      fields: [
+        { key: 'name', selector: '.ups-name' },
+        { key: 'locationLabel', selector: '.ups-zone' },
+        { key: 'statusType', selector: '.ups-status', transform: this.statusTypeToLabel },
+        { key: 'statusType', selector: '.ups-status', dataAttr: 'status', transform: this.statusTypeToDataAttr },
+      ],
+    },
+
+    // 기본정보 테이블 영역
+    infoTable: {
+      fields: [
+        { key: 'name', selector: '.info-name' },
+        { key: 'assetType', selector: '.info-type' },
+        { key: 'usageLabel', selector: '.info-usage', fallback: '-' },
+        { key: 'locationLabel', selector: '.info-location' },
+        { key: 'statusType', selector: '.info-status', transform: this.statusTypeToLabel },
+        { key: 'installDate', selector: '.info-install-date', transform: this.formatDate },
+      ],
+      chain: {
+        model: '.info-model',
+        vendor: '.info-vendor',
+      },
+    },
+
+    // 전력현황 영역 (4카드)
+    powerStatus: {
+      metrics: {
+        batterySoc:   { label: '배터리 사용률',   unit: '%', metricCode: 'UPS.BATT_PCT', scale: 1.0 },
+        batteryTime:  { label: '배터리 잔여시간', unit: 'h', metricCode: null,          scale: 1.0 },  // API 미지원
+        loadRate:     { label: '부하율',         unit: '%', metricCode: 'UPS.LOAD_PCT', scale: 1.0 },
+        batteryVolt:  { label: '배터리 출력전압', unit: 'V', metricCode: 'UPS.BATT_V',   scale: 0.1 },
+      },
+      selectors: {
+        card: '.power-card',
+        value: '.power-card-value',
+        timestamp: '.section-timestamp',
+      },
+    },
+
+    // 트렌드 차트 영역 (3탭)
+    chart: {
+      tabs: {
+        current:   { label: '입/출력 전류',   unit: 'A',  inputCode: 'UPS.INPUT_A_AVG',  outputCode: 'UPS.OUTPUT_A_AVG' },
+        voltage:   { label: '입/출력 전압',   unit: 'V',  inputCode: 'UPS.INPUT_V_AVG',  outputCode: 'UPS.OUTPUT_V_AVG' },
+        frequency: { label: '입/출력 주파수', unit: 'Hz', inputCode: 'UPS.INPUT_F_AVG',  outputCode: 'UPS.OUTPUT_F_AVG' },
+      },
+      series: {
+        input:  { label: '입력', color: '#f59e0b' },
+        output: { label: '출력', color: '#22c55e' },
+      },
+      selectors: {
+        container: '.chart-container',
+        tabBtn: '.tab-btn',
+      },
     },
   };
 
@@ -186,7 +190,7 @@ function initComponent() {
   // 8. Popup (template 기반)
   // ======================
   const popupCreatedConfig = {
-    chartSelector: this.config.selectors.chartContainer,
+    chartSelector: this.config.chart.selectors.container,
     events: {
       click: {
         '.close-btn': () => this.hideDetail(),
@@ -284,11 +288,11 @@ function stopRefresh() {
 }
 
 function switchTab(tabName) {
-  const { tab, selectors } = this.config;
-  if (!tabName || !tab[tabName]) return;
+  const { chart } = this.config;
+  if (!tabName || !chart.tabs[tabName]) return;
   this._activeTab = tabName;
 
-  const buttons = this.popupQueryAll(selectors.tabBtn);
+  const buttons = this.popupQueryAll(chart.selectors.tabBtn);
   if (buttons) {
     buttons.forEach((btn) => btn.classList.toggle('active', btn.dataset.tab === tabName));
   }
@@ -354,11 +358,11 @@ function renderBasicInfo({ response }) {
   }
 
   const asset = data.asset;
-  const { baseInfo, infoTable, selectors, datasetNames } = this.config;
+  const { header, infoTable, datasetNames } = this.config;
 
   // Header 영역
   fx.go(
-    baseInfo,
+    header.fields,
     fx.each(({ key, selector, dataAttr, transform }) => {
       const el = this.popupQuery(selector);
       if (!el) return;
@@ -379,7 +383,7 @@ function renderBasicInfo({ response }) {
   };
 
   fx.go(
-    infoTable,
+    infoTable.fields,
     fx.each(({ key, selector, transform, fallback }) => {
       let value = asset[key] ?? fallback ?? '-';
       if (transform) value = transform(value);
@@ -394,14 +398,14 @@ function renderBasicInfo({ response }) {
       (modelResp) => {
         if (!modelResp?.response?.data) return;
         const model = modelResp.response.data;
-        setCell(selectors.infoModel, model.name);
+        setCell(infoTable.chain.model, model.name);
 
         if (model.assetVendorKey) {
           fx.go(
             fetchData(this.page, datasetNames.vendorDetail, { baseUrl: this._baseUrl, assetVendorKey: model.assetVendorKey }),
             (vendorResp) => {
               if (!vendorResp?.response?.data) return;
-              setCell(selectors.infoVendor, vendorResp.response.data.name);
+              setCell(infoTable.chain.vendor, vendorResp.response.data.name);
             }
           ).catch(() => {});
         }
@@ -416,7 +420,8 @@ function renderBasicInfo({ response }) {
 
 function renderPowerStatus({ response }) {
   const { data } = response;
-  const { powerStatus, selectors } = this.config;
+  const { powerStatus } = this.config;
+  const { metrics, selectors } = powerStatus;
   const timestampEl = this.popupQuery(selectors.timestamp);
 
   if (!data || !Array.isArray(data) || data.length === 0) {
@@ -437,11 +442,11 @@ function renderPowerStatus({ response }) {
   });
 
   // 각 카드에 값 설정
-  Object.entries(powerStatus).forEach(([key, config]) => {
-    const card = this.popupQuery(`${selectors.powerCard}[data-metric="${key}"]`);
+  Object.entries(metrics).forEach(([key, config]) => {
+    const card = this.popupQuery(`${selectors.card}[data-metric="${key}"]`);
     if (!card) return;
 
-    const valueEl = card.querySelector(selectors.powerCardValue);
+    const valueEl = card.querySelector(selectors.value);
     if (!valueEl) return;
 
     // metricCode가 없으면 "-" 표시 (API 미지원)
@@ -472,8 +477,9 @@ function renderTrendChart({ response }) {
     return;
   }
 
-  const { tab, chartSeries, selectors } = this.config;
-  const tabConfig = tab[this._activeTab];
+  const { chart } = this.config;
+  const { tabs, series, selectors } = chart;
+  const tabConfig = tabs[this._activeTab];
   if (!tabConfig) return;
 
   // 데이터를 시간별로 그룹핑
@@ -494,7 +500,7 @@ function renderTrendChart({ response }) {
     return raw != null ? +(raw).toFixed(2) : null;
   });
 
-  const { input: inputSeries, output: outputSeries } = chartSeries;
+  const { input: inputSeries, output: outputSeries } = series;
 
   const option = {
     tooltip: {
@@ -562,7 +568,7 @@ function renderTrendChart({ response }) {
     ],
   };
 
-  this.updateChart(selectors.chartContainer, option);
+  this.updateChart(selectors.container, option);
 }
 
 // ======================
