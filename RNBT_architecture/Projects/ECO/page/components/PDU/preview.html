@@ -203,17 +203,6 @@
         `;
 
         // ======================
-        // TAB CONFIG
-        // ======================
-        const TAB_CONFIG = {
-            voltage:   { metricCode: 'DIST.V_LN_AVG',              label: '평균 전압',     unit: 'V',   color: '#3b82f6', scale: 1.0 },
-            current:   { metricCode: 'DIST.CURRENT_AVG_A',          label: '평균 전류',     unit: 'A',   color: '#f59e0b', scale: 1.0 },
-            power:     { metricCode: 'DIST.ACTIVE_POWER_TOTAL_KW',  label: '합계 전력',     unit: 'kW',  color: '#8b5cf6', scale: 1.0 },
-            frequency: { metricCode: 'DIST.FREQUENCY_HZ',           label: '주파수',        unit: 'Hz',  color: '#22c55e', scale: 1.0 },
-            energy:    { metricCode: 'DIST.ACTIVE_ENERGY_SUM_KWH',  label: '누적 전력사용량', unit: 'kWh', color: '#ef4444', scale: 1.0 },
-        };
-
-        // ======================
         // MOCK IMPLEMENTATIONS
         // ======================
 
@@ -442,20 +431,102 @@
             const { bind3DEvents, fetchData } = Wkit;
             const { applyShadowPopupMixin, applyEChartsMixin } = PopupMixin;
 
+            // ======================
+            // 1. 내부 상태
+            // ======================
             this._defaultAssetKey = this.setter?.assetInfo?.assetKey || this.id;
             this._baseUrl = BASE_URL;
             this._trendData = null;
             this._activeTab = 'voltage';
 
+            // ======================
+            // 2. 변환 함수 바인딩
+            // ======================
+            this.statusTypeToLabel = statusTypeToLabel.bind(this);
+            this.statusTypeToDataAttr = statusTypeToDataAttr.bind(this);
+            this.formatDate = formatDate.bind(this);
+
+            // ======================
+            // 3. Config 통합 (this.config로 모든 설정 접근)
+            // ======================
+            this.config = {
+                // 데이터셋 이름
+                datasetNames: {
+                    assetDetail: 'assetDetailUnified',
+                    metricHistory: 'metricHistoryStats',
+                    modelDetail: 'modelDetail',
+                    vendorDetail: 'vendorDetail',
+                },
+
+                // 템플릿
+                template: {
+                    popup: 'popup-pdu',
+                },
+
+                // 이벤트
+                events: {
+                    click: '@assetClicked',
+                },
+
+                // ========================
+                // UI 영역별 설정
+                // ========================
+
+                // 팝업 헤더 영역
+                header: {
+                    fields: [
+                        { key: 'name', selector: '.pdu-name' },
+                        { key: 'locationLabel', selector: '.pdu-zone' },
+                        { key: 'statusType', selector: '.pdu-status', transform: this.statusTypeToLabel },
+                        { key: 'statusType', selector: '.pdu-status', dataAttr: 'status', transform: this.statusTypeToDataAttr },
+                    ],
+                },
+
+                // 기본정보 테이블 영역
+                infoTable: {
+                    fields: [
+                        { key: 'name', selector: '.info-name' },
+                        { key: 'assetType', selector: '.info-type' },
+                        { key: 'usageLabel', selector: '.info-usage', fallback: '-' },
+                        { key: 'locationLabel', selector: '.info-location' },
+                        { key: 'statusType', selector: '.info-status', transform: this.statusTypeToLabel },
+                        { key: 'installDate', selector: '.info-install-date', transform: this.formatDate },
+                    ],
+                    chain: {
+                        model: '.info-model',
+                        vendor: '.info-vendor',
+                    },
+                },
+
+                // 트렌드 차트 영역 (5탭)
+                chart: {
+                    tabs: {
+                        voltage:   { metricCode: 'DIST.V_LN_AVG',              label: '평균 전압',       unit: 'V',   color: '#3b82f6', scale: 1.0 },
+                        current:   { metricCode: 'DIST.CURRENT_AVG_A',         label: '평균 전류',       unit: 'A',   color: '#f59e0b', scale: 1.0 },
+                        power:     { metricCode: 'DIST.ACTIVE_POWER_TOTAL_KW', label: '합계 전력',       unit: 'kW',  color: '#8b5cf6', scale: 1.0 },
+                        frequency: { metricCode: 'DIST.FREQUENCY_HZ',          label: '주파수',          unit: 'Hz',  color: '#22c55e', scale: 1.0 },
+                        energy:    { metricCode: 'DIST.ACTIVE_ENERGY_SUM_KWH', label: '누적 전력사용량', unit: 'kWh', color: '#ef4444', scale: 1.0 },
+                    },
+                    selectors: {
+                        container: '.chart-container',
+                        tabBtn: '.tab-btn',
+                    },
+                },
+            };
+
+            // ======================
+            // 4. 데이터셋 정의
+            // ======================
+            const { datasetNames } = this.config;
             this.datasetInfo = [
-                { datasetName: 'assetDetailUnified', param: { baseUrl: BASE_URL, assetKey: this._defaultAssetKey, locale: 'ko' }, render: ['renderBasicInfo'] },
+                { datasetName: datasetNames.assetDetail, param: { baseUrl: this._baseUrl, assetKey: this._defaultAssetKey, locale: 'ko' }, render: ['renderBasicInfo'] },
                 {
-                    datasetName: 'metricHistoryStats',
+                    datasetName: datasetNames.metricHistory,
                     param: {
-                        baseUrl: BASE_URL,
+                        baseUrl: this._baseUrl,
                         assetKey: this._defaultAssetKey,
                         interval: '1h',
-                        timeRange: 24 * 60 * 60 * 1000, // 24시간 (ms)
+                        timeRange: 24 * 60 * 60 * 1000,
                         metricCodes: ['DIST.V_LN_AVG', 'DIST.CURRENT_AVG_A', 'DIST.ACTIVE_POWER_TOTAL_KW', 'DIST.FREQUENCY_HZ', 'DIST.ACTIVE_ENERGY_SUM_KWH'],
                         statsKeys: ['avg'],
                     },
@@ -463,31 +534,30 @@
                 },
             ];
 
-            this.statusTypeToLabel = statusTypeToLabel.bind(this);
-            this.statusTypeToDataAttr = statusTypeToDataAttr.bind(this);
-            this.formatDate = formatDate.bind(this);
-
-            this.baseInfoConfig = [
-                { key: 'name', selector: '.pdu-name' },
-                { key: 'locationLabel', selector: '.pdu-zone' },
-                { key: 'statusType', selector: '.pdu-status', transform: this.statusTypeToLabel },
-                { key: 'statusType', selector: '.pdu-status', dataAttr: 'status', transform: this.statusTypeToDataAttr },
-            ];
-
+            // ======================
+            // 5. 렌더링 함수 바인딩
+            // ======================
             this.renderBasicInfo = renderBasicInfo.bind(this);
             this.renderTrendChart = renderTrendChart.bind(this);
             this.renderError = renderError.bind(this);
 
+            // ======================
+            // 6. Public Methods
+            // ======================
             this.showDetail = showDetail.bind(this);
             this.hideDetail = hideDetail.bind(this);
             this._switchTab = switchTab.bind(this);
 
-            this.customEvents = { click: '@assetClicked' };
-            bind3DEvents(this, this.customEvents);
+            // ======================
+            // 7. 이벤트 발행
+            // ======================
+            bind3DEvents(this, this.config.events);
 
-            this.templateConfig = { popup: 'popup-pdu' };
-            this.popupCreatedConfig = {
-                chartSelector: '.chart-container',
+            // ======================
+            // 8. Popup (template 기반)
+            // ======================
+            const popupCreatedConfig = {
+                chartSelector: this.config.chart.selectors.container,
                 events: {
                     click: {
                         '.close-btn': () => this.hideDetail(),
@@ -497,9 +567,14 @@
             };
 
             const { htmlCode, cssCode } = this.properties.publishCode || {};
-            this.getPopupHTML = () => extractTemplate(htmlCode || '', this.templateConfig.popup);
+            const ctx = this;
+            this.getPopupHTML = () => extractTemplate(htmlCode || '', ctx.config.template.popup);
             this.getPopupStyles = () => cssCode || '';
-            this.onPopupCreated = onPopupCreated.bind(this, this.popupCreatedConfig);
+            this.onPopupCreated = function() {
+                const { chartSelector, events } = popupCreatedConfig;
+                if (chartSelector) ctx.createChart(chartSelector);
+                if (events) ctx.bindPopupEvents(events);
+            };
 
             applyShadowPopupMixin(this, {
                 getHTML: this.getPopupHTML,
@@ -518,22 +593,32 @@
         function showDetail() {
             this.showPopup();
 
-            // metricHistoryStats는 fetchTrendData에서 직접 호출하므로 제외
+            const { datasetNames } = this.config;
+
+            // 1) assetDetailUnified 호출 (섹션별 독립 처리)
+            // metricHistoryStats는 fetchTrendData에서 fetch API로 직접 호출하므로 제외
             fx.go(
-                this.datasetInfo.filter(d => d.datasetName !== 'metricHistoryStats'),
+                this.datasetInfo.filter(d => d.datasetName !== datasetNames.metricHistory),
                 fx.each(({ datasetName, param, render }) =>
                     fx.go(
                         Wkit.fetchData(this.page, datasetName, param),
                         (response) => {
-                            if (!response || !response.response) { console.warn(`[PDU] ${datasetName} fetch failed - no response`); return; }
+                            if (!response || !response.response) {
+                                console.warn(`[PDU] ${datasetName} fetch failed - no response`);
+                                return;
+                            }
                             const data = response.response.data;
-                            if (data === null || data === undefined) { console.warn(`[PDU] ${datasetName} - no data`); return; }
+                            if (data === null || data === undefined) {
+                                console.warn(`[PDU] ${datasetName} - no data`);
+                                return;
+                            }
                             fx.each((fn) => this[fn](response), render);
                         }
                     )
                 )
             ).catch((e) => { console.error('[PDU] Data load error:', e); });
 
+            // 2) 트렌드 차트 호출 (mhs/l)
             fetchTrendData.call(this);
         }
 
@@ -542,14 +627,16 @@
         }
 
         function switchTab(tabName) {
-            if (!tabName || !TAB_CONFIG[tabName]) return;
+            const { chart } = this.config;
+            if (!tabName || !chart.tabs[tabName]) return;
             this._activeTab = tabName;
 
-            const buttons = this.popupQueryAll('.tab-btn');
+            const buttons = this.popupQueryAll(chart.selectors.tabBtn);
             if (buttons) {
                 buttons.forEach((btn) => btn.classList.toggle('active', btn.dataset.tab === tabName));
             }
 
+            // 이미 로드된 데이터로 차트 갱신
             if (this._trendData) {
                 this.renderTrendChart({ response: { data: this._trendData } });
             }
@@ -560,7 +647,8 @@
         // ======================
 
         async function fetchTrendData() {
-            const trendInfo = this.datasetInfo.find(d => d.datasetName === 'metricHistoryStats');
+            const { datasetNames } = this.config;
+            const trendInfo = this.datasetInfo.find(d => d.datasetName === datasetNames.metricHistory);
             if (!trendInfo) return;
 
             const { baseUrl, assetKey, interval, timeRange, metricCodes, statsKeys } = trendInfo.param;
@@ -602,46 +690,60 @@
 
         function renderBasicInfo({ response }) {
             const { data } = response;
-            if (!data || !data.asset) { renderError.call(this, '자산 데이터가 없습니다.'); return; }
+            if (!data || !data.asset) {
+                renderError.call(this, '자산 데이터가 없습니다.');
+                return;
+            }
 
             const asset = data.asset;
+            const { header, infoTable, datasetNames } = this.config;
 
+            // Header 영역
             fx.go(
-                this.baseInfoConfig,
+                header.fields,
                 fx.each(({ key, selector, dataAttr, transform }) => {
                     const el = this.popupQuery(selector);
                     if (!el) return;
                     let value = asset[key];
                     if (transform) value = transform(value);
-                    if (dataAttr) { el.dataset[dataAttr] = value; } else { el.textContent = value; }
+                    if (dataAttr) {
+                        el.dataset[dataAttr] = value;
+                    } else {
+                        el.textContent = value;
+                    }
                 })
             );
 
+            // 기본정보 테이블 (config 기반)
             const setCell = (selector, value) => {
                 const el = this.popupQuery(selector);
                 if (el) el.textContent = value ?? '-';
             };
 
-            setCell('.info-name', asset.name);
-            setCell('.info-type', asset.assetType);
-            setCell('.info-usage', asset.usageLabel || '-');
-            setCell('.info-location', asset.locationLabel);
-            setCell('.info-status', this.statusTypeToLabel(asset.statusType));
-            setCell('.info-install-date', this.formatDate(asset.installDate));
+            fx.go(
+                infoTable.fields,
+                fx.each(({ key, selector, transform, fallback }) => {
+                    let value = asset[key] ?? fallback ?? '-';
+                    if (transform) value = transform(value);
+                    setCell(selector, value);
+                })
+            );
 
+            // 제조사명/모델 체이닝: assetModelKey → mdl/g → vdr/g
             if (asset.assetModelKey) {
                 fx.go(
-                    Wkit.fetchData(this.page, 'modelDetail', { baseUrl: BASE_URL, assetModelKey: asset.assetModelKey }),
+                    Wkit.fetchData(this.page, datasetNames.modelDetail, { baseUrl: this._baseUrl, assetModelKey: asset.assetModelKey }),
                     (modelResp) => {
                         if (!modelResp?.response?.data) return;
                         const model = modelResp.response.data;
-                        setCell('.info-model', model.name);
+                        setCell(infoTable.chain.model, model.name);
+
                         if (model.assetVendorKey) {
                             fx.go(
-                                Wkit.fetchData(this.page, 'vendorDetail', { baseUrl: BASE_URL, assetVendorKey: model.assetVendorKey }),
+                                Wkit.fetchData(this.page, datasetNames.vendorDetail, { baseUrl: this._baseUrl, assetVendorKey: model.assetVendorKey }),
                                 (vendorResp) => {
                                     if (!vendorResp?.response?.data) return;
-                                    setCell('.info-vendor', vendorResp.response.data.name);
+                                    setCell(infoTable.chain.vendor, vendorResp.response.data.name);
                                 }
                             ).catch(() => {});
                         }
@@ -661,9 +763,12 @@
                 return;
             }
 
-            const tabConfig = TAB_CONFIG[this._activeTab];
+            const { chart } = this.config;
+            const { tabs, selectors } = chart;
+            const tabConfig = tabs[this._activeTab];
             if (!tabConfig) return;
 
+            // data를 시간별로 그룹핑
             const timeMap = {};
             data.forEach((row) => {
                 const hour = new Date(row.time).getHours() + '시';
@@ -691,24 +796,30 @@
                 },
                 grid: { left: 50, right: 20, top: 40, bottom: 24 },
                 xAxis: {
-                    type: 'category', data: hours,
+                    type: 'category',
+                    data: hours,
                     axisLine: { lineStyle: { color: '#333' } },
                     axisLabel: { color: '#888', fontSize: 10 },
                 },
                 yAxis: {
-                    type: 'value', name: tabConfig.unit,
+                    type: 'value',
+                    name: tabConfig.unit,
                     axisLine: { show: true, lineStyle: { color: tabConfig.color } },
                     axisLabel: { color: '#888', fontSize: 10 },
                     splitLine: { lineStyle: { color: '#333' } },
                 },
                 series: [
                     {
-                        name: tabConfig.label, type: 'line', data: values,
-                        smooth: true, symbol: 'none',
+                        name: tabConfig.label,
+                        type: 'line',
+                        data: values,
+                        smooth: true,
+                        symbol: 'none',
                         lineStyle: { color: tabConfig.color, width: 2 },
                         areaStyle: {
                             color: {
-                                type: 'linear', x: 0, y: 0, x2: 0, y2: 1,
+                                type: 'linear',
+                                x: 0, y: 0, x2: 0, y2: 1,
                                 colorStops: [
                                     { offset: 0, color: hexToRgba(tabConfig.color, 0.3) },
                                     { offset: 1, color: hexToRgba(tabConfig.color, 0) },
@@ -719,7 +830,7 @@
                 ],
             };
 
-            this.updateChart('.chart-container', option);
+            this.updateChart(selectors.container, option);
         }
 
         // ======================

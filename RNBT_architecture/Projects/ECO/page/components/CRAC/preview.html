@@ -264,24 +264,6 @@
         `;
 
         // ======================
-        // METRIC CONFIG
-        // ======================
-        const METRIC_CONFIG = {
-            'CRAC.UNIT_STATUS': { label: '가동상태', valueType: 'BOOL', unit: '', scale: 1.0 },
-            'CRAC.FAN_STATUS': { label: '팬상태', valueType: 'BOOL', unit: '', scale: 1.0 },
-            'CRAC.COOL_STATUS': { label: '냉방동작상태', valueType: 'BOOL', unit: '', scale: 1.0 },
-            'CRAC.HEAT_STATUS': { label: '난방동작상태', valueType: 'BOOL', unit: '', scale: 1.0 },
-            'CRAC.HUMIDIFY_STATUS': { label: '가습상태', valueType: 'BOOL', unit: '', scale: 1.0 },
-            'CRAC.DEHUMIDIFY_STATUS': { label: '제습상태', valueType: 'BOOL', unit: '', scale: 1.0 },
-            'CRAC.LEAK_STATUS': { label: '누수상태', valueType: 'BOOL', unit: '', scale: 1.0 },
-            'CRAC.RETURN_TEMP': { label: '인입온도', valueType: 'NUMBER', unit: '°C', scale: 0.1 },
-            'CRAC.RETURN_HUMIDITY': { label: '인입습도', valueType: 'NUMBER', unit: '%RH', scale: 0.1 },
-            'CRAC.TEMP_SET': { label: '온도설정값', valueType: 'NUMBER', unit: '°C', scale: 0.1 },
-            'CRAC.HUMIDITY_SET': { label: '습도설정값', valueType: 'NUMBER', unit: '%RH', scale: 0.1 },
-            'CRAC.SUPPLY_TEMP': { label: '공급온도', valueType: 'NUMBER', unit: '°C', scale: 0.1 },
-        };
-
-        // ======================
         // MOCK IMPLEMENTATIONS
         // ======================
 
@@ -559,18 +541,134 @@
             const { bind3DEvents, fetchData } = Wkit;
             const { applyShadowPopupMixin, applyEChartsMixin } = PopupMixin;
 
+            // ======================
+            // 1. 내부 상태
+            // ======================
             this._defaultAssetKey = this.setter?.assetInfo?.assetKey || this.id;
+            this._baseUrl = BASE_URL;
+            this._refreshIntervalId = null;
 
+            // ======================
+            // 2. 변환 함수 바인딩
+            // ======================
+            this.statusTypeToLabel = statusTypeToLabel.bind(this);
+            this.statusTypeToDataAttr = statusTypeToDataAttr.bind(this);
+            this.formatDate = formatDate.bind(this);
+            this.formatTimestamp = formatTimestamp.bind(this);
+
+            // ======================
+            // 3. Config 통합 (this.config로 모든 설정 접근)
+            // ======================
+            this.config = {
+                // 데이터셋 이름
+                datasetNames: {
+                    assetDetail: 'assetDetailUnified',
+                    metricLatest: 'metricLatest',
+                    metricHistory: 'metricHistoryStats',
+                    modelDetail: 'modelDetail',
+                    vendorDetail: 'vendorDetail',
+                },
+
+                // 템플릿
+                template: {
+                    popup: 'popup-crac',
+                },
+
+                // 이벤트
+                events: {
+                    click: '@assetClicked',
+                },
+
+                // 갱신 주기
+                refresh: {
+                    interval: 5000,
+                },
+
+                // ========================
+                // UI 영역별 설정
+                // ========================
+
+                // 팝업 헤더 영역
+                header: {
+                    fields: [
+                        { key: 'name', selector: '.crac-name' },
+                        { key: 'locationLabel', selector: '.crac-zone' },
+                        { key: 'statusType', selector: '.crac-status', transform: this.statusTypeToLabel },
+                        { key: 'statusType', selector: '.crac-status', dataAttr: 'status', transform: this.statusTypeToDataAttr },
+                    ],
+                },
+
+                // 기본정보 테이블 영역
+                infoTable: {
+                    fields: [
+                        { key: 'name', selector: '.info-name' },
+                        { key: 'assetType', selector: '.info-type' },
+                        { key: 'usageLabel', selector: '.info-usage', fallback: '-' },
+                        { key: 'locationLabel', selector: '.info-location' },
+                        { key: 'statusType', selector: '.info-status', transform: this.statusTypeToLabel },
+                        { key: 'installDate', selector: '.info-install-date', transform: this.formatDate },
+                    ],
+                    chain: {
+                        model: '.info-model',
+                        vendor: '.info-vendor',
+                    },
+                },
+
+                // 상태정보 카드 영역 (온습도 현재값/설정값)
+                statusCards: {
+                    metrics: {
+                        currentTemp:  { metricCode: 'CRAC.RETURN_TEMP',     selector: '.current-temp',     scale: 0.1 },
+                        setTemp:      { metricCode: 'CRAC.TEMP_SET',        selector: '.set-temp',         scale: 0.1 },
+                        currentHumid: { metricCode: 'CRAC.RETURN_HUMIDITY', selector: '.current-humidity', scale: 0.1 },
+                        setHumid:     { metricCode: 'CRAC.HUMIDITY_SET',    selector: '.set-humidity',     scale: 0.1 },
+                    },
+                    selectors: {
+                        timestamp: '.section-timestamp',
+                    },
+                },
+
+                // 상태 인디케이터 영역 (6개 BOOL dot)
+                indicators: {
+                    metrics: {
+                        'CRAC.FAN_STATUS':        { label: '팬상태',       isLeak: false },
+                        'CRAC.COOL_STATUS':       { label: '냉방동작상태', isLeak: false },
+                        'CRAC.HEAT_STATUS':       { label: '난방동작상태', isLeak: false },
+                        'CRAC.HUMIDIFY_STATUS':   { label: '가습상태',     isLeak: false },
+                        'CRAC.DEHUMIDIFY_STATUS': { label: '제습상태',     isLeak: false },
+                        'CRAC.LEAK_STATUS':       { label: '누수상태',     isLeak: true },
+                    },
+                    selectors: {
+                        indicator: '.indicator',
+                        dot: '.indicator-dot',
+                    },
+                },
+
+                // 트렌드 차트 영역 (바+라인 복합)
+                chart: {
+                    series: {
+                        temp:     { metricCode: 'CRAC.RETURN_TEMP',     label: '온도', unit: '°C',  color: '#3b82f6', scale: 0.1 },
+                        humidity: { metricCode: 'CRAC.RETURN_HUMIDITY', label: '습도', unit: '%',   color: '#22c55e', scale: 0.1 },
+                    },
+                    selectors: {
+                        container: '.chart-container',
+                    },
+                },
+            };
+
+            // ======================
+            // 4. 데이터셋 정의
+            // ======================
+            const { datasetNames } = this.config;
             this.datasetInfo = [
-                { datasetName: 'assetDetailUnified', param: { baseUrl: BASE_URL, assetKey: this._defaultAssetKey, locale: 'ko' }, render: ['renderBasicInfo'] },
-                { datasetName: 'metricLatest', param: { baseUrl: BASE_URL, assetKey: this._defaultAssetKey }, render: ['renderStatusCards', 'renderIndicators'] },
+                { datasetName: datasetNames.assetDetail, param: { baseUrl: this._baseUrl, assetKey: this._defaultAssetKey, locale: 'ko' }, render: ['renderBasicInfo'] },
+                { datasetName: datasetNames.metricLatest, param: { baseUrl: this._baseUrl, assetKey: this._defaultAssetKey }, render: ['renderStatusCards', 'renderIndicators'] },
                 {
-                    datasetName: 'metricHistoryStats',
+                    datasetName: datasetNames.metricHistory,
                     param: {
-                        baseUrl: BASE_URL,
+                        baseUrl: this._baseUrl,
                         assetKey: this._defaultAssetKey,
                         interval: '1h',
-                        timeRange: 24 * 60 * 60 * 1000, // 24시간 (ms)
+                        timeRange: 24 * 60 * 60 * 1000,
                         metricCodes: ['CRAC.RETURN_TEMP', 'CRAC.RETURN_HUMIDITY'],
                         statsKeys: ['avg'],
                     },
@@ -578,48 +676,49 @@
                 },
             ];
 
-            this.statusTypeToLabel = statusTypeToLabel.bind(this);
-            this.statusTypeToDataAttr = statusTypeToDataAttr.bind(this);
-            this.formatDate = formatDate.bind(this);
-            this.formatTimestamp = formatTimestamp.bind(this);
-
-            this.baseInfoConfig = [
-                { key: 'name', selector: '.crac-name' },
-                { key: 'locationLabel', selector: '.crac-zone' },
-                { key: 'statusType', selector: '.crac-status', transform: this.statusTypeToLabel },
-                { key: 'statusType', selector: '.crac-status', dataAttr: 'status', transform: this.statusTypeToDataAttr },
-            ];
-
-            this.timestampSelector = '.section-timestamp';
-            this.metricConfig = METRIC_CONFIG;
-
+            // ======================
+            // 5. 렌더링 함수 바인딩
+            // ======================
             this.renderBasicInfo = renderBasicInfo.bind(this);
             this.renderStatusCards = renderStatusCards.bind(this);
             this.renderIndicators = renderIndicators.bind(this);
             this.renderTrendChart = renderTrendChart.bind(this);
             this.renderError = renderError.bind(this);
 
-            this.refreshInterval = 5000;
-            this._refreshIntervalId = null;
-
+            // ======================
+            // 6. Public Methods
+            // ======================
             this.showDetail = showDetail.bind(this);
             this.hideDetail = hideDetail.bind(this);
             this.refreshMetrics = refreshMetrics.bind(this);
             this.stopRefresh = stopRefresh.bind(this);
 
-            this.customEvents = { click: '@assetClicked' };
-            bind3DEvents(this, this.customEvents);
+            // ======================
+            // 7. 이벤트 발행
+            // ======================
+            bind3DEvents(this, this.config.events);
 
-            this.templateConfig = { popup: 'popup-crac' };
-            this.popupCreatedConfig = {
-                chartSelector: '.chart-container',
-                events: { click: { '.close-btn': () => this.hideDetail() } },
+            // ======================
+            // 8. Popup (template 기반)
+            // ======================
+            const popupCreatedConfig = {
+                chartSelector: this.config.chart.selectors.container,
+                events: {
+                    click: {
+                        '.close-btn': () => this.hideDetail(),
+                    },
+                },
             };
 
             const { htmlCode, cssCode } = this.properties.publishCode || {};
-            this.getPopupHTML = () => extractTemplate(htmlCode || '', this.templateConfig.popup);
+            const ctx = this;
+            this.getPopupHTML = () => extractTemplate(htmlCode || '', ctx.config.template.popup);
             this.getPopupStyles = () => cssCode || '';
-            this.onPopupCreated = onPopupCreated.bind(this, this.popupCreatedConfig);
+            this.onPopupCreated = function() {
+                const { chartSelector, events } = popupCreatedConfig;
+                if (chartSelector) ctx.createChart(chartSelector);
+                if (events) ctx.bindPopupEvents(events);
+            };
 
             applyShadowPopupMixin(this, {
                 getHTML: this.getPopupHTML,
@@ -638,26 +737,37 @@
         function showDetail() {
             this.showPopup();
 
-            // metricHistoryStats는 fetchTrendData에서 직접 호출하므로 제외
+            const { datasetNames, refresh } = this.config;
+
+            // 1) assetDetailUnified + metricLatest 호출 (섹션별 독립 처리)
+            // metricHistoryStats는 fetchTrendData에서 fetch API로 직접 호출하므로 제외
             fx.go(
-                this.datasetInfo.filter(d => d.datasetName !== 'metricHistoryStats'),
+                this.datasetInfo.filter(d => d.datasetName !== datasetNames.metricHistory),
                 fx.each(({ datasetName, param, render }) =>
                     fx.go(
                         Wkit.fetchData(this.page, datasetName, param),
                         (response) => {
-                            if (!response || !response.response) { console.warn(`[CRAC] ${datasetName} fetch failed - no response`); return; }
+                            if (!response || !response.response) {
+                                console.warn(`[CRAC] ${datasetName} fetch failed - no response`);
+                                return;
+                            }
                             const data = response.response.data;
-                            if (data === null || data === undefined) { console.warn(`[CRAC] ${datasetName} - no data`); return; }
+                            if (data === null || data === undefined) {
+                                console.warn(`[CRAC] ${datasetName} - no data`);
+                                return;
+                            }
                             fx.each((fn) => this[fn](response), render);
                         }
                     )
                 )
             ).catch((e) => { console.error('[CRAC] Data load error:', e); });
 
+            // 2) 트렌드 차트 호출 (mhs/l)
             fetchTrendData.call(this);
 
+            // 3) 5초 주기로 메트릭 갱신 시작
             this.stopRefresh();
-            this._refreshIntervalId = setInterval(() => this.refreshMetrics(), this.refreshInterval);
+            this._refreshIntervalId = setInterval(() => this.refreshMetrics(), refresh.interval);
             console.log('[CRAC] Metric refresh started (5s interval)');
         }
 
@@ -667,9 +777,10 @@
         }
 
         function refreshMetrics() {
-            const metricInfo = this.datasetInfo.find(d => d.datasetName === 'metricLatest');
+            const { datasetNames } = this.config;
+            const metricInfo = this.datasetInfo.find(d => d.datasetName === datasetNames.metricLatest);
             fx.go(
-                Wkit.fetchData(this.page, 'metricLatest', metricInfo.param),
+                Wkit.fetchData(this.page, datasetNames.metricLatest, metricInfo.param),
                 (response) => {
                     if (!response || !response.response) return;
                     const data = response.response.data;
@@ -693,7 +804,8 @@
         // ======================
 
         async function fetchTrendData() {
-            const trendInfo = this.datasetInfo.find(d => d.datasetName === 'metricHistoryStats');
+            const { datasetNames } = this.config;
+            const trendInfo = this.datasetInfo.find(d => d.datasetName === datasetNames.metricHistory);
             if (!trendInfo) return;
 
             const { baseUrl, assetKey, interval, timeRange, metricCodes, statsKeys } = trendInfo.param;
@@ -734,46 +846,60 @@
 
         function renderBasicInfo({ response }) {
             const { data } = response;
-            if (!data || !data.asset) { renderError.call(this, '자산 데이터가 없습니다.'); return; }
+            if (!data || !data.asset) {
+                renderError.call(this, '자산 데이터가 없습니다.');
+                return;
+            }
 
             const asset = data.asset;
+            const { header, infoTable, datasetNames } = this.config;
 
+            // Header 영역
             fx.go(
-                this.baseInfoConfig,
+                header.fields,
                 fx.each(({ key, selector, dataAttr, transform }) => {
                     const el = this.popupQuery(selector);
                     if (!el) return;
                     let value = asset[key];
                     if (transform) value = transform(value);
-                    if (dataAttr) { el.dataset[dataAttr] = value; } else { el.textContent = value; }
+                    if (dataAttr) {
+                        el.dataset[dataAttr] = value;
+                    } else {
+                        el.textContent = value;
+                    }
                 })
             );
 
+            // 기본정보 테이블 (config 기반)
             const setCell = (selector, value) => {
                 const el = this.popupQuery(selector);
                 if (el) el.textContent = value ?? '-';
             };
 
-            setCell('.info-name', asset.name);
-            setCell('.info-type', asset.assetType);
-            setCell('.info-usage', asset.usageLabel || '-');
-            setCell('.info-location', asset.locationLabel);
-            setCell('.info-status', this.statusTypeToLabel(asset.statusType));
-            setCell('.info-install-date', this.formatDate(asset.installDate));
+            fx.go(
+                infoTable.fields,
+                fx.each(({ key, selector, transform, fallback }) => {
+                    let value = asset[key] ?? fallback ?? '-';
+                    if (transform) value = transform(value);
+                    setCell(selector, value);
+                })
+            );
 
+            // 제조사명/모델 체이닝: assetModelKey → mdl/g → vdr/g
             if (asset.assetModelKey) {
                 fx.go(
-                    Wkit.fetchData(this.page, 'modelDetail', { baseUrl: BASE_URL, assetModelKey: asset.assetModelKey }),
+                    Wkit.fetchData(this.page, datasetNames.modelDetail, { baseUrl: this._baseUrl, assetModelKey: asset.assetModelKey }),
                     (modelResp) => {
                         if (!modelResp?.response?.data) return;
                         const model = modelResp.response.data;
-                        setCell('.info-model', model.name);
+                        setCell(infoTable.chain.model, model.name);
+
                         if (model.assetVendorKey) {
                             fx.go(
-                                Wkit.fetchData(this.page, 'vendorDetail', { baseUrl: BASE_URL, assetVendorKey: model.assetVendorKey }),
+                                Wkit.fetchData(this.page, datasetNames.vendorDetail, { baseUrl: this._baseUrl, assetVendorKey: model.assetVendorKey }),
                                 (vendorResp) => {
                                     if (!vendorResp?.response?.data) return;
-                                    setCell('.info-vendor', vendorResp.response.data.name);
+                                    setCell(infoTable.chain.vendor, vendorResp.response.data.name);
                                 }
                             ).catch(() => {});
                         }
@@ -788,7 +914,10 @@
 
         function renderStatusCards({ response }) {
             const { data } = response;
-            const timestampEl = this.popupQuery(this.timestampSelector);
+            const { statusCards } = this.config;
+            const { metrics, selectors } = statusCards;
+            const timestampEl = this.popupQuery(selectors.timestamp);
+
             if (!data || !Array.isArray(data) || data.length === 0) return;
 
             if (timestampEl && data[0]?.eventedAt) {
@@ -798,20 +927,20 @@
             const metricMap = {};
             data.forEach((m) => { metricMap[m.metricCode] = m; });
 
-            const setValue = (selector, metricCode) => {
-                const el = this.popupQuery(selector);
+            // 각 카드에 값 설정
+            Object.values(metrics).forEach((config) => {
+                const el = this.popupQuery(config.selector);
                 if (!el) return;
-                const metric = metricMap[metricCode];
-                if (!metric) { el.textContent = '-'; return; }
-                const config = this.metricConfig[metricCode];
-                if (!config) { el.textContent = '-'; return; }
-                el.textContent = config.scale ? (metric.valueNumber * config.scale).toFixed(1) : metric.valueNumber;
-            };
 
-            setValue('.current-temp', 'CRAC.RETURN_TEMP');
-            setValue('.set-temp', 'CRAC.TEMP_SET');
-            setValue('.current-humidity', 'CRAC.RETURN_HUMIDITY');
-            setValue('.set-humidity', 'CRAC.HUMIDITY_SET');
+                const metric = metricMap[config.metricCode];
+                if (!metric) {
+                    el.textContent = '-';
+                    return;
+                }
+
+                const value = metric.valueNumber;
+                el.textContent = config.scale ? (value * config.scale).toFixed(1) : value;
+            });
         }
 
         // ======================
@@ -822,22 +951,31 @@
             const { data } = response;
             if (!data || !Array.isArray(data)) return;
 
+            const { indicators } = this.config;
+            const { metrics, selectors } = indicators;
+
             const metricMap = {};
             data.forEach((m) => { metricMap[m.metricCode] = m; });
 
-            const indicators = this.popupQueryAll('.indicator');
-            if (!indicators) return;
+            const indicatorEls = this.popupQueryAll(selectors.indicator);
+            if (!indicatorEls) return;
 
-            indicators.forEach((el) => {
+            indicatorEls.forEach((el) => {
                 const code = el.dataset.metric;
-                const dot = el.querySelector('.indicator-dot');
+                const dot = el.querySelector(selectors.dot);
                 if (!dot || !code) return;
 
                 const metric = metricMap[code];
-                if (!metric) { dot.dataset.state = 'unknown'; return; }
+                if (!metric) {
+                    dot.dataset.state = 'unknown';
+                    return;
+                }
 
-                const isLeak = code === 'CRAC.LEAK_STATUS';
+                // 누수(LEAK)는 true=에러, 나머지는 true=정상
+                const config = metrics[code];
+                const isLeak = config?.isLeak ?? false;
                 const isOn = metric.valueBool;
+
                 if (isLeak) {
                     dot.dataset.state = isOn ? 'error' : 'ok';
                 } else {
@@ -857,6 +995,12 @@
                 return;
             }
 
+            const { chart } = this.config;
+            const { series, selectors } = chart;
+            const tempConfig = series.temp;
+            const humidConfig = series.humidity;
+
+            // data를 시간별로 그룹핑
             const timeMap = {};
             data.forEach((row) => {
                 const hour = new Date(row.time).getHours() + '시';
@@ -865,8 +1009,14 @@
             });
 
             const hours = Object.keys(timeMap);
-            const tempData = hours.map((h) => timeMap[h]['CRAC.RETURN_TEMP'] != null ? +(timeMap[h]['CRAC.RETURN_TEMP'] * 0.1).toFixed(1) : null);
-            const humidityData = hours.map((h) => timeMap[h]['CRAC.RETURN_HUMIDITY'] != null ? +(timeMap[h]['CRAC.RETURN_HUMIDITY'] * 0.1).toFixed(1) : null);
+            const tempData = hours.map((h) => {
+                const raw = timeMap[h][tempConfig.metricCode];
+                return raw != null ? +(raw * tempConfig.scale).toFixed(1) : null;
+            });
+            const humidityData = hours.map((h) => {
+                const raw = timeMap[h][humidConfig.metricCode];
+                return raw != null ? +(raw * humidConfig.scale).toFixed(1) : null;
+            });
 
             const option = {
                 tooltip: {
@@ -876,46 +1026,59 @@
                     textStyle: { color: '#e0e6ed', fontSize: 12 },
                 },
                 legend: {
-                    data: ['온도', '습도'],
+                    data: [tempConfig.label, humidConfig.label],
                     top: 8,
                     textStyle: { color: '#8892a0', fontSize: 11 },
                 },
                 grid: { left: 50, right: 50, top: 40, bottom: 24 },
                 xAxis: {
-                    type: 'category', data: hours,
+                    type: 'category',
+                    data: hours,
                     axisLine: { lineStyle: { color: '#333' } },
                     axisLabel: { color: '#888', fontSize: 10 },
                 },
                 yAxis: [
                     {
-                        type: 'value', name: '°C', position: 'left',
-                        axisLine: { show: true, lineStyle: { color: '#3b82f6' } },
+                        type: 'value',
+                        name: tempConfig.unit,
+                        position: 'left',
+                        axisLine: { show: true, lineStyle: { color: tempConfig.color } },
                         axisLabel: { color: '#888', fontSize: 10 },
                         splitLine: { lineStyle: { color: '#333' } },
                     },
                     {
-                        type: 'value', name: '%', position: 'right',
-                        axisLine: { show: true, lineStyle: { color: '#22c55e' } },
+                        type: 'value',
+                        name: humidConfig.unit,
+                        position: 'right',
+                        axisLine: { show: true, lineStyle: { color: humidConfig.color } },
                         axisLabel: { color: '#888', fontSize: 10 },
                         splitLine: { show: false },
                     },
                 ],
                 series: [
                     {
-                        name: '온도', type: 'bar', yAxisIndex: 0, data: tempData,
+                        name: tempConfig.label,
+                        type: 'bar',
+                        yAxisIndex: 0,
+                        data: tempData,
                         barWidth: '40%',
-                        itemStyle: { color: hexToRgba('#3b82f6', 0.7), borderRadius: [2, 2, 0, 0] },
+                        itemStyle: { color: hexToRgba(tempConfig.color, 0.7), borderRadius: [2, 2, 0, 0] },
                     },
                     {
-                        name: '습도', type: 'line', yAxisIndex: 1, data: humidityData,
-                        smooth: true, symbol: 'none',
-                        lineStyle: { color: '#22c55e', width: 2 },
+                        name: humidConfig.label,
+                        type: 'line',
+                        yAxisIndex: 1,
+                        data: humidityData,
+                        smooth: true,
+                        symbol: 'none',
+                        lineStyle: { color: humidConfig.color, width: 2 },
                         areaStyle: {
                             color: {
-                                type: 'linear', x: 0, y: 0, x2: 0, y2: 1,
+                                type: 'linear',
+                                x: 0, y: 0, x2: 0, y2: 1,
                                 colorStops: [
-                                    { offset: 0, color: hexToRgba('#22c55e', 0.2) },
-                                    { offset: 1, color: hexToRgba('#22c55e', 0) },
+                                    { offset: 0, color: hexToRgba(humidConfig.color, 0.2) },
+                                    { offset: 1, color: hexToRgba(humidConfig.color, 0) },
                                 ],
                             },
                         },
@@ -923,7 +1086,7 @@
                 ],
             };
 
-            this.updateChart('.chart-container', option);
+            this.updateChart(selectors.container, option);
         }
 
         // ======================
