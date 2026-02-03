@@ -30,58 +30,126 @@ function hexToRgba(hex, alpha) {
 }
 
 // ======================
-// POWER STATUS CONFIG (전력현황 4카드)
+// CONFIG (컴포넌트 외부 선언)
 // ======================
-const POWER_STATUS_CONFIG = {
-  batterySoc:   { label: '배터리 사용률',   unit: '%', metricCode: 'UPS.BATT_PCT', scale: 1.0 },
-  batteryTime:  { label: '배터리 잔여시간', unit: 'h', metricCode: null,          scale: 1.0 },  // API 미지원
-  loadRate:     { label: '부하율',         unit: '%', metricCode: 'UPS.LOAD_PCT', scale: 1.0 },
-  batteryVolt:  { label: '배터리 출력전압', unit: 'V', metricCode: 'UPS.BATT_V',   scale: 0.1 },
-};
-
-// ======================
-// TAB CONFIG (3탭 트렌드 차트)
-// ======================
-const TAB_CONFIG = {
-  current:   { label: '입/출력 전류',   unit: 'A',  inputCode: 'UPS.INPUT_A_AVG',  outputCode: 'UPS.OUTPUT_A_AVG' },
-  voltage:   { label: '입/출력 전압',   unit: 'V',  inputCode: 'UPS.INPUT_V_AVG',  outputCode: 'UPS.OUTPUT_V_AVG' },
-  frequency: { label: '입/출력 주파수', unit: 'Hz', inputCode: 'UPS.INPUT_F_AVG',  outputCode: 'UPS.OUTPUT_F_AVG' },
-};
-
-// 차트 시리즈 설정 (입력/출력 듀얼 라인)
-const CHART_SERIES_CONFIG = {
-  input:  { label: '입력', color: '#f59e0b' },
-  output: { label: '출력', color: '#22c55e' },
-};
-
-// 데이터셋 이름 상수
-const DATASET_NAMES = {
-  assetDetail: 'assetDetailUnified',
-  metricLatest: 'metricLatest',
-  metricHistory: 'metricHistoryStats',
+const CONFIG = {
+  // 전력현황 4카드
+  powerStatus: {
+    batterySoc:   { label: '배터리 사용률',   unit: '%', metricCode: 'UPS.BATT_PCT', scale: 1.0 },
+    batteryTime:  { label: '배터리 잔여시간', unit: 'h', metricCode: null,          scale: 1.0 },  // API 미지원
+    loadRate:     { label: '부하율',         unit: '%', metricCode: 'UPS.LOAD_PCT', scale: 1.0 },
+    batteryVolt:  { label: '배터리 출력전압', unit: 'V', metricCode: 'UPS.BATT_V',   scale: 0.1 },
+  },
+  // 3탭 트렌드 차트
+  tab: {
+    current:   { label: '입/출력 전류',   unit: 'A',  inputCode: 'UPS.INPUT_A_AVG',  outputCode: 'UPS.OUTPUT_A_AVG' },
+    voltage:   { label: '입/출력 전압',   unit: 'V',  inputCode: 'UPS.INPUT_V_AVG',  outputCode: 'UPS.OUTPUT_V_AVG' },
+    frequency: { label: '입/출력 주파수', unit: 'Hz', inputCode: 'UPS.INPUT_F_AVG',  outputCode: 'UPS.OUTPUT_F_AVG' },
+  },
+  // 차트 시리즈 (입력/출력 듀얼 라인)
+  chartSeries: {
+    input:  { label: '입력', color: '#f59e0b' },
+    output: { label: '출력', color: '#22c55e' },
+  },
+  // 데이터셋 이름
+  datasetNames: {
+    assetDetail: 'assetDetailUnified',
+    metricLatest: 'metricLatest',
+    metricHistory: 'metricHistoryStats',
+    modelDetail: 'modelDetail',
+    vendorDetail: 'vendorDetail',
+  },
 };
 
 initComponent.call(this);
 
 function initComponent() {
   // ======================
-  // 1. 데이터 정의
+  // 1. 내부 상태
   // ======================
   this._defaultAssetKey = this.setter?.assetInfo?.assetKey || this.id;
   this._baseUrl = BASE_URL;
   this._trendData = null;
   this._activeTab = 'voltage';
+  this._refreshIntervalId = null;
 
+  // ======================
+  // 2. 변환 함수 바인딩
+  // ======================
+  this.statusTypeToLabel = statusTypeToLabel.bind(this);
+  this.statusTypeToDataAttr = statusTypeToDataAttr.bind(this);
+  this.formatDate = formatDate.bind(this);
+  this.formatTimestamp = formatTimestamp.bind(this);
+
+  // ======================
+  // 3. Config 통합 (this.config로 모든 설정 접근)
+  // ======================
+  this.config = {
+    // 외부 정의 config 병합
+    ...CONFIG,
+
+    // selectors
+    selectors: {
+      name: '.ups-name',
+      zone: '.ups-zone',
+      status: '.ups-status',
+      timestamp: '.section-timestamp',
+      chartContainer: '.chart-container',
+      powerCard: '.power-card',
+      powerCardValue: '.power-card-value',
+      tabBtn: '.tab-btn',
+      infoModel: '.info-model',
+      infoVendor: '.info-vendor',
+    },
+
+    // 기본정보 헤더 매핑
+    baseInfo: [
+      { key: 'name', selector: '.ups-name' },
+      { key: 'locationLabel', selector: '.ups-zone' },
+      { key: 'statusType', selector: '.ups-status', transform: this.statusTypeToLabel },
+      { key: 'statusType', selector: '.ups-status', dataAttr: 'status', transform: this.statusTypeToDataAttr },
+    ],
+
+    // 기본정보 테이블 매핑
+    infoTable: [
+      { key: 'name', selector: '.info-name' },
+      { key: 'assetType', selector: '.info-type' },
+      { key: 'usageLabel', selector: '.info-usage', fallback: '-' },
+      { key: 'locationLabel', selector: '.info-location' },
+      { key: 'statusType', selector: '.info-status', transform: this.statusTypeToLabel },
+      { key: 'installDate', selector: '.info-install-date', transform: this.formatDate },
+    ],
+
+    // 템플릿
+    template: {
+      popup: 'popup-ups',
+    },
+
+    // 이벤트
+    events: {
+      click: '@assetClicked',
+    },
+
+    // 갱신 주기
+    refresh: {
+      interval: 5000,
+    },
+  };
+
+  // ======================
+  // 4. 데이터셋 정의
+  // ======================
+  const { datasetNames } = this.config;
   this.datasetInfo = [
-    { datasetName: DATASET_NAMES.assetDetail, param: { baseUrl: this._baseUrl, assetKey: this._defaultAssetKey, locale: 'ko' }, render: ['renderBasicInfo'] },
-    { datasetName: DATASET_NAMES.metricLatest, param: { baseUrl: this._baseUrl, assetKey: this._defaultAssetKey }, render: ['renderPowerStatus'] },
+    { datasetName: datasetNames.assetDetail, param: { baseUrl: this._baseUrl, assetKey: this._defaultAssetKey, locale: 'ko' }, render: ['renderBasicInfo'] },
+    { datasetName: datasetNames.metricLatest, param: { baseUrl: this._baseUrl, assetKey: this._defaultAssetKey }, render: ['renderPowerStatus'] },
     {
-      datasetName: DATASET_NAMES.metricHistory,
+      datasetName: datasetNames.metricHistory,
       param: {
         baseUrl: this._baseUrl,
         assetKey: this._defaultAssetKey,
         interval: '1h',
-        timeRange: 24 * 60 * 60 * 1000, // 24시간 (ms)
+        timeRange: 24 * 60 * 60 * 1000,
         metricCodes: [
           'UPS.INPUT_A_AVG', 'UPS.OUTPUT_A_AVG',
           'UPS.INPUT_V_AVG', 'UPS.OUTPUT_V_AVG',
@@ -94,51 +162,6 @@ function initComponent() {
   ];
 
   // ======================
-  // 2. 변환 함수 바인딩
-  // ======================
-  this.statusTypeToLabel = statusTypeToLabel.bind(this);
-  this.statusTypeToDataAttr = statusTypeToDataAttr.bind(this);
-  this.formatDate = formatDate.bind(this);
-  this.formatTimestamp = formatTimestamp.bind(this);
-
-  // ======================
-  // 3. Selectors
-  // ======================
-  this.selectors = {
-    name: '.ups-name',
-    zone: '.ups-zone',
-    status: '.ups-status',
-    timestamp: '.section-timestamp',
-    chartContainer: '.chart-container',
-    // 카드 및 탭 관련
-    powerCard: '.power-card',
-    powerCardValue: '.power-card-value',
-    tabBtn: '.tab-btn',
-    // 체이닝 테이블 셀
-    infoModel: '.info-model',
-    infoVendor: '.info-vendor',
-  };
-
-  // ======================
-  // 4. Data Config
-  // ======================
-  this.baseInfoConfig = [
-    { key: 'name', selector: this.selectors.name },
-    { key: 'locationLabel', selector: this.selectors.zone },
-    { key: 'statusType', selector: this.selectors.status, transform: this.statusTypeToLabel },
-    { key: 'statusType', selector: this.selectors.status, dataAttr: 'status', transform: this.statusTypeToDataAttr },
-  ];
-
-  this.infoTableConfig = [
-    { key: 'name', selector: '.info-name' },
-    { key: 'assetType', selector: '.info-type' },
-    { key: 'usageLabel', selector: '.info-usage', fallback: '-' },
-    { key: 'locationLabel', selector: '.info-location' },
-    { key: 'statusType', selector: '.info-status', transform: this.statusTypeToLabel },
-    { key: 'installDate', selector: '.info-install-date', transform: this.formatDate },
-  ];
-
-  // ======================
   // 5. 렌더링 함수 바인딩
   // ======================
   this.renderBasicInfo = renderBasicInfo.bind(this);
@@ -146,13 +169,7 @@ function initComponent() {
   this.renderTrendChart = renderTrendChart.bind(this);
 
   // ======================
-  // 6. Refresh Config (5초 갱신)
-  // ======================
-  this.refreshInterval = 5000;
-  this._refreshIntervalId = null;
-
-  // ======================
-  // 7. Public Methods
+  // 6. Public Methods
   // ======================
   this.showDetail = showDetail.bind(this);
   this.hideDetail = hideDetail.bind(this);
@@ -161,26 +178,15 @@ function initComponent() {
   this._switchTab = switchTab.bind(this);
 
   // ======================
-  // 8. 이벤트 발행
+  // 7. 이벤트 발행
   // ======================
-  this.customEvents = {
-    click: '@assetClicked',
-  };
-
-  bind3DEvents(this, this.customEvents);
+  bind3DEvents(this, this.config.events);
 
   // ======================
-  // 9. Template Config
+  // 8. Popup (template 기반)
   // ======================
-  this.templateConfig = {
-    popup: 'popup-ups',
-  };
-
-  // ======================
-  // 10. Popup (template 기반)
-  // ======================
-  this.popupCreatedConfig = {
-    chartSelector: this.selectors.chartContainer,
+  const popupCreatedConfig = {
+    chartSelector: this.config.selectors.chartContainer,
     events: {
       click: {
         '.close-btn': () => this.hideDetail(),
@@ -190,9 +196,9 @@ function initComponent() {
   };
 
   const { htmlCode, cssCode } = this.properties.publishCode || {};
-  this.getPopupHTML = () => extractTemplate(htmlCode || '', this.templateConfig.popup);
+  this.getPopupHTML = () => extractTemplate(htmlCode || '', this.config.template.popup);
   this.getPopupStyles = () => cssCode || '';
-  this.onPopupCreated = onPopupCreated.bind(this, this.popupCreatedConfig);
+  this.onPopupCreated = onPopupCreated.bind(this, popupCreatedConfig);
 
   applyShadowPopupMixin(this, {
     getHTML: this.getPopupHTML,
@@ -212,10 +218,12 @@ function initComponent() {
 function showDetail() {
   this.showPopup();
 
+  const { datasetNames, refresh } = this.config;
+
   // 1) assetDetailUnified + metricLatest 호출 (섹션별 독립 처리)
   // metricHistoryStats는 fetchTrendData에서 fetch API로 직접 호출하므로 제외
   fx.go(
-    this.datasetInfo.filter(d => d.datasetName !== DATASET_NAMES.metricHistory),
+    this.datasetInfo.filter(d => d.datasetName !== datasetNames.metricHistory),
     fx.each(({ datasetName, param, render }) =>
       fx.go(
         fetchData(this.page, datasetName, param),
@@ -242,7 +250,7 @@ function showDetail() {
 
   // 3) 5초 주기로 메트릭 갱신 시작
   this.stopRefresh();
-  this._refreshIntervalId = setInterval(() => this.refreshMetrics(), this.refreshInterval);
+  this._refreshIntervalId = setInterval(() => this.refreshMetrics(), refresh.interval);
   console.log('[UPS] Metric refresh started (5s interval)');
 }
 
@@ -252,9 +260,10 @@ function hideDetail() {
 }
 
 function refreshMetrics() {
-  const metricInfo = this.datasetInfo.find(d => d.datasetName === DATASET_NAMES.metricLatest);
+  const { datasetNames } = this.config;
+  const metricInfo = this.datasetInfo.find(d => d.datasetName === datasetNames.metricLatest);
   fx.go(
-    fetchData(this.page, 'metricLatest', metricInfo.param),
+    fetchData(this.page, datasetNames.metricLatest, metricInfo.param),
     (response) => {
       if (!response || !response.response) return;
       const data = response.response.data;
@@ -275,10 +284,11 @@ function stopRefresh() {
 }
 
 function switchTab(tabName) {
-  if (!tabName || !TAB_CONFIG[tabName]) return;
+  const { tab, selectors } = this.config;
+  if (!tabName || !tab[tabName]) return;
   this._activeTab = tabName;
 
-  const buttons = this.popupQueryAll(this.selectors.tabBtn);
+  const buttons = this.popupQueryAll(selectors.tabBtn);
   if (buttons) {
     buttons.forEach((btn) => btn.classList.toggle('active', btn.dataset.tab === tabName));
   }
@@ -294,7 +304,8 @@ function switchTab(tabName) {
 // ======================
 
 async function fetchTrendData() {
-  const trendInfo = this.datasetInfo.find(d => d.datasetName === DATASET_NAMES.metricHistory);
+  const { datasetNames } = this.config;
+  const trendInfo = this.datasetInfo.find(d => d.datasetName === datasetNames.metricHistory);
   if (!trendInfo) return;
 
   const { baseUrl, assetKey, interval, timeRange, metricCodes, statsKeys } = trendInfo.param;
@@ -343,10 +354,11 @@ function renderBasicInfo({ response }) {
   }
 
   const asset = data.asset;
+  const { baseInfo, infoTable, selectors, datasetNames } = this.config;
 
   // Header 영역
   fx.go(
-    this.baseInfoConfig,
+    baseInfo,
     fx.each(({ key, selector, dataAttr, transform }) => {
       const el = this.popupQuery(selector);
       if (!el) return;
@@ -367,7 +379,7 @@ function renderBasicInfo({ response }) {
   };
 
   fx.go(
-    this.infoTableConfig,
+    infoTable,
     fx.each(({ key, selector, transform, fallback }) => {
       let value = asset[key] ?? fallback ?? '-';
       if (transform) value = transform(value);
@@ -378,18 +390,18 @@ function renderBasicInfo({ response }) {
   // 제조사명/모델 체이닝: assetModelKey → mdl/g → vdr/g
   if (asset.assetModelKey) {
     fx.go(
-      fetchData(this.page, 'modelDetail', { baseUrl: this._baseUrl, assetModelKey: asset.assetModelKey }),
+      fetchData(this.page, datasetNames.modelDetail, { baseUrl: this._baseUrl, assetModelKey: asset.assetModelKey }),
       (modelResp) => {
         if (!modelResp?.response?.data) return;
         const model = modelResp.response.data;
-        setCell(this.selectors.infoModel, model.name);
+        setCell(selectors.infoModel, model.name);
 
         if (model.assetVendorKey) {
           fx.go(
-            fetchData(this.page, 'vendorDetail', { baseUrl: this._baseUrl, assetVendorKey: model.assetVendorKey }),
+            fetchData(this.page, datasetNames.vendorDetail, { baseUrl: this._baseUrl, assetVendorKey: model.assetVendorKey }),
             (vendorResp) => {
               if (!vendorResp?.response?.data) return;
-              setCell(this.selectors.infoVendor, vendorResp.response.data.name);
+              setCell(selectors.infoVendor, vendorResp.response.data.name);
             }
           ).catch(() => {});
         }
@@ -404,7 +416,8 @@ function renderBasicInfo({ response }) {
 
 function renderPowerStatus({ response }) {
   const { data } = response;
-  const timestampEl = this.popupQuery(this.selectors.timestamp);
+  const { powerStatus, selectors } = this.config;
+  const timestampEl = this.popupQuery(selectors.timestamp);
 
   if (!data || !Array.isArray(data) || data.length === 0) {
     console.warn('[UPS] renderPowerStatus: no data');
@@ -424,11 +437,11 @@ function renderPowerStatus({ response }) {
   });
 
   // 각 카드에 값 설정
-  Object.entries(POWER_STATUS_CONFIG).forEach(([key, config]) => {
-    const card = this.popupQuery(`${this.selectors.powerCard}[data-metric="${key}"]`);
+  Object.entries(powerStatus).forEach(([key, config]) => {
+    const card = this.popupQuery(`${selectors.powerCard}[data-metric="${key}"]`);
     if (!card) return;
 
-    const valueEl = card.querySelector(this.selectors.powerCardValue);
+    const valueEl = card.querySelector(selectors.powerCardValue);
     if (!valueEl) return;
 
     // metricCode가 없으면 "-" 표시 (API 미지원)
@@ -459,7 +472,8 @@ function renderTrendChart({ response }) {
     return;
   }
 
-  const tabConfig = TAB_CONFIG[this._activeTab];
+  const { tab, chartSeries, selectors } = this.config;
+  const tabConfig = tab[this._activeTab];
   if (!tabConfig) return;
 
   // 데이터를 시간별로 그룹핑
@@ -480,7 +494,7 @@ function renderTrendChart({ response }) {
     return raw != null ? +(raw).toFixed(2) : null;
   });
 
-  const { input: inputSeries, output: outputSeries } = CHART_SERIES_CONFIG;
+  const { input: inputSeries, output: outputSeries } = chartSeries;
 
   const option = {
     tooltip: {
@@ -548,7 +562,7 @@ function renderTrendChart({ response }) {
     ],
   };
 
-  this.updateChart(this.selectors.chartContainer, option);
+  this.updateChart(selectors.chartContainer, option);
 }
 
 // ======================
