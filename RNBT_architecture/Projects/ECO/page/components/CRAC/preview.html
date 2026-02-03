@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>CRAC - Preview (Metric API 연동)</title>
+    <title>CRAC - Preview (스펙 v.0.8_260128)</title>
     <script src="https://cdn.jsdelivr.net/npm/echarts@5.5.0/dist/echarts.min.js"></script>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -54,7 +54,7 @@
 
     <script>
         // ======================
-        // TEMPLATE DATA (새로운 섹션 구조)
+        // HTML TEMPLATE (component.html 인라인)
         // ======================
         const htmlCode = `
             <template id="popup-crac">
@@ -74,32 +74,97 @@
                                 </button>
                             </div>
                         </div>
-
                         <div class="popup-body">
-                            <!-- Section 1: Realtime Metrics -->
-                            <div class="section metrics-section">
+                            <div class="section info-section">
+                                <div class="info-layout">
+                                    <div class="info-image-placeholder">
+                                        <svg width="48" height="48" viewBox="0 0 48 48" fill="none">
+                                            <rect x="8" y="6" width="32" height="36" rx="3" stroke="#4b5563" stroke-width="2"/>
+                                            <line x1="8" y1="16" x2="40" y2="16" stroke="#4b5563" stroke-width="2"/>
+                                            <line x1="8" y1="26" x2="40" y2="26" stroke="#4b5563" stroke-width="2"/>
+                                            <circle cx="24" cy="36" r="3" stroke="#4b5563" stroke-width="2"/>
+                                        </svg>
+                                        <span class="image-label">CRAC</span>
+                                    </div>
+                                    <table class="info-table">
+                                        <tbody>
+                                            <tr><th>자산명</th><td class="info-name">-</td></tr>
+                                            <tr><th>자산타입</th><td class="info-type">-</td></tr>
+                                            <tr><th>용도</th><td class="info-usage">-</td></tr>
+                                            <tr><th>제조사명</th><td class="info-vendor">-</td></tr>
+                                            <tr><th>모델</th><td class="info-model">-</td></tr>
+                                            <tr><th>위치</th><td class="info-location">-</td></tr>
+                                            <tr><th>상태</th><td class="info-status">-</td></tr>
+                                            <tr><th>설치일</th><td class="info-install-date">-</td></tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                            <div class="section status-section">
                                 <div class="section-header">
-                                    <span class="section-title">실시간 측정값</span>
+                                    <span class="section-title">항온항습기 상태정보</span>
                                     <span class="section-timestamp"></span>
                                 </div>
-                                <div class="metrics-container"></div>
-                            </div>
-
-                            <!-- Section 2: Properties -->
-                            <div class="section properties-section">
-                                <div class="section-header">
-                                    <span class="section-title">속성 정보</span>
+                                <div class="status-cards">
+                                    <div class="status-card">
+                                        <div class="status-card-label">현재온도 / 설정온도</div>
+                                        <div class="status-card-values">
+                                            <span class="current-temp">-</span>
+                                            <span class="status-card-unit">°C</span>
+                                            <span class="status-card-separator">/</span>
+                                            <span class="set-temp">-</span>
+                                            <span class="status-card-unit">°C</span>
+                                        </div>
+                                    </div>
+                                    <div class="status-card">
+                                        <div class="status-card-label">현재습도 / 설정습도</div>
+                                        <div class="status-card-values">
+                                            <span class="current-humidity">-</span>
+                                            <span class="status-card-unit">%</span>
+                                            <span class="status-card-separator">/</span>
+                                            <span class="set-humidity">-</span>
+                                            <span class="status-card-unit">%</span>
+                                        </div>
+                                    </div>
                                 </div>
-                                <div class="properties-container"></div>
                             </div>
-
-                            <!-- Section 3: Chart -->
+                            <div class="section indicator-section">
+                                <div class="section-header">
+                                    <span class="section-title">상태 인디케이터</span>
+                                </div>
+                                <div class="indicator-row">
+                                    <div class="indicator" data-metric="CRAC.FAN_STATUS">
+                                        <span class="indicator-dot" data-state="off"></span>
+                                        <span class="indicator-label">팬</span>
+                                    </div>
+                                    <div class="indicator" data-metric="CRAC.COOL_STATUS">
+                                        <span class="indicator-dot" data-state="off"></span>
+                                        <span class="indicator-label">냉방</span>
+                                    </div>
+                                    <div class="indicator" data-metric="CRAC.HEAT_STATUS">
+                                        <span class="indicator-dot" data-state="off"></span>
+                                        <span class="indicator-label">난방</span>
+                                    </div>
+                                    <div class="indicator" data-metric="CRAC.HUMIDIFY_STATUS">
+                                        <span class="indicator-dot" data-state="off"></span>
+                                        <span class="indicator-label">가습</span>
+                                    </div>
+                                    <div class="indicator" data-metric="CRAC.DEHUMIDIFY_STATUS">
+                                        <span class="indicator-dot" data-state="off"></span>
+                                        <span class="indicator-label">제습</span>
+                                    </div>
+                                    <div class="indicator" data-metric="CRAC.LEAK_STATUS">
+                                        <span class="indicator-dot" data-state="off"></span>
+                                        <span class="indicator-label">누수</span>
+                                    </div>
+                                </div>
+                            </div>
                             <div class="section chart-section">
                                 <div class="section-header">
-                                    <span class="section-title">히스토리</span>
+                                    <span class="section-title">온/습도 현황</span>
                                 </div>
                                 <div class="chart-container">
-                                    <div class="empty-state">히스토리 데이터가 없습니다</div>
+                                    <div class="empty-state">차트 데이터를 불러오는 중...</div>
                                 </div>
                             </div>
                         </div>
@@ -108,89 +173,92 @@
             </template>
         `;
 
+        // ======================
+        // CSS (component.css 인라인)
+        // ======================
         const cssCode = `
             .popup-overlay {
-                position: fixed; top: 0; left: 0;
-                width: 100vw; height: 100vh;
+                position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
                 background: rgba(0, 0, 0, 0.6);
-                display: flex; align-items: center; justify-content: center;
-                z-index: 1000;
+                display: flex; align-items: center; justify-content: center; z-index: 1000;
             }
-
             .popup-content {
-                background: #1a1f2e;
-                border-radius: 12px;
+                background: #1a1f2e; border-radius: 12px;
                 width: 560px; max-width: 90vw; height: 90vh;
-                overflow: hidden;
-                box-shadow: 0 24px 48px rgba(0, 0, 0, 0.4);
-                border: 1px solid #2a3142;
-                display: flex; flex-direction: column;
+                overflow: hidden; box-shadow: 0 24px 48px rgba(0, 0, 0, 0.4);
+                border: 1px solid #2a3142; display: flex; flex-direction: column;
             }
-
             .popup-header {
                 display: flex; justify-content: space-between; align-items: center;
                 padding: 20px 24px; border-bottom: 1px solid #2a3142; flex-shrink: 0;
             }
-
             .header-info { display: flex; flex-direction: column; gap: 4px; }
             .crac-name { margin: 0; font-size: 18px; font-weight: 600; color: #e0e6ed; }
             .crac-zone { font-size: 13px; color: #8892a0; }
-
             .header-actions { display: flex; align-items: center; gap: 12px; }
-            .crac-status { padding: 4px 12px; border-radius: 12px; font-size: 12px; font-weight: 500; text-transform: capitalize; }
+            .crac-status { padding: 4px 12px; border-radius: 12px; font-size: 12px; font-weight: 500; }
             .crac-status[data-status="normal"] { background: rgba(34, 197, 94, 0.15); color: #22c55e; }
             .crac-status[data-status="warning"] { background: rgba(234, 179, 8, 0.15); color: #eab308; }
             .crac-status[data-status="critical"] { background: rgba(239, 68, 68, 0.15); color: #ef4444; }
-
             .close-btn {
                 display: flex; align-items: center; justify-content: center;
                 width: 32px; height: 32px; padding: 0;
                 background: transparent; border: none; border-radius: 6px;
-                color: #8892a0; cursor: pointer;
-                transition: background 0.15s, color 0.15s;
+                color: #8892a0; cursor: pointer; transition: background 0.15s, color 0.15s;
             }
             .close-btn:hover { background: #2a3142; color: #e0e6ed; }
-
             .popup-body {
-                padding: 24px;
-                display: flex; flex-direction: column; gap: 20px;
-                flex: 1; min-height: 0; overflow: hidden;
+                padding: 20px 24px; display: flex; flex-direction: column; gap: 16px;
+                flex: 1; min-height: 0; overflow-y: auto;
             }
-
-            /* Section Common */
-            .section { background: #252b3b; border-radius: 8px; overflow: hidden; flex: 1; min-height: 0; display: flex; flex-direction: column; }
+            .section { background: #252b3b; border-radius: 8px; overflow: hidden; flex-shrink: 0; }
             .section-header {
                 display: flex; justify-content: space-between; align-items: center;
-                padding: 12px 16px; border-bottom: 1px solid #2a3142; flex-shrink: 0;
+                padding: 12px 16px; border-bottom: 1px solid #2a3142;
             }
-            .section-title { font-size: 13px; font-weight: 500; color: #8892a0; text-transform: uppercase; letter-spacing: 0.5px; }
+            .section-title { font-size: 13px; font-weight: 500; color: #8892a0; letter-spacing: 0.5px; }
             .section-timestamp { font-size: 11px; color: #6b7280; }
 
-            /* Metrics Section */
-            .metrics-container { display: grid; grid-template-columns: 1fr 1fr; gap: 1px; background: #2a3142; flex: 1; overflow-y: auto; }
-            .metric-card { background: #252b3b; padding: 20px 16px; text-align: center; }
-            .metric-label { font-size: 11px; color: #8892a0; margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.5px; }
-            .metric-value { font-size: 32px; font-weight: 600; color: #e0e6ed; line-height: 1; }
-            .metric-unit { font-size: 14px; font-weight: 400; color: #8892a0; margin-left: 2px; }
+            /* 기본정보 */
+            .info-section { padding: 16px; }
+            .info-layout { display: flex; gap: 16px; }
+            .info-image-placeholder {
+                width: 100px; min-height: 100px; background: #1a1f2e;
+                border-radius: 8px; border: 1px solid #2a3142;
+                display: flex; flex-direction: column; align-items: center; justify-content: center;
+                gap: 8px; flex-shrink: 0;
+            }
+            .info-image-placeholder svg { opacity: 0.5; }
+            .image-label { font-size: 11px; color: #6b7280; font-weight: 500; }
+            .info-table { flex: 1; border-collapse: collapse; font-size: 13px; }
+            .info-table th, .info-table td { padding: 5px 8px; text-align: left; border-bottom: 1px solid rgba(42, 49, 66, 0.5); }
+            .info-table th { color: #8892a0; font-weight: 400; white-space: nowrap; width: 70px; }
+            .info-table td { color: #e0e6ed; font-weight: 500; }
+            .info-table tr:last-child th, .info-table tr:last-child td { border-bottom: none; }
 
-            /* BOOL Metrics */
-            .metric-bool { padding: 16px; }
-            .metric-value-bool { font-size: 18px; font-weight: 600; line-height: 1; }
-            .bool-on .metric-value-bool { color: #22c55e; }
-            .bool-off .metric-value-bool { color: #6b7280; }
+            /* 상태정보 카드 */
+            .status-cards { display: grid; grid-template-columns: 1fr 1fr; gap: 1px; background: #2a3142; }
+            .status-card { background: #252b3b; padding: 16px; text-align: center; }
+            .status-card-label { font-size: 12px; color: #8892a0; margin-bottom: 10px; }
+            .status-card-values { display: flex; align-items: baseline; justify-content: center; gap: 2px; }
+            .status-card-values .current-temp, .status-card-values .current-humidity { font-size: 28px; font-weight: 600; color: #e0e6ed; line-height: 1; }
+            .status-card-values .set-temp, .status-card-values .set-humidity { font-size: 28px; font-weight: 600; color: #6b7280; line-height: 1; }
+            .status-card-unit { font-size: 14px; font-weight: 400; color: #8892a0; }
+            .status-card-separator { font-size: 20px; color: #4b5563; margin: 0 4px; }
 
-            /* Properties Section */
-            .properties-container { display: grid; grid-template-columns: 1fr 1fr; gap: 1px; background: #2a3142; flex: 1; overflow-y: auto; }
-            .property-card { background: #252b3b; padding: 12px 16px; }
-            .property-label { font-size: 11px; color: #8892a0; margin-bottom: 4px; }
-            .property-value { font-size: 14px; font-weight: 500; color: #e0e6ed; }
-            .properties-section.hidden { display: none; }
+            /* 인디케이터 */
+            .indicator-row { display: flex; justify-content: space-around; padding: 16px; }
+            .indicator { display: flex; flex-direction: column; align-items: center; gap: 8px; }
+            .indicator-dot { width: 12px; height: 12px; border-radius: 50%; background: #4b5563; transition: background 0.2s; }
+            .indicator-dot[data-state="on"] { background: #22c55e; box-shadow: 0 0 8px rgba(34, 197, 94, 0.4); }
+            .indicator-dot[data-state="off"] { background: #4b5563; }
+            .indicator-dot[data-state="error"] { background: #ef4444; box-shadow: 0 0 8px rgba(239, 68, 68, 0.4); }
+            .indicator-dot[data-state="ok"] { background: #22c55e; box-shadow: 0 0 8px rgba(34, 197, 94, 0.4); }
+            .indicator-label { font-size: 11px; color: #8892a0; }
 
-            /* Chart Section */
-            .chart-section .chart-container { width: 100%; flex: 1; min-height: 180px; }
-            .chart-section.hidden { display: none; }
-
-            /* States */
+            /* 차트 */
+            .chart-section { flex: 1; min-height: 220px; display: flex; flex-direction: column; }
+            .chart-container { flex: 1; min-height: 180px; width: 100%; }
             .empty-state { padding: 24px 16px; text-align: center; color: #6b7280; font-size: 13px; }
             .error-state { padding: 24px 16px; text-align: center; color: #ef4444; font-size: 13px; }
         `;
@@ -225,67 +293,61 @@
             }
         };
 
+        const BASE_URL = '10.23.128.125:4004';
+        let currentStatus = 'normal';
+
         const Wkit = {
             bind3DEvents: (ctx, events) => console.log('[Wkit.bind3DEvents]', Object.keys(events)),
             fetchData: (page, datasetName, param) => {
                 console.log('[Wkit.fetchData]', datasetName, param);
-                return Promise.resolve({ response: { data: getMockData(datasetName) } });
+                return Promise.resolve({ response: { data: getMockData(datasetName, param) } });
             }
         };
 
-        // Mock data
-        let currentStatus = 'normal';
+        // ======================
+        // MOCK DATA
+        // ======================
 
-        // assetDetailUnified 응답
-        const mockCRACData = {
+        const mockAssetData = {
             normal: {
                 asset: {
-                    name: 'CRAC-A01',
-                    locationLabel: 'Zone-A',
-                    statusType: 'ACTIVE'
+                    name: 'CRAC-A01', locationLabel: 'Zone-A / 2층 전산실',
+                    statusType: 'ACTIVE', assetType: '항온항습기',
+                    usageLabel: '서버실 냉각', installDate: '2025-03-15T00:00:00.000Z',
+                    assetModelKey: 'model-crac-001'
                 },
-                properties: [
-                    { label: 'Supply Temp', value: '18.2°C', helpText: 'Supply air temperature', displayOrder: 1 },
-                    { label: 'Return Temp', value: '24.5°C', helpText: 'Return air temperature', displayOrder: 2 },
-                    { label: 'Humidity', value: '48%', helpText: 'Relative humidity', displayOrder: 3 },
-                    { label: 'Fan Speed', value: '75%', helpText: 'Fan speed percentage', displayOrder: 4 },
-                    { label: 'Setpoint', value: '18.0°C', helpText: 'Temperature setpoint', displayOrder: 5 },
-                    { label: 'Mode', value: 'Cooling', helpText: 'Operating mode', displayOrder: 6 }
-                ]
+                properties: []
             },
             warning: {
                 asset: {
-                    name: 'CRAC-B02',
-                    locationLabel: 'Zone-B',
-                    statusType: 'WARNING'
+                    name: 'CRAC-B02', locationLabel: 'Zone-B / 3층 전산실',
+                    statusType: 'WARNING', assetType: '항온항습기',
+                    usageLabel: '서버실 냉각', installDate: '2024-11-20T00:00:00.000Z',
+                    assetModelKey: 'model-crac-001'
                 },
-                properties: [
-                    { label: 'Supply Temp', value: '20.5°C', helpText: 'Supply air temperature - HIGH', displayOrder: 1 },
-                    { label: 'Return Temp', value: '28.8°C', helpText: 'Return air temperature - HIGH', displayOrder: 2 },
-                    { label: 'Humidity', value: '62%', helpText: 'Relative humidity - HIGH', displayOrder: 3 },
-                    { label: 'Fan Speed', value: '95%', helpText: 'Fan speed percentage', displayOrder: 4 },
-                    { label: 'Setpoint', value: '18.0°C', helpText: 'Temperature setpoint', displayOrder: 5 },
-                    { label: 'Mode', value: 'Cooling', helpText: 'Operating mode', displayOrder: 6 }
-                ]
+                properties: []
             },
             critical: {
                 asset: {
-                    name: 'CRAC-C03',
-                    locationLabel: 'Zone-C',
-                    statusType: 'CRITICAL'
+                    name: 'CRAC-C03', locationLabel: 'Zone-C / 1층 전산실',
+                    statusType: 'CRITICAL', assetType: '항온항습기',
+                    usageLabel: '서버실 냉각', installDate: '2024-06-10T00:00:00.000Z',
+                    assetModelKey: 'model-crac-002'
                 },
-                properties: [
-                    { label: 'Supply Temp', value: '22.0°C', helpText: 'Supply air temperature - CRITICAL', displayOrder: 1 },
-                    { label: 'Return Temp', value: '32.5°C', helpText: 'Return air temperature - CRITICAL', displayOrder: 2 },
-                    { label: 'Humidity', value: '72%', helpText: 'Relative humidity - CRITICAL', displayOrder: 3 },
-                    { label: 'Fan Speed', value: '100%', helpText: 'Fan speed percentage - MAX', displayOrder: 4 },
-                    { label: 'Setpoint', value: '18.0°C', helpText: 'Temperature setpoint', displayOrder: 5 },
-                    { label: 'Mode', value: 'Cooling', helpText: 'Operating mode', displayOrder: 6 }
-                ]
+                properties: []
             }
         };
 
-        // metricLatest 응답 (실시간 측정값)
+        const mockModelData = {
+            'model-crac-001': { name: 'DataMate 3000', assetVendorKey: 'vendor-emerson' },
+            'model-crac-002': { name: 'InRow RD', assetVendorKey: 'vendor-apc' },
+        };
+
+        const mockVendorData = {
+            'vendor-emerson': { name: 'Emerson (Liebert)' },
+            'vendor-apc': { name: 'APC (Schneider)' },
+        };
+
         const mockMetricData = {
             normal: [
                 { metricCode: 'CRAC.UNIT_STATUS', eventedAt: new Date().toISOString(), valueType: 'BOOL', valueBool: true },
@@ -331,48 +393,35 @@
             ]
         };
 
-        function generateHistoryData() {
-            const timestamps = [];
-            const supplyTemp = [];
-            const returnTemp = [];
-            const humidity = [];
+        function generateTrendData() {
+            const result = [];
             const now = new Date();
-
             for (let i = 23; i >= 0; i--) {
                 const time = new Date(now.getTime() - i * 3600000);
-                timestamps.push(time.toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' }));
-
-                const baseSupply = 18 + Math.sin(i / 8) * 1;
-                supplyTemp.push(Math.round((baseSupply + (Math.random() - 0.5) * 2) * 10) / 10);
-
-                const baseReturn = 24 + Math.sin(i / 6) * 2;
-                returnTemp.push(Math.round((baseReturn + (Math.random() - 0.5) * 3) * 10) / 10);
-
-                const baseHumidity = 50 + Math.sin(i / 10) * 5;
-                humidity.push(Math.round(Math.max(35, Math.min(65, baseHumidity + (Math.random() - 0.5) * 8)) * 10) / 10);
+                const baseTemp = 240 + Math.sin(i / 6) * 20;
+                const baseHumid = 480 + Math.sin(i / 10) * 50;
+                result.push(
+                    { time: time.toISOString(), metricCode: 'CRAC.RETURN_TEMP', statsBody: { avg: Math.round(baseTemp + (Math.random() - 0.5) * 30) } },
+                    { time: time.toISOString(), metricCode: 'CRAC.RETURN_HUMIDITY', statsBody: { avg: Math.round(baseHumid + (Math.random() - 0.5) * 80) } }
+                );
             }
-
-            return {
-                timestamps,
-                values: { supplyTemp, returnTemp, humidity },
-                fields: [
-                    { key: 'supplyTemp', label: 'Supply Temp', unit: '°C' },
-                    { key: 'returnTemp', label: 'Return Temp', unit: '°C' },
-                    { key: 'humidity', label: 'Humidity', unit: '%' }
-                ]
-            };
+            return result;
         }
 
-        function getMockData(datasetName) {
+        function getMockData(datasetName, param) {
             switch (datasetName) {
-                case 'assetDetailUnified': return mockCRACData[currentStatus];
+                case 'assetDetailUnified': return mockAssetData[currentStatus];
                 case 'metricLatest': return mockMetricData[currentStatus];
-                case 'cracHistory': return generateHistoryData();
+                case 'metricHistoryStats': return generateTrendData();
+                case 'modelDetail': return mockModelData[param?.assetModelKey] || null;
+                case 'vendorDetail': return mockVendorData[param?.assetVendorKey] || null;
                 default: return {};
             }
         }
 
+        // ======================
         // Mock PopupMixin
+        // ======================
         const PopupMixin = {
             applyShadowPopupMixin: (ctx, config) => {
                 let shadowRoot = null;
@@ -386,33 +435,24 @@
                         shadowRoot = host.shadowRoot;
                         shadowRoot.innerHTML = '';
                     }
-
                     const style = document.createElement('style');
                     style.textContent = config.getStyles();
                     shadowRoot.appendChild(style);
-
                     const content = document.createElement('div');
                     content.innerHTML = config.getHTML();
                     shadowRoot.appendChild(content);
-
                     ctx._shadowRoot = shadowRoot;
                     config.onCreated?.();
                     console.log('[PopupMixin] Popup shown');
                 };
 
                 ctx.hidePopup = () => {
-                    if (ctx._shadowRoot) {
-                        ctx._shadowRoot.innerHTML = '';
-                        console.log('[PopupMixin] Popup hidden');
-                    }
+                    if (ctx._shadowRoot) { ctx._shadowRoot.innerHTML = ''; console.log('[PopupMixin] Popup hidden'); }
                 };
 
                 ctx.destroyPopup = () => {
                     if (_chart) { _chart.dispose(); _chart = null; }
-                    if (ctx._shadowRoot) {
-                        ctx._shadowRoot.innerHTML = '';
-                        ctx._shadowRoot = null;
-                    }
+                    if (ctx._shadowRoot) { ctx._shadowRoot.innerHTML = ''; ctx._shadowRoot = null; }
                     console.log('[PopupMixin] Popup destroyed');
                 };
 
@@ -439,20 +479,13 @@
                         console.log('[EChartsMixin] Chart created');
                     }
                 };
-
                 ctx.updateChart = (selector, option) => {
                     let chart = ctx._getChartRef();
                     if (!chart) {
                         const container = ctx.popupQuery(selector);
-                        if (container) {
-                            chart = echarts.init(container);
-                            ctx._setChartRef(chart);
-                        }
+                        if (container) { chart = echarts.init(container); ctx._setChartRef(chart); }
                     }
-                    if (chart) {
-                        chart.setOption(option);
-                        console.log('[EChartsMixin] Chart updated');
-                    }
+                    if (chart) { chart.setOption(option); console.log('[EChartsMixin] Chart updated'); }
                 };
             }
         };
@@ -481,14 +514,12 @@
 
         function createInstance() {
             if (instance) { onInstanceUnLoad.call(instance); }
-
             instance = {
                 id: 'preview-crac',
                 page: { element: document.getElementById('popup-host') },
                 properties: { publishCode: { htmlCode, cssCode } },
                 setter: { assetInfo: { assetKey: 'mock-crac-001' } }
             };
-
             initComponent.call(instance);
             updateInstanceInfo();
         }
@@ -499,11 +530,11 @@
         }
 
         // ======================
-        // COMPONENT LIFECYCLE
+        // COMPONENT LIFECYCLE (register.js 로직 미러)
         // ======================
 
         function statusTypeToLabel(statusType) {
-            const labels = { ACTIVE: 'Normal', WARNING: 'Warning', CRITICAL: 'Critical', INACTIVE: 'Inactive', MAINTENANCE: 'Maintenance' };
+            const labels = { ACTIVE: '정상운영', WARNING: '주의', CRITICAL: '위험', INACTIVE: '비활성', MAINTENANCE: '유지보수' };
             return labels[statusType] || statusType;
         }
 
@@ -512,15 +543,17 @@
             return map[statusType] || 'normal';
         }
 
-        function formatTimestamp(isoString) {
-            if (!isoString) return '';
-            try {
-                const date = new Date(isoString);
-                return date.toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
-            } catch { return ''; }
+        function formatDate(dateStr) {
+            if (!dateStr) return '-';
+            try { return new Date(dateStr).toLocaleDateString('ko-KR', { year: 'numeric', month: '2-digit', day: '2-digit' }); }
+            catch { return dateStr; }
         }
 
-        const BASE_URL = '10.23.128.125:4004';
+        function formatTimestamp(isoString) {
+            if (!isoString) return '';
+            try { return new Date(isoString).toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit', second: '2-digit' }); }
+            catch { return ''; }
+        }
 
         function initComponent() {
             const { bind3DEvents, fetchData } = Wkit;
@@ -528,58 +561,38 @@
 
             this._defaultAssetKey = this.setter?.assetInfo?.assetKey || this.id;
 
-            // 데이터셋 정의
             this.datasetInfo = [
-                { datasetName: 'assetDetailUnified', render: ['renderAssetInfo', 'renderProperties'] },
-                { datasetName: 'metricLatest', render: ['renderMetrics'] }
+                { datasetName: 'assetDetailUnified', params: { baseUrl: BASE_URL, assetKey: this._defaultAssetKey, locale: 'ko' }, render: ['renderBasicInfo'] },
+                { datasetName: 'metricLatest', params: { baseUrl: BASE_URL, assetKey: this._defaultAssetKey }, render: ['renderStatusCards', 'renderIndicators'] },
             ];
+
+            this.statusTypeToLabel = statusTypeToLabel.bind(this);
+            this.statusTypeToDataAttr = statusTypeToDataAttr.bind(this);
+            this.formatDate = formatDate.bind(this);
+            this.formatTimestamp = formatTimestamp.bind(this);
 
             this.baseInfoConfig = [
                 { key: 'name', selector: '.crac-name' },
                 { key: 'locationLabel', selector: '.crac-zone' },
-                { key: 'statusType', selector: '.crac-status', transform: statusTypeToLabel },
-                { key: 'statusType', selector: '.crac-status', dataAttr: 'status', transform: statusTypeToDataAttr }
+                { key: 'statusType', selector: '.crac-status', transform: this.statusTypeToLabel },
+                { key: 'statusType', selector: '.crac-status', dataAttr: 'status', transform: this.statusTypeToDataAttr },
             ];
 
-            this.metricsContainerSelector = '.metrics-container';
-            this.propertiesContainerSelector = '.properties-container';
-            this.propertiesSectionSelector = '.properties-section';
             this.timestampSelector = '.section-timestamp';
             this.metricConfig = METRIC_CONFIG;
 
-            this.sectionTitles = {
-                '.metrics-section .section-title': '실시간 측정값',
-                '.properties-section .section-title': '속성 정보',
-                '.chart-section .section-title': '히스토리',
-            };
-
-            this.formatTimestamp = formatTimestamp.bind(this);
-
-            // chartConfig: 차트 렌더링 설정
-            this.chartConfig = {
-                xKey: 'timestamps',
-                styleMap: {
-                    supplyTemp: { label: '공급 온도', unit: '°C', color: '#3b82f6', yAxisIndex: 0 },
-                    returnTemp: { label: '환기 온도', unit: '°C', color: '#ef4444', yAxisIndex: 0 },
-                    humidity: { label: '습도', unit: '%', color: '#22c55e', yAxisIndex: 1 }
-                },
-                optionBuilder: getDualAxisChartOption
-            };
-
-            // 렌더링 함수 바인딩
-            this.renderAssetInfo = renderAssetInfo.bind(this);
-            this.renderProperties = renderProperties.bind(this);
-            this.renderMetrics = renderMetrics.bind(this);
-            this.renderChart = renderChart.bind(this);
+            this.renderBasicInfo = renderBasicInfo.bind(this);
+            this.renderStatusCards = renderStatusCards.bind(this);
+            this.renderIndicators = renderIndicators.bind(this);
+            this.renderTrendChart = renderTrendChart.bind(this);
             this.renderError = renderError.bind(this);
 
-            // Refresh Config
             this.refreshInterval = 5000;
             this._refreshIntervalId = null;
 
             this.showDetail = showDetail.bind(this);
             this.hideDetail = hideDetail.bind(this);
-            this.refreshMetrics = refreshMetricsOnly.bind(this);
+            this.refreshMetrics = refreshMetrics.bind(this);
             this.stopRefresh = stopRefresh.bind(this);
 
             this.customEvents = { click: '@assetClicked' };
@@ -588,174 +601,48 @@
             this.templateConfig = { popup: 'popup-crac' };
             this.popupCreatedConfig = {
                 chartSelector: '.chart-container',
-                events: { click: { '.close-btn': () => this.hideDetail() } }
+                events: { click: { '.close-btn': () => this.hideDetail() } },
             };
 
             const { htmlCode, cssCode } = this.properties.publishCode || {};
-            const ctx = this;
-            this.getPopupHTML = () => extractTemplate(htmlCode || '', ctx.templateConfig.popup);
+            this.getPopupHTML = () => extractTemplate(htmlCode || '', this.templateConfig.popup);
             this.getPopupStyles = () => cssCode || '';
-            this.onPopupCreated = function() {
-                applySectionTitles.call(ctx);
-                const { chartSelector, events } = ctx.popupCreatedConfig;
-                if (chartSelector) ctx.createChart(chartSelector);
-                if (events) ctx.bindPopupEvents(events);
-            };
+            this.onPopupCreated = onPopupCreated.bind(this, this.popupCreatedConfig);
 
             applyShadowPopupMixin(this, {
                 getHTML: this.getPopupHTML,
                 getStyles: this.getPopupStyles,
-                onCreated: this.onPopupCreated
+                onCreated: this.onPopupCreated,
             });
 
             applyEChartsMixin(this);
-
             console.log('[CRAC] Registered:', this._defaultAssetKey);
         }
 
-        function renderAssetInfo({ response }) {
-            const { data } = response;
-            if (!data || !data.asset) {
-                renderError.call(this, '자산 데이터가 없습니다.');
-                return;
-            }
-
-            const asset = data.asset;
-
-            fx.go(
-                this.baseInfoConfig,
-                fx.each(({ key, selector, dataAttr, transform }) => {
-                    const el = this.popupQuery(selector);
-                    if (!el) return;
-                    let value = asset[key];
-                    if (transform) value = transform(value);
-                    if (dataAttr) {
-                        el.dataset[dataAttr] = value;
-                    } else {
-                        el.textContent = value;
-                    }
-                })
-            );
-        }
-
-        function renderMetrics({ response }) {
-            const { data } = response;
-            const container = this.popupQuery(this.metricsContainerSelector);
-            const timestampEl = this.popupQuery(this.timestampSelector);
-
-            if (!container) return;
-
-            if (!data || !Array.isArray(data) || data.length === 0) {
-                container.innerHTML = '<div class="empty-state">측정 데이터가 없습니다</div>';
-                return;
-            }
-
-            if (timestampEl && data[0]?.eventedAt) {
-                timestampEl.textContent = this.formatTimestamp(data[0].eventedAt);
-            }
-
-            container.innerHTML = data.map((metric) => {
-                const config = this.metricConfig[metric.metricCode];
-                if (!config) return '';
-
-                if (config.valueType === 'BOOL') {
-                    const isOn = metric.valueBool;
-                    return `<div class="metric-card metric-bool ${isOn ? 'bool-on' : 'bool-off'}">
-                        <div class="metric-label">${config.label}</div>
-                        <div class="metric-value-bool">${isOn ? 'ON' : 'OFF'}</div>
-                    </div>`;
-                }
-
-                const value = metric.valueNumber;
-                const displayValue = config.scale ? (value * config.scale).toFixed(1) : value;
-                return `<div class="metric-card">
-                    <div class="metric-label">${config.label}</div>
-                    <div class="metric-value">${displayValue}<span class="metric-unit">${config.unit}</span></div>
-                </div>`;
-            }).join('');
-        }
-
-        function renderProperties({ response }) {
-            const { data } = response;
-            const container = this.popupQuery(this.propertiesContainerSelector);
-
-            if (!container) return;
-
-            // properties가 없거나 빈 배열인 경우 empty-state 표시
-            if (!data?.properties || data.properties.length === 0) {
-                container.innerHTML = '<div class="empty-state">속성 정보가 없습니다</div>';
-                return;
-            }
-
-            const sortedProperties = [...data.properties].sort((a, b) => (a.displayOrder || 0) - (b.displayOrder || 0));
-
-            container.innerHTML = sortedProperties
-                .map(({ label, value, helpText }) => {
-                    return `
-                        <div class="property-card" title="${helpText || ''}">
-                            <div class="property-label">${label}</div>
-                            <div class="property-value">${value ?? '-'}</div>
-                        </div>
-                    `;
-                })
-                .join('');
-        }
-
-        function renderError(message) {
-            const nameEl = this.popupQuery('.crac-name');
-            const zoneEl = this.popupQuery('.crac-zone');
-            const statusEl = this.popupQuery('.crac-status');
-
-            if (nameEl) nameEl.textContent = '데이터 없음';
-            if (zoneEl) zoneEl.textContent = message;
-            if (statusEl) {
-                statusEl.textContent = 'Error';
-                statusEl.dataset.status = 'critical';
-            }
-
-            const metricsContainer = this.popupQuery(this.metricsContainerSelector);
-            if (metricsContainer) {
-                metricsContainer.innerHTML = `<div class="error-state">${message}</div>`;
-            }
-
-            console.warn('[CRAC] renderError:', message);
-        }
-
-        function renderChart({ response }) {
-            const { data } = response;
-            if (!data) return;
-            const { optionBuilder, ...chartConfig } = this.chartConfig;
-            const option = optionBuilder(chartConfig, data);
-            this.updateChart('.chart-container', option);
-        }
+        // ======================
+        // PUBLIC METHODS
+        // ======================
 
         function showDetail() {
             this.showPopup();
+
             fx.go(
                 this.datasetInfo,
-                fx.each(({ datasetName, render }) =>
+                fx.each(({ datasetName, params, render }) =>
                     fx.go(
-                        Wkit.fetchData(this.page, datasetName, { baseUrl: BASE_URL, assetKey: this._defaultAssetKey, locale: 'ko' }),
+                        Wkit.fetchData(this.page, datasetName, params),
                         (response) => {
-                            if (!response || !response.response) {
-                                this.renderError('데이터를 불러올 수 없습니다.');
-                                return;
-                            }
+                            if (!response || !response.response) { this.renderError('데이터를 불러올 수 없습니다.'); return; }
                             const data = response.response.data;
-                            if (data === null || data === undefined) {
-                                this.renderError('자산 정보가 존재하지 않습니다.');
-                                return;
-                            }
+                            if (data === null || data === undefined) { this.renderError('자산 정보가 존재하지 않습니다.'); return; }
                             fx.each((fn) => this[fn](response), render);
                         }
                     )
                 )
-            ).catch(e => {
-                console.error('[CRAC]', e);
-                this.renderError('데이터 로드 중 오류가 발생했습니다.');
-            });
+            ).catch((e) => { console.error('[CRAC]', e); this.renderError('데이터 로드 중 오류가 발생했습니다.'); });
 
-            // 5초 주기로 메트릭 갱신 시작
+            fetchTrendData.call(this);
+
             this.stopRefresh();
             this._refreshIntervalId = setInterval(() => this.refreshMetrics(), this.refreshInterval);
             console.log('[CRAC] Metric refresh started (5s interval)');
@@ -766,18 +653,18 @@
             this.hidePopup();
         }
 
-        function refreshMetricsOnly() {
+        function refreshMetrics() {
+            const metricInfo = this.datasetInfo.find(d => d.datasetName === 'metricLatest');
             fx.go(
-                Wkit.fetchData(this.page, 'metricLatest', { baseUrl: BASE_URL, assetKey: this._defaultAssetKey }),
+                Wkit.fetchData(this.page, 'metricLatest', metricInfo.params),
                 (response) => {
                     if (!response || !response.response) return;
                     const data = response.response.data;
                     if (data === null || data === undefined) return;
-                    this.renderMetrics(response);
+                    this.renderStatusCards(response);
+                    this.renderIndicators(response);
                 }
-            ).catch(e => {
-                console.warn('[CRAC] Metric refresh failed:', e);
-            });
+            ).catch((e) => { console.warn('[CRAC] Metric refresh failed:', e); });
         }
 
         function stopRefresh() {
@@ -788,75 +675,247 @@
             }
         }
 
-        function getDualAxisChartOption(config, data) {
-            const { xKey, styleMap } = config;
+        // ======================
+        // TREND DATA FETCH
+        // ======================
 
-            const seriesData = Object.entries(styleMap).map(([key, style]) => ({
-                key,
-                name: style.label,
-                unit: style.unit,
-                color: style.color,
-                yAxisIndex: style.yAxisIndex
-            }));
+        function fetchTrendData() {
+            const now = new Date();
+            const from = new Date(now.getTime() - 24 * 60 * 60 * 1000);
+            fx.go(
+                Wkit.fetchData(this.page, 'metricHistoryStats', {
+                    baseUrl: BASE_URL, assetKey: this._defaultAssetKey,
+                    interval: '1h',
+                    metricCodes: '"CRAC.RETURN_TEMP","CRAC.RETURN_HUMIDITY"',
+                    timeFrom: from.toISOString(), timeTo: now.toISOString(),
+                    statsKeys: '"avg"',
+                }),
+                (response) => {
+                    if (!response || !response.response) { console.warn('[CRAC] Trend data unavailable'); return; }
+                    this.renderTrendChart(response);
+                }
+            ).catch((e) => { console.warn('[CRAC] Trend fetch failed:', e); });
+        }
 
-            const yAxisUnits = [...new Set(seriesData.map(s => s.unit))];
-            const yAxes = yAxisUnits.map((unit, idx) => ({
-                type: 'value',
-                name: unit,
-                position: idx === 0 ? 'left' : 'right',
-                axisLine: { show: true, lineStyle: { color: '#333' } },
-                axisLabel: { color: '#888', fontSize: 10 },
-                splitLine: { lineStyle: { color: idx === 0 ? '#333' : 'transparent' } }
-            }));
+        // ======================
+        // RENDER: 기본정보 테이블
+        // ======================
 
-            return {
+        function renderBasicInfo({ response }) {
+            const { data } = response;
+            if (!data || !data.asset) { renderError.call(this, '자산 데이터가 없습니다.'); return; }
+
+            const asset = data.asset;
+
+            fx.go(
+                this.baseInfoConfig,
+                fx.each(({ key, selector, dataAttr, transform }) => {
+                    const el = this.popupQuery(selector);
+                    if (!el) return;
+                    let value = asset[key];
+                    if (transform) value = transform(value);
+                    if (dataAttr) { el.dataset[dataAttr] = value; } else { el.textContent = value; }
+                })
+            );
+
+            const setCell = (selector, value) => {
+                const el = this.popupQuery(selector);
+                if (el) el.textContent = value ?? '-';
+            };
+
+            setCell('.info-name', asset.name);
+            setCell('.info-type', asset.assetType);
+            setCell('.info-usage', asset.usageLabel || '-');
+            setCell('.info-location', asset.locationLabel);
+            setCell('.info-status', this.statusTypeToLabel(asset.statusType));
+            setCell('.info-install-date', this.formatDate(asset.installDate));
+
+            if (asset.assetModelKey) {
+                fx.go(
+                    Wkit.fetchData(this.page, 'modelDetail', { baseUrl: BASE_URL, assetModelKey: asset.assetModelKey }),
+                    (modelResp) => {
+                        if (!modelResp?.response?.data) return;
+                        const model = modelResp.response.data;
+                        setCell('.info-model', model.name);
+                        if (model.assetVendorKey) {
+                            fx.go(
+                                Wkit.fetchData(this.page, 'vendorDetail', { baseUrl: BASE_URL, assetVendorKey: model.assetVendorKey }),
+                                (vendorResp) => {
+                                    if (!vendorResp?.response?.data) return;
+                                    setCell('.info-vendor', vendorResp.response.data.name);
+                                }
+                            ).catch(() => {});
+                        }
+                    }
+                ).catch(() => {});
+            }
+        }
+
+        // ======================
+        // RENDER: 상태정보 카드
+        // ======================
+
+        function renderStatusCards({ response }) {
+            const { data } = response;
+            const timestampEl = this.popupQuery(this.timestampSelector);
+            if (!data || !Array.isArray(data) || data.length === 0) return;
+
+            if (timestampEl && data[0]?.eventedAt) {
+                timestampEl.textContent = this.formatTimestamp(data[0].eventedAt);
+            }
+
+            const metricMap = {};
+            data.forEach((m) => { metricMap[m.metricCode] = m; });
+
+            const setValue = (selector, metricCode) => {
+                const el = this.popupQuery(selector);
+                if (!el) return;
+                const metric = metricMap[metricCode];
+                if (!metric) { el.textContent = '-'; return; }
+                const config = this.metricConfig[metricCode];
+                if (!config) { el.textContent = '-'; return; }
+                el.textContent = config.scale ? (metric.valueNumber * config.scale).toFixed(1) : metric.valueNumber;
+            };
+
+            setValue('.current-temp', 'CRAC.RETURN_TEMP');
+            setValue('.set-temp', 'CRAC.TEMP_SET');
+            setValue('.current-humidity', 'CRAC.RETURN_HUMIDITY');
+            setValue('.set-humidity', 'CRAC.HUMIDITY_SET');
+        }
+
+        // ======================
+        // RENDER: 상태 인디케이터
+        // ======================
+
+        function renderIndicators({ response }) {
+            const { data } = response;
+            if (!data || !Array.isArray(data)) return;
+
+            const metricMap = {};
+            data.forEach((m) => { metricMap[m.metricCode] = m; });
+
+            const indicators = this.popupQueryAll('.indicator');
+            if (!indicators) return;
+
+            indicators.forEach((el) => {
+                const code = el.dataset.metric;
+                const dot = el.querySelector('.indicator-dot');
+                if (!dot || !code) return;
+
+                const metric = metricMap[code];
+                if (!metric) { dot.dataset.state = 'unknown'; return; }
+
+                const isLeak = code === 'CRAC.LEAK_STATUS';
+                const isOn = metric.valueBool;
+                if (isLeak) {
+                    dot.dataset.state = isOn ? 'error' : 'ok';
+                } else {
+                    dot.dataset.state = isOn ? 'on' : 'off';
+                }
+            });
+        }
+
+        // ======================
+        // RENDER: 트렌드 차트
+        // ======================
+
+        function renderTrendChart({ response }) {
+            const { data } = response;
+            if (!data || !Array.isArray(data) || data.length === 0) {
+                console.warn('[CRAC] renderTrendChart: no data');
+                return;
+            }
+
+            const timeMap = {};
+            data.forEach((row) => {
+                const hour = new Date(row.time).getHours() + '시';
+                if (!timeMap[hour]) timeMap[hour] = {};
+                timeMap[hour][row.metricCode] = row.statsBody?.avg ?? null;
+            });
+
+            const hours = Object.keys(timeMap);
+            const tempData = hours.map((h) => timeMap[h]['CRAC.RETURN_TEMP'] != null ? +(timeMap[h]['CRAC.RETURN_TEMP'] * 0.1).toFixed(1) : null);
+            const humidityData = hours.map((h) => timeMap[h]['CRAC.RETURN_HUMIDITY'] != null ? +(timeMap[h]['CRAC.RETURN_HUMIDITY'] * 0.1).toFixed(1) : null);
+
+            const option = {
                 tooltip: {
                     trigger: 'axis',
                     backgroundColor: 'rgba(26, 31, 46, 0.95)',
                     borderColor: '#2a3142',
-                    textStyle: { color: '#e0e6ed', fontSize: 12 }
+                    textStyle: { color: '#e0e6ed', fontSize: 12 },
                 },
                 legend: {
-                    data: seriesData.map(s => s.name),
+                    data: ['온도', '습도'],
                     top: 8,
-                    textStyle: { color: '#8892a0', fontSize: 11 }
+                    textStyle: { color: '#8892a0', fontSize: 11 },
                 },
                 grid: { left: 50, right: 50, top: 40, bottom: 24 },
                 xAxis: {
-                    type: 'category',
-                    data: data[xKey],
+                    type: 'category', data: hours,
                     axisLine: { lineStyle: { color: '#333' } },
-                    axisLabel: { color: '#888', fontSize: 10 }
+                    axisLabel: { color: '#888', fontSize: 10 },
                 },
-                yAxis: yAxes,
-                series: seriesData.map(({ key, name, color, yAxisIndex = 0 }) => ({
-                    name,
-                    type: 'line',
-                    yAxisIndex,
-                    data: data[key],
-                    smooth: true,
-                    symbol: 'none',
-                    lineStyle: { color, width: 2 },
-                    areaStyle: {
-                        color: {
-                            type: 'linear',
-                            x: 0, y: 0, x2: 0, y2: 1,
-                            colorStops: [
-                                { offset: 0, color: hexToRgba(color, 0.2) },
-                                { offset: 1, color: hexToRgba(color, 0) }
-                            ]
-                        }
-                    }
-                }))
+                yAxis: [
+                    {
+                        type: 'value', name: '°C', position: 'left',
+                        axisLine: { show: true, lineStyle: { color: '#3b82f6' } },
+                        axisLabel: { color: '#888', fontSize: 10 },
+                        splitLine: { lineStyle: { color: '#333' } },
+                    },
+                    {
+                        type: 'value', name: '%', position: 'right',
+                        axisLine: { show: true, lineStyle: { color: '#22c55e' } },
+                        axisLabel: { color: '#888', fontSize: 10 },
+                        splitLine: { show: false },
+                    },
+                ],
+                series: [
+                    {
+                        name: '온도', type: 'bar', yAxisIndex: 0, data: tempData,
+                        barWidth: '40%',
+                        itemStyle: { color: hexToRgba('#3b82f6', 0.7), borderRadius: [2, 2, 0, 0] },
+                    },
+                    {
+                        name: '습도', type: 'line', yAxisIndex: 1, data: humidityData,
+                        smooth: true, symbol: 'none',
+                        lineStyle: { color: '#22c55e', width: 2 },
+                        areaStyle: {
+                            color: {
+                                type: 'linear', x: 0, y: 0, x2: 0, y2: 1,
+                                colorStops: [
+                                    { offset: 0, color: hexToRgba('#22c55e', 0.2) },
+                                    { offset: 1, color: hexToRgba('#22c55e', 0) },
+                                ],
+                            },
+                        },
+                    },
+                ],
             };
+
+            this.updateChart('.chart-container', option);
         }
 
-        function applySectionTitles() {
-            if (!this.sectionTitles) return;
-            Object.entries(this.sectionTitles).forEach(([selector, title]) => {
-                const el = this.popupQuery(selector);
-                if (el) el.textContent = title;
-            });
+        // ======================
+        // RENDER: 에러
+        // ======================
+
+        function renderError(message) {
+            const nameEl = this.popupQuery('.crac-name');
+            const zoneEl = this.popupQuery('.crac-zone');
+            const statusEl = this.popupQuery('.crac-status');
+            if (nameEl) nameEl.textContent = '데이터 없음';
+            if (zoneEl) zoneEl.textContent = message;
+            if (statusEl) { statusEl.textContent = 'Error'; statusEl.dataset.status = 'critical'; }
+            console.warn('[CRAC] renderError:', message);
+        }
+
+        // ======================
+        // POPUP LIFECYCLE
+        // ======================
+
+        function onPopupCreated({ chartSelector, events }) {
+            chartSelector && this.createChart(chartSelector);
+            events && this.bindPopupEvents(events);
         }
 
         function onInstanceUnLoad() {

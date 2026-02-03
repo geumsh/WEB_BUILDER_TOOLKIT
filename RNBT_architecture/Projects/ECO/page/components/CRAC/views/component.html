@@ -2,11 +2,12 @@
   CRAC - Shadow DOM Popup Template
   항온항습기 상세 팝업
 
-  섹션 구조:
-  1. Header - 자산 기본 정보 (assetDetailUnified.asset)
-  2. Realtime Metrics - 실시간 측정값 (metricLatest + metricConfig)
-  3. Properties - 정적 속성 (assetDetailUnified.properties)
-  4. Chart - 히스토리 차트 (추후)
+  섹션 구조 (기획서 v.0.8_260128 기준):
+  1. Header - 자산명 + 상태 badge + 닫기
+  2. 기본정보 - 이미지 placeholder + 8필드 테이블
+  3. 상태정보 - 현재온도/설정온도, 현재습도/설정습도 카드
+  4. 상태 인디케이터 - 팬, 냉방, 난방, 가습, 제습, 누수 (6개 dot)
+  5. 온/습도 현황 - 트렌드 차트 (bar: 온도, line: 습도)
 -->
 <template id="popup-crac">
     <div class="popup-overlay">
@@ -29,34 +30,103 @@
 
             <!-- Body -->
             <div class="popup-body">
-                <!-- Section 1: Realtime Metrics (metricLatest API) -->
-                <div class="section metrics-section">
+                <!-- Section 1: 기본정보 (이미지 + 테이블) -->
+                <div class="section info-section">
+                    <div class="info-layout">
+                        <div class="info-image-placeholder">
+                            <svg width="48" height="48" viewBox="0 0 48 48" fill="none">
+                                <rect x="8" y="6" width="32" height="36" rx="3" stroke="#4b5563" stroke-width="2"/>
+                                <line x1="8" y1="16" x2="40" y2="16" stroke="#4b5563" stroke-width="2"/>
+                                <line x1="8" y1="26" x2="40" y2="26" stroke="#4b5563" stroke-width="2"/>
+                                <circle cx="24" cy="36" r="3" stroke="#4b5563" stroke-width="2"/>
+                            </svg>
+                            <span class="image-label">CRAC</span>
+                        </div>
+                        <table class="info-table">
+                            <tbody>
+                                <tr><th>자산명</th><td class="info-name">-</td></tr>
+                                <tr><th>자산타입</th><td class="info-type">-</td></tr>
+                                <tr><th>용도</th><td class="info-usage">-</td></tr>
+                                <tr><th>제조사명</th><td class="info-vendor">-</td></tr>
+                                <tr><th>모델</th><td class="info-model">-</td></tr>
+                                <tr><th>위치</th><td class="info-location">-</td></tr>
+                                <tr><th>상태</th><td class="info-status">-</td></tr>
+                                <tr><th>설치일</th><td class="info-install-date">-</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Section 2: 상태정보 (현재/설정 온습도) -->
+                <div class="section status-section">
                     <div class="section-header">
-                        <span class="section-title"></span>
+                        <span class="section-title">항온항습기 상태정보</span>
                         <span class="section-timestamp"></span>
                     </div>
-                    <div class="metrics-container">
-                        <!-- JS에서 metricLatest + metricConfig 기반으로 동적 생성 -->
+                    <div class="status-cards">
+                        <div class="status-card">
+                            <div class="status-card-label">현재온도 / 설정온도</div>
+                            <div class="status-card-values">
+                                <span class="current-temp">-</span>
+                                <span class="status-card-unit">°C</span>
+                                <span class="status-card-separator">/</span>
+                                <span class="set-temp">-</span>
+                                <span class="status-card-unit">°C</span>
+                            </div>
+                        </div>
+                        <div class="status-card">
+                            <div class="status-card-label">현재습도 / 설정습도</div>
+                            <div class="status-card-values">
+                                <span class="current-humidity">-</span>
+                                <span class="status-card-unit">%</span>
+                                <span class="status-card-separator">/</span>
+                                <span class="set-humidity">-</span>
+                                <span class="status-card-unit">%</span>
+                            </div>
+                        </div>
                     </div>
                 </div>
 
-                <!-- Section 2: Properties (assetDetailUnified.properties) -->
-                <div class="section properties-section">
+                <!-- Section 3: 상태 인디케이터 -->
+                <div class="section indicator-section">
                     <div class="section-header">
-                        <span class="section-title"></span>
+                        <span class="section-title">상태 인디케이터</span>
                     </div>
-                    <div class="properties-container">
-                        <!-- JS에서 assetDetailUnified.properties 기반으로 동적 생성 -->
+                    <div class="indicator-row">
+                        <div class="indicator" data-metric="CRAC.FAN_STATUS">
+                            <span class="indicator-dot" data-state="off"></span>
+                            <span class="indicator-label">팬</span>
+                        </div>
+                        <div class="indicator" data-metric="CRAC.COOL_STATUS">
+                            <span class="indicator-dot" data-state="off"></span>
+                            <span class="indicator-label">냉방</span>
+                        </div>
+                        <div class="indicator" data-metric="CRAC.HEAT_STATUS">
+                            <span class="indicator-dot" data-state="off"></span>
+                            <span class="indicator-label">난방</span>
+                        </div>
+                        <div class="indicator" data-metric="CRAC.HUMIDIFY_STATUS">
+                            <span class="indicator-dot" data-state="off"></span>
+                            <span class="indicator-label">가습</span>
+                        </div>
+                        <div class="indicator" data-metric="CRAC.DEHUMIDIFY_STATUS">
+                            <span class="indicator-dot" data-state="off"></span>
+                            <span class="indicator-label">제습</span>
+                        </div>
+                        <div class="indicator" data-metric="CRAC.LEAK_STATUS">
+                            <span class="indicator-dot" data-state="off"></span>
+                            <span class="indicator-label">누수</span>
+                        </div>
                     </div>
                 </div>
 
-                <!-- Section 3: Chart (추후 활성화) -->
+                <!-- Section 4: 온/습도 현황 트렌드 차트 -->
                 <div class="section chart-section">
                     <div class="section-header">
-                        <span class="section-title"></span>
+                        <span class="section-title">온/습도 현황</span>
                     </div>
                     <div class="chart-container">
-                        <div class="empty-state">히스토리 데이터가 없습니다</div>
+                        <div class="empty-state">차트 데이터를 불러오는 중...</div>
                     </div>
                 </div>
             </div>
