@@ -521,8 +521,24 @@
             this._activeTab = 'current';
 
             this.datasetInfo = [
-                { datasetName: 'assetDetailUnified', params: { baseUrl: this._baseUrl, assetKey: this._defaultAssetKey, locale: 'ko' }, render: ['renderBasicInfo'] },
-                { datasetName: 'metricLatest', params: { baseUrl: this._baseUrl, assetKey: this._defaultAssetKey }, render: ['renderPowerStatus'] },
+                { datasetName: 'assetDetailUnified', param: { baseUrl: this._baseUrl, assetKey: this._defaultAssetKey, locale: 'ko' }, render: ['renderBasicInfo'] },
+                { datasetName: 'metricLatest', param: { baseUrl: this._baseUrl, assetKey: this._defaultAssetKey }, render: ['renderPowerStatus'] },
+                {
+                    datasetName: 'metricHistoryStats',
+                    param: {
+                        baseUrl: this._baseUrl,
+                        assetKey: this._defaultAssetKey,
+                        interval: '1h',
+                        timeRange: 24 * 60 * 60 * 1000, // 24시간 (ms)
+                        metricCodes: [
+                            'UPS.INPUT_A_AVG', 'UPS.OUTPUT_A_AVG',
+                            'UPS.INPUT_V_AVG', 'UPS.OUTPUT_V_AVG',
+                            'UPS.INPUT_F_AVG', 'UPS.OUTPUT_F_AVG',
+                        ],
+                        statsKeys: ['avg'],
+                    },
+                    render: ['renderTrendChart'],
+                },
             ];
 
             this.statusTypeToLabel = statusTypeToLabel.bind(this);
@@ -592,9 +608,9 @@
 
             fx.go(
                 this.datasetInfo,
-                fx.each(({ datasetName, params, render }) =>
+                fx.each(({ datasetName, param, render }) =>
                     fx.go(
-                        Wkit.fetchData(this.page, datasetName, params),
+                        Wkit.fetchData(this.page, datasetName, param),
                         (response) => {
                             if (!response || !response.response) {
                                 this.renderError('데이터를 불러올 수 없습니다.');
@@ -629,7 +645,7 @@
         function refreshMetrics() {
             const metricInfo = this.datasetInfo.find(d => d.datasetName === 'metricLatest');
             fx.go(
-                Wkit.fetchData(this.page, 'metricLatest', metricInfo.params),
+                Wkit.fetchData(this.page, 'metricLatest', metricInfo.param),
                 (response) => {
                     if (!response || !response.response) return;
                     const data = response.response.data;

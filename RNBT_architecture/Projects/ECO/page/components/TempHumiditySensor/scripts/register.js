@@ -61,8 +61,20 @@ function initComponent() {
   this._baseUrl = BASE_URL;
 
   this.datasetInfo = [
-    { datasetName: 'assetDetailUnified', params: { baseUrl: this._baseUrl, assetKey: this._defaultAssetKey, locale: 'ko' }, render: ['renderBasicInfo'] },
-    { datasetName: 'metricLatest', params: { baseUrl: this._baseUrl, assetKey: this._defaultAssetKey }, render: ['renderStatusCards'] },
+    { datasetName: 'assetDetailUnified', param: { baseUrl: this._baseUrl, assetKey: this._defaultAssetKey, locale: 'ko' }, render: ['renderBasicInfo'] },
+    { datasetName: 'metricLatest', param: { baseUrl: this._baseUrl, assetKey: this._defaultAssetKey }, render: ['renderStatusCards'] },
+    {
+      datasetName: 'metricHistoryStats',
+      param: {
+        baseUrl: this._baseUrl,
+        assetKey: this._defaultAssetKey,
+        interval: '1h',
+        timeRange: 24 * 60 * 60 * 1000, // 24시간 (ms)
+        metricCodes: ['SENSOR.TEMP', 'SENSOR.HUMIDITY'],
+        statsKeys: ['avg'],
+      },
+      render: ['renderTrendChart'],
+    },
   ];
 
   // ======================
@@ -159,9 +171,9 @@ function showDetail() {
   // 1) assetDetailUnified + metricLatest 호출
   fx.go(
     this.datasetInfo,
-    fx.each(({ datasetName, params, render }) =>
+    fx.each(({ datasetName, param, render }) =>
       fx.go(
-        fetchData(this.page, datasetName, params),
+        fetchData(this.page, datasetName, param),
         (response) => {
           if (!response || !response.response) {
             this.renderError('데이터를 불러올 수 없습니다.');
@@ -198,7 +210,7 @@ function hideDetail() {
 function refreshMetrics() {
   const metricInfo = this.datasetInfo.find(d => d.datasetName === 'metricLatest');
   fx.go(
-    fetchData(this.page, 'metricLatest', metricInfo.params),
+    fetchData(this.page, 'metricLatest', metricInfo.param),
     (response) => {
       if (!response || !response.response) return;
       const data = response.response.data;
@@ -223,15 +235,18 @@ function stopRefresh() {
 // ======================
 
 function fetchTrendData() {
+  const trendInfo = this.datasetInfo.find(d => d.datasetName === 'metricHistoryStats');
+  if (!trendInfo) return;
+
+  const { interval, timeRange, metricCodes, statsKeys } = trendInfo.param;
   const now = new Date();
-  const from = new Date(now.getTime() - 24 * 60 * 60 * 1000);
-  const metricCodes = ['SENSOR.TEMP', 'SENSOR.HUMIDITY'];
-  const statsKeys = ['avg'];
+  const from = new Date(now.getTime() - timeRange);
+
   fx.go(
     fetchData(this.page, 'metricHistoryStats', {
       baseUrl: this._baseUrl,
       assetKey: this._defaultAssetKey,
-      interval: '1h',
+      interval,
       metricCodes,
       timeFrom: from.toISOString(),
       timeTo: now.toISOString(),
