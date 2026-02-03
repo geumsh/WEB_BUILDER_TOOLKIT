@@ -104,6 +104,15 @@ function initComponent() {
     { key: 'statusType', selector: '.ups-status', dataAttr: 'status', transform: this.statusTypeToDataAttr },
   ];
 
+  this.infoTableConfig = [
+    { key: 'name', selector: '.info-name' },
+    { key: 'assetType', selector: '.info-type' },
+    { key: 'usageLabel', selector: '.info-usage', fallback: '-' },
+    { key: 'locationLabel', selector: '.info-location' },
+    { key: 'statusType', selector: '.info-status', transform: this.statusTypeToLabel },
+    { key: 'installDate', selector: '.info-install-date', transform: this.formatDate },
+  ];
+
   // ======================
   // 4. 렌더링 함수 바인딩
   // ======================
@@ -327,18 +336,20 @@ function renderBasicInfo({ response }) {
     })
   );
 
-  // 기본정보 테이블
+  // 기본정보 테이블 (config 기반)
   const setCell = (selector, value) => {
     const el = this.popupQuery(selector);
     if (el) el.textContent = value ?? '-';
   };
 
-  setCell('.info-name', asset.name);
-  setCell('.info-type', asset.assetType);
-  setCell('.info-usage', asset.usageLabel || '-');
-  setCell('.info-location', asset.locationLabel);
-  setCell('.info-status', this.statusTypeToLabel(asset.statusType));
-  setCell('.info-install-date', this.formatDate(asset.installDate));
+  fx.go(
+    this.infoTableConfig,
+    fx.each(({ key, selector, transform, fallback }) => {
+      let value = asset[key] ?? fallback ?? '-';
+      if (transform) value = transform(value);
+      setCell(selector, value);
+    })
+  );
 
   // 제조사명/모델 체이닝: assetModelKey → mdl/g → vdr/g
   if (asset.assetModelKey) {
