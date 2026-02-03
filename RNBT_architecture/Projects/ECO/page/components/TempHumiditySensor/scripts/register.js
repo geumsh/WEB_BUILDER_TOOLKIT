@@ -29,53 +29,15 @@ function hexToRgba(hex, alpha) {
   return `rgba(${r}, ${g}, ${b}, ${alpha})`;
 }
 
-// ======================
-// STATUS CONFIG (실시간 측정값 카드)
-// ======================
-const STATUS_CONFIG = {
-  temperature: {
-    metricCode: 'SENSOR.TEMP',
-    label: '온도',
-    unit: '°C',
-    color: '#3b82f6',
-    scale: 1.0,
-    targetValue: null,  // 적정값 API 미확인 → "-" 표시
-  },
-  humidity: {
-    metricCode: 'SENSOR.HUMIDITY',
-    label: '습도',
-    unit: '%',
-    color: '#22c55e',
-    scale: 1.0,
-    targetValue: null,
-  },
-};
-
 initComponent.call(this);
 
 function initComponent() {
   // ======================
-  // 1. 데이터 정의
+  // 1. 내부 상태
   // ======================
   this._defaultAssetKey = this.setter?.assetInfo?.assetKey || this.id;
   this._baseUrl = BASE_URL;
-
-  this.datasetInfo = [
-    { datasetName: 'assetDetailUnified', param: { baseUrl: this._baseUrl, assetKey: this._defaultAssetKey, locale: 'ko' }, render: ['renderBasicInfo'] },
-    { datasetName: 'metricLatest', param: { baseUrl: this._baseUrl, assetKey: this._defaultAssetKey }, render: ['renderStatusCards'] },
-    {
-      datasetName: 'metricHistoryStats',
-      param: {
-        baseUrl: this._baseUrl,
-        assetKey: this._defaultAssetKey,
-        interval: '1h',
-        timeRange: 24 * 60 * 60 * 1000, // 24시간 (ms)
-        metricCodes: ['SENSOR.TEMP', 'SENSOR.HUMIDITY'],
-        statsKeys: ['avg'],
-      },
-      render: ['renderTrendChart'],
-    },
-  ];
+  this._refreshIntervalId = null;
 
   // ======================
   // 2. 변환 함수 바인딩
@@ -86,33 +48,122 @@ function initComponent() {
   this.formatTimestamp = formatTimestamp.bind(this);
 
   // ======================
-  // 3. Selectors
+  // 3. Config 통합 (this.config로 모든 설정 접근)
   // ======================
-  this.selectors = {
-    name: '.sensor-name',
-    zone: '.sensor-zone',
-    status: '.sensor-status',
-    timestamp: '.section-timestamp',
-    chartContainer: '.chart-container',
+  this.config = {
+    // 데이터셋 이름
+    datasetNames: {
+      assetDetail: 'assetDetailUnified',
+      metricLatest: 'metricLatest',
+      metricHistory: 'metricHistoryStats',
+      modelDetail: 'modelDetail',
+      vendorDetail: 'vendorDetail',
+    },
+
+    // 템플릿
+    template: {
+      popup: 'popup-sensor',
+    },
+
+    // 이벤트
+    events: {
+      click: '@assetClicked',
+    },
+
+    // 갱신 주기
+    refresh: {
+      interval: 5000,
+    },
+
+    // ========================
+    // UI 영역별 설정
+    // ========================
+
+    // 팝업 헤더 영역
+    header: {
+      fields: [
+        { key: 'name', selector: '.sensor-name' },
+        { key: 'locationLabel', selector: '.sensor-zone' },
+        { key: 'statusType', selector: '.sensor-status', transform: this.statusTypeToLabel },
+        { key: 'statusType', selector: '.sensor-status', dataAttr: 'status', transform: this.statusTypeToDataAttr },
+      ],
+    },
+
+    // 기본정보 테이블 영역
+    infoTable: {
+      fields: [
+        { key: 'name', selector: '.info-name' },
+        { key: 'assetType', selector: '.info-type' },
+        { key: 'usageLabel', selector: '.info-usage', fallback: '-' },
+        { key: 'locationLabel', selector: '.info-location' },
+        { key: 'statusType', selector: '.info-status', transform: this.statusTypeToLabel },
+        { key: 'installDate', selector: '.info-install-date', transform: this.formatDate },
+      ],
+      chain: {
+        model: '.info-model',
+        vendor: '.info-vendor',
+      },
+    },
+
+    // 상태 카드 영역 (온습도 측정값)
+    statusCards: {
+      metrics: {
+        temperature: {
+          metricCode: 'SENSOR.TEMP',
+          label: '온도',
+          unit: '°C',
+          color: '#3b82f6',
+          scale: 1.0,
+          targetValue: null,
+        },
+        humidity: {
+          metricCode: 'SENSOR.HUMIDITY',
+          label: '습도',
+          unit: '%',
+          color: '#22c55e',
+          scale: 1.0,
+          targetValue: null,
+        },
+      },
+      selectors: {
+        card: '.status-card',
+        currentValue: '.status-current-value',
+        targetValue: '.status-target-value',
+        timestamp: '.section-timestamp',
+      },
+    },
+
+    // 트렌드 차트 영역 (바+라인 복합)
+    chart: {
+      series: {
+        temp:     { metricCode: 'SENSOR.TEMP',     label: '온도', unit: '°C', color: '#3b82f6', scale: 1.0 },
+        humidity: { metricCode: 'SENSOR.HUMIDITY', label: '습도', unit: '%',  color: '#22c55e', scale: 1.0 },
+      },
+      selectors: {
+        container: '.chart-container',
+      },
+    },
   };
 
   // ======================
-  // 4. Data Config
+  // 4. 데이터셋 정의
   // ======================
-  this.baseInfoConfig = [
-    { key: 'name', selector: this.selectors.name },
-    { key: 'locationLabel', selector: this.selectors.zone },
-    { key: 'statusType', selector: this.selectors.status, transform: this.statusTypeToLabel },
-    { key: 'statusType', selector: this.selectors.status, dataAttr: 'status', transform: this.statusTypeToDataAttr },
-  ];
-
-  this.infoTableConfig = [
-    { key: 'name', selector: '.info-name' },
-    { key: 'assetType', selector: '.info-type' },
-    { key: 'usageLabel', selector: '.info-usage', fallback: '-' },
-    { key: 'locationLabel', selector: '.info-location' },
-    { key: 'statusType', selector: '.info-status', transform: this.statusTypeToLabel },
-    { key: 'installDate', selector: '.info-install-date', transform: this.formatDate },
+  const { datasetNames } = this.config;
+  this.datasetInfo = [
+    { datasetName: datasetNames.assetDetail, param: { baseUrl: this._baseUrl, assetKey: this._defaultAssetKey, locale: 'ko' }, render: ['renderBasicInfo'] },
+    { datasetName: datasetNames.metricLatest, param: { baseUrl: this._baseUrl, assetKey: this._defaultAssetKey }, render: ['renderStatusCards'] },
+    {
+      datasetName: datasetNames.metricHistory,
+      param: {
+        baseUrl: this._baseUrl,
+        assetKey: this._defaultAssetKey,
+        interval: '1h',
+        timeRange: 24 * 60 * 60 * 1000,
+        metricCodes: ['SENSOR.TEMP', 'SENSOR.HUMIDITY'],
+        statsKeys: ['avg'],
+      },
+      render: ['renderTrendChart'],
+    },
   ];
 
   // ======================
@@ -124,13 +175,7 @@ function initComponent() {
   this.renderError = renderError.bind(this);
 
   // ======================
-  // 6. Refresh Config (5초 갱신)
-  // ======================
-  this.refreshInterval = 5000;
-  this._refreshIntervalId = null;
-
-  // ======================
-  // 7. Public Methods
+  // 6. Public Methods
   // ======================
   this.showDetail = showDetail.bind(this);
   this.hideDetail = hideDetail.bind(this);
@@ -138,26 +183,15 @@ function initComponent() {
   this.stopRefresh = stopRefresh.bind(this);
 
   // ======================
-  // 8. 이벤트 발행
+  // 7. 이벤트 발행
   // ======================
-  this.customEvents = {
-    click: '@assetClicked',
-  };
-
-  bind3DEvents(this, this.customEvents);
+  bind3DEvents(this, this.config.events);
 
   // ======================
-  // 9. Template Config
+  // 8. Popup (template 기반)
   // ======================
-  this.templateConfig = {
-    popup: 'popup-sensor',
-  };
-
-  // ======================
-  // 10. Popup (template 기반)
-  // ======================
-  this.popupCreatedConfig = {
-    chartSelector: this.selectors.chartContainer,
+  const popupCreatedConfig = {
+    chartSelector: this.config.chart.selectors.container,
     events: {
       click: {
         '.close-btn': () => this.hideDetail(),
@@ -166,9 +200,9 @@ function initComponent() {
   };
 
   const { htmlCode, cssCode } = this.properties.publishCode || {};
-  this.getPopupHTML = () => extractTemplate(htmlCode || '', this.templateConfig.popup);
+  this.getPopupHTML = () => extractTemplate(htmlCode || '', this.config.template.popup);
   this.getPopupStyles = () => cssCode || '';
-  this.onPopupCreated = onPopupCreated.bind(this, this.popupCreatedConfig);
+  this.onPopupCreated = onPopupCreated.bind(this, popupCreatedConfig);
 
   applyShadowPopupMixin(this, {
     getHTML: this.getPopupHTML,
@@ -188,10 +222,12 @@ function initComponent() {
 function showDetail() {
   this.showPopup();
 
+  const { datasetNames, refresh } = this.config;
+
   // 1) assetDetailUnified + metricLatest 호출 (섹션별 독립 처리)
   // metricHistoryStats는 fetchTrendData에서 fetch API로 직접 호출하므로 제외
   fx.go(
-    this.datasetInfo.filter(d => d.datasetName !== 'metricHistoryStats'),
+    this.datasetInfo.filter(d => d.datasetName !== datasetNames.metricHistory),
     fx.each(({ datasetName, param, render }) =>
       fx.go(
         fetchData(this.page, datasetName, param),
@@ -218,7 +254,7 @@ function showDetail() {
 
   // 3) 5초 주기로 메트릭 갱신 시작
   this.stopRefresh();
-  this._refreshIntervalId = setInterval(() => this.refreshMetrics(), this.refreshInterval);
+  this._refreshIntervalId = setInterval(() => this.refreshMetrics(), refresh.interval);
   console.log('[TempHumiditySensor] Metric refresh started (5s interval)');
 }
 
@@ -228,9 +264,10 @@ function hideDetail() {
 }
 
 function refreshMetrics() {
-  const metricInfo = this.datasetInfo.find(d => d.datasetName === 'metricLatest');
+  const { datasetNames } = this.config;
+  const metricInfo = this.datasetInfo.find(d => d.datasetName === datasetNames.metricLatest);
   fx.go(
-    fetchData(this.page, 'metricLatest', metricInfo.param),
+    fetchData(this.page, datasetNames.metricLatest, metricInfo.param),
     (response) => {
       if (!response || !response.response) return;
       const data = response.response.data;
@@ -255,7 +292,8 @@ function stopRefresh() {
 // ======================
 
 async function fetchTrendData() {
-  const trendInfo = this.datasetInfo.find(d => d.datasetName === 'metricHistoryStats');
+  const { datasetNames } = this.config;
+  const trendInfo = this.datasetInfo.find(d => d.datasetName === datasetNames.metricHistory);
   if (!trendInfo) return;
 
   const { baseUrl, assetKey, interval, timeRange, metricCodes, statsKeys } = trendInfo.param;
@@ -303,10 +341,11 @@ function renderBasicInfo({ response }) {
   }
 
   const asset = data.asset;
+  const { header, infoTable, datasetNames } = this.config;
 
   // Header 영역
   fx.go(
-    this.baseInfoConfig,
+    header.fields,
     fx.each(({ key, selector, dataAttr, transform }) => {
       const el = this.popupQuery(selector);
       if (!el) return;
@@ -327,7 +366,7 @@ function renderBasicInfo({ response }) {
   };
 
   fx.go(
-    this.infoTableConfig,
+    infoTable.fields,
     fx.each(({ key, selector, transform, fallback }) => {
       let value = asset[key] ?? fallback ?? '-';
       if (transform) value = transform(value);
@@ -338,18 +377,18 @@ function renderBasicInfo({ response }) {
   // 제조사명/모델 체이닝: assetModelKey → mdl/g → vdr/g
   if (asset.assetModelKey) {
     fx.go(
-      fetchData(this.page, 'modelDetail', { baseUrl: this._baseUrl, assetModelKey: asset.assetModelKey }),
+      fetchData(this.page, datasetNames.modelDetail, { baseUrl: this._baseUrl, assetModelKey: asset.assetModelKey }),
       (modelResp) => {
         if (!modelResp?.response?.data) return;
         const model = modelResp.response.data;
-        setCell('.info-model', model.name);
+        setCell(infoTable.chain.model, model.name);
 
         if (model.assetVendorKey) {
           fx.go(
-            fetchData(this.page, 'vendorDetail', { baseUrl: this._baseUrl, assetVendorKey: model.assetVendorKey }),
+            fetchData(this.page, datasetNames.vendorDetail, { baseUrl: this._baseUrl, assetVendorKey: model.assetVendorKey }),
             (vendorResp) => {
               if (!vendorResp?.response?.data) return;
-              setCell('.info-vendor', vendorResp.response.data.name);
+              setCell(infoTable.chain.vendor, vendorResp.response.data.name);
             }
           ).catch(() => {});
         }
@@ -364,7 +403,9 @@ function renderBasicInfo({ response }) {
 
 function renderStatusCards({ response }) {
   const { data } = response;
-  const timestampEl = this.popupQuery(this.selectors.timestamp);
+  const { statusCards } = this.config;
+  const { metrics, selectors } = statusCards;
+  const timestampEl = this.popupQuery(selectors.timestamp);
 
   if (!data || !Array.isArray(data) || data.length === 0) {
     console.warn('[TempHumiditySensor] renderStatusCards: no data');
@@ -384,12 +425,12 @@ function renderStatusCards({ response }) {
   });
 
   // 각 카드에 값 설정
-  Object.entries(STATUS_CONFIG).forEach(([key, config]) => {
-    const card = this.popupQuery(`.status-card[data-metric="${key}"]`);
+  Object.entries(metrics).forEach(([key, config]) => {
+    const card = this.popupQuery(`${selectors.card}[data-metric="${key}"]`);
     if (!card) return;
 
-    const currentValueEl = card.querySelector('.status-current-value');
-    const targetValueEl = card.querySelector('.status-target-value');
+    const currentValueEl = card.querySelector(selectors.currentValue);
+    const targetValueEl = card.querySelector(selectors.targetValue);
 
     // 현재값
     const rawValue = metricMap[config.metricCode];
@@ -420,6 +461,11 @@ function renderTrendChart({ response }) {
     return;
   }
 
+  const { chart } = this.config;
+  const { series, selectors } = chart;
+  const tempConfig = series.temp;
+  const humidConfig = series.humidity;
+
   // 데이터를 시간별로 그룹핑
   const timeMap = {};
   data.forEach((row) => {
@@ -429,8 +475,6 @@ function renderTrendChart({ response }) {
   });
 
   const hours = Object.keys(timeMap);
-  const tempConfig = STATUS_CONFIG.temperature;
-  const humidConfig = STATUS_CONFIG.humidity;
 
   const tempValues = hours.map((h) => {
     const raw = timeMap[h][tempConfig.metricCode];
@@ -502,7 +546,7 @@ function renderTrendChart({ response }) {
     ],
   };
 
-  this.updateChart(this.selectors.chartContainer, option);
+  this.updateChart(selectors.container, option);
 }
 
 // ======================

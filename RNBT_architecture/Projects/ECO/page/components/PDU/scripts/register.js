@@ -28,43 +28,16 @@ function hexToRgba(hex, alpha) {
   return `rgba(${r}, ${g}, ${b}, ${alpha})`;
 }
 
-// ======================
-// TAB CONFIG (탭별 메트릭 매핑)
-// ======================
-const TAB_CONFIG = {
-  voltage:   { metricCode: 'DIST.V_LN_AVG',              label: '평균 전압',     unit: 'V',   color: '#3b82f6', scale: 1.0 },
-  current:   { metricCode: 'DIST.CURRENT_AVG_A',          label: '평균 전류',     unit: 'A',   color: '#f59e0b', scale: 1.0 },
-  power:     { metricCode: 'DIST.ACTIVE_POWER_TOTAL_KW',  label: '합계 전력',     unit: 'kW',  color: '#8b5cf6', scale: 1.0 },
-  frequency: { metricCode: 'DIST.FREQUENCY_HZ',           label: '주파수',        unit: 'Hz',  color: '#22c55e', scale: 1.0 },
-  energy:    { metricCode: 'DIST.ACTIVE_ENERGY_SUM_KWH',  label: '누적 전력사용량', unit: 'kWh', color: '#ef4444', scale: 1.0 },
-};
-
 initComponent.call(this);
 
 function initComponent() {
   // ======================
-  // 1. 데이터 정의
+  // 1. 내부 상태
   // ======================
   this._defaultAssetKey = this.setter?.assetInfo?.assetKey || this.id;
   this._baseUrl = BASE_URL;
   this._trendData = null;
   this._activeTab = 'voltage';
-
-  this.datasetInfo = [
-    { datasetName: 'assetDetailUnified', param: { baseUrl: this._baseUrl, assetKey: this._defaultAssetKey, locale: 'ko' }, render: ['renderBasicInfo'] },
-    {
-      datasetName: 'metricHistoryStats',
-      param: {
-        baseUrl: this._baseUrl,
-        assetKey: this._defaultAssetKey,
-        interval: '1h',
-        timeRange: 24 * 60 * 60 * 1000, // 24시간 (ms)
-        metricCodes: ['DIST.V_LN_AVG', 'DIST.CURRENT_AVG_A', 'DIST.ACTIVE_POWER_TOTAL_KW', 'DIST.FREQUENCY_HZ', 'DIST.ACTIVE_ENERGY_SUM_KWH'],
-        statsKeys: ['avg'],
-      },
-      render: ['renderTrendChart'],
-    },
-  ];
 
   // ======================
   // 2. 변환 함수 바인딩
@@ -74,32 +47,91 @@ function initComponent() {
   this.formatDate = formatDate.bind(this);
 
   // ======================
-  // 3. Selectors
+  // 3. Config 통합 (this.config로 모든 설정 접근)
   // ======================
-  this.selectors = {
-    name: '.pdu-name',
-    zone: '.pdu-zone',
-    status: '.pdu-status',
-    chartContainer: '.chart-container',
+  this.config = {
+    // 데이터셋 이름
+    datasetNames: {
+      assetDetail: 'assetDetailUnified',
+      metricHistory: 'metricHistoryStats',
+      modelDetail: 'modelDetail',
+      vendorDetail: 'vendorDetail',
+    },
+
+    // 템플릿
+    template: {
+      popup: 'popup-pdu',
+    },
+
+    // 이벤트
+    events: {
+      click: '@assetClicked',
+    },
+
+    // ========================
+    // UI 영역별 설정
+    // ========================
+
+    // 팝업 헤더 영역
+    header: {
+      fields: [
+        { key: 'name', selector: '.pdu-name' },
+        { key: 'locationLabel', selector: '.pdu-zone' },
+        { key: 'statusType', selector: '.pdu-status', transform: this.statusTypeToLabel },
+        { key: 'statusType', selector: '.pdu-status', dataAttr: 'status', transform: this.statusTypeToDataAttr },
+      ],
+    },
+
+    // 기본정보 테이블 영역
+    infoTable: {
+      fields: [
+        { key: 'name', selector: '.info-name' },
+        { key: 'assetType', selector: '.info-type' },
+        { key: 'usageLabel', selector: '.info-usage', fallback: '-' },
+        { key: 'locationLabel', selector: '.info-location' },
+        { key: 'statusType', selector: '.info-status', transform: this.statusTypeToLabel },
+        { key: 'installDate', selector: '.info-install-date', transform: this.formatDate },
+      ],
+      chain: {
+        model: '.info-model',
+        vendor: '.info-vendor',
+      },
+    },
+
+    // 트렌드 차트 영역 (5탭)
+    chart: {
+      tabs: {
+        voltage:   { metricCode: 'DIST.V_LN_AVG',              label: '평균 전압',       unit: 'V',   color: '#3b82f6', scale: 1.0 },
+        current:   { metricCode: 'DIST.CURRENT_AVG_A',         label: '평균 전류',       unit: 'A',   color: '#f59e0b', scale: 1.0 },
+        power:     { metricCode: 'DIST.ACTIVE_POWER_TOTAL_KW', label: '합계 전력',       unit: 'kW',  color: '#8b5cf6', scale: 1.0 },
+        frequency: { metricCode: 'DIST.FREQUENCY_HZ',          label: '주파수',          unit: 'Hz',  color: '#22c55e', scale: 1.0 },
+        energy:    { metricCode: 'DIST.ACTIVE_ENERGY_SUM_KWH', label: '누적 전력사용량', unit: 'kWh', color: '#ef4444', scale: 1.0 },
+      },
+      selectors: {
+        container: '.chart-container',
+        tabBtn: '.tab-btn',
+      },
+    },
   };
 
   // ======================
-  // 4. Data Config
+  // 4. 데이터셋 정의
   // ======================
-  this.baseInfoConfig = [
-    { key: 'name', selector: this.selectors.name },
-    { key: 'locationLabel', selector: this.selectors.zone },
-    { key: 'statusType', selector: this.selectors.status, transform: this.statusTypeToLabel },
-    { key: 'statusType', selector: this.selectors.status, dataAttr: 'status', transform: this.statusTypeToDataAttr },
-  ];
-
-  this.infoTableConfig = [
-    { key: 'name', selector: '.info-name' },
-    { key: 'assetType', selector: '.info-type' },
-    { key: 'usageLabel', selector: '.info-usage', fallback: '-' },
-    { key: 'locationLabel', selector: '.info-location' },
-    { key: 'statusType', selector: '.info-status', transform: this.statusTypeToLabel },
-    { key: 'installDate', selector: '.info-install-date', transform: this.formatDate },
+  const { datasetNames } = this.config;
+  this.datasetInfo = [
+    { datasetName: datasetNames.assetDetail, param: { baseUrl: this._baseUrl, assetKey: this._defaultAssetKey, locale: 'ko' }, render: ['renderBasicInfo'] },
+    {
+      datasetName: datasetNames.metricHistory,
+      param: {
+        baseUrl: this._baseUrl,
+        assetKey: this._defaultAssetKey,
+        interval: '1h',
+        timeRange: 24 * 60 * 60 * 1000,
+        metricCodes: ['DIST.V_LN_AVG', 'DIST.CURRENT_AVG_A', 'DIST.ACTIVE_POWER_TOTAL_KW', 'DIST.FREQUENCY_HZ', 'DIST.ACTIVE_ENERGY_SUM_KWH'],
+        statsKeys: ['avg'],
+      },
+      render: ['renderTrendChart'],
+    },
   ];
 
   // ======================
@@ -119,24 +151,13 @@ function initComponent() {
   // ======================
   // 7. 이벤트 발행
   // ======================
-  this.customEvents = {
-    click: '@assetClicked',
-  };
-
-  bind3DEvents(this, this.customEvents);
+  bind3DEvents(this, this.config.events);
 
   // ======================
-  // 8. Template Config
+  // 8. Popup (template 기반)
   // ======================
-  this.templateConfig = {
-    popup: 'popup-pdu',
-  };
-
-  // ======================
-  // 9. Popup (template 기반)
-  // ======================
-  this.popupCreatedConfig = {
-    chartSelector: this.selectors.chartContainer,
+  const popupCreatedConfig = {
+    chartSelector: this.config.chart.selectors.container,
     events: {
       click: {
         '.close-btn': () => this.hideDetail(),
@@ -146,9 +167,9 @@ function initComponent() {
   };
 
   const { htmlCode, cssCode } = this.properties.publishCode || {};
-  this.getPopupHTML = () => extractTemplate(htmlCode || '', this.templateConfig.popup);
+  this.getPopupHTML = () => extractTemplate(htmlCode || '', this.config.template.popup);
   this.getPopupStyles = () => cssCode || '';
-  this.onPopupCreated = onPopupCreated.bind(this, this.popupCreatedConfig);
+  this.onPopupCreated = onPopupCreated.bind(this, popupCreatedConfig);
 
   applyShadowPopupMixin(this, {
     getHTML: this.getPopupHTML,
@@ -168,10 +189,12 @@ function initComponent() {
 function showDetail() {
   this.showPopup();
 
+  const { datasetNames } = this.config;
+
   // 1) assetDetailUnified 호출 (섹션별 독립 처리)
   // metricHistoryStats는 fetchTrendData에서 fetch API로 직접 호출하므로 제외
   fx.go(
-    this.datasetInfo.filter(d => d.datasetName !== 'metricHistoryStats'),
+    this.datasetInfo.filter(d => d.datasetName !== datasetNames.metricHistory),
     fx.each(({ datasetName, param, render }) =>
       fx.go(
         fetchData(this.page, datasetName, param),
@@ -202,10 +225,11 @@ function hideDetail() {
 }
 
 function switchTab(tabName) {
-  if (!tabName || !TAB_CONFIG[tabName]) return;
+  const { chart } = this.config;
+  if (!tabName || !chart.tabs[tabName]) return;
   this._activeTab = tabName;
 
-  const buttons = this.popupQueryAll('.tab-btn');
+  const buttons = this.popupQueryAll(chart.selectors.tabBtn);
   if (buttons) {
     buttons.forEach((btn) => btn.classList.toggle('active', btn.dataset.tab === tabName));
   }
@@ -221,7 +245,8 @@ function switchTab(tabName) {
 // ======================
 
 async function fetchTrendData() {
-  const trendInfo = this.datasetInfo.find(d => d.datasetName === 'metricHistoryStats');
+  const { datasetNames } = this.config;
+  const trendInfo = this.datasetInfo.find(d => d.datasetName === datasetNames.metricHistory);
   if (!trendInfo) return;
 
   const { baseUrl, assetKey, interval, timeRange, metricCodes, statsKeys } = trendInfo.param;
@@ -270,10 +295,11 @@ function renderBasicInfo({ response }) {
   }
 
   const asset = data.asset;
+  const { header, infoTable, datasetNames } = this.config;
 
   // Header 영역
   fx.go(
-    this.baseInfoConfig,
+    header.fields,
     fx.each(({ key, selector, dataAttr, transform }) => {
       const el = this.popupQuery(selector);
       if (!el) return;
@@ -294,7 +320,7 @@ function renderBasicInfo({ response }) {
   };
 
   fx.go(
-    this.infoTableConfig,
+    infoTable.fields,
     fx.each(({ key, selector, transform, fallback }) => {
       let value = asset[key] ?? fallback ?? '-';
       if (transform) value = transform(value);
@@ -305,18 +331,18 @@ function renderBasicInfo({ response }) {
   // 제조사명/모델 체이닝: assetModelKey → mdl/g → vdr/g
   if (asset.assetModelKey) {
     fx.go(
-      fetchData(this.page, 'modelDetail', { baseUrl: this._baseUrl, assetModelKey: asset.assetModelKey }),
+      fetchData(this.page, datasetNames.modelDetail, { baseUrl: this._baseUrl, assetModelKey: asset.assetModelKey }),
       (modelResp) => {
         if (!modelResp?.response?.data) return;
         const model = modelResp.response.data;
-        setCell('.info-model', model.name);
+        setCell(infoTable.chain.model, model.name);
 
         if (model.assetVendorKey) {
           fx.go(
-            fetchData(this.page, 'vendorDetail', { baseUrl: this._baseUrl, assetVendorKey: model.assetVendorKey }),
+            fetchData(this.page, datasetNames.vendorDetail, { baseUrl: this._baseUrl, assetVendorKey: model.assetVendorKey }),
             (vendorResp) => {
               if (!vendorResp?.response?.data) return;
-              setCell('.info-vendor', vendorResp.response.data.name);
+              setCell(infoTable.chain.vendor, vendorResp.response.data.name);
             }
           ).catch(() => {});
         }
@@ -336,7 +362,9 @@ function renderTrendChart({ response }) {
     return;
   }
 
-  const tabConfig = TAB_CONFIG[this._activeTab];
+  const { chart } = this.config;
+  const { tabs, selectors } = chart;
+  const tabConfig = tabs[this._activeTab];
   if (!tabConfig) return;
 
   // data를 시간별로 그룹핑
@@ -401,7 +429,7 @@ function renderTrendChart({ response }) {
     ],
   };
 
-  this.updateChart(this.selectors.chartContainer, option);
+  this.updateChart(selectors.container, option);
 }
 
 // ======================
