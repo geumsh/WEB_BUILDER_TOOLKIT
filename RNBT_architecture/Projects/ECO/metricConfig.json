@@ -338,6 +338,63 @@
     "interface": "PERF_UPS"
   },
 
+  "UPS.INPUT_V_AVG": {
+    "label": "입력전압(3상 평균)",
+    "description": "AVG(UPS.INPUT_V_1, UPS.INPUT_V_2, UPS.INPUT_V_3)",
+    "valueType": "NUMBER",
+    "unit": "V",
+    "scale": 1.0,
+    "interface": "DERIVED"
+  },
+  "UPS.INPUT_A_SUM": {
+    "label": "입력전류(3상 합)",
+    "description": "SUM(UPS.INPUT_A_1, UPS.INPUT_A_2, UPS.INPUT_A_3)",
+    "valueType": "NUMBER",
+    "unit": "A",
+    "scale": 1.0,
+    "interface": "DERIVED"
+  },
+  "UPS.OUTPUT_V_AVG": {
+    "label": "출력전압(3상 평균)",
+    "description": "AVG(UPS.OUTPUT_V_1, UPS.OUTPUT_V_2, UPS.OUTPUT_V_3)",
+    "valueType": "NUMBER",
+    "unit": "V",
+    "scale": 1.0,
+    "interface": "DERIVED"
+  },
+  "UPS.OUTPUT_F_AVG": {
+    "label": "출력주파수(3상 평균)",
+    "description": "AVG(UPS.OUTPUT_F_1, UPS.OUTPUT_F_2, UPS.OUTPUT_F_3)",
+    "valueType": "NUMBER",
+    "unit": "Hz",
+    "scale": 1.0,
+    "interface": "DERIVED"
+  },
+  "UPS.OUTPUT_A_SUM": {
+    "label": "출력전류(3상 합)",
+    "description": "SUM(UPS.OUTPUT_A_1, UPS.OUTPUT_A_2, UPS.OUTPUT_A_3)",
+    "valueType": "NUMBER",
+    "unit": "A",
+    "scale": 1.0,
+    "interface": "DERIVED"
+  },
+  "UPS.OUTPUT_POWER_KW": {
+    "label": "출력전력",
+    "description": "(UPS.OUTPUT_V_AVG × UPS.OUTPUT_A_SUM) / 1000. 단순 V×A 기반, PF/√3 미반영",
+    "valueType": "NUMBER",
+    "unit": "kW",
+    "scale": 1.0,
+    "interface": "DERIVED"
+  },
+  "UPS.INPUT_POWER_KW": {
+    "label": "입력전력",
+    "description": "(UPS.INPUT_V_AVG × UPS.INPUT_A_SUM) / 1000. 단순 V×A 기반, PF/√3 미반영",
+    "valueType": "NUMBER",
+    "unit": "kW",
+    "scale": 1.0,
+    "interface": "DERIVED"
+  },
+
   "DIST.V_LN_AVG": {
     "label": "평균선간전압L-N",
     "description": "평균 선간전압 (L-N)",
