@@ -169,8 +169,9 @@ function showDetail() {
   this.showPopup();
 
   // 1) assetDetailUnified + metricLatest 호출 (섹션별 독립 처리)
+  // metricHistoryStats는 fetchTrendData에서 fetch API로 직접 호출하므로 제외
   fx.go(
-    this.datasetInfo,
+    this.datasetInfo.filter(d => d.datasetName !== 'metricHistoryStats'),
     fx.each(({ datasetName, param, render }) =>
       fx.go(
         fetchData(this.page, datasetName, param),

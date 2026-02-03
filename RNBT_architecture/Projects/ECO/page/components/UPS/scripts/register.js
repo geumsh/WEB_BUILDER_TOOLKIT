@@ -63,7 +63,7 @@ function initComponent() {
   this._defaultAssetKey = this.setter?.assetInfo?.assetKey || this.id;
   this._baseUrl = BASE_URL;
   this._trendData = null;
-  this._activeTab = 'current';
+  this._activeTab = 'voltage';
 
   this.datasetInfo = [
     { datasetName: 'assetDetailUnified', param: { baseUrl: this._baseUrl, assetKey: this._defaultAssetKey, locale: 'ko' }, render: ['renderBasicInfo'] },
@@ -180,8 +180,9 @@ function showDetail() {
   this.showPopup();
 
   // 1) assetDetailUnified + metricLatest 호출 (섹션별 독립 처리)
+  // metricHistoryStats는 fetchTrendData에서 fetch API로 직접 호출하므로 제외
   fx.go(
-    this.datasetInfo,
+    this.datasetInfo.filter(d => d.datasetName !== 'metricHistoryStats'),
     fx.each(({ datasetName, param, render }) =>
       fx.go(
         fetchData(this.page, datasetName, param),

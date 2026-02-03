@@ -518,8 +518,9 @@
         function showDetail() {
             this.showPopup();
 
+            // metricHistoryStats는 fetchTrendData에서 직접 호출하므로 제외
             fx.go(
-                this.datasetInfo,
+                this.datasetInfo.filter(d => d.datasetName !== 'metricHistoryStats'),
                 fx.each(({ datasetName, param, render }) =>
                     fx.go(
                         Wkit.fetchData(this.page, datasetName, param),
