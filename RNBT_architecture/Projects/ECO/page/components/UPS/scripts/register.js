@@ -48,10 +48,17 @@ const TAB_CONFIG = {
   frequency: { label: '입/출력 주파수', unit: 'Hz', inputCode: 'UPS.INPUT_F_AVG',  outputCode: 'UPS.OUTPUT_F_AVG' },
 };
 
-// 차트 색상 정의
-const CHART_COLORS = {
-  input: '#f59e0b',   // 입력 - 주황
-  output: '#22c55e',  // 출력 - 초록
+// 차트 시리즈 설정 (입력/출력 듀얼 라인)
+const CHART_SERIES_CONFIG = {
+  input:  { label: '입력', color: '#f59e0b' },
+  output: { label: '출력', color: '#22c55e' },
+};
+
+// 데이터셋 이름 상수
+const DATASET_NAMES = {
+  assetDetail: 'assetDetailUnified',
+  metricLatest: 'metricLatest',
+  metricHistory: 'metricHistoryStats',
 };
 
 initComponent.call(this);
@@ -66,10 +73,10 @@ function initComponent() {
   this._activeTab = 'voltage';
 
   this.datasetInfo = [
-    { datasetName: 'assetDetailUnified', param: { baseUrl: this._baseUrl, assetKey: this._defaultAssetKey, locale: 'ko' }, render: ['renderBasicInfo'] },
-    { datasetName: 'metricLatest', param: { baseUrl: this._baseUrl, assetKey: this._defaultAssetKey }, render: ['renderPowerStatus'] },
+    { datasetName: DATASET_NAMES.assetDetail, param: { baseUrl: this._baseUrl, assetKey: this._defaultAssetKey, locale: 'ko' }, render: ['renderBasicInfo'] },
+    { datasetName: DATASET_NAMES.metricLatest, param: { baseUrl: this._baseUrl, assetKey: this._defaultAssetKey }, render: ['renderPowerStatus'] },
     {
-      datasetName: 'metricHistoryStats',
+      datasetName: DATASET_NAMES.metricHistory,
       param: {
         baseUrl: this._baseUrl,
         assetKey: this._defaultAssetKey,
@@ -103,6 +110,13 @@ function initComponent() {
     status: '.ups-status',
     timestamp: '.section-timestamp',
     chartContainer: '.chart-container',
+    // 카드 및 탭 관련
+    powerCard: '.power-card',
+    powerCardValue: '.power-card-value',
+    tabBtn: '.tab-btn',
+    // 체이닝 테이블 셀
+    infoModel: '.info-model',
+    infoVendor: '.info-vendor',
   };
 
   // ======================
@@ -130,7 +144,6 @@ function initComponent() {
   this.renderBasicInfo = renderBasicInfo.bind(this);
   this.renderPowerStatus = renderPowerStatus.bind(this);
   this.renderTrendChart = renderTrendChart.bind(this);
-  this.renderError = renderError.bind(this);
 
   // ======================
   // 6. Refresh Config (5초 갱신)
@@ -202,7 +215,7 @@ function showDetail() {
   // 1) assetDetailUnified + metricLatest 호출 (섹션별 독립 처리)
   // metricHistoryStats는 fetchTrendData에서 fetch API로 직접 호출하므로 제외
   fx.go(
-    this.datasetInfo.filter(d => d.datasetName !== 'metricHistoryStats'),
+    this.datasetInfo.filter(d => d.datasetName !== DATASET_NAMES.metricHistory),
     fx.each(({ datasetName, param, render }) =>
       fx.go(
         fetchData(this.page, datasetName, param),
@@ -239,7 +252,7 @@ function hideDetail() {
 }
 
 function refreshMetrics() {
-  const metricInfo = this.datasetInfo.find(d => d.datasetName === 'metricLatest');
+  const metricInfo = this.datasetInfo.find(d => d.datasetName === DATASET_NAMES.metricLatest);
   fx.go(
     fetchData(this.page, 'metricLatest', metricInfo.param),
     (response) => {
@@ -265,7 +278,7 @@ function switchTab(tabName) {
   if (!tabName || !TAB_CONFIG[tabName]) return;
   this._activeTab = tabName;
 
-  const buttons = this.popupQueryAll('.tab-btn');
+  const buttons = this.popupQueryAll(this.selectors.tabBtn);
   if (buttons) {
     buttons.forEach((btn) => btn.classList.toggle('active', btn.dataset.tab === tabName));
   }
@@ -281,7 +294,7 @@ function switchTab(tabName) {
 // ======================
 
 async function fetchTrendData() {
-  const trendInfo = this.datasetInfo.find(d => d.datasetName === 'metricHistoryStats');
+  const trendInfo = this.datasetInfo.find(d => d.datasetName === DATASET_NAMES.metricHistory);
   if (!trendInfo) return;
 
   const { baseUrl, assetKey, interval, timeRange, metricCodes, statsKeys } = trendInfo.param;
@@ -325,7 +338,7 @@ async function fetchTrendData() {
 function renderBasicInfo({ response }) {
   const { data } = response;
   if (!data || !data.asset) {
-    renderError.call(this, '자산 데이터가 없습니다.');
+    console.warn('[UPS] renderBasicInfo: no asset data');
     return;
   }
 
@@ -369,14 +382,14 @@ function renderBasicInfo({ response }) {
       (modelResp) => {
         if (!modelResp?.response?.data) return;
         const model = modelResp.response.data;
-        setCell('.info-model', model.name);
+        setCell(this.selectors.infoModel, model.name);
 
         if (model.assetVendorKey) {
           fx.go(
             fetchData(this.page, 'vendorDetail', { baseUrl: this._baseUrl, assetVendorKey: model.assetVendorKey }),
             (vendorResp) => {
               if (!vendorResp?.response?.data) return;
-              setCell('.info-vendor', vendorResp.response.data.name);
+              setCell(this.selectors.infoVendor, vendorResp.response.data.name);
             }
           ).catch(() => {});
         }
@@ -412,10 +425,10 @@ function renderPowerStatus({ response }) {
 
   // 각 카드에 값 설정
   Object.entries(POWER_STATUS_CONFIG).forEach(([key, config]) => {
-    const card = this.popupQuery(`.power-card[data-metric="${key}"]`);
+    const card = this.popupQuery(`${this.selectors.powerCard}[data-metric="${key}"]`);
     if (!card) return;
 
-    const valueEl = card.querySelector('.power-card-value');
+    const valueEl = card.querySelector(this.selectors.powerCardValue);
     if (!valueEl) return;
 
     // metricCode가 없으면 "-" 표시 (API 미지원)
@@ -467,6 +480,8 @@ function renderTrendChart({ response }) {
     return raw != null ? +(raw).toFixed(2) : null;
   });
 
+  const { input: inputSeries, output: outputSeries } = CHART_SERIES_CONFIG;
+
   const option = {
     tooltip: {
       trigger: 'axis',
@@ -475,7 +490,7 @@ function renderTrendChart({ response }) {
       textStyle: { color: '#e0e6ed', fontSize: 12 },
     },
     legend: {
-      data: ['입력', '출력'],
+      data: [inputSeries.label, outputSeries.label],
       top: 8,
       textStyle: { color: '#8892a0', fontSize: 11 },
     },
@@ -495,37 +510,37 @@ function renderTrendChart({ response }) {
     },
     series: [
       {
-        name: '입력',
+        name: inputSeries.label,
         type: 'line',
         data: inputValues,
         smooth: true,
         symbol: 'none',
-        lineStyle: { color: CHART_COLORS.input, width: 2 },
+        lineStyle: { color: inputSeries.color, width: 2 },
         areaStyle: {
           color: {
             type: 'linear',
             x: 0, y: 0, x2: 0, y2: 1,
             colorStops: [
-              { offset: 0, color: hexToRgba(CHART_COLORS.input, 0.2) },
-              { offset: 1, color: hexToRgba(CHART_COLORS.input, 0) },
+              { offset: 0, color: hexToRgba(inputSeries.color, 0.2) },
+              { offset: 1, color: hexToRgba(inputSeries.color, 0) },
             ],
           },
         },
       },
       {
-        name: '출력',
+        name: outputSeries.label,
         type: 'line',
         data: outputValues,
         smooth: true,
         symbol: 'none',
-        lineStyle: { color: CHART_COLORS.output, width: 2 },
+        lineStyle: { color: outputSeries.color, width: 2 },
         areaStyle: {
           color: {
             type: 'linear',
             x: 0, y: 0, x2: 0, y2: 1,
             colorStops: [
-              { offset: 0, color: hexToRgba(CHART_COLORS.output, 0.2) },
-              { offset: 1, color: hexToRgba(CHART_COLORS.output, 0) },
+              { offset: 0, color: hexToRgba(outputSeries.color, 0.2) },
+              { offset: 1, color: hexToRgba(outputSeries.color, 0) },
             ],
           },
         },
@@ -534,25 +549,6 @@ function renderTrendChart({ response }) {
   };
 
   this.updateChart(this.selectors.chartContainer, option);
-}
-
-// ======================
-// RENDER: 에러
-// ======================
-
-function renderError(message) {
-  const nameEl = this.popupQuery(this.selectors.name);
-  const zoneEl = this.popupQuery(this.selectors.zone);
-  const statusEl = this.popupQuery(this.selectors.status);
-
-  if (nameEl) nameEl.textContent = '데이터 없음';
-  if (zoneEl) zoneEl.textContent = message;
-  if (statusEl) {
-    statusEl.textContent = 'Error';
-    statusEl.dataset.status = 'critical';
-  }
-
-  console.warn('[UPS] renderError:', message);
 }
 
 // ======================
