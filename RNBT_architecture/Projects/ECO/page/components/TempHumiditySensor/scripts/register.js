@@ -168,7 +168,7 @@ function initComponent() {
 function showDetail() {
   this.showPopup();
 
-  // 1) assetDetailUnified + metricLatest 호출
+  // 1) assetDetailUnified + metricLatest 호출 (섹션별 독립 처리)
   fx.go(
     this.datasetInfo,
     fx.each(({ datasetName, param, render }) =>
@@ -176,12 +176,12 @@ function showDetail() {
         fetchData(this.page, datasetName, param),
         (response) => {
           if (!response || !response.response) {
-            this.renderError('데이터를 불러올 수 없습니다.');
+            console.warn(`[TempHumiditySensor] ${datasetName} fetch failed - no response`);
             return;
           }
           const data = response.response.data;
           if (data === null || data === undefined) {
-            this.renderError('자산 정보가 존재하지 않습니다.');
+            console.warn(`[TempHumiditySensor] ${datasetName} - no data`);
             return;
           }
           fx.each((fn) => this[fn](response), render);
@@ -189,8 +189,7 @@ function showDetail() {
       )
     )
   ).catch((e) => {
-    console.error('[TempHumiditySensor]', e);
-    this.renderError('데이터 로드 중 오류가 발생했습니다.');
+    console.error('[TempHumiditySensor] Data load error:', e);
   });
 
   // 2) 트렌드 차트 호출 (mhs/l)
@@ -234,34 +233,41 @@ function stopRefresh() {
 // TREND DATA FETCH
 // ======================
 
-function fetchTrendData() {
+async function fetchTrendData() {
   const trendInfo = this.datasetInfo.find(d => d.datasetName === 'metricHistoryStats');
   if (!trendInfo) return;
 
-  const { interval, timeRange, metricCodes, statsKeys } = trendInfo.param;
+  const { baseUrl, assetKey, interval, timeRange, metricCodes, statsKeys } = trendInfo.param;
   const now = new Date();
   const from = new Date(now.getTime() - timeRange);
 
-  fx.go(
-    fetchData(this.page, 'metricHistoryStats', {
-      baseUrl: this._baseUrl,
-      assetKey: this._defaultAssetKey,
-      interval,
-      metricCodes,
-      timeFrom: from.toISOString().replace('T', ' ').slice(0, 19),
-      timeTo: now.toISOString().replace('T', ' ').slice(0, 19),
-      statsKeys,
-    }),
-    (response) => {
-      if (!response || !response.response) {
-        console.warn('[TempHumiditySensor] Trend data unavailable');
-        return;
-      }
-      this.renderTrendChart(response);
+  try {
+    const response = await fetch(`http://${baseUrl}/api/v1/mhs/l`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        filter: {
+          assetKey,
+          interval,
+          metricCodes,
+          timeFrom: from.toISOString().replace('T', ' ').slice(0, 19),
+          timeTo: now.toISOString().replace('T', ' ').slice(0, 19),
+        },
+        statsKeys,
+        sort: [],
+      }),
+    });
+
+    const result = await response.json();
+    if (!result || !result.success) {
+      console.warn('[TempHumiditySensor] Trend data unavailable');
+      return;
     }
-  ).catch((e) => {
+    // Wkit.fetchData 형태로 래핑하여 renderTrendChart에 전달
+    this.renderTrendChart({ response: { data: result.data } });
+  } catch (e) {
     console.warn('[TempHumiditySensor] Trend fetch failed:', e);
-  });
+  }
 }
 
 // ======================

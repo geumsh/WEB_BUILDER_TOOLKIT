@@ -148,7 +148,7 @@ function initComponent() {
 function showDetail() {
   this.showPopup();
 
-  // 1) assetDetailUnified 호출
+  // 1) assetDetailUnified 호출 (섹션별 독립 처리)
   fx.go(
     this.datasetInfo,
     fx.each(({ datasetName, param, render }) =>
@@ -156,12 +156,12 @@ function showDetail() {
         fetchData(this.page, datasetName, param),
         (response) => {
           if (!response || !response.response) {
-            this.renderError('데이터를 불러올 수 없습니다.');
+            console.warn(`[PDU] ${datasetName} fetch failed - no response`);
             return;
           }
           const data = response.response.data;
           if (data === null || data === undefined) {
-            this.renderError('자산 정보가 존재하지 않습니다.');
+            console.warn(`[PDU] ${datasetName} - no data`);
             return;
           }
           fx.each((fn) => this[fn](response), render);
@@ -169,8 +169,7 @@ function showDetail() {
       )
     )
   ).catch((e) => {
-    console.error('[PDU]', e);
-    this.renderError('데이터 로드 중 오류가 발생했습니다.');
+    console.error('[PDU] Data load error:', e);
   });
 
   // 2) 트렌드 차트 호출 (mhs/l)
@@ -200,36 +199,42 @@ function switchTab(tabName) {
 // TREND DATA FETCH
 // ======================
 
-function fetchTrendData() {
+async function fetchTrendData() {
   const trendInfo = this.datasetInfo.find(d => d.datasetName === 'metricHistoryStats');
   if (!trendInfo) return;
 
-  const { interval, timeRange, metricCodes, statsKeys } = trendInfo.param;
+  const { baseUrl, assetKey, interval, timeRange, metricCodes, statsKeys } = trendInfo.param;
   const now = new Date();
   const from = new Date(now.getTime() - timeRange);
 
-  fx.go(
-    fetchData(this.page, 'metricHistoryStats', {
-      baseUrl: this._baseUrl,
-      assetKey: this._defaultAssetKey,
-      interval,
-      metricCodes,
-      timeFrom: from.toISOString().replace('T', ' ').slice(0, 19),
-      timeTo: now.toISOString().replace('T', ' ').slice(0, 19),
-      statsKeys,
-    }),
-    (response) => {
-      if (!response || !response.response) {
-        console.warn('[PDU] Trend data unavailable');
-        return;
-      }
-      // 데이터를 저장해두고 현재 활성 탭으로 렌더링
-      this._trendData = response.response.data;
-      this.renderTrendChart(response);
+  try {
+    const response = await fetch(`http://${baseUrl}/api/v1/mhs/l`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        filter: {
+          assetKey,
+          interval,
+          metricCodes,
+          timeFrom: from.toISOString().replace('T', ' ').slice(0, 19),
+          timeTo: now.toISOString().replace('T', ' ').slice(0, 19),
+        },
+        statsKeys,
+        sort: [],
+      }),
+    });
+
+    const result = await response.json();
+    if (!result || !result.success) {
+      console.warn('[PDU] Trend data unavailable');
+      return;
     }
-  ).catch((e) => {
+    // 데이터를 저장해두고 현재 활성 탭으로 렌더링
+    this._trendData = result.data;
+    this.renderTrendChart({ response: { data: result.data } });
+  } catch (e) {
     console.warn('[PDU] Trend fetch failed:', e);
-  });
+  }
 }
 
 // ======================
