@@ -1,12 +1,12 @@
 <!--
   UPS - Shadow DOM Popup Template
-  UPS 상세 팝업
+  UPS 상세 팝업 (기획서 v.0.8_260128 기준)
 
   섹션 구조:
-  1. Header - 자산 기본 정보 (assetDetailUnified.asset)
-  2. Realtime Metrics - 실시간 측정값 (metricLatest + metricConfig)
-  3. Properties - 정적 속성 (assetDetailUnified.properties)
-  4. Chart - 히스토리 차트 (추후)
+  1. Header - 자산명 + 상태 badge + 닫기
+  2. 기본정보 - 이미지 placeholder + 8필드 테이블
+  3. UPS 전력현황 - 4카드 (배터리 사용률/잔여시간/부하율/출력전압)
+  4. UPS 입/출력 추이 - 3탭 트렌드 차트 (전류/전압/주파수)
 -->
 <template id="popup-ups">
     <div class="popup-overlay">
@@ -29,35 +29,94 @@
 
             <!-- Body -->
             <div class="popup-body">
-                <!-- Section 1: Realtime Metrics (metricLatest API) -->
-                <div class="section metrics-section">
+                <!-- Section 1: 기본정보 (이미지 + 테이블) -->
+                <div class="section info-section">
                     <div class="section-header">
-                        <span class="section-title"></span>
+                        <span class="section-title">기본정보</span>
+                    </div>
+                    <div class="info-content">
+                        <div class="info-layout">
+                            <div class="info-image-placeholder">
+                                <svg width="48" height="48" viewBox="0 0 48 48" fill="none">
+                                    <rect x="8" y="6" width="32" height="36" rx="2" stroke="#4b5563" stroke-width="2"/>
+                                    <rect x="12" y="10" width="8" height="4" fill="#4b5563"/>
+                                    <rect x="28" y="10" width="8" height="4" fill="#4b5563"/>
+                                    <rect x="14" y="18" width="20" height="8" rx="1" stroke="#4b5563" stroke-width="1.5"/>
+                                    <line x1="14" y1="22" x2="22" y2="22" stroke="#22c55e" stroke-width="2"/>
+                                    <rect x="14" y="30" width="20" height="8" rx="1" stroke="#4b5563" stroke-width="1.5"/>
+                                    <line x1="14" y1="34" x2="20" y2="34" stroke="#3b82f6" stroke-width="2"/>
+                                </svg>
+                                <span class="image-label">UPS</span>
+                            </div>
+                            <table class="info-table">
+                                <tbody>
+                                    <tr><th>자산명</th><td class="info-name">-</td></tr>
+                                    <tr><th>자산타입</th><td class="info-type">-</td></tr>
+                                    <tr><th>용도</th><td class="info-usage">-</td></tr>
+                                    <tr><th>제조사명</th><td class="info-vendor">-</td></tr>
+                                    <tr><th>모델</th><td class="info-model">-</td></tr>
+                                    <tr><th>위치</th><td class="info-location">-</td></tr>
+                                    <tr><th>상태</th><td class="info-status">-</td></tr>
+                                    <tr><th>설치일</th><td class="info-install-date">-</td></tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Section 2: UPS 전력현황 (4카드) -->
+                <div class="section power-section">
+                    <div class="section-header">
+                        <span class="section-title">UPS 전력현황</span>
                         <span class="section-timestamp"></span>
                     </div>
-                    <div class="metrics-container">
-                        <!-- JS에서 metricLatest + metricConfig 기반으로 동적 생성 -->
+                    <div class="power-cards">
+                        <div class="power-card" data-metric="batterySoc">
+                            <div class="power-card-label">배터리 사용률</div>
+                            <div class="power-card-body">
+                                <span class="power-card-value">-</span>
+                                <span class="power-card-unit">%</span>
+                            </div>
+                        </div>
+                        <div class="power-card" data-metric="batteryTime">
+                            <div class="power-card-label">배터리 잔여시간</div>
+                            <div class="power-card-body">
+                                <span class="power-card-value">-</span>
+                                <span class="power-card-unit">h</span>
+                            </div>
+                        </div>
+                        <div class="power-card" data-metric="loadRate">
+                            <div class="power-card-label">부하율</div>
+                            <div class="power-card-body">
+                                <span class="power-card-value">-</span>
+                                <span class="power-card-unit">%</span>
+                            </div>
+                        </div>
+                        <div class="power-card" data-metric="batteryVolt">
+                            <div class="power-card-label">배터리 출력전압</div>
+                            <div class="power-card-body">
+                                <span class="power-card-value">-</span>
+                                <span class="power-card-unit">V</span>
+                            </div>
+                        </div>
                     </div>
                 </div>
 
-                <!-- Section 2: Properties (assetDetailUnified.properties) -->
-                <div class="section properties-section">
-                    <div class="section-header">
-                        <span class="section-title"></span>
-                    </div>
-                    <div class="properties-container">
-                        <!-- JS에서 assetDetailUnified.properties 기반으로 동적 생성 -->
-                    </div>
-                </div>
-
-                <!-- Section 3: Chart (추후 활성화) -->
+                <!-- Section 3: UPS 입/출력 추이 (3탭 트렌드 차트) -->
                 <div class="section chart-section">
                     <div class="section-header">
-                        <span class="section-title"></span>
+                        <span class="section-title">UPS 입/출력 추이</span>
                     </div>
-                    <div class="chart-container">
-                        <div class="empty-state">히스토리 데이터가 없습니다</div>
+                    <div class="tab-header">
+                        <button class="tab-btn active" data-tab="current">입/출력 전류</button>
+                        <button class="tab-btn" data-tab="voltage">입/출력 전압</button>
+                        <button class="tab-btn" data-tab="frequency">입/출력 주파수</button>
                     </div>
+                    <div class="chart-legend">
+                        <span class="legend-item legend-input"><span class="legend-dot"></span>입력</span>
+                        <span class="legend-item legend-output"><span class="legend-dot"></span>출력</span>
+                    </div>
+                    <div class="chart-container"></div>
                 </div>
             </div>
         </div>

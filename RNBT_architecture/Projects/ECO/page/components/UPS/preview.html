@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>UPS - Preview (Metric API 연동)</title>
+    <title>UPS - Preview (기획서 v.0.8_260128)</title>
     <script src="https://cdn.jsdelivr.net/npm/echarts@5.5.0/dist/echarts.min.js"></script>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -54,7 +54,7 @@
 
     <script>
         // ======================
-        // TEMPLATE DATA (새로운 섹션 구조)
+        // TEMPLATE DATA (기획서 v.0.8_260128 기준)
         // ======================
         const htmlCode = `
             <template id="popup-ups">
@@ -75,26 +75,94 @@
                             </div>
                         </div>
                         <div class="popup-body">
-                            <div class="section metrics-section">
+                            <!-- Section 1: 기본정보 -->
+                            <div class="section info-section">
                                 <div class="section-header">
-                                    <span class="section-title"></span>
+                                    <span class="section-title">기본정보</span>
+                                </div>
+                                <div class="info-content">
+                                    <div class="info-layout">
+                                        <div class="info-image-placeholder">
+                                            <svg width="48" height="48" viewBox="0 0 48 48" fill="none">
+                                                <rect x="8" y="6" width="32" height="36" rx="2" stroke="#4b5563" stroke-width="2"/>
+                                                <rect x="12" y="10" width="8" height="4" fill="#4b5563"/>
+                                                <rect x="28" y="10" width="8" height="4" fill="#4b5563"/>
+                                                <rect x="14" y="18" width="20" height="8" rx="1" stroke="#4b5563" stroke-width="1.5"/>
+                                                <line x1="14" y1="22" x2="22" y2="22" stroke="#22c55e" stroke-width="2"/>
+                                                <rect x="14" y="30" width="20" height="8" rx="1" stroke="#4b5563" stroke-width="1.5"/>
+                                                <line x1="14" y1="34" x2="20" y2="34" stroke="#3b82f6" stroke-width="2"/>
+                                            </svg>
+                                            <span class="image-label">UPS</span>
+                                        </div>
+                                        <table class="info-table">
+                                            <tbody>
+                                                <tr><th>자산명</th><td class="info-name">-</td></tr>
+                                                <tr><th>자산타입</th><td class="info-type">-</td></tr>
+                                                <tr><th>용도</th><td class="info-usage">-</td></tr>
+                                                <tr><th>제조사명</th><td class="info-vendor">-</td></tr>
+                                                <tr><th>모델</th><td class="info-model">-</td></tr>
+                                                <tr><th>위치</th><td class="info-location">-</td></tr>
+                                                <tr><th>상태</th><td class="info-status">-</td></tr>
+                                                <tr><th>설치일</th><td class="info-install-date">-</td></tr>
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Section 2: UPS 전력현황 (4카드) -->
+                            <div class="section power-section">
+                                <div class="section-header">
+                                    <span class="section-title">UPS 전력현황</span>
                                     <span class="section-timestamp"></span>
                                 </div>
-                                <div class="metrics-container"></div>
-                            </div>
-                            <div class="section properties-section">
-                                <div class="section-header">
-                                    <span class="section-title"></span>
+                                <div class="power-cards">
+                                    <div class="power-card" data-metric="batterySoc">
+                                        <div class="power-card-label">배터리 사용률</div>
+                                        <div class="power-card-body">
+                                            <span class="power-card-value">-</span>
+                                            <span class="power-card-unit">%</span>
+                                        </div>
+                                    </div>
+                                    <div class="power-card" data-metric="batteryTime">
+                                        <div class="power-card-label">배터리 잔여시간</div>
+                                        <div class="power-card-body">
+                                            <span class="power-card-value">-</span>
+                                            <span class="power-card-unit">h</span>
+                                        </div>
+                                    </div>
+                                    <div class="power-card" data-metric="loadRate">
+                                        <div class="power-card-label">부하율</div>
+                                        <div class="power-card-body">
+                                            <span class="power-card-value">-</span>
+                                            <span class="power-card-unit">%</span>
+                                        </div>
+                                    </div>
+                                    <div class="power-card" data-metric="batteryVolt">
+                                        <div class="power-card-label">배터리 출력전압</div>
+                                        <div class="power-card-body">
+                                            <span class="power-card-value">-</span>
+                                            <span class="power-card-unit">V</span>
+                                        </div>
+                                    </div>
                                 </div>
-                                <div class="properties-container"></div>
                             </div>
+
+                            <!-- Section 3: UPS 입/출력 추이 (3탭 트렌드 차트) -->
                             <div class="section chart-section">
                                 <div class="section-header">
-                                    <span class="section-title"></span>
+                                    <span class="section-title">UPS 입/출력 추이</span>
                                 </div>
-                                <div class="chart-container">
-                                    <div class="empty-state">히스토리 데이터가 없습니다</div>
+                                <div class="tab-header">
+                                    <button class="tab-btn active" data-tab="current">입/출력 전류</button>
+                                    <button class="tab-btn" data-tab="voltage">입/출력 전압</button>
+                                    <button class="tab-btn" data-tab="frequency">입/출력 주파수</button>
                                 </div>
+                                <div class="chart-legend">
+                                    <span class="legend-item legend-input"><span class="legend-dot"></span>입력</span>
+                                    <span class="legend-item legend-output"><span class="legend-dot"></span>출력</span>
+                                </div>
+                                <div class="chart-container"></div>
                             </div>
                         </div>
                     </div>
@@ -110,75 +178,77 @@
             .ups-name { margin: 0; font-size: 18px; font-weight: 600; color: #e0e6ed; }
             .ups-zone { font-size: 13px; color: #8892a0; }
             .header-actions { display: flex; align-items: center; gap: 12px; }
-            .ups-status { padding: 4px 12px; border-radius: 12px; font-size: 12px; font-weight: 500; text-transform: capitalize; }
+            .ups-status { padding: 4px 12px; border-radius: 12px; font-size: 12px; font-weight: 500; }
             .ups-status[data-status="normal"] { background: rgba(34,197,94,0.15); color: #22c55e; }
             .ups-status[data-status="warning"] { background: rgba(234,179,8,0.15); color: #eab308; }
             .ups-status[data-status="critical"] { background: rgba(239,68,68,0.15); color: #ef4444; }
             .close-btn { display: flex; align-items: center; justify-content: center; width: 32px; height: 32px; padding: 0; background: transparent; border: none; border-radius: 6px; color: #8892a0; cursor: pointer; transition: background 0.15s, color 0.15s; }
             .close-btn:hover { background: #2a3142; color: #e0e6ed; }
-            .popup-body { padding: 24px; display: flex; flex-direction: column; gap: 20px; flex: 1; min-height: 0; overflow: hidden; }
-            .section { background: #252b3b; border-radius: 8px; overflow: hidden; flex: 1; min-height: 0; display: flex; flex-direction: column; }
-            .section-header { display: flex; justify-content: space-between; align-items: center; padding: 12px 16px; border-bottom: 1px solid #2a3142; flex-shrink: 0; }
-            .section-title { font-size: 13px; font-weight: 500; color: #8892a0; text-transform: uppercase; letter-spacing: 0.5px; }
+            .popup-body { padding: 20px 24px; display: flex; flex-direction: column; gap: 16px; flex: 1; min-height: 0; overflow-y: auto; }
+            .section { background: #252b3b; border-radius: 8px; overflow: hidden; flex-shrink: 0; }
+            .section-header { display: flex; justify-content: space-between; align-items: center; padding: 12px 16px; border-bottom: 1px solid #2a3142; }
+            .section-title { font-size: 13px; font-weight: 500; color: #8892a0; letter-spacing: 0.5px; }
             .section-timestamp { font-size: 11px; color: #6b7280; }
-            .metrics-container { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 1px; background: #2a3142; flex: 1; overflow-y: auto; }
-            .metric-card { background: #252b3b; padding: 16px 12px; text-align: center; }
-            .metric-label { font-size: 10px; color: #8892a0; margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.5px; }
-            .metric-value { font-size: 24px; font-weight: 600; color: #e0e6ed; line-height: 1; }
-            .metric-unit { font-size: 12px; font-weight: 400; color: #8892a0; margin-left: 2px; }
-            .metric-bool { padding: 12px; }
-            .metric-value-bool { font-size: 16px; font-weight: 700; letter-spacing: 1px; }
-            .metric-bool.bool-on .metric-value-bool { color: #22c55e; }
-            .metric-bool.bool-off .metric-value-bool { color: #6b7280; }
-            .metric-card[data-status="normal"] .metric-value { color: #22c55e; }
-            .metric-card[data-status="warning"] .metric-value { color: #eab308; }
-            .metric-card[data-status="critical"] .metric-value { color: #ef4444; }
-            .properties-container { display: grid; grid-template-columns: 1fr 1fr; gap: 1px; background: #2a3142; flex: 1; overflow-y: auto; }
-            .property-card { background: #252b3b; padding: 12px 16px; }
-            .property-label { font-size: 11px; color: #8892a0; margin-bottom: 4px; }
-            .property-value { font-size: 14px; font-weight: 500; color: #e0e6ed; }
-            .chart-section .chart-container { width: 100%; flex: 1; min-height: 180px; }
-            .chart-section.hidden { display: none; }
+            .info-section .info-content { padding: 16px; }
+            .info-layout { display: flex; gap: 16px; }
+            .info-image-placeholder { width: 100px; min-height: 100px; background: #1a1f2e; border-radius: 8px; border: 1px solid #2a3142; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; flex-shrink: 0; }
+            .info-image-placeholder svg { opacity: 0.5; }
+            .image-label { font-size: 11px; color: #6b7280; font-weight: 500; }
+            .info-table { flex: 1; border-collapse: collapse; font-size: 13px; }
+            .info-table th, .info-table td { padding: 5px 8px; text-align: left; border-bottom: 1px solid rgba(42, 49, 66, 0.5); }
+            .info-table th { color: #8892a0; font-weight: 400; white-space: nowrap; width: 70px; }
+            .info-table td { color: #e0e6ed; font-weight: 500; }
+            .info-table tr:last-child th, .info-table tr:last-child td { border-bottom: none; }
+            .power-cards { display: grid; grid-template-columns: 1fr 1fr; gap: 1px; background: #2a3142; }
+            .power-card { background: #252b3b; padding: 14px 16px; }
+            .power-card-label { font-size: 11px; font-weight: 500; color: #8892a0; margin-bottom: 8px; letter-spacing: 0.3px; }
+            .power-card-body { display: flex; align-items: baseline; gap: 2px; }
+            .power-card-value { font-size: 24px; font-weight: 600; color: #e0e6ed; line-height: 1; }
+            .power-card-unit { font-size: 12px; font-weight: 400; color: #8892a0; }
+            .power-card[data-metric="batteryVolt"] .power-card-value { color: #3b82f6; }
+            .chart-section { flex: 1; min-height: 280px; display: flex; flex-direction: column; }
+            .tab-header { display: flex; gap: 4px; padding: 8px 16px; border-bottom: 1px solid #2a3142; flex-shrink: 0; }
+            .tab-btn { padding: 6px 12px; background: transparent; border: none; border-radius: 6px; color: #8892a0; font-size: 12px; font-weight: 500; cursor: pointer; transition: background 0.15s, color 0.15s; }
+            .tab-btn:hover { background: #252b3b; color: #e0e6ed; }
+            .tab-btn.active { background: #3b82f6; color: #fff; }
+            .chart-legend { display: flex; gap: 16px; padding: 8px 16px; flex-shrink: 0; }
+            .legend-item { display: flex; align-items: center; gap: 6px; font-size: 11px; color: #8892a0; }
+            .legend-dot { width: 10px; height: 3px; border-radius: 1px; }
+            .legend-input .legend-dot { background: #f59e0b; }
+            .legend-output .legend-dot { background: #22c55e; }
+            .chart-container { flex: 1; min-height: 200px; width: 100%; }
             .empty-state { padding: 24px 16px; text-align: center; color: #6b7280; font-size: 13px; }
             .error-state { padding: 24px 16px; text-align: center; color: #ef4444; font-size: 13px; }
         `;
 
         // ======================
-        // METRIC CONFIG (25 metrics from register.js)
+        // POWER STATUS CONFIG
         // ======================
-        const METRIC_CONFIG = {
-            'UPS.INPUT_V_1': { label: '입력전압 R', valueType: 'NUMBER', unit: 'V', scale: 0.1 },
-            'UPS.INPUT_V_2': { label: '입력전압 S', valueType: 'NUMBER', unit: 'V', scale: 0.1 },
-            'UPS.INPUT_V_3': { label: '입력전압 T', valueType: 'NUMBER', unit: 'V', scale: 0.1 },
-            'UPS.INPUT_F_1': { label: '입력주파수 R', valueType: 'NUMBER', unit: 'Hz', scale: 0.1 },
-            'UPS.INPUT_F_2': { label: '입력주파수 S', valueType: 'NUMBER', unit: 'Hz', scale: 0.1 },
-            'UPS.INPUT_F_3': { label: '입력주파수 T', valueType: 'NUMBER', unit: 'Hz', scale: 0.1 },
-            'UPS.INPUT_A_1': { label: '입력전류 R', valueType: 'NUMBER', unit: 'A', scale: 0.1 },
-            'UPS.INPUT_A_2': { label: '입력전류 S', valueType: 'NUMBER', unit: 'A', scale: 0.1 },
-            'UPS.INPUT_A_3': { label: '입력전류 T', valueType: 'NUMBER', unit: 'A', scale: 0.1 },
-            'UPS.OUTPUT_V_1': { label: '출력전압 R', valueType: 'NUMBER', unit: 'V', scale: 0.1 },
-            'UPS.OUTPUT_V_2': { label: '출력전압 S', valueType: 'NUMBER', unit: 'V', scale: 0.1 },
-            'UPS.OUTPUT_V_3': { label: '출력전압 T', valueType: 'NUMBER', unit: 'V', scale: 0.1 },
-            'UPS.OUTPUT_F_1': { label: '출력주파수 R', valueType: 'NUMBER', unit: 'Hz', scale: 0.1 },
-            'UPS.OUTPUT_F_2': { label: '출력주파수 S', valueType: 'NUMBER', unit: 'Hz', scale: 0.1 },
-            'UPS.OUTPUT_F_3': { label: '출력주파수 T', valueType: 'NUMBER', unit: 'Hz', scale: 0.1 },
-            'UPS.OUTPUT_A_1': { label: '출력전류 R', valueType: 'NUMBER', unit: 'A', scale: 0.1 },
-            'UPS.OUTPUT_A_2': { label: '출력전류 S', valueType: 'NUMBER', unit: 'A', scale: 0.1 },
-            'UPS.OUTPUT_A_3': { label: '출력전류 T', valueType: 'NUMBER', unit: 'A', scale: 0.1 },
-            'UPS.BATT_V': { label: '배터리전압', valueType: 'NUMBER', unit: 'V', scale: 0.1 },
-            'UPS.BATT_A': { label: '배터리전류', valueType: 'NUMBER', unit: 'A', scale: 0.1 },
-            'UPS.INPUT_BAD_STATE': { label: '입력전력이상', valueType: 'BOOL', unit: '', scale: 1.0 },
-            'UPS.BATT_CHARGING': { label: '배터리충전중', valueType: 'BOOL', unit: '', scale: 1.0 },
-            'UPS.OUTPUT_ON_BATTERY': { label: '배터리출력중', valueType: 'BOOL', unit: '', scale: 1.0 },
-            'UPS.INVERTER_OFF': { label: '인버터정지', valueType: 'BOOL', unit: '', scale: 1.0 },
-            'UPS.ON_BYPASS': { label: '바이패스운전', valueType: 'BOOL', unit: '', scale: 1.0 },
-            'UPS.BATT_FAULT': { label: '배터리Fault', valueType: 'BOOL', unit: '', scale: 1.0 },
-            'UPS.OUTPUT_OVERLOAD': { label: '출력과부하', valueType: 'BOOL', unit: '', scale: 1.0 },
+        const POWER_STATUS_CONFIG = {
+            batterySoc:   { label: '배터리 사용률',   unit: '%', metricCode: null,        scale: 1.0 },
+            batteryTime:  { label: '배터리 잔여시간', unit: 'h', metricCode: null,        scale: 1.0 },
+            loadRate:     { label: '부하율',         unit: '%', metricCode: null,        scale: 1.0 },
+            batteryVolt:  { label: '배터리 출력전압', unit: 'V', metricCode: 'UPS.BATT_V', scale: 0.1 },
+        };
+
+        // ======================
+        // TAB CONFIG
+        // ======================
+        const TAB_CONFIG = {
+            current:   { label: '입/출력 전류',   unit: 'A',  inputCode: 'UPS.INPUT_A_AVG',  outputCode: 'UPS.OUTPUT_A_AVG' },
+            voltage:   { label: '입/출력 전압',   unit: 'V',  inputCode: 'UPS.INPUT_V_AVG',  outputCode: 'UPS.OUTPUT_V_AVG' },
+            frequency: { label: '입/출력 주파수', unit: 'Hz', inputCode: 'UPS.INPUT_F_AVG',  outputCode: 'UPS.OUTPUT_F_AVG' },
+        };
+
+        const CHART_COLORS = {
+            input: '#f59e0b',
+            output: '#22c55e',
         };
 
         // ======================
         // MOCK IMPLEMENTATIONS
         // ======================
+        const API_BASE = 'http://10.23.128.125:4004';
 
         const fx = {
             go: (data, ...fns) => fns.reduce((acc, fn) => acc.then ? acc.then(fn) : Promise.resolve(fn(acc)), Promise.resolve(data)),
@@ -192,7 +262,7 @@
             bind3DEvents: (ctx, events) => console.log('[Wkit.bind3DEvents]', Object.keys(events)),
             fetchData: (page, datasetName, param) => {
                 console.log('[Wkit.fetchData]', datasetName, param);
-                return Promise.resolve({ response: { data: getMockData(datasetName) } });
+                return Promise.resolve({ response: { data: getMockData(datasetName, param) } });
             }
         };
 
@@ -202,155 +272,111 @@
         // assetDetailUnified 응답
         const mockUPSData = {
             normal: {
-                asset: { name: 'UPS-A01', locationLabel: 'Zone-A', statusType: 'ACTIVE' },
-                properties: [
-                    { label: '용량', value: '100kVA', helpText: 'UPS 정격 용량', displayOrder: 1 },
-                    { label: '모델', value: 'GE LP33', helpText: 'UPS 모델명', displayOrder: 2 },
-                    { label: '설치일', value: '2023-03-15', helpText: '설치 날짜', displayOrder: 3 },
-                    { label: '운전모드', value: 'Online', helpText: '현재 운전 모드', displayOrder: 4 }
-                ]
+                asset: {
+                    name: 'UPS-A01',
+                    assetType: 'UPS',
+                    usageLabel: '주전원',
+                    locationLabel: '2층 전기실',
+                    statusType: 'ACTIVE',
+                    installDate: '2025-10-23',
+                    assetModelKey: 'mdl-ups-001',
+                },
             },
             warning: {
-                asset: { name: 'UPS-B02', locationLabel: 'Zone-B', statusType: 'WARNING' },
-                properties: [
-                    { label: '용량', value: '80kVA', helpText: 'UPS 정격 용량', displayOrder: 1 },
-                    { label: '모델', value: 'Eaton 9PX', helpText: 'UPS 모델명', displayOrder: 2 },
-                    { label: '설치일', value: '2022-08-10', helpText: '설치 날짜', displayOrder: 3 },
-                    { label: '운전모드', value: 'Online', helpText: '현재 운전 모드', displayOrder: 4 }
-                ]
+                asset: {
+                    name: 'UPS-B02',
+                    assetType: 'UPS',
+                    usageLabel: '보조전원',
+                    locationLabel: '1층 전기실',
+                    statusType: 'WARNING',
+                    installDate: '2024-08-10',
+                    assetModelKey: 'mdl-ups-002',
+                },
             },
             critical: {
-                asset: { name: 'UPS-C03', locationLabel: 'Zone-C', statusType: 'CRITICAL' },
-                properties: [
-                    { label: '용량', value: '60kVA', helpText: 'UPS 정격 용량', displayOrder: 1 },
-                    { label: '모델', value: 'APC SRT', helpText: 'UPS 모델명', displayOrder: 2 },
-                    { label: '설치일', value: '2021-11-01', helpText: '설치 날짜', displayOrder: 3 },
-                    { label: '운전모드', value: 'Battery', helpText: '현재 운전 모드', displayOrder: 4 }
-                ]
+                asset: {
+                    name: 'UPS-C03',
+                    assetType: 'UPS',
+                    usageLabel: '백업전원',
+                    locationLabel: '지하 전기실',
+                    statusType: 'CRITICAL',
+                    installDate: '2023-11-01',
+                    assetModelKey: 'mdl-ups-003',
+                },
             }
         };
 
-        // metricLatest 응답 (실시간 측정값 - raw int, scale 0.1 적용 필요)
+        // modelDetail 응답
+        const mockModelData = {
+            'mdl-ups-001': { name: 'Galaxy 8000', assetVendorKey: 'vdr-apc' },
+            'mdl-ups-002': { name: '9PX 8000', assetVendorKey: 'vdr-eaton' },
+            'mdl-ups-003': { name: 'SRT 10000', assetVendorKey: 'vdr-apc' },
+        };
+
+        // vendorDetail 응답
+        const mockVendorData = {
+            'vdr-apc': { name: 'APC by Schneider Electric' },
+            'vdr-eaton': { name: 'Eaton' },
+        };
+
+        // metricLatest 응답 (UPS.BATT_V만 사용)
         const mockMetricData = {
             normal: [
-                { metricCode: 'UPS.INPUT_V_1', eventedAt: new Date().toISOString(), valueType: 'NUMBER', valueNumber: 2200 },
-                { metricCode: 'UPS.INPUT_V_2', eventedAt: new Date().toISOString(), valueType: 'NUMBER', valueNumber: 2210 },
-                { metricCode: 'UPS.INPUT_V_3', eventedAt: new Date().toISOString(), valueType: 'NUMBER', valueNumber: 2195 },
-                { metricCode: 'UPS.INPUT_F_1', eventedAt: new Date().toISOString(), valueType: 'NUMBER', valueNumber: 600 },
-                { metricCode: 'UPS.INPUT_F_2', eventedAt: new Date().toISOString(), valueType: 'NUMBER', valueNumber: 600 },
-                { metricCode: 'UPS.INPUT_F_3', eventedAt: new Date().toISOString(), valueType: 'NUMBER', valueNumber: 600 },
-                { metricCode: 'UPS.INPUT_A_1', eventedAt: new Date().toISOString(), valueType: 'NUMBER', valueNumber: 150 },
-                { metricCode: 'UPS.INPUT_A_2', eventedAt: new Date().toISOString(), valueType: 'NUMBER', valueNumber: 148 },
-                { metricCode: 'UPS.INPUT_A_3', eventedAt: new Date().toISOString(), valueType: 'NUMBER', valueNumber: 152 },
-                { metricCode: 'UPS.OUTPUT_V_1', eventedAt: new Date().toISOString(), valueType: 'NUMBER', valueNumber: 2200 },
-                { metricCode: 'UPS.OUTPUT_V_2', eventedAt: new Date().toISOString(), valueType: 'NUMBER', valueNumber: 2200 },
-                { metricCode: 'UPS.OUTPUT_V_3', eventedAt: new Date().toISOString(), valueType: 'NUMBER', valueNumber: 2200 },
-                { metricCode: 'UPS.OUTPUT_F_1', eventedAt: new Date().toISOString(), valueType: 'NUMBER', valueNumber: 600 },
-                { metricCode: 'UPS.OUTPUT_F_2', eventedAt: new Date().toISOString(), valueType: 'NUMBER', valueNumber: 600 },
-                { metricCode: 'UPS.OUTPUT_F_3', eventedAt: new Date().toISOString(), valueType: 'NUMBER', valueNumber: 600 },
-                { metricCode: 'UPS.OUTPUT_A_1', eventedAt: new Date().toISOString(), valueType: 'NUMBER', valueNumber: 145 },
-                { metricCode: 'UPS.OUTPUT_A_2', eventedAt: new Date().toISOString(), valueType: 'NUMBER', valueNumber: 143 },
-                { metricCode: 'UPS.OUTPUT_A_3', eventedAt: new Date().toISOString(), valueType: 'NUMBER', valueNumber: 147 },
                 { metricCode: 'UPS.BATT_V', eventedAt: new Date().toISOString(), valueType: 'NUMBER', valueNumber: 5400 },
-                { metricCode: 'UPS.BATT_A', eventedAt: new Date().toISOString(), valueType: 'NUMBER', valueNumber: 20 },
-                { metricCode: 'UPS.INPUT_BAD_STATE', eventedAt: new Date().toISOString(), valueType: 'BOOL', valueNumber: 0 },
-                { metricCode: 'UPS.BATT_CHARGING', eventedAt: new Date().toISOString(), valueType: 'BOOL', valueNumber: 1 },
-                { metricCode: 'UPS.OUTPUT_ON_BATTERY', eventedAt: new Date().toISOString(), valueType: 'BOOL', valueNumber: 0 },
-                { metricCode: 'UPS.INVERTER_OFF', eventedAt: new Date().toISOString(), valueType: 'BOOL', valueNumber: 0 },
-                { metricCode: 'UPS.ON_BYPASS', eventedAt: new Date().toISOString(), valueType: 'BOOL', valueNumber: 0 },
-                { metricCode: 'UPS.BATT_FAULT', eventedAt: new Date().toISOString(), valueType: 'BOOL', valueNumber: 0 },
-                { metricCode: 'UPS.OUTPUT_OVERLOAD', eventedAt: new Date().toISOString(), valueType: 'BOOL', valueNumber: 0 }
             ],
             warning: [
-                { metricCode: 'UPS.INPUT_V_1', eventedAt: new Date().toISOString(), valueType: 'NUMBER', valueNumber: 2150 },
-                { metricCode: 'UPS.INPUT_V_2', eventedAt: new Date().toISOString(), valueType: 'NUMBER', valueNumber: 2080 },
-                { metricCode: 'UPS.INPUT_V_3', eventedAt: new Date().toISOString(), valueType: 'NUMBER', valueNumber: 2170 },
-                { metricCode: 'UPS.INPUT_F_1', eventedAt: new Date().toISOString(), valueType: 'NUMBER', valueNumber: 598 },
-                { metricCode: 'UPS.INPUT_F_2', eventedAt: new Date().toISOString(), valueType: 'NUMBER', valueNumber: 595 },
-                { metricCode: 'UPS.INPUT_F_3', eventedAt: new Date().toISOString(), valueType: 'NUMBER', valueNumber: 599 },
-                { metricCode: 'UPS.INPUT_A_1', eventedAt: new Date().toISOString(), valueType: 'NUMBER', valueNumber: 180 },
-                { metricCode: 'UPS.INPUT_A_2', eventedAt: new Date().toISOString(), valueType: 'NUMBER', valueNumber: 185 },
-                { metricCode: 'UPS.INPUT_A_3', eventedAt: new Date().toISOString(), valueType: 'NUMBER', valueNumber: 178 },
-                { metricCode: 'UPS.OUTPUT_V_1', eventedAt: new Date().toISOString(), valueType: 'NUMBER', valueNumber: 2190 },
-                { metricCode: 'UPS.OUTPUT_V_2', eventedAt: new Date().toISOString(), valueType: 'NUMBER', valueNumber: 2185 },
-                { metricCode: 'UPS.OUTPUT_V_3', eventedAt: new Date().toISOString(), valueType: 'NUMBER', valueNumber: 2195 },
-                { metricCode: 'UPS.OUTPUT_F_1', eventedAt: new Date().toISOString(), valueType: 'NUMBER', valueNumber: 600 },
-                { metricCode: 'UPS.OUTPUT_F_2', eventedAt: new Date().toISOString(), valueType: 'NUMBER', valueNumber: 600 },
-                { metricCode: 'UPS.OUTPUT_F_3', eventedAt: new Date().toISOString(), valueType: 'NUMBER', valueNumber: 600 },
-                { metricCode: 'UPS.OUTPUT_A_1', eventedAt: new Date().toISOString(), valueType: 'NUMBER', valueNumber: 175 },
-                { metricCode: 'UPS.OUTPUT_A_2', eventedAt: new Date().toISOString(), valueType: 'NUMBER', valueNumber: 180 },
-                { metricCode: 'UPS.OUTPUT_A_3', eventedAt: new Date().toISOString(), valueType: 'NUMBER', valueNumber: 173 },
                 { metricCode: 'UPS.BATT_V', eventedAt: new Date().toISOString(), valueType: 'NUMBER', valueNumber: 5100 },
-                { metricCode: 'UPS.BATT_A', eventedAt: new Date().toISOString(), valueType: 'NUMBER', valueNumber: 35 },
-                { metricCode: 'UPS.INPUT_BAD_STATE', eventedAt: new Date().toISOString(), valueType: 'BOOL', valueNumber: 1 },
-                { metricCode: 'UPS.BATT_CHARGING', eventedAt: new Date().toISOString(), valueType: 'BOOL', valueNumber: 1 },
-                { metricCode: 'UPS.OUTPUT_ON_BATTERY', eventedAt: new Date().toISOString(), valueType: 'BOOL', valueNumber: 0 },
-                { metricCode: 'UPS.INVERTER_OFF', eventedAt: new Date().toISOString(), valueType: 'BOOL', valueNumber: 0 },
-                { metricCode: 'UPS.ON_BYPASS', eventedAt: new Date().toISOString(), valueType: 'BOOL', valueNumber: 0 },
-                { metricCode: 'UPS.BATT_FAULT', eventedAt: new Date().toISOString(), valueType: 'BOOL', valueNumber: 0 },
-                { metricCode: 'UPS.OUTPUT_OVERLOAD', eventedAt: new Date().toISOString(), valueType: 'BOOL', valueNumber: 0 }
             ],
             critical: [
-                { metricCode: 'UPS.INPUT_V_1', eventedAt: new Date().toISOString(), valueType: 'NUMBER', valueNumber: 0 },
-                { metricCode: 'UPS.INPUT_V_2', eventedAt: new Date().toISOString(), valueType: 'NUMBER', valueNumber: 0 },
-                { metricCode: 'UPS.INPUT_V_3', eventedAt: new Date().toISOString(), valueType: 'NUMBER', valueNumber: 0 },
-                { metricCode: 'UPS.INPUT_F_1', eventedAt: new Date().toISOString(), valueType: 'NUMBER', valueNumber: 0 },
-                { metricCode: 'UPS.INPUT_F_2', eventedAt: new Date().toISOString(), valueType: 'NUMBER', valueNumber: 0 },
-                { metricCode: 'UPS.INPUT_F_3', eventedAt: new Date().toISOString(), valueType: 'NUMBER', valueNumber: 0 },
-                { metricCode: 'UPS.INPUT_A_1', eventedAt: new Date().toISOString(), valueType: 'NUMBER', valueNumber: 0 },
-                { metricCode: 'UPS.INPUT_A_2', eventedAt: new Date().toISOString(), valueType: 'NUMBER', valueNumber: 0 },
-                { metricCode: 'UPS.INPUT_A_3', eventedAt: new Date().toISOString(), valueType: 'NUMBER', valueNumber: 0 },
-                { metricCode: 'UPS.OUTPUT_V_1', eventedAt: new Date().toISOString(), valueType: 'NUMBER', valueNumber: 2180 },
-                { metricCode: 'UPS.OUTPUT_V_2', eventedAt: new Date().toISOString(), valueType: 'NUMBER', valueNumber: 2175 },
-                { metricCode: 'UPS.OUTPUT_V_3', eventedAt: new Date().toISOString(), valueType: 'NUMBER', valueNumber: 2170 },
-                { metricCode: 'UPS.OUTPUT_F_1', eventedAt: new Date().toISOString(), valueType: 'NUMBER', valueNumber: 599 },
-                { metricCode: 'UPS.OUTPUT_F_2', eventedAt: new Date().toISOString(), valueType: 'NUMBER', valueNumber: 599 },
-                { metricCode: 'UPS.OUTPUT_F_3', eventedAt: new Date().toISOString(), valueType: 'NUMBER', valueNumber: 599 },
-                { metricCode: 'UPS.OUTPUT_A_1', eventedAt: new Date().toISOString(), valueType: 'NUMBER', valueNumber: 200 },
-                { metricCode: 'UPS.OUTPUT_A_2', eventedAt: new Date().toISOString(), valueType: 'NUMBER', valueNumber: 205 },
-                { metricCode: 'UPS.OUTPUT_A_3', eventedAt: new Date().toISOString(), valueType: 'NUMBER', valueNumber: 198 },
                 { metricCode: 'UPS.BATT_V', eventedAt: new Date().toISOString(), valueType: 'NUMBER', valueNumber: 3200 },
-                { metricCode: 'UPS.BATT_A', eventedAt: new Date().toISOString(), valueType: 'NUMBER', valueNumber: 85 },
-                { metricCode: 'UPS.INPUT_BAD_STATE', eventedAt: new Date().toISOString(), valueType: 'BOOL', valueNumber: 1 },
-                { metricCode: 'UPS.BATT_CHARGING', eventedAt: new Date().toISOString(), valueType: 'BOOL', valueNumber: 0 },
-                { metricCode: 'UPS.OUTPUT_ON_BATTERY', eventedAt: new Date().toISOString(), valueType: 'BOOL', valueNumber: 1 },
-                { metricCode: 'UPS.INVERTER_OFF', eventedAt: new Date().toISOString(), valueType: 'BOOL', valueNumber: 0 },
-                { metricCode: 'UPS.ON_BYPASS', eventedAt: new Date().toISOString(), valueType: 'BOOL', valueNumber: 0 },
-                { metricCode: 'UPS.BATT_FAULT', eventedAt: new Date().toISOString(), valueType: 'BOOL', valueNumber: 1 },
-                { metricCode: 'UPS.OUTPUT_OVERLOAD', eventedAt: new Date().toISOString(), valueType: 'BOOL', valueNumber: 1 }
             ]
         };
 
-        function generateHistoryData() {
-            const timestamps = [];
-            const load = [];
-            const battery = [];
+        // metricHistoryStats 응답 생성 (24시간 시계열)
+        function generateTrendData() {
             const now = new Date();
+            const data = [];
 
             for (let i = 23; i >= 0; i--) {
-                const time = new Date(now.getTime() - i * 3600000);
-                timestamps.push(time.toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' }));
-                const baseLoad = 45 + Math.sin(i / 4) * 15;
-                load.push(Math.round((baseLoad + (Math.random() - 0.5) * 10) * 10) / 10);
-                battery.push(Math.round((95 + (Math.random() - 0.5) * 10) * 10) / 10);
+                const time = new Date(now.getTime() - i * 3600000).toISOString();
+                const hour = new Date(now.getTime() - i * 3600000).getHours();
+
+                // 입력/출력 전류 (A)
+                data.push({ time, metricCode: 'UPS.INPUT_A_AVG', statsBody: { avg: 14.5 + Math.random() * 2 - 1 } });
+                data.push({ time, metricCode: 'UPS.OUTPUT_A_AVG', statsBody: { avg: 13.8 + Math.random() * 2 - 1 } });
+
+                // 입력/출력 전압 (V)
+                data.push({ time, metricCode: 'UPS.INPUT_V_AVG', statsBody: { avg: 220 + Math.random() * 6 - 3 } });
+                data.push({ time, metricCode: 'UPS.OUTPUT_V_AVG', statsBody: { avg: 220 + Math.random() * 2 - 1 } });
+
+                // 입력/출력 주파수 (Hz)
+                data.push({ time, metricCode: 'UPS.INPUT_F_AVG', statsBody: { avg: 60 + Math.random() * 0.4 - 0.2 } });
+                data.push({ time, metricCode: 'UPS.OUTPUT_F_AVG', statsBody: { avg: 60 + Math.random() * 0.1 - 0.05 } });
             }
 
-            return {
-                timestamps,
-                values: { load, battery },
-                fields: [
-                    { key: 'load', label: 'Load', unit: '%' },
-                    { key: 'battery', label: 'Battery', unit: '%' }
-                ]
-            };
+            return data;
         }
 
-        function getMockData(datasetName) {
+        function getMockData(datasetName, param) {
             switch (datasetName) {
-                case 'assetDetailUnified': return mockUPSData[currentStatus];
-                case 'metricLatest': return mockMetricData[currentStatus];
-                case 'upsHistory': return generateHistoryData();
-                default: return {};
+                case 'assetDetailUnified':
+                    return mockUPSData[currentStatus];
+                case 'metricLatest':
+                    // 5초 갱신마다 약간 다른 값
+                    const base = mockMetricData[currentStatus];
+                    return base.map(m => ({
+                        ...m,
+                        eventedAt: new Date().toISOString(),
+                        valueNumber: m.valueNumber + Math.floor(Math.random() * 100 - 50),
+                    }));
+                case 'modelDetail':
+                    return mockModelData[param.assetModelKey] || null;
+                case 'vendorDetail':
+                    return mockVendorData[param.assetVendorKey] || null;
+                case 'metricHistoryStats':
+                    return generateTrendData();
+                default:
+                    return {};
             }
         }
 
@@ -449,6 +475,13 @@
             return template?.innerHTML || '';
         }
 
+        function hexToRgba(hex, alpha) {
+            const r = parseInt(hex.slice(1, 3), 16);
+            const g = parseInt(hex.slice(3, 5), 16);
+            const b = parseInt(hex.slice(5, 7), 16);
+            return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+        }
+
         // ======================
         // COMPONENT INSTANCE
         // ======================
@@ -474,27 +507,8 @@
         }
 
         // ======================
-        // COMPONENT LIFECYCLE
+        // COMPONENT LIFECYCLE (register.js와 동일)
         // ======================
-
-        function statusTypeToLabel(statusType) {
-            const labels = { ACTIVE: 'Normal', WARNING: 'Warning', CRITICAL: 'Critical', INACTIVE: 'Inactive', MAINTENANCE: 'Maintenance' };
-            return labels[statusType] || statusType;
-        }
-
-        function statusTypeToDataAttr(statusType) {
-            const map = { ACTIVE: 'normal', WARNING: 'warning', CRITICAL: 'critical', INACTIVE: 'inactive', MAINTENANCE: 'maintenance' };
-            return map[statusType] || 'normal';
-        }
-
-        function formatTimestamp(isoString) {
-            if (!isoString) return '';
-            try {
-                const date = new Date(isoString);
-                return date.toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
-            } catch { return ''; }
-        }
-
         const BASE_URL = '10.23.128.125:4004';
 
         function initComponent() {
@@ -502,68 +516,54 @@
             const { applyShadowPopupMixin, applyEChartsMixin } = PopupMixin;
 
             this._defaultAssetKey = this.setter?.assetInfo?.assetKey || this.id;
+            this._baseUrl = BASE_URL;
+            this._trendData = null;
+            this._activeTab = 'current';
 
-            // 데이터셋 정의
             this.datasetInfo = [
-                { datasetName: 'assetDetailUnified', render: ['renderAssetInfo', 'renderProperties'] },
-                { datasetName: 'metricLatest', render: ['renderMetrics'] }
+                { datasetName: 'assetDetailUnified', params: { baseUrl: this._baseUrl, assetKey: this._defaultAssetKey, locale: 'ko' }, render: ['renderBasicInfo'] },
+                { datasetName: 'metricLatest', params: { baseUrl: this._baseUrl, assetKey: this._defaultAssetKey }, render: ['renderPowerStatus'] },
             ];
+
+            this.statusTypeToLabel = statusTypeToLabel.bind(this);
+            this.statusTypeToDataAttr = statusTypeToDataAttr.bind(this);
+            this.formatDate = formatDate.bind(this);
+            this.formatTimestamp = formatTimestamp.bind(this);
 
             this.baseInfoConfig = [
                 { key: 'name', selector: '.ups-name' },
                 { key: 'locationLabel', selector: '.ups-zone' },
-                { key: 'statusType', selector: '.ups-status', transform: statusTypeToLabel },
-                { key: 'statusType', selector: '.ups-status', dataAttr: 'status', transform: statusTypeToDataAttr }
+                { key: 'statusType', selector: '.ups-status', transform: this.statusTypeToLabel },
+                { key: 'statusType', selector: '.ups-status', dataAttr: 'status', transform: this.statusTypeToDataAttr },
             ];
 
-            this.metricsContainerSelector = '.metrics-container';
-            this.propertiesContainerSelector = '.properties-container';
-            this.propertiesSectionSelector = '.properties-section';
-            this.timestampSelector = '.section-timestamp';
-            this.metricConfig = METRIC_CONFIG;
-
-            // Section Titles
-            this.sectionTitles = {
-                '.metrics-section .section-title': '실시간 측정값',
-                '.properties-section .section-title': '속성 정보',
-                '.chart-section .section-title': '히스토리',
-            };
-
-            this.formatTimestamp = formatTimestamp.bind(this);
-
-            this.renderAssetInfo = renderAssetInfo.bind(this);
-            this.renderProperties = renderProperties.bind(this);
-            this.renderMetrics = renderMetrics.bind(this);
+            this.renderBasicInfo = renderBasicInfo.bind(this);
+            this.renderPowerStatus = renderPowerStatus.bind(this);
+            this.renderTrendChart = renderTrendChart.bind(this);
             this.renderError = renderError.bind(this);
 
-            // Refresh Config
-            this.refreshInterval = 5000; // 5초
+            this.refreshInterval = 5000;
             this._refreshIntervalId = null;
 
             this.showDetail = showDetail.bind(this);
             this.hideDetail = hideDetail.bind(this);
-            this.refreshMetrics = refreshMetricsOnly.bind(this);
+            this.refreshMetrics = refreshMetrics.bind(this);
             this.stopRefresh = stopRefresh.bind(this);
-
-            // chartConfig: 차트 렌더링 설정
-            this.chartConfig = {
-                xKey: 'timestamps',
-                styleMap: {
-                    load: { label: '부하율', unit: '%', color: '#3b82f6', smooth: true, areaStyle: true },
-                    battery: { label: '배터리', unit: '%', color: '#22c55e', smooth: true }
-                },
-                optionBuilder: getMultiLineChartOption
-            };
-
-            this.renderChart = renderChart.bind(this, this.chartConfig);
+            this._switchTab = switchTab.bind(this);
 
             this.customEvents = { click: '@assetClicked' };
             bind3DEvents(this, this.customEvents);
 
             this.templateConfig = { popup: 'popup-ups' };
+
             this.popupCreatedConfig = {
                 chartSelector: '.chart-container',
-                events: { click: { '.close-btn': () => this.hideDetail() } }
+                events: {
+                    click: {
+                        '.close-btn': () => this.hideDetail(),
+                        '.tab-btn': (e) => this._switchTab(e.target.dataset.tab),
+                    },
+                },
             };
 
             const { htmlCode, cssCode } = this.properties.publishCode || {};
@@ -571,7 +571,6 @@
             this.getPopupHTML = () => extractTemplate(htmlCode || '', ctx.templateConfig.popup);
             this.getPopupStyles = () => cssCode || '';
             this.onPopupCreated = function() {
-                applySectionTitles.call(ctx);
                 const { chartSelector, events } = ctx.popupCreatedConfig;
                 if (chartSelector) ctx.createChart(chartSelector);
                 if (events) ctx.bindPopupEvents(events);
@@ -580,7 +579,7 @@
             applyShadowPopupMixin(this, {
                 getHTML: this.getPopupHTML,
                 getStyles: this.getPopupStyles,
-                onCreated: this.onPopupCreated
+                onCreated: this.onPopupCreated,
             });
 
             applyEChartsMixin(this);
@@ -588,7 +587,116 @@
             console.log('[UPS] Registered:', this._defaultAssetKey);
         }
 
-        function renderAssetInfo({ response }) {
+        function showDetail() {
+            this.showPopup();
+
+            fx.go(
+                this.datasetInfo,
+                fx.each(({ datasetName, params, render }) =>
+                    fx.go(
+                        Wkit.fetchData(this.page, datasetName, params),
+                        (response) => {
+                            if (!response || !response.response) {
+                                this.renderError('데이터를 불러올 수 없습니다.');
+                                return;
+                            }
+                            const data = response.response.data;
+                            if (data === null || data === undefined) {
+                                this.renderError('자산 정보가 존재하지 않습니다.');
+                                return;
+                            }
+                            fx.each((fn) => this[fn](response), render);
+                        }
+                    )
+                )
+            ).catch(e => {
+                console.error('[UPS]', e);
+                this.renderError('데이터 로드 중 오류가 발생했습니다.');
+            });
+
+            fetchTrendData.call(this);
+
+            this.stopRefresh();
+            this._refreshIntervalId = setInterval(() => this.refreshMetrics(), this.refreshInterval);
+            console.log('[UPS] Metric refresh started (5s interval)');
+        }
+
+        function hideDetail() {
+            this.stopRefresh();
+            this.hidePopup();
+        }
+
+        function refreshMetrics() {
+            const metricInfo = this.datasetInfo.find(d => d.datasetName === 'metricLatest');
+            fx.go(
+                Wkit.fetchData(this.page, 'metricLatest', metricInfo.params),
+                (response) => {
+                    if (!response || !response.response) return;
+                    const data = response.response.data;
+                    if (data === null || data === undefined) return;
+                    this.renderPowerStatus(response);
+                }
+            ).catch(e => {
+                console.warn('[UPS] Metric refresh failed:', e);
+            });
+        }
+
+        function stopRefresh() {
+            if (this._refreshIntervalId) {
+                clearInterval(this._refreshIntervalId);
+                this._refreshIntervalId = null;
+                console.log('[UPS] Metric refresh stopped');
+            }
+        }
+
+        function switchTab(tabName) {
+            if (!tabName || !TAB_CONFIG[tabName]) return;
+            this._activeTab = tabName;
+
+            const buttons = this.popupQueryAll('.tab-btn');
+            if (buttons) {
+                buttons.forEach((btn) => btn.classList.toggle('active', btn.dataset.tab === tabName));
+            }
+
+            if (this._trendData) {
+                this.renderTrendChart({ response: { data: this._trendData } });
+            }
+        }
+
+        function fetchTrendData() {
+            const now = new Date();
+            const from = new Date(now.getTime() - 24 * 60 * 60 * 1000);
+            const metricCodes = [
+                'UPS.INPUT_A_AVG', 'UPS.OUTPUT_A_AVG',
+                'UPS.INPUT_V_AVG', 'UPS.OUTPUT_V_AVG',
+                'UPS.INPUT_F_AVG', 'UPS.OUTPUT_F_AVG',
+            ];
+            const statsKeys = ['avg'];
+
+            fx.go(
+                Wkit.fetchData(this.page, 'metricHistoryStats', {
+                    baseUrl: this._baseUrl,
+                    assetKey: this._defaultAssetKey,
+                    interval: '1h',
+                    metricCodes,
+                    timeFrom: from.toISOString(),
+                    timeTo: now.toISOString(),
+                    statsKeys,
+                }),
+                (response) => {
+                    if (!response || !response.response) {
+                        console.warn('[UPS] Trend data unavailable');
+                        return;
+                    }
+                    this._trendData = response.response.data;
+                    this.renderTrendChart(response);
+                }
+            ).catch(e => {
+                console.warn('[UPS] Trend fetch failed:', e);
+            });
+        }
+
+        function renderBasicInfo({ response }) {
             const { data } = response;
             if (!data || !data.asset) {
                 renderError.call(this, '자산 데이터가 없습니다.');
@@ -611,17 +719,47 @@
                     }
                 })
             );
+
+            const setCell = (selector, value) => {
+                const el = this.popupQuery(selector);
+                if (el) el.textContent = value ?? '-';
+            };
+
+            setCell('.info-name', asset.name);
+            setCell('.info-type', asset.assetType);
+            setCell('.info-usage', asset.usageLabel || '-');
+            setCell('.info-location', asset.locationLabel);
+            setCell('.info-status', this.statusTypeToLabel(asset.statusType));
+            setCell('.info-install-date', this.formatDate(asset.installDate));
+
+            if (asset.assetModelKey) {
+                fx.go(
+                    Wkit.fetchData(this.page, 'modelDetail', { baseUrl: this._baseUrl, assetModelKey: asset.assetModelKey }),
+                    (modelResp) => {
+                        if (!modelResp?.response?.data) return;
+                        const model = modelResp.response.data;
+                        setCell('.info-model', model.name);
+
+                        if (model.assetVendorKey) {
+                            fx.go(
+                                Wkit.fetchData(this.page, 'vendorDetail', { baseUrl: this._baseUrl, assetVendorKey: model.assetVendorKey }),
+                                (vendorResp) => {
+                                    if (!vendorResp?.response?.data) return;
+                                    setCell('.info-vendor', vendorResp.response.data.name);
+                                }
+                            ).catch(() => {});
+                        }
+                    }
+                ).catch(() => {});
+            }
         }
 
-        function renderMetrics({ response }) {
+        function renderPowerStatus({ response }) {
             const { data } = response;
-            const container = this.popupQuery(this.metricsContainerSelector);
-            const timestampEl = this.popupQuery(this.timestampSelector);
-
-            if (!container) return;
+            const timestampEl = this.popupQuery('.section-timestamp');
 
             if (!data || !Array.isArray(data) || data.length === 0) {
-                container.innerHTML = '<div class="empty-state">측정 데이터가 없습니다</div>';
+                console.warn('[UPS] renderPowerStatus: no data');
                 return;
             }
 
@@ -629,62 +767,128 @@
                 timestampEl.textContent = this.formatTimestamp(data[0].eventedAt);
             }
 
-            container.innerHTML = data
-                .map((metric) => {
-                    const config = this.metricConfig[metric.metricCode];
-                    if (!config) return '';
+            const metricMap = {};
+            data.forEach((metric) => {
+                const value = metric.valueType === 'NUMBER' ? metric.valueNumber : metric.valueString;
+                metricMap[metric.metricCode] = value;
+            });
 
-                    // BOOL type
-                    if (config.valueType === 'BOOL') {
-                        const isOn = metric.valueNumber === 1;
-                        const boolClass = isOn ? 'bool-on' : 'bool-off';
-                        const boolText = isOn ? 'ON' : 'OFF';
-                        return `
-                            <div class="metric-card metric-bool ${boolClass}">
-                                <div class="metric-label">${config.label}</div>
-                                <div class="metric-value-bool">${boolText}</div>
-                            </div>
-                        `;
-                    }
+            Object.entries(POWER_STATUS_CONFIG).forEach(([key, config]) => {
+                const card = this.popupQuery(`.power-card[data-metric="${key}"]`);
+                if (!card) return;
 
-                    // NUMBER type
-                    const value = metric.valueNumber;
-                    const displayValue = config.scale ? (value * config.scale).toFixed(1) : value;
+                const valueEl = card.querySelector('.power-card-value');
+                if (!valueEl) return;
 
-                    return `
-                        <div class="metric-card">
-                            <div class="metric-label">${config.label}</div>
-                            <div class="metric-value">${displayValue}<span class="metric-unit">${config.unit}</span></div>
-                        </div>
-                    `;
-                })
-                .join('');
+                if (!config.metricCode) {
+                    valueEl.textContent = '-';
+                    return;
+                }
+
+                const rawValue = metricMap[config.metricCode];
+                if (rawValue != null) {
+                    const displayValue = (rawValue * config.scale).toFixed(1);
+                    valueEl.textContent = displayValue;
+                } else {
+                    valueEl.textContent = '-';
+                }
+            });
         }
 
-        function renderProperties({ response }) {
+        function renderTrendChart({ response }) {
             const { data } = response;
-            const container = this.popupQuery(this.propertiesContainerSelector);
-
-            if (!container) return;
-
-            // properties가 없거나 빈 배열인 경우 empty-state 표시
-            if (!data?.properties || data.properties.length === 0) {
-                container.innerHTML = '<div class="empty-state">속성 정보가 없습니다</div>';
+            if (!data || !Array.isArray(data) || data.length === 0) {
+                console.warn('[UPS] renderTrendChart: no data');
                 return;
             }
 
-            const sortedProperties = [...data.properties].sort((a, b) => (a.displayOrder || 0) - (b.displayOrder || 0));
+            const tabConfig = TAB_CONFIG[this._activeTab];
+            if (!tabConfig) return;
 
-            container.innerHTML = sortedProperties
-                .map(({ label, value, helpText }) => {
-                    return `
-                        <div class="property-card" title="${helpText || ''}">
-                            <div class="property-label">${label}</div>
-                            <div class="property-value">${value ?? '-'}</div>
-                        </div>
-                    `;
-                })
-                .join('');
+            const timeMap = {};
+            data.forEach((row) => {
+                const hour = new Date(row.time).getHours() + '시';
+                if (!timeMap[hour]) timeMap[hour] = {};
+                timeMap[hour][row.metricCode] = row.statsBody?.avg ?? null;
+            });
+
+            const hours = Object.keys(timeMap);
+            const inputValues = hours.map((h) => {
+                const raw = timeMap[h][tabConfig.inputCode];
+                return raw != null ? +(raw).toFixed(2) : null;
+            });
+            const outputValues = hours.map((h) => {
+                const raw = timeMap[h][tabConfig.outputCode];
+                return raw != null ? +(raw).toFixed(2) : null;
+            });
+
+            const option = {
+                tooltip: {
+                    trigger: 'axis',
+                    backgroundColor: 'rgba(26, 31, 46, 0.95)',
+                    borderColor: '#2a3142',
+                    textStyle: { color: '#e0e6ed', fontSize: 12 },
+                },
+                legend: {
+                    data: ['입력', '출력'],
+                    top: 8,
+                    textStyle: { color: '#8892a0', fontSize: 11 },
+                },
+                grid: { left: 50, right: 20, top: 40, bottom: 24 },
+                xAxis: {
+                    type: 'category',
+                    data: hours,
+                    axisLine: { lineStyle: { color: '#333' } },
+                    axisLabel: { color: '#888', fontSize: 10 },
+                },
+                yAxis: {
+                    type: 'value',
+                    name: tabConfig.unit,
+                    axisLine: { show: true, lineStyle: { color: '#666' } },
+                    axisLabel: { color: '#888', fontSize: 10 },
+                    splitLine: { lineStyle: { color: '#333' } },
+                },
+                series: [
+                    {
+                        name: '입력',
+                        type: 'line',
+                        data: inputValues,
+                        smooth: true,
+                        symbol: 'none',
+                        lineStyle: { color: CHART_COLORS.input, width: 2 },
+                        areaStyle: {
+                            color: {
+                                type: 'linear',
+                                x: 0, y: 0, x2: 0, y2: 1,
+                                colorStops: [
+                                    { offset: 0, color: hexToRgba(CHART_COLORS.input, 0.2) },
+                                    { offset: 1, color: hexToRgba(CHART_COLORS.input, 0) },
+                                ],
+                            },
+                        },
+                    },
+                    {
+                        name: '출력',
+                        type: 'line',
+                        data: outputValues,
+                        smooth: true,
+                        symbol: 'none',
+                        lineStyle: { color: CHART_COLORS.output, width: 2 },
+                        areaStyle: {
+                            color: {
+                                type: 'linear',
+                                x: 0, y: 0, x2: 0, y2: 1,
+                                colorStops: [
+                                    { offset: 0, color: hexToRgba(CHART_COLORS.output, 0.2) },
+                                    { offset: 1, color: hexToRgba(CHART_COLORS.output, 0) },
+                                ],
+                            },
+                        },
+                    },
+                ],
+            };
+
+            this.updateChart('.chart-container', option);
         }
 
         function renderError(message) {
@@ -699,154 +903,45 @@
                 statusEl.dataset.status = 'critical';
             }
 
-            const metricsContainer = this.popupQuery(this.metricsContainerSelector);
-            if (metricsContainer) {
-                metricsContainer.innerHTML = `<div class="error-state">${message}</div>`;
-            }
-
             console.warn('[UPS] renderError:', message);
         }
 
-        function renderChart(config, { response }) {
-            const { data } = response;
-            if (!data) return;
-            const { optionBuilder, ...chartConfig } = config;
-            const option = optionBuilder(chartConfig, data);
-            this.updateChart('.chart-container', option);
-        }
-
-        function showDetail() {
-            this.showPopup();
-            fx.go(
-                this.datasetInfo,
-                fx.each(({ datasetName, render }) =>
-                    fx.go(
-                        Wkit.fetchData(this.page, datasetName, { baseUrl: BASE_URL, assetKey: this._defaultAssetKey, locale: 'ko' }),
-                        (response) => {
-                            if (!response || !response.response) {
-                                this.renderError('데이터를 불러올 수 없습니다.');
-                                return;
-                            }
-                            const data = response.response.data;
-                            if (data === null || data === undefined) {
-                                this.renderError('자산 정보가 존재하지 않습니다.');
-                                return;
-                            }
-                            fx.each((fn) => this[fn](response), render);
-                        }
-                    )
-                )
-            ).catch(e => {
-                console.error('[UPS]', e);
-                this.renderError('데이터 로드 중 오류가 발생했습니다.');
-            });
-
-            // 5초 주기로 메트릭 갱신 시작
-            this.stopRefresh();
-            this._refreshIntervalId = setInterval(() => this.refreshMetrics(), this.refreshInterval);
-            console.log('[UPS] Metric refresh started (5s interval)');
-        }
-
-        function hideDetail() {
-            this.stopRefresh();
-            this.hidePopup();
-        }
-
-        function refreshMetricsOnly() {
-            fx.go(
-                Wkit.fetchData(this.page, 'metricLatest', { baseUrl: BASE_URL, assetKey: this._defaultAssetKey }),
-                (response) => {
-                    if (!response || !response.response) return;
-                    const data = response.response.data;
-                    if (data === null || data === undefined) return;
-                    this.renderMetrics(response);
-                }
-            ).catch(e => {
-                console.warn('[UPS] Metric refresh failed:', e);
-            });
-        }
-
-        function stopRefresh() {
-            if (this._refreshIntervalId) {
-                clearInterval(this._refreshIntervalId);
-                this._refreshIntervalId = null;
-                console.log('[UPS] Metric refresh stopped');
-            }
-        }
-
-        function getMultiLineChartOption(config, data) {
-            const { xKey, styleMap } = config;
-
-            const seriesData = Object.entries(styleMap).map(([key, style]) => ({
-                key,
-                name: style.label,
-                unit: style.unit,
-                color: style.color,
-                smooth: style.smooth,
-                areaStyle: style.areaStyle
-            }));
-
-            return {
-                grid: { left: 45, right: 16, top: 30, bottom: 24 },
-                legend: {
-                    data: seriesData.map(s => s.name),
-                    top: 0,
-                    textStyle: { color: '#8892a0', fontSize: 11 }
-                },
-                tooltip: {
-                    trigger: 'axis',
-                    backgroundColor: '#1a1f2e',
-                    borderColor: '#2a3142',
-                    textStyle: { color: '#e0e6ed', fontSize: 12 }
-                },
-                xAxis: {
-                    type: 'category',
-                    data: data[xKey],
-                    axisLine: { lineStyle: { color: '#333' } },
-                    axisLabel: { color: '#888', fontSize: 10 }
-                },
-                yAxis: {
-                    type: 'value',
-                    min: 0,
-                    max: 100,
-                    axisLine: { show: false },
-                    axisLabel: { color: '#888', fontSize: 10, formatter: '{value}%' },
-                    splitLine: { lineStyle: { color: '#333' } }
-                },
-                series: seriesData.map(({ key, name, color, smooth, areaStyle }) => ({
-                    name,
-                    type: 'line',
-                    data: data[key],
-                    smooth,
-                    symbol: 'none',
-                    lineStyle: { color, width: 2 },
-                    areaStyle: areaStyle ? {
-                        color: {
-                            type: 'linear',
-                            x: 0, y: 0, x2: 0, y2: 1,
-                            colorStops: [
-                                { offset: 0, color: hexToRgba(color, 0.3) },
-                                { offset: 1, color: hexToRgba(color, 0) }
-                            ]
-                        }
-                    } : null
-                }))
+        function statusTypeToLabel(statusType) {
+            const labels = {
+                ACTIVE: '정상운영',
+                WARNING: '주의',
+                CRITICAL: '위험',
+                INACTIVE: '비활성',
+                MAINTENANCE: '유지보수',
             };
+            return labels[statusType] || statusType;
         }
 
-        function hexToRgba(hex, alpha) {
-            const r = parseInt(hex.slice(1, 3), 16);
-            const g = parseInt(hex.slice(3, 5), 16);
-            const b = parseInt(hex.slice(5, 7), 16);
-            return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+        function statusTypeToDataAttr(statusType) {
+            const map = {
+                ACTIVE: 'normal',
+                WARNING: 'warning',
+                CRITICAL: 'critical',
+                INACTIVE: 'inactive',
+                MAINTENANCE: 'maintenance',
+            };
+            return map[statusType] || 'normal';
         }
 
-        function applySectionTitles() {
-            if (!this.sectionTitles) return;
-            Object.entries(this.sectionTitles).forEach(([selector, title]) => {
-                const el = this.popupQuery(selector);
-                if (el) el.textContent = title;
-            });
+        function formatDate(dateStr) {
+            if (!dateStr) return '-';
+            try {
+                const date = new Date(dateStr);
+                return date.toLocaleDateString('ko-KR', { year: 'numeric', month: '2-digit', day: '2-digit' });
+            } catch { return dateStr; }
+        }
+
+        function formatTimestamp(isoString) {
+            if (!isoString) return '';
+            try {
+                const date = new Date(isoString);
+                return date.toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+            } catch { return ''; }
         }
 
         function onInstanceUnLoad() {

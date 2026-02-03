@@ -152,30 +152,45 @@ function findAssetById(id) {
 // ASSET API v1 DATA
 // ======================
 
+// 카테고리별 모델 키 매핑 (MODEL_DATA의 categoryCode 기준)
+const MODEL_KEY_BY_CATEGORY = {
+    'UPS': 'MODEL_SCHNEIDER_GALAXY_001',
+    'PDU': 'MODEL_SCHNEIDER_PDU_001',
+    'CRAC': 'MODEL_EMERSON_LIEBERT_001',
+    'SENSOR': 'MODEL_HONEYWELL_TEMP_001',
+    'SWBD': 'MODEL_LS_SWBD_001',
+    'DIST': 'MODEL_SIEMENS_ACCURA_001',
+};
+
 function getAssetApiData() {
-    return ALL_ASSETS.map((asset, index) => ({
-        id: index + 1,
-        assetKey: asset.id,
-        assetModelId: null,
-        assetModelKey: null,
-        ownerUserId: null,
-        serviceType: 'DCM',
-        domainType: 'FACILITY',
-        assetCategoryType: asset.type.toUpperCase(),
-        assetType: asset.type.toUpperCase(),
-        usageCode: null,
-        serialNumber: `SN-${asset.id}`,
-        name: asset.name,
-        locationCode: asset.parentId || null,
-        locationLabel: asset.parentId ? findAssetById(asset.parentId)?.name : null,
-        description: `${asset.name} (${asset.type})`,
-        statusType: asset.status === 'normal' ? 'ACTIVE' : asset.status === 'warning' ? 'WARNING' : 'CRITICAL',
-        installDate: '2024-01-15',
-        decommissionDate: null,
-        property: JSON.stringify({ canHaveChildren: asset.canHaveChildren }),
-        createdAt: '2024-01-15T09:00:00Z',
-        updatedAt: new Date().toISOString()
-    }));
+    return ALL_ASSETS.map((asset, index) => {
+        const categoryType = asset.type.toUpperCase();
+        const assetModelKey = MODEL_KEY_BY_CATEGORY[categoryType] || null;
+
+        return {
+            id: index + 1,
+            assetKey: asset.id,
+            assetModelId: assetModelKey ? index + 1 : null,
+            assetModelKey: assetModelKey,
+            ownerUserId: null,
+            serviceType: 'DCM',
+            domainType: 'FACILITY',
+            assetCategoryType: categoryType,
+            assetType: categoryType,
+            usageCode: null,
+            serialNumber: `SN-${asset.id}`,
+            name: asset.name,
+            locationCode: asset.parentId || null,
+            locationLabel: asset.parentId ? findAssetById(asset.parentId)?.name : null,
+            description: `${asset.name} (${asset.type})`,
+            statusType: asset.status === 'normal' ? 'ACTIVE' : asset.status === 'warning' ? 'WARNING' : 'CRITICAL',
+            installDate: '2024-01-15',
+            decommissionDate: null,
+            property: JSON.stringify({ canHaveChildren: asset.canHaveChildren }),
+            createdAt: '2024-01-15T09:00:00Z',
+            updatedAt: new Date().toISOString()
+        };
+    });
 }
 
 function getRelationApiData() {
