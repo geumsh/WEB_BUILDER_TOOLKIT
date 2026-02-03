@@ -30,6 +30,13 @@ ECO 프로젝트는 Asset API v1만 사용합니다. 모든 API는 POST 메서�
 |-----|--------|------|
 | `/api/v1/mh/gl` | POST | 자산별 최신 메트릭 데이터 조회 |
 
+**Metric History Stats API**
+
+| API | 메서드 | 설명 |
+|-----|--------|------|
+| `/api/v1/mhs/l` | POST | 메트릭 통계 기간 리스트 조회 |
+| `/api/v1/mhs/g` | POST | 메트릭 통계 단건 조회 |
+
 **Vendor API**
 
 | API | 메서드 | 설명 |
@@ -851,6 +858,193 @@ Content-Type: application/json
 
 ---
 
+## 15. 메트릭 통계 기간 리스트 조회
+
+특정 기간(timeFrom ~ timeTo) 동안의 통계 row를 전체 배열(List)로 조회합니다. `interval` 값에 따라 조회 테이블이 결정됩니다.
+
+- `interval=1m` → `dh_metric_history_stats_1m`
+- `interval=1h` → `dh_metric_history_stats_1h`
+
+페이징 없이 전체 결과를 반환하므로 기간/건수 제한을 운영 정책으로 권장합니다.
+
+### Request
+
+```
+POST /api/v1/mhs/l
+Content-Type: application/json
+```
+
+```json
+{
+  "sort": [
+    { "field": "time", "direction": "ASC" }
+  ],
+  "filter": {
+    "assetKey": "AST-000123",
+    "interval": "1h",
+    "metricCodes": ["temperature", "loadRate"],
+    "timeFrom": "2026-01-20T00:00:00.000",
+    "timeTo": "2026-01-23T23:59:59.999"
+  },
+  "statsKeys": ["avg", "max", "count", "numeric_count"]
+}
+```
+
+### Request Parameters
+
+| 필드 | 타입 | 필수 | 설명 |
+|------|------|------|------|
+| sort | array | X | 정렬 (기본 time ASC 권장) |
+| filter.assetKey | string | O | 자산 Key |
+| filter.interval | string | O | 집계 주기 (지원: `1m`, `1h`) |
+| filter.metricCodes | array(string) | X | 메트릭 코드 목록 (미지정 시 전체) |
+| filter.timeFrom | string | O | 조회 시작 (포함, ISO 8601) |
+| filter.timeTo | string | O | 조회 종료 (포함, ISO 8601) |
+| statsKeys | array(string) | X | statsBody에서 반환할 키 제한 (미지정 시 전체) |
+
+### Response
+
+```json
+{
+  "success": true,
+  "data": [
+    {
+      "time": "2026-01-23T10:00:00.000",
+      "assetKey": "AST-000123",
+      "metricCode": "temperature",
+      "interval": "1h",
+      "statsBody": {
+        "avg": 25.1,
+        "max": 29.2,
+        "count": 3600,
+        "numeric_count": 3590
+      },
+      "windowStartAt": "2026-01-23T10:00:00.000",
+      "windowEndAt": "2026-01-23T10:59:59.999999",
+      "sampleCount": 3600,
+      "endpointId": null,
+      "sensorExternalId": null,
+      "createdAt": "2026-01-23T11:02:00.000",
+      "updatedAt": "2026-01-23T11:05:00.000"
+    }
+  ],
+  "error": null,
+  "timestamp": "2026-02-03T00:53:36.751Z",
+  "path": "/api/v1/mhs/l"
+}
+```
+
+### Response Fields (MhsDto)
+
+| 필드 | 타입 | 설명 |
+|------|------|------|
+| time | string | 버킷 시작 시각 (ISO 8601) |
+| assetKey | string | 자산 Key |
+| metricCode | string | 메트릭 코드 |
+| interval | string | 집계 주기 (요청 값 그대로 포함) |
+| statsBody | object | 통계 값 (count, numeric_count, avg, min, max 등) |
+| windowStartAt | string | 윈도우 시작 시각 |
+| windowEndAt | string | 윈도우 종료 시각 |
+| sampleCount | number | 샘플 수 |
+| endpointId | string\|null | v1에서는 null 고정 |
+| sensorExternalId | string\|null | v1에서는 null 고정 |
+| createdAt | string | 생성일시 |
+| updatedAt | string | 수정일시 |
+
+### statsBody 지원 키
+
+| 키 | 설명 |
+|----|------|
+| count | 전체 데이터 수 |
+| numeric_count | 숫자 값 데이터 수 |
+| avg | 평균 |
+| min | 최소 |
+| max | 최대 |
+
+---
+
+## 16. 메트릭 통계 단건 조회
+
+특정 time + assetKey + metricCode + interval에 해당하는 통계 1건을 조회합니다.
+
+### Request
+
+```
+POST /api/v1/mhs/g
+Content-Type: application/json
+```
+
+```json
+{
+  "filter": {
+    "time": "2026-01-23T10:00:00.000",
+    "assetKey": "AST-000123",
+    "metricCode": "temperature",
+    "interval": "1h"
+  },
+  "statsKeys": ["count", "numeric_count", "avg", "min", "max"]
+}
+```
+
+### Request Parameters
+
+| 필드 | 타입 | 필수 | 설명 |
+|------|------|------|------|
+| filter.time | string | O | 버킷 시작 시각 (ISO 8601) |
+| filter.assetKey | string | O | 자산 Key |
+| filter.metricCode | string | O | 메트릭 코드 |
+| filter.interval | string | O | 집계 주기 (지원: `1m`, `1h`) |
+| statsKeys | array(string) | X | statsBody에서 반환할 키 제한 (미지정 시 전체) |
+
+### Response
+
+```json
+{
+  "success": true,
+  "data": {
+    "time": "2026-01-23T10:00:00.000",
+    "assetKey": "AST-000123",
+    "metricCode": "temperature",
+    "interval": "1h",
+    "statsBody": {
+      "count": 3600,
+      "numeric_count": 3590,
+      "avg": 25.1,
+      "min": 22.0,
+      "max": 29.2
+    },
+    "windowStartAt": "2026-01-23T10:00:00.000",
+    "windowEndAt": "2026-01-23T10:59:59.999999",
+    "sampleCount": 3600,
+    "endpointId": null,
+    "sensorExternalId": null,
+    "createdAt": "2026-01-23T11:02:00.000",
+    "updatedAt": "2026-01-23T11:05:00.000"
+  },
+  "error": null,
+  "timestamp": "2026-02-03T00:53:36.731Z",
+  "path": "/api/v1/mhs/g"
+}
+```
+
+### Error Response (404)
+
+```json
+{
+  "success": false,
+  "data": null,
+  "error": {
+    "key": "METRIC_STATS_NOT_FOUND",
+    "message": "Metric stats not found for given filter",
+    "data": null
+  },
+  "timestamp": "2026-02-03T00:53:36.731Z",
+  "path": "/api/v1/mhs/g"
+}
+```
+
+---
+
 ## 컴포넌트 - API 매핑
 
 | 컴포넌트 | 사용 데이터셋 | API |
@@ -914,6 +1108,8 @@ Available endpoints:
   POST /api/v1/rel/la     - Relation list (paged)
   POST /api/v1/rel/g      - Relation single
   POST /api/v1/mh/gl      - Metric latest (by asset)
+  POST /api/v1/mhs/l      - Metric history stats list
+  POST /api/v1/mhs/g      - Metric history stats single
   POST /api/v1/vdr/la     - Vendor list (paged)
   POST /api/v1/vdr/l      - Vendor list (all)
   POST /api/v1/vdr/g      - Vendor single
@@ -933,3 +1129,4 @@ Available endpoints:
 | 2026-01-27 | /api/v1/ast/gx (자산 상세 조회 통합 API) 문서 추가 |
 | 2026-01-28 | /api/v1/mh/gl (자산별 최신 메트릭 조회) API 추가 |
 | 2026-02-03 | /api/v1/vdr/* (자산 벤더 관리), /api/v1/mdl/* (자산 모델 관리) API 추가 |
+| 2026-02-03 | /api/v1/mhs/* (메트릭 통계 조회) API 추가 |

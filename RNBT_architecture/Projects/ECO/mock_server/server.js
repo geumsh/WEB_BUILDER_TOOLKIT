@@ -901,6 +901,115 @@ app.post('/api/v1/mh/gl', (req, res) => {
 });
 
 // ======================
+// METRIC HISTORY STATS API v1
+// ======================
+
+/**
+ * 메트릭 통계 mock row 생성
+ * interval에 따라 버킷 단위로 시계열 데이터를 생성
+ */
+function generateMhsRow(time, assetKey, metricCode, interval, statsKeys) {
+    const baseAvg = 20 + Math.random() * 10;
+    const fullStats = {
+        count: 60 + Math.round(Math.random() * 10),
+        numeric_count: 58 + Math.round(Math.random() * 10),
+        avg: Math.round(baseAvg * 10) / 10,
+        min: Math.round((baseAvg - 2 - Math.random() * 3) * 10) / 10,
+        max: Math.round((baseAvg + 2 + Math.random() * 3) * 10) / 10
+    };
+
+    const statsBody = statsKeys && statsKeys.length > 0
+        ? Object.fromEntries(statsKeys.filter(k => k in fullStats).map(k => [k, fullStats[k]]))
+        : fullStats;
+
+    const windowStart = new Date(time);
+    const intervalMs = interval === '1m' ? 60000 : 3600000;
+    const windowEnd = new Date(windowStart.getTime() + intervalMs - 1);
+
+    return {
+        time: windowStart.toISOString(),
+        assetKey,
+        metricCode,
+        interval,
+        statsBody,
+        windowStartAt: windowStart.toISOString(),
+        windowEndAt: windowEnd.toISOString(),
+        sampleCount: fullStats.count,
+        endpointId: null,
+        sensorExternalId: null,
+        createdAt: new Date(windowStart.getTime() + intervalMs + 120000).toISOString(),
+        updatedAt: new Date(windowStart.getTime() + intervalMs + 300000).toISOString()
+    };
+}
+
+/**
+ * POST /api/v1/mhs/l - 메트릭 통계 기간 리스트 조회
+ */
+app.post('/api/v1/mhs/l', (req, res) => {
+    console.log(`[${new Date().toISOString()}] POST /api/v1/mhs/l`);
+
+    const { sort = [], filter = {}, statsKeys = [] } = req.body;
+    const { assetKey, interval = '1h', metricCodes = [], timeFrom, timeTo } = filter;
+
+    if (!assetKey || !timeFrom || !timeTo || !interval) {
+        return res.status(400).json(createErrorResponse(
+            'INVALID_REQUEST',
+            'filter.assetKey, filter.interval, filter.timeFrom, filter.timeTo are required',
+            '/api/v1/mhs/l'
+        ));
+    }
+
+    const codes = metricCodes.length > 0 ? metricCodes : ['SENSOR.TEMP'];
+    const intervalMs = interval === '1m' ? 60000 : 3600000;
+    const from = new Date(timeFrom).getTime();
+    const to = new Date(timeTo).getTime();
+    const rows = [];
+
+    for (let t = from; t <= to; t += intervalMs) {
+        for (const code of codes) {
+            rows.push(generateMhsRow(new Date(t).toISOString(), assetKey, code, interval, statsKeys));
+        }
+    }
+
+    // sort
+    if (sort.length > 0) {
+        const { field, direction } = sort[0];
+        rows.sort((a, b) => {
+            const aVal = a[field] || '';
+            const bVal = b[field] || '';
+            return direction === 'ASC'
+                ? String(aVal).localeCompare(String(bVal))
+                : String(bVal).localeCompare(String(aVal));
+        });
+    }
+
+    res.json(createListResponse(rows, '/api/v1/mhs/l'));
+});
+
+/**
+ * POST /api/v1/mhs/g - 메트릭 통계 단건 조회
+ */
+app.post('/api/v1/mhs/g', (req, res) => {
+    console.log(`[${new Date().toISOString()}] POST /api/v1/mhs/g`);
+
+    const { filter = {}, statsKeys = [] } = req.body;
+    const { time, assetKey, metricCode, interval = '1h' } = filter;
+
+    if (!assetKey || !metricCode || !interval) {
+        return res.status(400).json(createErrorResponse(
+            'INVALID_REQUEST',
+            'filter.assetKey, filter.metricCode, filter.interval are required',
+            '/api/v1/mhs/g'
+        ));
+    }
+
+    const bucketTime = time || new Date().toISOString();
+    const row = generateMhsRow(bucketTime, assetKey, metricCode, interval, statsKeys);
+
+    res.json(createSingleResponse(row, '/api/v1/mhs/g'));
+});
+
+// ======================
 // SERVER START
 // ======================
 
@@ -921,6 +1030,8 @@ app.listen(PORT, () => {
     console.log(`  POST /api/v1/rel/la     - Relation list (paged)`);
     console.log(`  POST /api/v1/rel/g      - Relation single`);
     console.log(`  POST /api/v1/mh/gl      - Metric latest (per asset)`);
+    console.log(`  POST /api/v1/mhs/l      - Metric history stats list`);
+    console.log(`  POST /api/v1/mhs/g      - Metric history stats single`);
     console.log(`  POST /api/v1/vdr/la     - Vendor list (paged)`);
     console.log(`  POST /api/v1/vdr/l      - Vendor list (all)`);
     console.log(`  POST /api/v1/vdr/g      - Vendor single`);
