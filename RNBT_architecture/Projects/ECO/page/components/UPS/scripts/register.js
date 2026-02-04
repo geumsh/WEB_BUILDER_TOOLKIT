@@ -29,6 +29,15 @@ function hexToRgba(hex, alpha) {
   return `rgba(${r}, ${g}, ${b}, ${alpha})`;
 }
 
+// ======================
+// RESPONSE HELPER
+// ======================
+function extractData(response, path = 'data') {
+  if (!response?.response) return null;
+  const data = response.response[path];
+  return data !== null && data !== undefined ? data : null;
+}
+
 initComponent.call(this);
 
 function initComponent() {
@@ -65,11 +74,6 @@ function initComponent() {
     // 템플릿
     template: {
       popup: 'popup-ups',
-    },
-
-    // 이벤트
-    events: {
-      click: '@assetClicked',
     },
 
     // 갱신 주기
@@ -182,9 +186,13 @@ function initComponent() {
   this._switchTab = switchTab.bind(this);
 
   // ======================
-  // 7. 이벤트 발행
+  // 7. 3D 이벤트 바인딩 (라이브러리 강제 네이밍)
   // ======================
-  bind3DEvents(this, this.config.events);
+  this.customEvents = {
+    click: '@assetClicked',
+  };
+
+  bind3DEvents(this, this.customEvents);
 
   // ======================
   // 8. Popup (template 기반)
@@ -225,29 +233,19 @@ function showDetail() {
   const { datasetNames, refresh } = this.config;
 
   // 1) assetDetailUnified + metricLatest 호출 (섹션별 독립 처리)
-  // metricHistoryStats는 fetchTrendData에서 fetch API로 직접 호출하므로 제외
   fx.go(
-    this.datasetInfo.filter(d => d.datasetName !== datasetNames.metricHistory),
+    this.datasetInfo,
+    fx.filter(d => d.datasetName !== datasetNames.metricHistory),
     fx.each(({ datasetName, param, render }) =>
-      fx.go(
-        fetchData(this.page, datasetName, param),
-        (response) => {
-          if (!response || !response.response) {
-            console.warn(`[UPS] ${datasetName} fetch failed - no response`);
-            return;
-          }
-          const data = response.response.data;
-          if (data === null || data === undefined) {
-            console.warn(`[UPS] ${datasetName} - no data`);
-            return;
-          }
-          fx.each((fn) => this[fn](response), render);
-        }
-      )
+      fetchData(this.page, datasetName, param)
+        .then(response => {
+          const data = extractData(response);
+          if (!data) return;
+          fx.each(fn => this[fn](response), render);
+        })
+        .catch(e => console.warn(`[UPS] ${datasetName} fetch failed:`, e))
     )
-  ).catch((e) => {
-    console.error('[UPS] Data load error:', e);
-  });
+  );
 
   // 2) 트렌드 차트 호출 (mhs/l)
   fetchTrendData.call(this);
@@ -255,7 +253,6 @@ function showDetail() {
   // 3) 5초 주기로 메트릭 갱신 시작
   this.stopRefresh();
   this._refreshIntervalId = setInterval(() => this.refreshMetrics(), refresh.interval);
-  console.log('[UPS] Metric refresh started (5s interval)');
 }
 
 function hideDetail() {
@@ -266,17 +263,13 @@ function hideDetail() {
 function refreshMetrics() {
   const { datasetNames } = this.config;
   const metricInfo = this.datasetInfo.find(d => d.datasetName === datasetNames.metricLatest);
-  fx.go(
-    fetchData(this.page, datasetNames.metricLatest, metricInfo.param),
-    (response) => {
-      if (!response || !response.response) return;
-      const data = response.response.data;
-      if (data === null || data === undefined) return;
-      this.renderPowerStatus(response);
-    }
-  ).catch((e) => {
-    console.warn('[UPS] Metric refresh failed:', e);
-  });
+
+  fetchData(this.page, datasetNames.metricLatest, metricInfo.param)
+    .then(response => {
+      const data = extractData(response);
+      if (data) this.renderPowerStatus(response);
+    })
+    .catch(e => console.warn('[UPS] Metric refresh failed:', e));
 }
 
 function stopRefresh() {
@@ -363,55 +356,58 @@ function renderBasicInfo({ response }) {
   // Header 영역
   fx.go(
     header.fields,
-    fx.each(({ key, selector, dataAttr, transform }) => {
-      const el = this.popupQuery(selector);
-      if (!el) return;
-      let value = asset[key];
-      if (transform) value = transform(value);
-      if (dataAttr) {
-        el.dataset[dataAttr] = value;
-      } else {
-        el.textContent = value;
-      }
-    })
+    fx.each(field => renderField(this, asset, field))
   );
 
-  // 기본정보 테이블 (config 기반)
+  // 기본정보 테이블
+  fx.go(
+    infoTable.fields,
+    fx.each(field => renderField(this, asset, field))
+  );
+
+  // 제조사명/모델 체이닝
+  if (asset.assetModelKey) {
+    fetchModelVendorChain.call(this, asset.assetModelKey, infoTable.chain, datasetNames);
+  }
+}
+
+function renderField(ctx, data, { key, selector, dataAttr, transform, fallback }) {
+  const el = ctx.popupQuery(selector);
+  if (!el) return;
+
+  let value = data[key] ?? fallback ?? '-';
+  if (transform) value = transform(value);
+
+  if (dataAttr) {
+    el.dataset[dataAttr] = value;
+  } else {
+    el.textContent = value;
+  }
+}
+
+function fetchModelVendorChain(assetModelKey, chain, datasetNames) {
   const setCell = (selector, value) => {
     const el = this.popupQuery(selector);
     if (el) el.textContent = value ?? '-';
   };
 
-  fx.go(
-    infoTable.fields,
-    fx.each(({ key, selector, transform, fallback }) => {
-      let value = asset[key] ?? fallback ?? '-';
-      if (transform) value = transform(value);
-      setCell(selector, value);
-    })
-  );
+  fetchData(this.page, datasetNames.modelDetail, { baseUrl: this._baseUrl, assetModelKey })
+    .then(resp => {
+      const model = extractData(resp);
+      if (!model) return;
 
-  // 제조사명/모델 체이닝: assetModelKey → mdl/g → vdr/g
-  if (asset.assetModelKey) {
-    fx.go(
-      fetchData(this.page, datasetNames.modelDetail, { baseUrl: this._baseUrl, assetModelKey: asset.assetModelKey }),
-      (modelResp) => {
-        if (!modelResp?.response?.data) return;
-        const model = modelResp.response.data;
-        setCell(infoTable.chain.model, model.name);
+      setCell(chain.model, model.name);
 
-        if (model.assetVendorKey) {
-          fx.go(
-            fetchData(this.page, datasetNames.vendorDetail, { baseUrl: this._baseUrl, assetVendorKey: model.assetVendorKey }),
-            (vendorResp) => {
-              if (!vendorResp?.response?.data) return;
-              setCell(infoTable.chain.vendor, vendorResp.response.data.name);
-            }
-          ).catch(() => {});
-        }
+      if (model.assetVendorKey) {
+        return fetchData(this.page, datasetNames.vendorDetail, { baseUrl: this._baseUrl, assetVendorKey: model.assetVendorKey });
       }
-    ).catch(() => {});
-  }
+    })
+    .then(resp => {
+      if (!resp) return;
+      const vendor = extractData(resp);
+      if (vendor) setCell(chain.vendor, vendor.name);
+    })
+    .catch(() => {});
 }
 
 // ======================
@@ -422,7 +418,6 @@ function renderPowerStatus({ response }) {
   const { data } = response;
   const { powerStatus } = this.config;
   const { metrics, selectors } = powerStatus;
-  const timestampEl = this.popupQuery(selectors.timestamp);
 
   if (!data || !Array.isArray(data) || data.length === 0) {
     console.warn('[UPS] renderPowerStatus: no data');
@@ -430,40 +425,37 @@ function renderPowerStatus({ response }) {
   }
 
   // 타임스탬프 표시
+  const timestampEl = this.popupQuery(selectors.timestamp);
   if (timestampEl && data[0]?.eventedAt) {
     timestampEl.textContent = this.formatTimestamp(data[0].eventedAt);
   }
 
-  // 메트릭 코드를 값으로 매핑
-  const metricMap = {};
-  data.forEach((metric) => {
-    const value = metric.valueType === 'NUMBER' ? metric.valueNumber : metric.valueString;
-    metricMap[metric.metricCode] = value;
-  });
+  // 메트릭 코드 → 값 매핑
+  const metricMap = fx.reduce(
+    (acc, m) => (acc[m.metricCode] = m.valueType === 'NUMBER' ? m.valueNumber : m.valueString, acc),
+    {},
+    data
+  );
 
-  // 각 카드에 값 설정
-  Object.entries(metrics).forEach(([key, config]) => {
-    const card = this.popupQuery(`${selectors.card}[data-metric="${key}"]`);
-    if (!card) return;
+  // 카드 업데이트
+  fx.go(
+    Object.entries(metrics),
+    fx.each(([key, cfg]) => updatePowerCard(this, selectors, metricMap, key, cfg))
+  );
+}
 
-    const valueEl = card.querySelector(selectors.value);
-    if (!valueEl) return;
+function updatePowerCard(ctx, selectors, metricMap, key, cfg) {
+  const card = ctx.popupQuery(`${selectors.card}[data-metric="${key}"]`);
+  const valueEl = card?.querySelector(selectors.value);
+  if (!valueEl) return;
 
-    // metricCode가 없으면 "-" 표시 (API 미지원)
-    if (!config.metricCode) {
-      valueEl.textContent = '-';
-      return;
-    }
+  if (!cfg.metricCode) {
+    valueEl.textContent = '-';
+    return;
+  }
 
-    // 값 표시
-    const rawValue = metricMap[config.metricCode];
-    if (rawValue != null) {
-      const displayValue = (rawValue * config.scale).toFixed(1);
-      valueEl.textContent = displayValue;
-    } else {
-      valueEl.textContent = '-';
-    }
-  });
+  const rawValue = metricMap[cfg.metricCode];
+  valueEl.textContent = rawValue != null ? (rawValue * cfg.scale).toFixed(1) : '-';
 }
 
 // ======================
@@ -482,23 +474,26 @@ function renderTrendChart({ response }) {
   const tabConfig = tabs[this._activeTab];
   if (!tabConfig) return;
 
-  // 데이터를 시간별로 그룹핑
-  const timeMap = {};
-  data.forEach((row) => {
-    const hour = new Date(row.time).getHours() + '시';
-    if (!timeMap[hour]) timeMap[hour] = {};
-    timeMap[hour][row.metricCode] = row.statsBody?.avg ?? null;
-  });
+  // 시간별 그룹핑 + 시리즈 데이터 추출
+  const timeMap = fx.reduce(
+    (acc, row) => {
+      const hour = new Date(row.time).getHours() + '시';
+      if (!acc[hour]) acc[hour] = {};
+      acc[hour][row.metricCode] = row.statsBody?.avg ?? null;
+      return acc;
+    },
+    {},
+    data
+  );
 
   const hours = Object.keys(timeMap);
-  const inputValues = hours.map((h) => {
-    const raw = timeMap[h][tabConfig.inputCode];
+  const extractValues = (code) => fx.map(h => {
+    const raw = timeMap[h][code];
     return raw != null ? +(raw).toFixed(2) : null;
-  });
-  const outputValues = hours.map((h) => {
-    const raw = timeMap[h][tabConfig.outputCode];
-    return raw != null ? +(raw).toFixed(2) : null;
-  });
+  }, hours);
+
+  const inputValues = extractValues(tabConfig.inputCode);
+  const outputValues = extractValues(tabConfig.outputCode);
 
   const { input: inputSeries, output: outputSeries } = series;
 
