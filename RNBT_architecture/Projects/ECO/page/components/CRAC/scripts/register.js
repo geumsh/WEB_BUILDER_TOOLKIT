@@ -30,6 +30,15 @@ function hexToRgba(hex, alpha) {
   return `rgba(${r}, ${g}, ${b}, ${alpha})`;
 }
 
+// ======================
+// RESPONSE HELPER
+// ======================
+function extractData(response, path = 'data') {
+  if (!response?.response) return null;
+  const data = response.response[path];
+  return data !== null && data !== undefined ? data : null;
+}
+
 initComponent.call(this);
 
 function initComponent() {
@@ -66,14 +75,39 @@ function initComponent() {
       popup: 'popup-crac',
     },
 
-    // 이벤트
-    events: {
-      click: '@assetClicked',
+    // API 엔드포인트 및 파라미터
+    api: {
+      trendHistory: '/api/v1/mhs/l',
+      trendParams: {
+        interval: '1h',
+        metricCodes: ['CRAC.RETURN_TEMP', 'CRAC.RETURN_HUMIDITY'],
+        statsKeys: ['avg'],
+        timeRangeMs: 24 * 60 * 60 * 1000,
+      },
     },
 
     // 갱신 주기
     refresh: {
       interval: 5000,
+    },
+
+    // 상태 매핑
+    statusMap: {
+      labels: {
+        ACTIVE: '정상운영',
+        WARNING: '주의',
+        CRITICAL: '위험',
+        INACTIVE: '비활성',
+        MAINTENANCE: '유지보수',
+      },
+      dataAttrs: {
+        ACTIVE: 'normal',
+        WARNING: 'warning',
+        CRITICAL: 'critical',
+        INACTIVE: 'inactive',
+        MAINTENANCE: 'maintenance',
+      },
+      defaultDataAttr: 'normal',
     },
 
     // ========================
@@ -150,7 +184,7 @@ function initComponent() {
   // ======================
   // 4. 데이터셋 정의
   // ======================
-  const { datasetNames } = this.config;
+  const { datasetNames, api } = this.config;
   this.datasetInfo = [
     { datasetName: datasetNames.assetDetail, param: { baseUrl: this._baseUrl, assetKey: this._defaultAssetKey, locale: 'ko' }, render: ['renderBasicInfo'] },
     { datasetName: datasetNames.metricLatest, param: { baseUrl: this._baseUrl, assetKey: this._defaultAssetKey }, render: ['renderStatusCards', 'renderIndicators'] },
@@ -159,10 +193,10 @@ function initComponent() {
       param: {
         baseUrl: this._baseUrl,
         assetKey: this._defaultAssetKey,
-        interval: '1h',
-        timeRange: 24 * 60 * 60 * 1000,
-        metricCodes: ['CRAC.RETURN_TEMP', 'CRAC.RETURN_HUMIDITY'],
-        statsKeys: ['avg'],
+        interval: api.trendParams.interval,
+        timeRange: api.trendParams.timeRangeMs,
+        metricCodes: api.trendParams.metricCodes,
+        statsKeys: api.trendParams.statsKeys,
       },
       render: ['renderTrendChart'],
     },
@@ -175,7 +209,6 @@ function initComponent() {
   this.renderStatusCards = renderStatusCards.bind(this);
   this.renderIndicators = renderIndicators.bind(this);
   this.renderTrendChart = renderTrendChart.bind(this);
-  this.renderError = renderError.bind(this);
 
   // ======================
   // 6. Public Methods
@@ -186,9 +219,12 @@ function initComponent() {
   this.stopRefresh = stopRefresh.bind(this);
 
   // ======================
-  // 7. 이벤트 발행
+  // 7. 3D 이벤트 바인딩
   // ======================
-  bind3DEvents(this, this.config.events);
+  this.customEvents = {
+    click: '@assetClicked',
+  };
+  bind3DEvents(this, this.customEvents);
 
   // ======================
   // 8. Popup (template 기반)
@@ -228,29 +264,19 @@ function showDetail() {
   const { datasetNames, refresh } = this.config;
 
   // 1) assetDetailUnified + metricLatest 호출 (섹션별 독립 처리)
-  // metricHistoryStats는 fetchTrendData에서 fetch API로 직접 호출하므로 제외
   fx.go(
-    this.datasetInfo.filter(d => d.datasetName !== datasetNames.metricHistory),
+    this.datasetInfo,
+    fx.filter(d => d.datasetName !== datasetNames.metricHistory),
     fx.each(({ datasetName, param, render }) =>
-      fx.go(
-        fetchData(this.page, datasetName, param),
-        (response) => {
-          if (!response || !response.response) {
-            console.warn(`[CRAC] ${datasetName} fetch failed - no response`);
-            return;
-          }
-          const data = response.response.data;
-          if (data === null || data === undefined) {
-            console.warn(`[CRAC] ${datasetName} - no data`);
-            return;
-          }
-          fx.each((fn) => this[fn](response), render);
-        }
-      )
+      fetchData(this.page, datasetName, param)
+        .then(response => {
+          const data = extractData(response);
+          if (!data) return;
+          fx.each(fn => this[fn](response), render);
+        })
+        .catch(e => console.warn(`[CRAC] ${datasetName} fetch failed:`, e))
     )
-  ).catch((e) => {
-    console.error('[CRAC] Data load error:', e);
-  });
+  );
 
   // 2) 트렌드 차트 호출 (mhs/l)
   fetchTrendData.call(this);
@@ -258,7 +284,6 @@ function showDetail() {
   // 3) 5초 주기로 메트릭 갱신 시작
   this.stopRefresh();
   this._refreshIntervalId = setInterval(() => this.refreshMetrics(), refresh.interval);
-  console.log('[CRAC] Metric refresh started (5s interval)');
 }
 
 function hideDetail() {
@@ -269,18 +294,17 @@ function hideDetail() {
 function refreshMetrics() {
   const { datasetNames } = this.config;
   const metricInfo = this.datasetInfo.find(d => d.datasetName === datasetNames.metricLatest);
-  fx.go(
-    fetchData(this.page, datasetNames.metricLatest, metricInfo.param),
-    (response) => {
-      if (!response || !response.response) return;
-      const data = response.response.data;
-      if (data === null || data === undefined) return;
-      this.renderStatusCards(response);
-      this.renderIndicators(response);
-    }
-  ).catch((e) => {
-    console.warn('[CRAC] Metric refresh failed:', e);
-  });
+  if (!metricInfo) return;
+
+  const { datasetName, param, render } = metricInfo;
+
+  fetchData(this.page, datasetName, param)
+    .then(response => {
+      const data = extractData(response);
+      if (!data) return;
+      fx.each(fn => this[fn](response), render);
+    })
+    .catch(e => console.warn(`[CRAC] ${datasetName} fetch failed:`, e));
 }
 
 function stopRefresh() {
@@ -295,42 +319,38 @@ function stopRefresh() {
 // TREND DATA FETCH
 // ======================
 
-async function fetchTrendData() {
-  const { datasetNames } = this.config;
+function fetchTrendData() {
+  const { datasetNames, api } = this.config;
   const trendInfo = this.datasetInfo.find(d => d.datasetName === datasetNames.metricHistory);
   if (!trendInfo) return;
 
-  const { baseUrl, assetKey, interval, timeRange, metricCodes, statsKeys } = trendInfo.param;
+  const { datasetName, param, render } = trendInfo;
+  const { baseUrl, assetKey, interval, metricCodes, statsKeys } = param;
+
+  // timeFrom, timeTo 동적 계산
   const now = new Date();
-  const from = new Date(now.getTime() - timeRange);
+  const from = new Date(now.getTime() - api.trendParams.timeRangeMs);
+  const timeFrom = from.toISOString().replace('T', ' ').slice(0, 19);
+  const timeTo = now.toISOString().replace('T', ' ').slice(0, 19);
 
-  try {
-    const response = await fetch(`http://${baseUrl}/api/v1/mhs/l`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        filter: {
-          assetKey,
-          interval,
-          metricCodes,
-          timeFrom: from.toISOString().replace('T', ' ').slice(0, 19),
-          timeTo: now.toISOString().replace('T', ' ').slice(0, 19),
-        },
-        statsKeys,
-        sort: [],
-      }),
-    });
-
-    const result = await response.json();
-    if (!result || !result.success) {
-      console.warn('[CRAC] Trend data unavailable');
-      return;
-    }
-    // Wkit.fetchData 형태로 래핑하여 renderTrendChart에 전달
-    this.renderTrendChart({ response: { data: result.data } });
-  } catch (e) {
-    console.warn('[CRAC] Trend fetch failed:', e);
-  }
+  fetch(`http://${baseUrl}${api.trendHistory}`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      filter: { assetKey, interval, metricCodes, timeFrom, timeTo },
+      statsKeys,
+      sort: [],
+    }),
+  })
+    .then(response => response.json())
+    .then(result => {
+      if (!result?.success || !result.data) {
+        console.warn(`[CRAC] ${datasetName}: no data`);
+        return;
+      }
+      fx.each(fn => this[fn]({ response: { data: result.data } }), render);
+    })
+    .catch(e => console.warn(`[CRAC] ${datasetName} fetch failed:`, e));
 }
 
 // ======================
@@ -340,7 +360,7 @@ async function fetchTrendData() {
 function renderBasicInfo({ response }) {
   const { data } = response;
   if (!data || !data.asset) {
-    renderError.call(this, '자산 데이터가 없습니다.');
+    console.warn('[CRAC] renderBasicInfo: no asset data');
     return;
   }
 
@@ -350,55 +370,58 @@ function renderBasicInfo({ response }) {
   // Header 영역
   fx.go(
     header.fields,
-    fx.each(({ key, selector, dataAttr, transform }) => {
-      const el = this.popupQuery(selector);
-      if (!el) return;
-      let value = asset[key];
-      if (transform) value = transform(value);
-      if (dataAttr) {
-        el.dataset[dataAttr] = value;
-      } else {
-        el.textContent = value;
-      }
-    })
+    fx.each(field => renderField(this, asset, field))
   );
 
-  // 기본정보 테이블 (config 기반)
+  // 기본정보 테이블
+  fx.go(
+    infoTable.fields,
+    fx.each(field => renderField(this, asset, field))
+  );
+
+  // 제조사명/모델 체이닝
+  if (asset.assetModelKey) {
+    fetchModelVendorChain.call(this, asset.assetModelKey, infoTable.chain, datasetNames);
+  }
+}
+
+function renderField(ctx, data, { key, selector, dataAttr, transform, fallback }) {
+  const el = ctx.popupQuery(selector);
+  if (!el) return;
+
+  let value = data[key] ?? fallback ?? '-';
+  if (transform) value = transform(value);
+
+  if (dataAttr) {
+    el.dataset[dataAttr] = value;
+  } else {
+    el.textContent = value;
+  }
+}
+
+function fetchModelVendorChain(assetModelKey, chain, datasetNames) {
   const setCell = (selector, value) => {
     const el = this.popupQuery(selector);
     if (el) el.textContent = value ?? '-';
   };
 
-  fx.go(
-    infoTable.fields,
-    fx.each(({ key, selector, transform, fallback }) => {
-      let value = asset[key] ?? fallback ?? '-';
-      if (transform) value = transform(value);
-      setCell(selector, value);
-    })
-  );
+  fetchData(this.page, datasetNames.modelDetail, { baseUrl: this._baseUrl, assetModelKey })
+    .then(resp => {
+      const model = extractData(resp);
+      if (!model) return;
 
-  // 제조사명/모델 체이닝: assetModelKey → mdl/g → vdr/g
-  if (asset.assetModelKey) {
-    fx.go(
-      fetchData(this.page, datasetNames.modelDetail, { baseUrl: this._baseUrl, assetModelKey: asset.assetModelKey }),
-      (modelResp) => {
-        if (!modelResp?.response?.data) return;
-        const model = modelResp.response.data;
-        setCell(infoTable.chain.model, model.name);
+      setCell(chain.model, model.name);
 
-        if (model.assetVendorKey) {
-          fx.go(
-            fetchData(this.page, datasetNames.vendorDetail, { baseUrl: this._baseUrl, assetVendorKey: model.assetVendorKey }),
-            (vendorResp) => {
-              if (!vendorResp?.response?.data) return;
-              setCell(infoTable.chain.vendor, vendorResp.response.data.name);
-            }
-          ).catch(() => {});
-        }
+      if (model.assetVendorKey) {
+        return fetchData(this.page, datasetNames.vendorDetail, { baseUrl: this._baseUrl, assetVendorKey: model.assetVendorKey });
       }
-    ).catch(() => {});
-  }
+    })
+    .then(resp => {
+      if (!resp) return;
+      const vendor = extractData(resp);
+      if (vendor) setCell(chain.vendor, vendor.name);
+    })
+    .catch(() => {});
 }
 
 // ======================
@@ -409,31 +432,42 @@ function renderStatusCards({ response }) {
   const { data } = response;
   const { statusCards } = this.config;
   const { metrics, selectors } = statusCards;
+
+  if (!data || !Array.isArray(data) || data.length === 0) {
+    console.warn('[CRAC] renderStatusCards: no data');
+    return;
+  }
+
+  // 타임스탬프 표시
   const timestampEl = this.popupQuery(selectors.timestamp);
-
-  if (!data || !Array.isArray(data) || data.length === 0) return;
-
   if (timestampEl && data[0]?.eventedAt) {
     timestampEl.textContent = this.formatTimestamp(data[0].eventedAt);
   }
 
-  const metricMap = {};
-  data.forEach((m) => { metricMap[m.metricCode] = m; });
+  // 메트릭 코드 → 값 매핑
+  const metricMap = fx.reduce(
+    (acc, m) => (acc[m.metricCode] = m, acc),
+    {},
+    data
+  );
 
   // 각 카드에 값 설정
-  Object.values(metrics).forEach((config) => {
-    const el = this.popupQuery(config.selector);
-    if (!el) return;
+  fx.go(
+    Object.entries(metrics),
+    fx.each(([_, cfg]) => {
+      const el = this.popupQuery(cfg.selector);
+      if (!el) return;
 
-    const metric = metricMap[config.metricCode];
-    if (!metric) {
-      el.textContent = '-';
-      return;
-    }
+      const metric = metricMap[cfg.metricCode];
+      if (!metric) {
+        el.textContent = '-';
+        return;
+      }
 
-    const value = metric.valueNumber;
-    el.textContent = config.scale ? (value * config.scale).toFixed(1) : value;
-  });
+      const value = metric.valueNumber;
+      el.textContent = cfg.scale ? (value * cfg.scale).toFixed(1) : value;
+    })
+  );
 }
 
 // ======================
@@ -447,34 +481,41 @@ function renderIndicators({ response }) {
   const { indicators } = this.config;
   const { metrics, selectors } = indicators;
 
-  const metricMap = {};
-  data.forEach((m) => { metricMap[m.metricCode] = m; });
+  // 메트릭 코드 → 값 매핑
+  const metricMap = fx.reduce(
+    (acc, m) => (acc[m.metricCode] = m, acc),
+    {},
+    data
+  );
 
   const indicatorEls = this.popupQueryAll(selectors.indicator);
   if (!indicatorEls) return;
 
-  indicatorEls.forEach((el) => {
-    const code = el.dataset.metric;
-    const dot = el.querySelector(selectors.dot);
-    if (!dot || !code) return;
+  fx.go(
+    Array.from(indicatorEls),
+    fx.each(el => {
+      const code = el.dataset.metric;
+      const dot = el.querySelector(selectors.dot);
+      if (!dot || !code) return;
 
-    const metric = metricMap[code];
-    if (!metric) {
-      dot.dataset.state = 'unknown';
-      return;
-    }
+      const metric = metricMap[code];
+      if (!metric) {
+        dot.dataset.state = 'unknown';
+        return;
+      }
 
-    // 누수(LEAK)는 true=에러, 나머지는 true=정상
-    const config = metrics[code];
-    const isLeak = config?.isLeak ?? false;
-    const isOn = metric.valueBool;
+      // 누수(LEAK)는 true=에러, 나머지는 true=정상
+      const cfg = metrics[code];
+      const isLeak = cfg?.isLeak ?? false;
+      const isOn = metric.valueBool;
 
-    if (isLeak) {
-      dot.dataset.state = isOn ? 'error' : 'ok';
-    } else {
-      dot.dataset.state = isOn ? 'on' : 'off';
-    }
-  });
+      if (isLeak) {
+        dot.dataset.state = isOn ? 'error' : 'ok';
+      } else {
+        dot.dataset.state = isOn ? 'on' : 'off';
+      }
+    })
+  );
 }
 
 // ======================
@@ -493,23 +534,26 @@ function renderTrendChart({ response }) {
   const tempConfig = series.temp;
   const humidConfig = series.humidity;
 
-  // data를 시간별로 그룹핑
-  const timeMap = {};
-  data.forEach((row) => {
-    const hour = new Date(row.time).getHours() + '시';
-    if (!timeMap[hour]) timeMap[hour] = {};
-    timeMap[hour][row.metricCode] = row.statsBody?.avg ?? null;
-  });
+  // 시간별 그룹핑 + 시리즈 데이터 추출
+  const timeMap = fx.reduce(
+    (acc, row) => {
+      const hour = new Date(row.time).getHours() + '시';
+      if (!acc[hour]) acc[hour] = {};
+      acc[hour][row.metricCode] = row.statsBody?.avg ?? null;
+      return acc;
+    },
+    {},
+    data
+  );
 
   const hours = Object.keys(timeMap);
-  const tempData = hours.map((h) => {
-    const raw = timeMap[h][tempConfig.metricCode];
-    return raw != null ? +(raw * tempConfig.scale).toFixed(1) : null;
-  });
-  const humidityData = hours.map((h) => {
-    const raw = timeMap[h][humidConfig.metricCode];
-    return raw != null ? +(raw * humidConfig.scale).toFixed(1) : null;
-  });
+  const extractValues = (code, scale) => fx.map(h => {
+    const raw = timeMap[h][code];
+    return raw != null ? +(raw * scale).toFixed(1) : null;
+  }, hours);
+
+  const tempData = extractValues(tempConfig.metricCode, tempConfig.scale);
+  const humidityData = extractValues(humidConfig.metricCode, humidConfig.scale);
 
   const option = {
     tooltip: {
@@ -583,48 +627,17 @@ function renderTrendChart({ response }) {
 }
 
 // ======================
-// RENDER: 에러
-// ======================
-
-function renderError(message) {
-  const nameEl = this.popupQuery(this.selectors.name);
-  const zoneEl = this.popupQuery(this.selectors.zone);
-  const statusEl = this.popupQuery(this.selectors.status);
-
-  if (nameEl) nameEl.textContent = '데이터 없음';
-  if (zoneEl) zoneEl.textContent = message;
-  if (statusEl) {
-    statusEl.textContent = 'Error';
-    statusEl.dataset.status = 'critical';
-  }
-
-  console.warn('[CRAC] renderError:', message);
-}
-
-// ======================
 // TRANSFORM FUNCTIONS
 // ======================
 
 function statusTypeToLabel(statusType) {
-  const labels = {
-    ACTIVE: '정상운영',
-    WARNING: '주의',
-    CRITICAL: '위험',
-    INACTIVE: '비활성',
-    MAINTENANCE: '유지보수',
-  };
+  const { labels } = this.config.statusMap;
   return labels[statusType] || statusType;
 }
 
 function statusTypeToDataAttr(statusType) {
-  const map = {
-    ACTIVE: 'normal',
-    WARNING: 'warning',
-    CRITICAL: 'critical',
-    INACTIVE: 'inactive',
-    MAINTENANCE: 'maintenance',
-  };
-  return map[statusType] || 'normal';
+  const { dataAttrs, defaultDataAttr } = this.config.statusMap;
+  return dataAttrs[statusType] || defaultDataAttr;
 }
 
 function formatDate(dateStr) {
@@ -652,6 +665,22 @@ function formatTimestamp(isoString) {
 // ======================
 
 function onPopupCreated({ chartSelector, events }) {
+  renderInitialLabels.call(this);
   chartSelector && this.createChart(chartSelector);
   events && this.bindPopupEvents(events);
+}
+
+function renderInitialLabels() {
+  const { indicators } = this.config;
+
+  // 인디케이터 라벨
+  fx.go(
+    Object.entries(indicators.metrics),
+    fx.each(([code, cfg]) => {
+      const indicator = this.popupQuery(`${indicators.selectors.indicator}[data-metric="${code}"]`);
+      if (!indicator) return;
+      const labelEl = indicator.querySelector('.indicator-label');
+      if (labelEl) labelEl.textContent = cfg.label;
+    })
+  );
 }

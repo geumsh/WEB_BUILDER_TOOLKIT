@@ -574,9 +574,15 @@
                     popup: 'popup-crac',
                 },
 
-                // 이벤트
-                events: {
-                    click: '@assetClicked',
+                // API 엔드포인트 및 파라미터
+                api: {
+                    trendHistory: '/api/v1/mhs/l',
+                    trendParams: {
+                        interval: '1h',
+                        metricCodes: ['CRAC.RETURN_TEMP', 'CRAC.RETURN_HUMIDITY'],
+                        statsKeys: ['avg'],
+                        timeRangeMs: 24 * 60 * 60 * 1000,
+                    },
                 },
 
                 // 갱신 주기
@@ -658,7 +664,7 @@
             // ======================
             // 4. 데이터셋 정의
             // ======================
-            const { datasetNames } = this.config;
+            const { datasetNames, api } = this.config;
             this.datasetInfo = [
                 { datasetName: datasetNames.assetDetail, param: { baseUrl: this._baseUrl, assetKey: this._defaultAssetKey, locale: 'ko' }, render: ['renderBasicInfo'] },
                 { datasetName: datasetNames.metricLatest, param: { baseUrl: this._baseUrl, assetKey: this._defaultAssetKey }, render: ['renderStatusCards', 'renderIndicators'] },
@@ -667,10 +673,10 @@
                     param: {
                         baseUrl: this._baseUrl,
                         assetKey: this._defaultAssetKey,
-                        interval: '1h',
-                        timeRange: 24 * 60 * 60 * 1000,
-                        metricCodes: ['CRAC.RETURN_TEMP', 'CRAC.RETURN_HUMIDITY'],
-                        statsKeys: ['avg'],
+                        interval: api.trendParams.interval,
+                        timeRange: api.trendParams.timeRangeMs,
+                        metricCodes: api.trendParams.metricCodes,
+                        statsKeys: api.trendParams.statsKeys,
                     },
                     render: ['renderTrendChart'],
                 },
@@ -694,9 +700,12 @@
             this.stopRefresh = stopRefresh.bind(this);
 
             // ======================
-            // 7. 이벤트 발행
+            // 7. 3D 이벤트 바인딩
             // ======================
-            bind3DEvents(this, this.config.events);
+            this.customEvents = {
+                click: '@assetClicked',
+            };
+            bind3DEvents(this, this.customEvents);
 
             // ======================
             // 8. Popup (template 기반)
@@ -804,21 +813,18 @@
         // ======================
 
         async function fetchTrendData() {
-            const { datasetNames } = this.config;
-            const trendInfo = this.datasetInfo.find(d => d.datasetName === datasetNames.metricHistory);
-            if (!trendInfo) return;
-
-            const { baseUrl, assetKey, interval, timeRange, metricCodes, statsKeys } = trendInfo.param;
+            const { api } = this.config;
+            const { interval, metricCodes, statsKeys, timeRangeMs } = api.trendParams;
             const now = new Date();
-            const from = new Date(now.getTime() - timeRange);
+            const from = new Date(now.getTime() - timeRangeMs);
 
             try {
-                const response = await fetch(`http://${baseUrl}/api/v1/mhs/l`, {
+                const response = await fetch(`http://${this._baseUrl}${api.trendHistory}`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
                         filter: {
-                            assetKey,
+                            assetKey: this._defaultAssetKey,
                             interval,
                             metricCodes,
                             timeFrom: from.toISOString().replace('T', ' ').slice(0, 19),

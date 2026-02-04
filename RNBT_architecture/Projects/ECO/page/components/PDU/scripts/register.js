@@ -28,6 +28,15 @@ function hexToRgba(hex, alpha) {
   return `rgba(${r}, ${g}, ${b}, ${alpha})`;
 }
 
+// ======================
+// RESPONSE HELPER
+// ======================
+function extractData(response, path = 'data') {
+  if (!response?.response) return null;
+  const data = response.response[path];
+  return data !== null && data !== undefined ? data : null;
+}
+
 initComponent.call(this);
 
 function initComponent() {
@@ -50,6 +59,16 @@ function initComponent() {
   // 3. Config 통합 (this.config로 모든 설정 접근)
   // ======================
   this.config = {
+    // 상태 코드별 레이블/속성 매핑
+    statusMap: {
+      ACTIVE: { label: '정상운영', dataAttr: 'normal' },
+      WARNING: { label: '주의', dataAttr: 'warning' },
+      CRITICAL: { label: '위험', dataAttr: 'critical' },
+      INACTIVE: { label: '비활성', dataAttr: 'inactive' },
+      MAINTENANCE: { label: '유지보수', dataAttr: 'maintenance' },
+      DEFAULT: { label: '알 수 없음', dataAttr: 'normal' },
+    },
+
     // 데이터셋 이름
     datasetNames: {
       assetDetail: 'assetDetailUnified',
@@ -63,9 +82,15 @@ function initComponent() {
       popup: 'popup-pdu',
     },
 
-    // 이벤트
-    events: {
-      click: '@assetClicked',
+    // API 엔드포인트 및 파라미터
+    api: {
+      trendHistory: '/api/v1/mhs/l',
+      trendParams: {
+        interval: '1h',
+        metricCodes: ['DIST.V_LN_AVG', 'DIST.CURRENT_AVG_A', 'DIST.ACTIVE_POWER_TOTAL_KW', 'DIST.FREQUENCY_HZ', 'DIST.ACTIVE_ENERGY_SUM_KWH'],
+        statsKeys: ['avg'],
+        timeRangeMs: 24 * 60 * 60 * 1000,
+      },
     },
 
     // ========================
@@ -117,7 +142,7 @@ function initComponent() {
   // ======================
   // 4. 데이터셋 정의
   // ======================
-  const { datasetNames } = this.config;
+  const { datasetNames, api } = this.config;
   this.datasetInfo = [
     { datasetName: datasetNames.assetDetail, param: { baseUrl: this._baseUrl, assetKey: this._defaultAssetKey, locale: 'ko' }, render: ['renderBasicInfo'] },
     {
@@ -125,10 +150,10 @@ function initComponent() {
       param: {
         baseUrl: this._baseUrl,
         assetKey: this._defaultAssetKey,
-        interval: '1h',
-        timeRange: 24 * 60 * 60 * 1000,
-        metricCodes: ['DIST.V_LN_AVG', 'DIST.CURRENT_AVG_A', 'DIST.ACTIVE_POWER_TOTAL_KW', 'DIST.FREQUENCY_HZ', 'DIST.ACTIVE_ENERGY_SUM_KWH'],
-        statsKeys: ['avg'],
+        interval: api.trendParams.interval,
+        timeRange: api.trendParams.timeRangeMs,
+        metricCodes: api.trendParams.metricCodes,
+        statsKeys: api.trendParams.statsKeys,
       },
       render: ['renderTrendChart'],
     },
@@ -139,7 +164,7 @@ function initComponent() {
   // ======================
   this.renderBasicInfo = renderBasicInfo.bind(this);
   this.renderTrendChart = renderTrendChart.bind(this);
-  this.renderError = renderError.bind(this);
+  this.renderInitialLabels = renderInitialLabels.bind(this);
 
   // ======================
   // 6. Public Methods
@@ -149,9 +174,12 @@ function initComponent() {
   this._switchTab = switchTab.bind(this);
 
   // ======================
-  // 7. 이벤트 발행
+  // 7. 3D 이벤트 바인딩
   // ======================
-  bind3DEvents(this, this.config.events);
+  this.customEvents = {
+    click: '@assetClicked',
+  };
+  bind3DEvents(this, this.customEvents);
 
   // ======================
   // 8. Popup (template 기반)
@@ -194,17 +222,14 @@ function showDetail() {
   // 1) assetDetailUnified 호출 (섹션별 독립 처리)
   // metricHistoryStats는 fetchTrendData에서 fetch API로 직접 호출하므로 제외
   fx.go(
-    this.datasetInfo.filter(d => d.datasetName !== datasetNames.metricHistory),
+    this.datasetInfo,
+    fx.filter((d) => d.datasetName !== datasetNames.metricHistory),
     fx.each(({ datasetName, param, render }) =>
       fx.go(
         fetchData(this.page, datasetName, param),
         (response) => {
-          if (!response || !response.response) {
-            console.warn(`[PDU] ${datasetName} fetch failed - no response`);
-            return;
-          }
-          const data = response.response.data;
-          if (data === null || data === undefined) {
+          const data = extractData(response, 'data');
+          if (data === null) {
             console.warn(`[PDU] ${datasetName} - no data`);
             return;
           }
@@ -231,7 +256,10 @@ function switchTab(tabName) {
 
   const buttons = this.popupQueryAll(chart.selectors.tabBtn);
   if (buttons) {
-    buttons.forEach((btn) => btn.classList.toggle('active', btn.dataset.tab === tabName));
+    fx.go(
+      buttons,
+      fx.each((btn) => btn.classList.toggle('active', btn.dataset.tab === tabName))
+    );
   }
 
   // 이미 로드된 데이터로 차트 갱신
@@ -244,43 +272,91 @@ function switchTab(tabName) {
 // TREND DATA FETCH
 // ======================
 
-async function fetchTrendData() {
-  const { datasetNames } = this.config;
-  const trendInfo = this.datasetInfo.find(d => d.datasetName === datasetNames.metricHistory);
+function fetchTrendData() {
+  const { datasetNames, api } = this.config;
+  const trendInfo = fx.go(
+    this.datasetInfo,
+    fx.filter((d) => d.datasetName === datasetNames.metricHistory),
+    (arr) => arr[0]
+  );
   if (!trendInfo) return;
 
   const { baseUrl, assetKey, interval, timeRange, metricCodes, statsKeys } = trendInfo.param;
   const now = new Date();
   const from = new Date(now.getTime() - timeRange);
 
-  try {
-    const response = await fetch(`http://${baseUrl}/api/v1/mhs/l`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        filter: {
-          assetKey,
-          interval,
-          metricCodes,
-          timeFrom: from.toISOString().replace('T', ' ').slice(0, 19),
-          timeTo: now.toISOString().replace('T', ' ').slice(0, 19),
-        },
-        statsKeys,
-        sort: [],
-      }),
+  fetch(`http://${baseUrl}${api.trendHistory}`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      filter: {
+        assetKey,
+        interval,
+        metricCodes,
+        timeFrom: from.toISOString().replace('T', ' ').slice(0, 19),
+        timeTo: now.toISOString().replace('T', ' ').slice(0, 19),
+      },
+      statsKeys,
+      sort: [],
+    }),
+  })
+    .then((resp) => resp.json())
+    .then((result) => {
+      if (!result || !result.success) {
+        console.warn('[PDU] Trend data unavailable');
+        return;
+      }
+      this._trendData = result.data;
+      this.renderTrendChart({ response: { data: result.data } });
+    })
+    .catch((e) => {
+      console.warn('[PDU] Trend fetch failed:', e);
     });
+}
 
-    const result = await response.json();
-    if (!result || !result.success) {
-      console.warn('[PDU] Trend data unavailable');
-      return;
-    }
-    // 데이터를 저장해두고 현재 활성 탭으로 렌더링
-    this._trendData = result.data;
-    this.renderTrendChart({ response: { data: result.data } });
-  } catch (e) {
-    console.warn('[PDU] Trend fetch failed:', e);
+// ======================
+// RENDER HELPERS
+// ======================
+
+function renderField(ctx, data, field) {
+  const el = ctx.popupQuery(field.selector);
+  if (!el) return;
+  let value = data[field.key] ?? field.fallback ?? '-';
+  if (field.transform) value = field.transform(value);
+  if (field.dataAttr) {
+    el.dataset[field.dataAttr] = value;
+  } else {
+    el.textContent = value;
   }
+}
+
+function fetchModelVendorChain(ctx, asset, chainConfig) {
+  const { datasetNames } = ctx.config;
+  const setCell = (selector, value) => {
+    const el = ctx.popupQuery(selector);
+    if (el) el.textContent = value ?? '-';
+  };
+
+  if (!asset.assetModelKey) return;
+
+  fx.go(
+    fetchData(ctx.page, datasetNames.modelDetail, { baseUrl: ctx._baseUrl, assetModelKey: asset.assetModelKey }),
+    (modelResp) => {
+      const model = extractData(modelResp, 'data');
+      if (!model) return;
+      setCell(chainConfig.model, model.name);
+
+      if (model.assetVendorKey) {
+        fx.go(
+          fetchData(ctx.page, datasetNames.vendorDetail, { baseUrl: ctx._baseUrl, assetVendorKey: model.assetVendorKey }),
+          (vendorResp) => {
+            const vendor = extractData(vendorResp, 'data');
+            if (vendor) setCell(chainConfig.vendor, vendor.name);
+          }
+        ).catch(() => {});
+      }
+    }
+  ).catch(() => {});
 }
 
 // ======================
@@ -290,65 +366,27 @@ async function fetchTrendData() {
 function renderBasicInfo({ response }) {
   const { data } = response;
   if (!data || !data.asset) {
-    renderError.call(this, '자산 데이터가 없습니다.');
+    console.warn('[PDU] renderBasicInfo: 자산 데이터가 없습니다.');
     return;
   }
 
   const asset = data.asset;
-  const { header, infoTable, datasetNames } = this.config;
+  const { header, infoTable } = this.config;
 
   // Header 영역
   fx.go(
     header.fields,
-    fx.each(({ key, selector, dataAttr, transform }) => {
-      const el = this.popupQuery(selector);
-      if (!el) return;
-      let value = asset[key];
-      if (transform) value = transform(value);
-      if (dataAttr) {
-        el.dataset[dataAttr] = value;
-      } else {
-        el.textContent = value;
-      }
-    })
+    fx.each((field) => renderField(this, asset, field))
   );
 
-  // 기본정보 테이블 (config 기반)
-  const setCell = (selector, value) => {
-    const el = this.popupQuery(selector);
-    if (el) el.textContent = value ?? '-';
-  };
-
+  // 기본정보 테이블
   fx.go(
     infoTable.fields,
-    fx.each(({ key, selector, transform, fallback }) => {
-      let value = asset[key] ?? fallback ?? '-';
-      if (transform) value = transform(value);
-      setCell(selector, value);
-    })
+    fx.each((field) => renderField(this, asset, field))
   );
 
-  // 제조사명/모델 체이닝: assetModelKey → mdl/g → vdr/g
-  if (asset.assetModelKey) {
-    fx.go(
-      fetchData(this.page, datasetNames.modelDetail, { baseUrl: this._baseUrl, assetModelKey: asset.assetModelKey }),
-      (modelResp) => {
-        if (!modelResp?.response?.data) return;
-        const model = modelResp.response.data;
-        setCell(infoTable.chain.model, model.name);
-
-        if (model.assetVendorKey) {
-          fx.go(
-            fetchData(this.page, datasetNames.vendorDetail, { baseUrl: this._baseUrl, assetVendorKey: model.assetVendorKey }),
-            (vendorResp) => {
-              if (!vendorResp?.response?.data) return;
-              setCell(infoTable.chain.vendor, vendorResp.response.data.name);
-            }
-          ).catch(() => {});
-        }
-      }
-    ).catch(() => {});
-  }
+  // 제조사명/모델 체이닝
+  fetchModelVendorChain(this, asset, infoTable.chain);
 }
 
 // ======================
@@ -367,19 +405,25 @@ function renderTrendChart({ response }) {
   const tabConfig = tabs[this._activeTab];
   if (!tabConfig) return;
 
-  // data를 시간별로 그룹핑
-  const timeMap = {};
-  data.forEach((row) => {
-    const hour = new Date(row.time).getHours() + '시';
-    if (!timeMap[hour]) timeMap[hour] = {};
-    timeMap[hour][row.metricCode] = row.statsBody?.avg ?? null;
-  });
+  // data를 시간별로 그룹핑 (fx.reduce 사용)
+  const timeMap = fx.go(
+    data,
+    fx.reduce((acc, row) => {
+      const hour = new Date(row.time).getHours() + '시';
+      if (!acc[hour]) acc[hour] = {};
+      acc[hour][row.metricCode] = row.statsBody?.avg ?? null;
+      return acc;
+    }, {})
+  );
 
   const hours = Object.keys(timeMap);
-  const values = hours.map((h) => {
-    const raw = timeMap[h][tabConfig.metricCode];
-    return raw != null ? +(raw * tabConfig.scale).toFixed(2) : null;
-  });
+  const values = fx.go(
+    hours,
+    fx.map((h) => {
+      const raw = timeMap[h][tabConfig.metricCode];
+      return raw != null ? +(raw * tabConfig.scale).toFixed(2) : null;
+    })
+  );
 
   const option = {
     tooltip: {
@@ -433,22 +477,18 @@ function renderTrendChart({ response }) {
 }
 
 // ======================
-// RENDER: 에러
+// RENDER: 초기 레이블
 // ======================
 
-function renderError(message) {
-  const nameEl = this.popupQuery(this.selectors.name);
-  const zoneEl = this.popupQuery(this.selectors.zone);
-  const statusEl = this.popupQuery(this.selectors.status);
-
-  if (nameEl) nameEl.textContent = '데이터 없음';
-  if (zoneEl) zoneEl.textContent = message;
-  if (statusEl) {
-    statusEl.textContent = 'Error';
-    statusEl.dataset.status = 'critical';
-  }
-
-  console.warn('[PDU] renderError:', message);
+function renderInitialLabels() {
+  const { chart } = this.config;
+  fx.go(
+    Object.entries(chart.tabs),
+    fx.each(([tabKey, cfg]) => {
+      const btn = this.popupQuery(`${chart.selectors.tabBtn}[data-tab="${tabKey}"]`);
+      if (btn) btn.textContent = cfg.label;
+    })
+  );
 }
 
 // ======================
@@ -456,25 +496,15 @@ function renderError(message) {
 // ======================
 
 function statusTypeToLabel(statusType) {
-  const labels = {
-    ACTIVE: '정상운영',
-    WARNING: '주의',
-    CRITICAL: '위험',
-    INACTIVE: '비활성',
-    MAINTENANCE: '유지보수',
-  };
-  return labels[statusType] || statusType;
+  const { statusMap } = this.config;
+  const entry = statusMap[statusType] || statusMap.DEFAULT;
+  return entry.label;
 }
 
 function statusTypeToDataAttr(statusType) {
-  const map = {
-    ACTIVE: 'normal',
-    WARNING: 'warning',
-    CRITICAL: 'critical',
-    INACTIVE: 'inactive',
-    MAINTENANCE: 'maintenance',
-  };
-  return map[statusType] || 'normal';
+  const { statusMap } = this.config;
+  const entry = statusMap[statusType] || statusMap.DEFAULT;
+  return entry.dataAttr;
 }
 
 function formatDate(dateStr) {
@@ -494,4 +524,5 @@ function formatDate(dateStr) {
 function onPopupCreated({ chartSelector, events }) {
   chartSelector && this.createChart(chartSelector);
   events && this.bindPopupEvents(events);
+  this.renderInitialLabels();
 }

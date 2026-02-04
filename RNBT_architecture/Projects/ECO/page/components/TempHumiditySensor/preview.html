@@ -116,7 +116,7 @@
                                     <!-- 온도 카드 -->
                                     <div class="status-card" data-metric="temperature">
                                         <div class="status-card-header">
-                                            <span class="status-card-label">온도</span>
+                                            <span class="status-card-label"></span>
                                         </div>
                                         <div class="status-card-body">
                                             <div class="status-current">
@@ -134,7 +134,7 @@
                                     <!-- 습도 카드 -->
                                     <div class="status-card" data-metric="humidity">
                                         <div class="status-card-header">
-                                            <span class="status-card-label">습도</span>
+                                            <span class="status-card-label"></span>
                                         </div>
                                         <div class="status-card-body">
                                             <div class="status-current">
@@ -273,8 +273,34 @@
             each: (fn, arr) => {
                 if (arr === undefined) return (arr2) => { arr2.forEach(fn); return arr2; };
                 arr.forEach(fn); return arr;
+            },
+            filter: (fn, arr) => {
+                if (arr === undefined) return (arr2) => arr2.filter(fn);
+                return arr.filter(fn);
+            },
+            reduce: (fn, init, arr) => {
+                if (arr === undefined) return (arr2) => arr2.reduce(fn, init);
+                return arr.reduce(fn, init);
+            },
+            map: (fn, arr) => {
+                if (arr === undefined) return (arr2) => arr2.map(fn);
+                return arr.map(fn);
             }
         };
+
+        // ======================
+        // HELPER FUNCTIONS
+        // ======================
+
+        /**
+         * extractData - 응답 객체에서 데이터 추출 (null 반환 시 실패)
+         */
+        function extractData(response, path = 'data') {
+            if (!response || !response.response) return null;
+            const data = response.response[path];
+            if (data === null || data === undefined) return null;
+            return data;
+        }
 
         const API_BASE = '10.23.128.125:4004';
         let currentStatus = 'normal';
@@ -529,13 +555,13 @@
         // ======================
 
         function statusTypeToLabel(statusType) {
-            const labels = { ACTIVE: '정상운영', WARNING: '주의', CRITICAL: '위험', INACTIVE: '비활성', MAINTENANCE: '유지보수' };
-            return labels[statusType] || statusType;
+            const cfg = this.config.statusMap[statusType];
+            return cfg ? cfg.label : statusType;
         }
 
         function statusTypeToDataAttr(statusType) {
-            const map = { ACTIVE: 'normal', WARNING: 'warning', CRITICAL: 'critical', INACTIVE: 'inactive', MAINTENANCE: 'maintenance' };
-            return map[statusType] || 'normal';
+            const cfg = this.config.statusMap[statusType];
+            return cfg ? cfg.dataAttr : 'normal';
         }
 
         function formatDate(dateStr) {
@@ -591,14 +617,27 @@
                     popup: 'popup-sensor',
                 },
 
-                // 이벤트
-                events: {
-                    click: '@assetClicked',
-                },
-
                 // 갱신 주기
                 refresh: {
                     interval: 5000,
+                },
+
+                // 상태 매핑 (statusType → label, dataAttr)
+                statusMap: {
+                    ACTIVE:      { label: '정상운영', dataAttr: 'normal' },
+                    WARNING:     { label: '주의',     dataAttr: 'warning' },
+                    CRITICAL:    { label: '위험',     dataAttr: 'critical' },
+                    INACTIVE:    { label: '비활성',   dataAttr: 'inactive' },
+                    MAINTENANCE: { label: '유지보수', dataAttr: 'maintenance' },
+                },
+
+                // API 파라미터
+                api: {
+                    trendParams: {
+                        interval: '1h',
+                        timeRange: 24 * 60 * 60 * 1000,
+                        statsKeys: ['avg'],
+                    },
                 },
 
                 // ========================
@@ -674,7 +713,7 @@
             // ======================
             // 4. 데이터셋 정의
             // ======================
-            const { datasetNames } = this.config;
+            const { datasetNames, statusCards, api } = this.config;
             this.datasetInfo = [
                 { datasetName: datasetNames.assetDetail, param: { baseUrl: this._baseUrl, assetKey: this._defaultAssetKey, locale: 'ko' }, render: ['renderBasicInfo'] },
                 { datasetName: datasetNames.metricLatest, param: { baseUrl: this._baseUrl, assetKey: this._defaultAssetKey }, render: ['renderStatusCards'] },
@@ -683,10 +722,10 @@
                     param: {
                         baseUrl: this._baseUrl,
                         assetKey: this._defaultAssetKey,
-                        interval: '1h',
-                        timeRange: 24 * 60 * 60 * 1000,
-                        metricCodes: ['SENSOR.TEMP', 'SENSOR.HUMIDITY'],
-                        statsKeys: ['avg'],
+                        interval: api.trendParams.interval,
+                        timeRange: api.trendParams.timeRange,
+                        metricCodes: Object.values(statusCards.metrics).map(m => m.metricCode),
+                        statsKeys: api.trendParams.statsKeys,
                     },
                     render: ['renderTrendChart'],
                 },
@@ -698,7 +737,7 @@
             this.renderBasicInfo = renderBasicInfo.bind(this);
             this.renderStatusCards = renderStatusCards.bind(this);
             this.renderTrendChart = renderTrendChart.bind(this);
-            this.renderError = renderError.bind(this);
+            this.renderInitialLabels = renderInitialLabels.bind(this);
 
             // ======================
             // 6. Public Methods
@@ -709,9 +748,10 @@
             this.stopRefresh = stopRefresh.bind(this);
 
             // ======================
-            // 7. 이벤트 발행
+            // 7. 3D 이벤트 바인딩
             // ======================
-            bind3DEvents(this, this.config.events);
+            this.customEvents = { click: '@assetClicked' };
+            bind3DEvents(this, this.customEvents);
 
             // ======================
             // 8. Popup (template 기반)
@@ -733,6 +773,7 @@
                 const { chartSelector, events } = popupCreatedConfig;
                 if (chartSelector) ctx.createChart(chartSelector);
                 if (events) ctx.bindPopupEvents(events);
+                ctx.renderInitialLabels();
             };
 
             applyShadowPopupMixin(this, {
@@ -746,68 +787,86 @@
             console.log('[TempHumiditySensor] Registered:', this._defaultAssetKey);
         }
 
+        /**
+         * renderField - 필드 설정에 따라 요소에 값 렌더링
+         */
+        function renderField(ctx, data, field) {
+            const { key, selector, dataAttr, transform, fallback } = field;
+            const el = ctx.popupQuery(selector);
+            if (!el) return;
+            let value = data[key] ?? fallback ?? '-';
+            if (transform) value = transform(value);
+            if (dataAttr) {
+                el.dataset[dataAttr] = value;
+            } else {
+                el.textContent = value;
+            }
+        }
+
+        /**
+         * fetchModelVendorChain - 모델/제조사 체인 API 호출
+         */
+        function fetchModelVendorChain(ctx, asset, chainConfig) {
+            if (!asset.assetModelKey) return;
+            const { datasetNames } = ctx.config;
+
+            fx.go(
+                Wkit.fetchData(ctx.page, datasetNames.modelDetail, { baseUrl: ctx._baseUrl, assetModelKey: asset.assetModelKey }),
+                (modelResp) => {
+                    const model = extractData(modelResp);
+                    if (!model) return;
+                    const modelEl = ctx.popupQuery(chainConfig.model);
+                    if (modelEl) modelEl.textContent = model.name || '-';
+
+                    if (model.assetVendorKey) {
+                        fx.go(
+                            Wkit.fetchData(ctx.page, datasetNames.vendorDetail, { baseUrl: ctx._baseUrl, assetVendorKey: model.assetVendorKey }),
+                            (vendorResp) => {
+                                const vendor = extractData(vendorResp);
+                                if (!vendor) return;
+                                const vendorEl = ctx.popupQuery(chainConfig.vendor);
+                                if (vendorEl) vendorEl.textContent = vendor.name || '-';
+                            }
+                        ).catch(() => {});
+                    }
+                }
+            ).catch(() => {});
+        }
+
+        /**
+         * renderInitialLabels - 팝업 생성 시 동적 레이블 렌더링
+         */
+        function renderInitialLabels() {
+            const { statusCards } = this.config;
+            fx.go(
+                Object.entries(statusCards.metrics),
+                fx.each(([key, cfg]) => {
+                    const card = this.popupQuery(`${statusCards.selectors.card}[data-metric="${key}"]`);
+                    if (!card) return;
+                    const labelEl = card.querySelector('.status-card-label');
+                    if (labelEl) labelEl.textContent = cfg.label;
+                })
+            );
+        }
+
         function renderBasicInfo({ response }) {
             const { data } = response;
             if (!data || !data.asset) {
-                renderError.call(this, '자산 데이터가 없습니다.');
+                console.warn('[TempHumiditySensor] renderBasicInfo: no asset data');
                 return;
             }
 
             const asset = data.asset;
-            const { header, infoTable, datasetNames } = this.config;
+            const { header, infoTable } = this.config;
 
             // Header 영역
-            fx.go(
-                header.fields,
-                fx.each(({ key, selector, dataAttr, transform }) => {
-                    const el = this.popupQuery(selector);
-                    if (!el) return;
-                    let value = asset[key];
-                    if (transform) value = transform(value);
-                    if (dataAttr) {
-                        el.dataset[dataAttr] = value;
-                    } else {
-                        el.textContent = value;
-                    }
-                })
-            );
+            fx.go(header.fields, fx.each((field) => renderField(this, asset, field)));
 
-            // 기본정보 테이블 (config 기반)
-            const setCell = (selector, value) => {
-                const el = this.popupQuery(selector);
-                if (el) el.textContent = value ?? '-';
-            };
+            // 기본정보 테이블
+            fx.go(infoTable.fields, fx.each((field) => renderField(this, asset, field)));
 
-            fx.go(
-                infoTable.fields,
-                fx.each(({ key, selector, transform, fallback }) => {
-                    let value = asset[key] ?? fallback ?? '-';
-                    if (transform) value = transform(value);
-                    setCell(selector, value);
-                })
-            );
-
-            // 제조사명/모델 체이닝: assetModelKey → mdl/g → vdr/g
-            if (asset.assetModelKey) {
-                fx.go(
-                    Wkit.fetchData(this.page, datasetNames.modelDetail, { baseUrl: this._baseUrl, assetModelKey: asset.assetModelKey }),
-                    (modelResp) => {
-                        if (!modelResp?.response?.data) return;
-                        const model = modelResp.response.data;
-                        setCell(infoTable.chain.model, model.name);
-
-                        if (model.assetVendorKey) {
-                            fx.go(
-                                Wkit.fetchData(this.page, datasetNames.vendorDetail, { baseUrl: this._baseUrl, assetVendorKey: model.assetVendorKey }),
-                                (vendorResp) => {
-                                    if (!vendorResp?.response?.data) return;
-                                    setCell(infoTable.chain.vendor, vendorResp.response.data.name);
-                                }
-                            ).catch(() => {});
-                        }
-                    }
-                ).catch(() => {});
-            }
+            // 제조사명/모델 체이닝
+            fetchModelVendorChain(this, asset, infoTable.chain);
         }
 
         function renderStatusCards({ response }) {
@@ -826,37 +885,39 @@
                 timestampEl.textContent = this.formatTimestamp(data[0].eventedAt);
             }
 
-            // 메트릭 코드를 값으로 매핑
-            const metricMap = {};
-            data.forEach((metric) => {
-                const value = metric.valueType === 'NUMBER' ? metric.valueNumber : metric.valueString;
-                metricMap[metric.metricCode] = value;
-            });
+            // 메트릭 코드를 값으로 매핑 (동기 호출)
+            const metricMap = fx.reduce(
+                (acc, metric) => {
+                    const value = metric.valueType === 'NUMBER' ? metric.valueNumber : metric.valueString;
+                    acc[metric.metricCode] = value;
+                    return acc;
+                },
+                {},
+                data
+            );
 
             // 각 카드에 값 설정
-            Object.entries(metrics).forEach(([key, config]) => {
-                const card = this.popupQuery(`${selectors.card}[data-metric="${key}"]`);
-                if (!card) return;
+            fx.go(
+                Object.entries(metrics),
+                fx.each(([key, cfg]) => {
+                    const card = this.popupQuery(`${selectors.card}[data-metric="${key}"]`);
+                    if (!card) return;
 
-                const currentValueEl = card.querySelector(selectors.currentValue);
-                const targetValueEl = card.querySelector(selectors.targetValue);
+                    const currentValueEl = card.querySelector(selectors.currentValue);
+                    const targetValueEl = card.querySelector(selectors.targetValue);
 
-                // 현재값
-                const rawValue = metricMap[config.metricCode];
-                if (currentValueEl) {
-                    if (rawValue != null) {
-                        const displayValue = (rawValue * config.scale).toFixed(1);
-                        currentValueEl.textContent = displayValue;
-                    } else {
-                        currentValueEl.textContent = '-';
+                    // 현재값
+                    const rawValue = metricMap[cfg.metricCode];
+                    if (currentValueEl) {
+                        currentValueEl.textContent = rawValue != null ? (rawValue * cfg.scale).toFixed(1) : '-';
                     }
-                }
 
-                // 적정값 (API 미확인 → "-")
-                if (targetValueEl) {
-                    targetValueEl.textContent = config.targetValue ?? '-';
-                }
-            });
+                    // 적정값
+                    if (targetValueEl) {
+                        targetValueEl.textContent = cfg.targetValue ?? '-';
+                    }
+                })
+            );
         }
 
         function renderTrendChart({ response }) {
@@ -871,25 +932,35 @@
             const tempConfig = series.temp;
             const humidConfig = series.humidity;
 
-            // 데이터를 시간별로 그룹핑
-            const timeMap = {};
-            data.forEach((row) => {
-                const hour = new Date(row.time).getHours() + '시';
-                if (!timeMap[hour]) timeMap[hour] = {};
-                timeMap[hour][row.metricCode] = row.statsBody?.avg ?? null;
-            });
+            // 데이터를 시간별로 그룹핑 (동기 호출)
+            const timeMap = fx.reduce(
+                (acc, row) => {
+                    const hour = new Date(row.time).getHours() + '시';
+                    if (!acc[hour]) acc[hour] = {};
+                    acc[hour][row.metricCode] = row.statsBody?.avg ?? null;
+                    return acc;
+                },
+                {},
+                data
+            );
 
             const hours = Object.keys(timeMap);
 
-            const tempValues = hours.map((h) => {
-                const raw = timeMap[h][tempConfig.metricCode];
-                return raw != null ? +(raw * tempConfig.scale).toFixed(1) : null;
-            });
+            const tempValues = fx.map(
+                (h) => {
+                    const raw = timeMap[h][tempConfig.metricCode];
+                    return raw != null ? +(raw * tempConfig.scale).toFixed(1) : null;
+                },
+                hours
+            );
 
-            const humidValues = hours.map((h) => {
-                const raw = timeMap[h][humidConfig.metricCode];
-                return raw != null ? +(raw * humidConfig.scale).toFixed(1) : null;
-            });
+            const humidValues = fx.map(
+                (h) => {
+                    const raw = timeMap[h][humidConfig.metricCode];
+                    return raw != null ? +(raw * humidConfig.scale).toFixed(1) : null;
+                },
+                hours
+            );
 
             const option = {
                 tooltip: {
@@ -954,21 +1025,6 @@
             this.updateChart(selectors.container, option);
         }
 
-        function renderError(message) {
-            const nameEl = this.popupQuery('.sensor-name');
-            const zoneEl = this.popupQuery('.sensor-zone');
-            const statusEl = this.popupQuery('.sensor-status');
-
-            if (nameEl) nameEl.textContent = '데이터 없음';
-            if (zoneEl) zoneEl.textContent = message;
-            if (statusEl) {
-                statusEl.textContent = 'Error';
-                statusEl.dataset.status = 'critical';
-            }
-
-            console.warn('[TempHumiditySensor] renderError:', message);
-        }
-
         function showDetail() {
             this.showPopup();
 
@@ -977,17 +1033,14 @@
             // 1) assetDetailUnified + metricLatest 호출 (섹션별 독립 처리)
             // metricHistoryStats는 fetchTrendData에서 fetch API로 직접 호출하므로 제외
             fx.go(
-                this.datasetInfo.filter(d => d.datasetName !== datasetNames.metricHistory),
+                this.datasetInfo,
+                fx.filter(d => d.datasetName !== datasetNames.metricHistory),
                 fx.each(({ datasetName, param, render }) =>
                     fx.go(
                         Wkit.fetchData(this.page, datasetName, param),
                         (response) => {
-                            if (!response || !response.response) {
-                                console.warn(`[TempHumiditySensor] ${datasetName} fetch failed - no response`);
-                                return;
-                            }
-                            const data = response.response.data;
-                            if (data === null || data === undefined) {
+                            const data = extractData(response);
+                            if (data === null) {
                                 console.warn(`[TempHumiditySensor] ${datasetName} - no data`);
                                 return;
                             }
@@ -1008,7 +1061,7 @@
             console.log('[TempHumiditySensor] Metric refresh started (5s interval)');
         }
 
-        async function fetchTrendData() {
+        function fetchTrendData() {
             const { datasetNames } = this.config;
             const trendInfo = this.datasetInfo.find(d => d.datasetName === datasetNames.metricHistory);
             if (!trendInfo) return;
@@ -1017,32 +1070,32 @@
             const now = new Date();
             const from = new Date(now.getTime() - timeRange);
 
-            try {
-                const response = await fetch(`http://${baseUrl}/api/v1/mhs/l`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        filter: {
-                            assetKey,
-                            interval,
-                            metricCodes,
-                            timeFrom: from.toISOString().replace('T', ' ').slice(0, 19),
-                            timeTo: now.toISOString().replace('T', ' ').slice(0, 19),
-                        },
-                        statsKeys,
-                        sort: [],
-                    }),
+            fetch(`http://${baseUrl}/api/v1/mhs/l`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    filter: {
+                        assetKey,
+                        interval,
+                        metricCodes,
+                        timeFrom: from.toISOString().replace('T', ' ').slice(0, 19),
+                        timeTo: now.toISOString().replace('T', ' ').slice(0, 19),
+                    },
+                    statsKeys,
+                    sort: [],
+                }),
+            })
+                .then(response => response.json())
+                .then(result => {
+                    if (!result || !result.success) {
+                        console.warn('[TempHumiditySensor] Trend data unavailable');
+                        return;
+                    }
+                    this.renderTrendChart({ response: { data: result.data } });
+                })
+                .catch(e => {
+                    console.warn('[TempHumiditySensor] Trend fetch failed:', e);
                 });
-
-                const result = await response.json();
-                if (!result || !result.success) {
-                    console.warn('[TempHumiditySensor] Trend data unavailable');
-                    return;
-                }
-                this.renderTrendChart({ response: { data: result.data } });
-            } catch (e) {
-                console.warn('[TempHumiditySensor] Trend fetch failed:', e);
-            }
         }
 
         function hideDetail() {
@@ -1052,13 +1105,17 @@
 
         function refreshMetricsOnly() {
             const { datasetNames } = this.config;
-            const metricInfo = this.datasetInfo.find(d => d.datasetName === datasetNames.metricLatest);
+            const metricInfo = fx.go(
+                this.datasetInfo,
+                fx.filter(d => d.datasetName === datasetNames.metricLatest)
+            )[0];
+            if (!metricInfo) return;
+
             fx.go(
                 Wkit.fetchData(this.page, datasetNames.metricLatest, metricInfo.param),
                 (response) => {
-                    if (!response || !response.response) return;
-                    const data = response.response.data;
-                    if (data === null || data === undefined) return;
+                    const data = extractData(response);
+                    if (data === null) return;
                     this.renderStatusCards(response);
                 }
             ).catch(e => {
