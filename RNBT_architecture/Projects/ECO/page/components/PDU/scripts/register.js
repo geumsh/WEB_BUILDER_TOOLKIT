@@ -413,7 +413,7 @@ function renderTrendChart({ response }) {
       if (!acc[hour]) acc[hour] = {};
       acc[hour][row.metricCode] = row.statsBody?.avg ?? null;
       return acc;
-    }, {})
+    })
   );
 
   const hours = Object.keys(timeMap);

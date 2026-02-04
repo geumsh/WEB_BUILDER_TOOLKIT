@@ -464,7 +464,7 @@ function renderStatusCards({ response }) {
       const value = metric.valueType === 'NUMBER' ? metric.valueNumber : metric.valueString;
       acc[metric.metricCode] = value;
       return acc;
-    }, {})
+    })
   );
 
   // 각 카드에 값 설정 (fx.each 사용)

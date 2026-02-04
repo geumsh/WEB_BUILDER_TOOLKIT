@@ -822,16 +822,15 @@
             const tabConfig = tabs[this._activeTab];
             if (!tabConfig) return;
 
-            // data를 시간별로 그룹핑 (fx.reduce 동기 호출)
-            const timeMap = fx.reduce(
-                (acc, row) => {
+            // data를 시간별로 그룹핑 (fx.reduce 사용)
+            const timeMap = fx.go(
+                data,
+                fx.reduce((acc, row) => {
                     const hour = new Date(row.time).getHours() + '시';
                     if (!acc[hour]) acc[hour] = {};
                     acc[hour][row.metricCode] = row.statsBody?.avg ?? null;
                     return acc;
-                },
-                {},
-                data
+                })
             );
 
             const hours = Object.keys(timeMap);
