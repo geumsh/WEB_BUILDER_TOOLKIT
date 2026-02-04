@@ -63,12 +63,12 @@ function initComponent() {
   this._trendTimeTo = null;   // 호출 시 동적 계산
 
   // ======================
-  // 2. 변환 함수 바인딩
+  // 2. 변환 함수 바인딩 (config.fields.transform에서 사용)
   // ======================
-  this.statusTypeToLabel = statusTypeToLabel.bind(this);
-  this.statusTypeToDataAttr = statusTypeToDataAttr.bind(this);
-  this.formatDate = formatDate.bind(this);
-  this.formatTimestamp = formatTimestamp.bind(this);
+  this.statusTypeToLabel = statusTypeToLabel.bind(this);       // 'ACTIVE' → '정상'
+  this.statusTypeToDataAttr = statusTypeToDataAttr.bind(this); // 'ACTIVE' → 'normal' (CSS 선택자용)
+  this.formatDate = formatDate.bind(this);                     // ISO → 'YYYY-MM-DD'
+  this.formatTimestamp = formatTimestamp.bind(this);           // ISO → 'HH:mm:ss'
 
   // ======================
   // 3. Config 통합 (this.config로 모든 설정 접근)
@@ -133,7 +133,9 @@ function initComponent() {
       },
       selectors: {
         card: '.power-card',
+        label: '.power-card-label',
         value: '.power-card-value',
+        unit: '.power-card-unit',
         timestamp: '.section-timestamp',
       },
     },
@@ -152,6 +154,8 @@ function initComponent() {
       selectors: {
         container: '.chart-container',
         tabBtn: '.tab-btn',
+        legendInput: '.legend-input .legend-label',
+        legendOutput: '.legend-output .legend-label',
       },
     },
   };
@@ -630,6 +634,39 @@ function formatTimestamp(isoString) {
 // ======================
 
 function onPopupCreated({ chartSelector, events }) {
+  renderInitialLabels.call(this);
   chartSelector && this.createChart(chartSelector);
   events && this.bindPopupEvents(events);
+}
+
+function renderInitialLabels() {
+  const { powerStatus, chart } = this.config;
+
+  // 전력현황 카드 라벨/유닛
+  fx.go(
+    Object.entries(powerStatus.metrics),
+    fx.each(([key, cfg]) => {
+      const card = this.popupQuery(`${powerStatus.selectors.card}[data-metric="${key}"]`);
+      if (!card) return;
+      const labelEl = card.querySelector(powerStatus.selectors.label);
+      const unitEl = card.querySelector(powerStatus.selectors.unit);
+      if (labelEl) labelEl.textContent = cfg.label;
+      if (unitEl) unitEl.textContent = cfg.unit;
+    })
+  );
+
+  // 탭 버튼 라벨
+  fx.go(
+    Object.entries(chart.tabs),
+    fx.each(([key, cfg]) => {
+      const btn = this.popupQuery(`${chart.selectors.tabBtn}[data-tab="${key}"]`);
+      if (btn) btn.textContent = cfg.label;
+    })
+  );
+
+  // 범례 라벨
+  const inputLegend = this.popupQuery(chart.selectors.legendInput);
+  const outputLegend = this.popupQuery(chart.selectors.legendOutput);
+  if (inputLegend) inputLegend.textContent = chart.series.input.label;
+  if (outputLegend) outputLegend.textContent = chart.series.output.label;
 }

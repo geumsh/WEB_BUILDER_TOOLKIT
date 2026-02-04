@@ -118,31 +118,31 @@
                                 </div>
                                 <div class="power-cards">
                                     <div class="power-card" data-metric="batterySoc">
-                                        <div class="power-card-label">배터리 사용률</div>
+                                        <div class="power-card-label"></div>
                                         <div class="power-card-body">
                                             <span class="power-card-value">-</span>
-                                            <span class="power-card-unit">%</span>
+                                            <span class="power-card-unit"></span>
                                         </div>
                                     </div>
                                     <div class="power-card" data-metric="batteryTime">
-                                        <div class="power-card-label">배터리 잔여시간</div>
+                                        <div class="power-card-label"></div>
                                         <div class="power-card-body">
                                             <span class="power-card-value">-</span>
-                                            <span class="power-card-unit">h</span>
+                                            <span class="power-card-unit"></span>
                                         </div>
                                     </div>
                                     <div class="power-card" data-metric="loadRate">
-                                        <div class="power-card-label">부하율</div>
+                                        <div class="power-card-label"></div>
                                         <div class="power-card-body">
                                             <span class="power-card-value">-</span>
-                                            <span class="power-card-unit">%</span>
+                                            <span class="power-card-unit"></span>
                                         </div>
                                     </div>
                                     <div class="power-card" data-metric="batteryVolt">
-                                        <div class="power-card-label">배터리 출력전압</div>
+                                        <div class="power-card-label"></div>
                                         <div class="power-card-body">
                                             <span class="power-card-value">-</span>
-                                            <span class="power-card-unit">V</span>
+                                            <span class="power-card-unit"></span>
                                         </div>
                                     </div>
                                 </div>
@@ -154,13 +154,13 @@
                                     <span class="section-title">UPS 입/출력 추이</span>
                                 </div>
                                 <div class="tab-header">
-                                    <button class="tab-btn" data-tab="current">입/출력 전류</button>
-                                    <button class="tab-btn active" data-tab="voltage">입/출력 전압</button>
-                                    <button class="tab-btn" data-tab="frequency">입/출력 주파수</button>
+                                    <button class="tab-btn" data-tab="current"></button>
+                                    <button class="tab-btn active" data-tab="voltage"></button>
+                                    <button class="tab-btn" data-tab="frequency"></button>
                                 </div>
                                 <div class="chart-legend">
-                                    <span class="legend-item legend-input"><span class="legend-dot"></span>입력</span>
-                                    <span class="legend-item legend-output"><span class="legend-dot"></span>출력</span>
+                                    <span class="legend-item legend-input"><span class="legend-dot"></span><span class="legend-label"></span></span>
+                                    <span class="legend-item legend-output"><span class="legend-dot"></span><span class="legend-label"></span></span>
                                 </div>
                                 <div class="chart-container"></div>
                             </div>
@@ -495,7 +495,7 @@
         // ======================
         // COMPONENT LIFECYCLE (register.js와 동일)
         // ======================
-        const BASE_URL = '10.23.128.140:8811';
+        const BASE_URL = '10.23.128.125:4004';
 
         function initComponent() {
             const { bind3DEvents, fetchData } = Wkit;
@@ -510,16 +510,35 @@
             this._activeTab = 'voltage';
             this._refreshIntervalId = null;
 
-            // ======================
-            // 2. 변환 함수 바인딩
-            // ======================
-            this.statusTypeToLabel = statusTypeToLabel.bind(this);
-            this.statusTypeToDataAttr = statusTypeToDataAttr.bind(this);
-            this.formatDate = formatDate.bind(this);
-            this.formatTimestamp = formatTimestamp.bind(this);
+            // 트렌드 차트 API 파라미터
+            this._trendInterval = '1h';
+            this._trendMetricCodes = [
+                'UPS.INPUT_A_AVG', 'UPS.OUTPUT_A_AVG',
+                'UPS.INPUT_V_AVG', 'UPS.OUTPUT_V_AVG',
+                'UPS.INPUT_F_AVG', 'UPS.OUTPUT_F_AVG',
+            ];
+            this._trendStatsKeys = ['avg'];
+            this._trendTimeRangeMs = 24 * 60 * 60 * 1000;
+            this._trendTimeFrom = null; // 호출 시 동적 계산
+            this._trendTimeTo = null;   // 호출 시 동적 계산
 
             // ======================
-            // 3. Config 통합 (this.config로 모든 설정 접근)
+            // 2. 변환 함수 바인딩 (config.fields.transform에서 사용)
+            // ======================
+            this.statusTypeToLabel = statusTypeToLabel.bind(this);       // 'ACTIVE' → '정상'
+            this.statusTypeToDataAttr = statusTypeToDataAttr.bind(this); // 'ACTIVE' → 'normal' (CSS 선택자용)
+            this.formatDate = formatDate.bind(this);                     // ISO → 'YYYY-MM-DD'
+            this.formatTimestamp = formatTimestamp.bind(this);           // ISO → 'HH:mm:ss'
+
+            // ======================
+            // 3. 이벤트 (DEFAULT_JS_NAMING.md: this.customEvents)
+            // ======================
+            this.customEvents = {
+                click: '@assetClicked',
+            };
+
+            // ======================
+            // 4. Config 통합 (this.config로 모든 설정 접근)
             // ======================
             this.config = {
                 // 데이터셋 이름
@@ -534,11 +553,6 @@
                 // 템플릿
                 template: {
                     popup: 'popup-ups',
-                },
-
-                // 이벤트
-                events: {
-                    click: '@assetClicked',
                 },
 
                 // 갱신 주기
@@ -586,7 +600,9 @@
                     },
                     selectors: {
                         card: '.power-card',
+                        label: '.power-card-label',
                         value: '.power-card-value',
+                        unit: '.power-card-unit',
                         timestamp: '.section-timestamp',
                     },
                 },
@@ -605,12 +621,14 @@
                     selectors: {
                         container: '.chart-container',
                         tabBtn: '.tab-btn',
+                        legendInput: '.legend-input .legend-label',
+                        legendOutput: '.legend-output .legend-label',
                     },
                 },
             };
 
             // ======================
-            // 4. 데이터셋 정의
+            // 5. 데이터셋 정의
             // ======================
             const { datasetNames } = this.config;
             this.datasetInfo = [
@@ -621,28 +639,25 @@
                     param: {
                         baseUrl: this._baseUrl,
                         assetKey: this._defaultAssetKey,
-                        interval: '1h',
-                        timeRange: 24 * 60 * 60 * 1000,
-                        metricCodes: [
-                            'UPS.INPUT_A_AVG', 'UPS.OUTPUT_A_AVG',
-                            'UPS.INPUT_V_AVG', 'UPS.OUTPUT_V_AVG',
-                            'UPS.INPUT_F_AVG', 'UPS.OUTPUT_F_AVG',
-                        ],
-                        statsKeys: ['avg'],
+                        interval: this._trendInterval,
+                        metricCodes: this._trendMetricCodes,
+                        statsKeys: this._trendStatsKeys,
+                        timeFrom: this._trendTimeFrom,
+                        timeTo: this._trendTimeTo,
                     },
                     render: ['renderTrendChart'],
                 },
             ];
 
             // ======================
-            // 5. 렌더링 함수 바인딩
+            // 6. 렌더링 함수 바인딩
             // ======================
             this.renderBasicInfo = renderBasicInfo.bind(this);
             this.renderPowerStatus = renderPowerStatus.bind(this);
             this.renderTrendChart = renderTrendChart.bind(this);
 
             // ======================
-            // 6. Public Methods
+            // 7. Public Methods
             // ======================
             this.showDetail = showDetail.bind(this);
             this.hideDetail = hideDetail.bind(this);
@@ -651,12 +666,12 @@
             this._switchTab = switchTab.bind(this);
 
             // ======================
-            // 7. 이벤트 발행
+            // 8. 이벤트 발행
             // ======================
-            bind3DEvents(this, this.config.events);
+            bind3DEvents(this, this.customEvents);
 
             // ======================
-            // 8. Popup (template 기반)
+            // 9. Popup (template 기반)
             // ======================
             const popupCreatedConfig = {
                 chartSelector: this.config.chart.selectors.container,
@@ -673,6 +688,7 @@
             this.getPopupHTML = () => extractTemplate(htmlCode || '', ctx.config.template.popup);
             this.getPopupStyles = () => cssCode || '';
             this.onPopupCreated = function() {
+                renderInitialLabels.call(ctx);
                 const { chartSelector, events } = popupCreatedConfig;
                 if (chartSelector) ctx.createChart(chartSelector);
                 if (events) ctx.bindPopupEvents(events);
@@ -778,9 +794,9 @@
             const trendInfo = this.datasetInfo.find(d => d.datasetName === datasetNames.metricHistory);
             if (!trendInfo) return;
 
-            const { baseUrl, assetKey, interval, timeRange, metricCodes, statsKeys } = trendInfo.param;
+            const { baseUrl, assetKey, interval, metricCodes, statsKeys } = trendInfo.param;
             const now = new Date();
-            const from = new Date(now.getTime() - timeRange);
+            const from = new Date(now.getTime() - this._trendTimeRangeMs);
 
             try {
                 const response = await fetch(`http://${baseUrl}/api/v1/mhs/l`, {
@@ -1039,6 +1055,38 @@
             console.warn('[UPS] renderError:', message);
         }
 
+        function renderInitialLabels() {
+            const { powerStatus, chart } = this.config;
+
+            // 전력현황 카드 라벨/유닛
+            fx.go(
+                Object.entries(powerStatus.metrics),
+                fx.each(([key, cfg]) => {
+                    const card = this.popupQuery(`${powerStatus.selectors.card}[data-metric="${key}"]`);
+                    if (!card) return;
+                    const labelEl = card.querySelector(powerStatus.selectors.label);
+                    const unitEl = card.querySelector(powerStatus.selectors.unit);
+                    if (labelEl) labelEl.textContent = cfg.label;
+                    if (unitEl) unitEl.textContent = cfg.unit;
+                })
+            );
+
+            // 탭 버튼 라벨
+            fx.go(
+                Object.entries(chart.tabs),
+                fx.each(([key, cfg]) => {
+                    const btn = this.popupQuery(`${chart.selectors.tabBtn}[data-tab="${key}"]`);
+                    if (btn) btn.textContent = cfg.label;
+                })
+            );
+
+            // 범례 라벨
+            const inputLegend = this.popupQuery(chart.selectors.legendInput);
+            const outputLegend = this.popupQuery(chart.selectors.legendOutput);
+            if (inputLegend) inputLegend.textContent = chart.series.input.label;
+            if (outputLegend) outputLegend.textContent = chart.series.output.label;
+        }
+
         function statusTypeToLabel(statusType) {
             const labels = {
                 ACTIVE: '정상운영',
@@ -1080,6 +1128,10 @@
         function onInstanceUnLoad() {
             this.stopRefresh();
             this.destroyPopup();
+
+            // 캐시 데이터 해제
+            this._trendData = null;
+
             console.log('[UPS] Destroyed:', this.id);
         }
 
