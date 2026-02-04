@@ -689,25 +689,18 @@
         // TREND DATA FETCH
         // ======================
 
-        function fetchTrendData() {
-            const { datasetNames, api } = this.config;
-            const trendInfo = fx.go(
-                this.datasetInfo,
-                fx.filter((d) => d.datasetName === datasetNames.metricHistory),
-                (arr) => arr[0]
-            );
-            if (!trendInfo) return;
-
-            const { baseUrl, assetKey, interval, timeRange, metricCodes, statsKeys } = trendInfo.param;
+        async function fetchTrendData() {
+            const { api } = this.config;
+            const { interval, metricCodes, statsKeys, timeRangeMs } = api.trendParams;
             const now = new Date();
-            const from = new Date(now.getTime() - timeRange);
+            const from = new Date(now.getTime() - timeRangeMs);
 
-            fetch(`http://${baseUrl}${api.trendHistory}`, {
+            fetch(`http://${this._baseUrl}${api.trendHistory}`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     filter: {
-                        assetKey,
+                        assetKey: this._defaultAssetKey,
                         interval,
                         metricCodes,
                         timeFrom: from.toISOString().replace('T', ' ').slice(0, 19),
@@ -822,15 +815,16 @@
             const tabConfig = tabs[this._activeTab];
             if (!tabConfig) return;
 
-            // data를 시간별로 그룹핑 (fx.reduce 사용)
-            const timeMap = fx.go(
-                data,
-                fx.reduce((acc, row) => {
+            // data를 시간별로 그룹핑
+            const timeMap = fx.reduce(
+                (acc, row) => {
                     const hour = new Date(row.time).getHours() + '시';
                     if (!acc[hour]) acc[hour] = {};
                     acc[hour][row.metricCode] = row.statsBody?.avg ?? null;
                     return acc;
-                })
+                },
+                {},
+                data
             );
 
             const hours = Object.keys(timeMap);

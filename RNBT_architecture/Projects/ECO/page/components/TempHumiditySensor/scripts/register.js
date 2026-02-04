@@ -457,14 +457,15 @@ function renderStatusCards({ response }) {
     timestampEl.textContent = this.formatTimestamp(data[0].eventedAt);
   }
 
-  // 메트릭 코드를 값으로 매핑 (fx.reduce 사용)
-  const metricMap = fx.go(
-    data,
-    fx.reduce((acc, metric) => {
+  // 메트릭 코드를 값으로 매핑
+  const metricMap = fx.reduce(
+    (acc, metric) => {
       const value = metric.valueType === 'NUMBER' ? metric.valueNumber : metric.valueString;
       acc[metric.metricCode] = value;
       return acc;
-    })
+    },
+    {},
+    data
   );
 
   // 각 카드에 값 설정 (fx.each 사용)
@@ -512,15 +513,16 @@ function renderTrendChart({ response }) {
   const tempConfig = series.temp;
   const humidConfig = series.humidity;
 
-  // 데이터를 시간별로 그룹핑 (fx.reduce 사용)
-  const timeMap = fx.go(
-    data,
-    fx.reduce((acc, row) => {
+  // 데이터를 시간별로 그룹핑
+  const timeMap = fx.reduce(
+    (acc, row) => {
       const hour = new Date(row.time).getHours() + '시';
       if (!acc[hour]) acc[hour] = {};
       acc[hour][row.metricCode] = row.statsBody?.avg ?? null;
       return acc;
-    }, {})
+    },
+    {},
+    data
   );
 
   const hours = Object.keys(timeMap);

@@ -633,10 +633,12 @@
 
                 // API 파라미터
                 api: {
+                    trendHistory: '/api/v1/mhs/l',
                     trendParams: {
                         interval: '1h',
-                        timeRange: 24 * 60 * 60 * 1000,
+                        metricCodes: ['SENSOR.TEMP', 'SENSOR.HUMIDITY'],
                         statsKeys: ['avg'],
+                        timeRangeMs: 24 * 60 * 60 * 1000,
                     },
                 },
 
@@ -723,8 +725,8 @@
                         baseUrl: this._baseUrl,
                         assetKey: this._defaultAssetKey,
                         interval: api.trendParams.interval,
-                        timeRange: api.trendParams.timeRange,
-                        metricCodes: Object.values(statusCards.metrics).map(m => m.metricCode),
+                        timeRange: api.trendParams.timeRangeMs,
+                        metricCodes: api.trendParams.metricCodes,
                         statsKeys: api.trendParams.statsKeys,
                     },
                     render: ['renderTrendChart'],
@@ -885,14 +887,15 @@
                 timestampEl.textContent = this.formatTimestamp(data[0].eventedAt);
             }
 
-            // 메트릭 코드를 값으로 매핑 (fx.reduce 사용)
-            const metricMap = fx.go(
-                data,
-                fx.reduce((acc, metric) => {
+            // 메트릭 코드를 값으로 매핑
+            const metricMap = fx.reduce(
+                (acc, metric) => {
                     const value = metric.valueType === 'NUMBER' ? metric.valueNumber : metric.valueString;
                     acc[metric.metricCode] = value;
                     return acc;
-                })
+                },
+                {},
+                data
             );
 
             // 각 카드에 값 설정
@@ -931,15 +934,16 @@
             const tempConfig = series.temp;
             const humidConfig = series.humidity;
 
-            // 데이터를 시간별로 그룹핑 (fx.reduce 사용)
-            const timeMap = fx.go(
-                data,
-                fx.reduce((acc, row) => {
+            // 데이터를 시간별로 그룹핑
+            const timeMap = fx.reduce(
+                (acc, row) => {
                     const hour = new Date(row.time).getHours() + '시';
                     if (!acc[hour]) acc[hour] = {};
                     acc[hour][row.metricCode] = row.statsBody?.avg ?? null;
                     return acc;
-                })
+                },
+                {},
+                data
             );
 
             const hours = Object.keys(timeMap);
@@ -1059,41 +1063,38 @@
             console.log('[TempHumiditySensor] Metric refresh started (5s interval)');
         }
 
-        function fetchTrendData() {
-            const { datasetNames } = this.config;
-            const trendInfo = this.datasetInfo.find(d => d.datasetName === datasetNames.metricHistory);
-            if (!trendInfo) return;
-
-            const { baseUrl, assetKey, interval, timeRange, metricCodes, statsKeys } = trendInfo.param;
+        async function fetchTrendData() {
+            const { api } = this.config;
+            const { interval, metricCodes, statsKeys, timeRangeMs } = api.trendParams;
             const now = new Date();
-            const from = new Date(now.getTime() - timeRange);
+            const from = new Date(now.getTime() - timeRangeMs);
 
-            fetch(`http://${baseUrl}/api/v1/mhs/l`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    filter: {
-                        assetKey,
-                        interval,
-                        metricCodes,
-                        timeFrom: from.toISOString().replace('T', ' ').slice(0, 19),
-                        timeTo: now.toISOString().replace('T', ' ').slice(0, 19),
-                    },
-                    statsKeys,
-                    sort: [],
-                }),
-            })
-                .then(response => response.json())
-                .then(result => {
-                    if (!result || !result.success) {
-                        console.warn('[TempHumiditySensor] Trend data unavailable');
-                        return;
-                    }
-                    this.renderTrendChart({ response: { data: result.data } });
-                })
-                .catch(e => {
-                    console.warn('[TempHumiditySensor] Trend fetch failed:', e);
+            try {
+                const response = await fetch(`http://${this._baseUrl}${api.trendHistory}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        filter: {
+                            assetKey: this._defaultAssetKey,
+                            interval,
+                            metricCodes,
+                            timeFrom: from.toISOString().replace('T', ' ').slice(0, 19),
+                            timeTo: now.toISOString().replace('T', ' ').slice(0, 19),
+                        },
+                        statsKeys,
+                        sort: [],
+                    }),
                 });
+
+                const result = await response.json();
+                if (!result || !result.success) {
+                    console.warn('[TempHumiditySensor] Trend data unavailable');
+                    return;
+                }
+                this.renderTrendChart({ response: { data: result.data } });
+            } catch (e) {
+                console.warn('[TempHumiditySensor] Trend fetch failed:', e);
+            }
         }
 
         function hideDetail() {
