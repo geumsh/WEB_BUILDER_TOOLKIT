@@ -1,0 +1,183 @@
+/* ==========================================================================
+   Event Status Component
+   Figma Node ID: 2:6544
+   ========================================================================== */
+
+/* Container */
+.event-status {
+  position: relative;
+  width: 511px;
+  height: 203px;
+  overflow: visible;
+}
+
+/* Background (배경 레이어 - absolute 허용) */
+.event-status__bg {
+  position: absolute;
+  inset: 0;
+  background: rgba(208, 225, 255, 0.2);
+  border-radius: 20px;
+  z-index: 0;
+}
+
+/* Content Wrapper (Flexbox) */
+.event-status__content {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  padding: 12px 14px 14px 14px;
+  overflow: visible;
+}
+
+/* Title */
+.event-status__title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 7px;
+}
+
+.event-status .title__bullet {
+  width: 6px;
+  height: 6px;
+  background-color: #c8deff;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.event-status .title__text {
+  font-weight: 600;
+  font-size: 17px;
+  color: #c8deff;
+  letter-spacing: -0.68px;
+  line-height: 1;
+}
+
+/* Table */
+.event-status__table {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+}
+
+/* Table Header */
+.event-status__header {
+  display: flex;
+  align-items: center;
+  height: 18px;
+  background: #223e81;
+  border-radius: 15px;
+  margin-bottom: 3px;
+  flex-shrink: 0;
+}
+
+.event-status .header__cell {
+  font-weight: 600;
+  font-size: 11px;
+  color: #c8deff;
+  text-align: center;
+  letter-spacing: -0.44px;
+  line-height: 1.95;
+  flex-shrink: 0;
+}
+
+.event-status .header__cell--indicator {
+  width: 24px;
+}
+
+.event-status .header__cell--time {
+  width: 130px;
+}
+
+.event-status .header__cell--type {
+  width: 50px;
+}
+
+.event-status .header__cell--device {
+  width: 55px;
+}
+
+.event-status .header__cell--content {
+  flex: 1;
+  text-align: center;
+}
+
+/* Table Rows */
+.event-status__rows {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.event-status__row {
+  display: flex;
+  align-items: center;
+  height: 24px;
+  background: rgba(255, 255, 255, 0.12);
+  border-radius: 15px;
+  padding-left: 7px;
+  flex-shrink: 0;
+}
+
+.event-status__row:nth-child(n+3) {
+  height: 25px;
+}
+
+/* Row Indicator (Status Circle) */
+.event-status .row__indicator {
+  width: 11px;
+  height: 11px;
+  min-width: 11px;
+  min-height: 11px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  margin-right: 6px;
+}
+
+.event-status .row__indicator--red {
+  background-color: #ff3a3a;
+}
+
+.event-status .row__indicator--green {
+  background-color: #6fff3a;
+}
+
+.event-status .row__indicator--yellow {
+  background-color: #ffde3a;
+}
+
+.event-status .row__indicator--white {
+  background-color: #22ff00;
+}
+
+/* Row Cells */
+.event-status .row__cell {
+  font-weight: 500;
+  font-size: 14px;
+  color: #ffffff;
+  text-align: center;
+  letter-spacing: -0.56px;
+  line-height: 1.95;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.event-status .row__cell--time {
+  width: 130px;
+}
+
+.event-status .row__cell--type {
+  width: 50px;
+}
+
+.event-status .row__cell--device {
+  width: 55px;
+}
+
+.event-status .row__cell--content {
+  flex: 1;
+  text-align: left;
+  padding-left: 12px;
+}

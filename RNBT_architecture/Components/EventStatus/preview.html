@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EventStatus Preview</title>
+    <link href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css" rel="stylesheet">
+    <link rel="stylesheet" href="styles/component.css">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            padding: 40px;
+            background: #0a1628;
+            font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, sans-serif;
+        }
+        h1 { color: #c8deff; margin-bottom: 24px; font-size: 20px; }
+        .controls { margin-top: 24px; }
+        .controls button {
+            padding: 8px 16px;
+            margin-right: 8px;
+            background: #223e81;
+            color: #c8deff;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        .controls button:hover { background: #2d4f9e; }
+        .controls button.destroy { background: #f87171; color: #fff; }
+    </style>
+</head>
+<body>
+    <h1>EventStatus Component Preview</h1>
+    <div id="component-root"></div>
+    <div class="controls">
+        <button onclick="sendMockData()">Load Data</button>
+        <button onclick="addRandomEvent()">Add Event</button>
+        <button onclick="destroy()" class="destroy">Destroy</button>
+    </div>
+
+    <script>
+        // ======================
+        // MOCK CONTEXT
+        // ======================
+
+        const mockThis = {
+            appendElement: document.getElementById('component-root')
+        };
+
+        // HTML 삽입
+        mockThis.appendElement.innerHTML = `
+            <div class="event-status">
+                <div class="event-status__bg"></div>
+                <div class="event-status__content">
+                    <div class="event-status__title">
+                        <span class="title__bullet"></span>
+                        <span class="title__text">이벤트 현황</span>
+                    </div>
+                    <div class="event-status__table">
+                        <div class="event-status__header">
+                            <div class="header__cell header__cell--indicator"></div>
+                            <div class="header__cell header__cell--time">발생시간</div>
+                            <div class="header__cell header__cell--type">타입</div>
+                            <div class="header__cell header__cell--device">장비</div>
+                            <div class="header__cell header__cell--content">내용</div>
+                        </div>
+                        <div class="event-status__rows"></div>
+                    </div>
+                </div>
+            </div>
+        `;
+
+        // ======================
+        // MOCK DEPENDENCIES
+        // ======================
+
+        const GlobalDataPublisher = {
+            subscribe: (topic, context, fn) => console.log(`[Mock] subscribe: ${topic}`),
+            unsubscribe: (topic, context) => console.log(`[Mock] unsubscribe: ${topic}`)
+        };
+
+        const Wkit = {
+            bindEvents: (context, events) => console.log('[Mock] bindEvents:', events),
+            removeCustomEvents: (context, events) => console.log('[Mock] removeCustomEvents:', events)
+        };
+
+        const fx = {
+            go: (arr, ...fns) => fns.reduce((acc, fn) => fn(acc), arr),
+            each: fn => arr => { arr.forEach(fn); return arr; }
+        };
+
+        // ======================
+        // REGISTER (inline)
+        // ======================
+
+        (function register() {
+            const { subscribe } = GlobalDataPublisher;
+            const { bindEvents } = Wkit;
+
+            const config = {
+                titleKey: 'title',
+                eventsKey: 'events',
+                eventFields: {
+                    time: 'time',
+                    type: 'type',
+                    device: 'device',
+                    content: 'content',
+                    level: 'level'
+                },
+                levelMap: {
+                    error: 'red',
+                    warning: 'yellow',
+                    success: 'green',
+                    info: 'white'
+                }
+            };
+
+            this.renderData = renderData.bind(this, config);
+
+            this.subscriptions = {
+                eventStatusData: ['renderData']
+            };
+
+            fx.go(
+                Object.entries(this.subscriptions),
+                fx.each(([topic, fnList]) =>
+                    fx.each(fn => this[fn] && subscribe(topic, this, this[fn]), fnList)
+                )
+            );
+
+            this.customEvents = {
+                click: { '.event-status__row': '@rowClicked' }
+            };
+
+            bindEvents(this, this.customEvents);
+
+            function renderData(config, { response }) {
+                const { data } = response;
+                if (!data) return;
+
+                const titleEl = this.appendElement.querySelector('.title__text');
+                if (titleEl && data[config.titleKey]) {
+                    titleEl.textContent = data[config.titleKey];
+                }
+
+                const events = data[config.eventsKey];
+                if (events && Array.isArray(events)) {
+                    const rowsEl = this.appendElement.querySelector('.event-status__rows');
+                    rowsEl.innerHTML = '';
+                    events.forEach((event, index) => appendEventRow.call(this, config, rowsEl, event, index));
+                }
+            }
+
+            function appendEventRow(config, rowsEl, event, index) {
+                const { eventFields, levelMap } = config;
+                const div = document.createElement('div');
+                div.className = 'event-status__row';
+                div.dataset.index = index;
+
+                const level = event[eventFields.level] || 'info';
+                const colorClass = levelMap[level] || 'white';
+
+                div.innerHTML = `
+                    <div class="row__indicator row__indicator--${colorClass}"></div>
+                    <div class="row__cell row__cell--time">${event[eventFields.time] || '-'}</div>
+                    <div class="row__cell row__cell--type">${event[eventFields.type] || '-'}</div>
+                    <div class="row__cell row__cell--device">${event[eventFields.device] || '-'}</div>
+                    <div class="row__cell row__cell--content">${event[eventFields.content] || '-'}</div>
+                `;
+
+                rowsEl.appendChild(div);
+            }
+        }).call(mockThis);
+
+        // ======================
+        // BEFORE DESTROY
+        // ======================
+
+        function destroy() {
+            (function beforeDestroy() {
+                const { unsubscribe } = GlobalDataPublisher;
+                const { removeCustomEvents } = Wkit;
+
+                fx.go(
+                    Object.entries(this.subscriptions),
+                    fx.each(([topic, _]) => unsubscribe(topic, this))
+                );
+                this.subscriptions = null;
+
+                removeCustomEvents(this, this.customEvents);
+                this.customEvents = null;
+
+                this.renderData = null;
+
+                console.log('[EventStatus] destroyed');
+            }).call(mockThis);
+        }
+
+        // ======================
+        // TEST DATA
+        // ======================
+
+        const mockEvents = [
+            { time: '25-07-07 09:00:00', type: 'EVA', device: 'SV001', content: '고온 (U20): 25 °C', level: 'error' },
+            { time: '25-07-07 09:00:00', type: 'EVB', device: 'SV003', content: '포트 오류 (U5: Port-10)', level: 'error' },
+            { time: '25-07-07 09:00:00', type: 'EVC', device: 'SV001', content: '고온 (U20): 25 °C', level: 'success' },
+            { time: '25-07-07 09:00:00', type: 'EVD', device: 'SV001', content: '포트 오류 (U5: Port-10)', level: 'warning' },
+            { time: '25-07-07 09:00:00', type: 'EVF', device: 'SV231', content: '고온 (U20): 25 °C', level: 'info' }
+        ];
+
+        function sendMockData() {
+            mockThis.renderData({
+                response: {
+                    data: {
+                        title: '이벤트 현황',
+                        events: mockEvents
+                    }
+                }
+            });
+        }
+
+        const levels = ['error', 'warning', 'success', 'info'];
+        const types = ['EVA', 'EVB', 'EVC', 'EVD', 'EVE', 'EVF'];
+        const devices = ['SV001', 'SV002', 'SV003', 'SV100', 'SV231'];
+        const contents = ['고온 (U20): 25 °C', '포트 오류 (U5: Port-10)', '저전압 경고', '연결 해제'];
+
+        function addRandomEvent() {
+            const now = new Date();
+            const time = `${String(now.getFullYear()).slice(2)}-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')} ${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}:${String(now.getSeconds()).padStart(2,'0')}`;
+
+            mockEvents.unshift({
+                time,
+                type: types[Math.floor(Math.random() * types.length)],
+                device: devices[Math.floor(Math.random() * devices.length)],
+                content: contents[Math.floor(Math.random() * contents.length)],
+                level: levels[Math.floor(Math.random() * levels.length)]
+            });
+
+            if (mockEvents.length > 5) mockEvents.length = 5;
+            sendMockData();
+        }
+
+        // 초기 렌더링
+        sendMockData();
+    </script>
+</body>
+</html>
