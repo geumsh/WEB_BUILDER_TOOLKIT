@@ -93,6 +93,11 @@ function initComponent() {
       interval: 5000,
     },
 
+    // API 엔드포인트
+    api: {
+      trendHistory: '/api/v1/mhs/l',
+    },
+
     // ========================
     // UI 영역별 설정
     // ========================
@@ -331,7 +336,7 @@ function fetchTrendData() {
   const timeFrom = from.toISOString().replace('T', ' ').slice(0, 19);
   const timeTo = now.toISOString().replace('T', ' ').slice(0, 19);
 
-  fetch(`http://${baseUrl}/api/v1/mhs/l`, {
+  fetch(`http://${baseUrl}${this.config.api.trendHistory}`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({

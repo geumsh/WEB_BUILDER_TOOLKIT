@@ -560,6 +560,11 @@
                     interval: 5000,
                 },
 
+                // API 엔드포인트
+                api: {
+                    trendHistory: '/api/v1/mhs/l',
+                },
+
                 // ========================
                 // UI 영역별 설정
                 // ========================
@@ -799,7 +804,7 @@
             const from = new Date(now.getTime() - this._trendTimeRangeMs);
 
             try {
-                const response = await fetch(`http://${baseUrl}/api/v1/mhs/l`, {
+                const response = await fetch(`http://${baseUrl}${this.config.api.trendHistory}`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
