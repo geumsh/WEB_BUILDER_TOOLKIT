@@ -1,6 +1,13 @@
 /* ==========================================================================
    Event Status Component
    Figma Node ID: 2:6544
+
+   CODING_STYLE 준수:
+   - px 단위 사용 (rem/em 금지)
+   - Flexbox 우선 (absolute는 배경 레이어만)
+
+   Note: Figma 원본은 자유 배치 디자인으로, 헤더와 데이터 컬럼이
+   정확히 정렬되지 않음. Flexbox로 근사치 구현.
    ========================================================================== */
 
 @import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css');
@@ -23,31 +30,41 @@ body {
   position: relative;
   width: 511px;
   height: 203px;
+  overflow: visible;
 }
 
 /* ==========================================================================
-   Background Panel
+   Background (배경 레이어 - absolute 허용)
    ========================================================================== */
-.event-status__panel {
+.event-status__bg {
   position: absolute;
-  top: 0;
-  left: 0;
-  width: 511px;
-  height: 203px;
+  inset: 0;
   background: rgba(208, 225, 255, 0.2);
   border-radius: 20px;
+  z-index: 0;
+}
+
+/* ==========================================================================
+   Content Wrapper (Flexbox)
+   ========================================================================== */
+.event-status__content {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  padding: 12px 14px 14px 14px;
+  overflow: visible;
 }
 
 /* ==========================================================================
    Title
    ========================================================================== */
 .event-status__title {
-  position: absolute;
-  top: 12px;
-  left: 8px;
   display: flex;
   align-items: center;
   gap: 8px;
+  margin-bottom: 7px;
 }
 
 .title__bullet {
@@ -55,6 +72,7 @@ body {
   height: 6px;
   background-color: #c8deff;
   border-radius: 50%;
+  flex-shrink: 0;
 }
 
 .title__text {
@@ -67,19 +85,27 @@ body {
 }
 
 /* ==========================================================================
+   Table
+   ========================================================================== */
+.event-status__table {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+}
+
+/* ==========================================================================
    Table Header
+   Figma 메타데이터 기반 위치:
+   - 발생시간 center: 79px, 타입: 182px, 장비: 242px, 내용: 364px
    ========================================================================== */
 .event-status__header {
-  position: absolute;
-  top: 31px;
-  left: 14px;
-  width: 477px;
+  display: flex;
+  align-items: center;
   height: 18px;
   background: #223e81;
   border-radius: 15px;
-  display: flex;
-  align-items: center;
-  padding-left: 27px;
+  margin-bottom: 3px;
+  flex-shrink: 0;
 }
 
 .header__cell {
@@ -90,6 +116,12 @@ body {
   text-align: center;
   letter-spacing: -0.44px;
   line-height: 1.95;
+  flex-shrink: 0;
+}
+
+/* 헤더 컬럼 너비 - 데이터 컬럼과 정렬 */
+.header__cell--indicator {
+  width: 24px;
 }
 
 .header__cell--time {
@@ -106,16 +138,13 @@ body {
 
 .header__cell--content {
   flex: 1;
+  text-align: center;
 }
 
 /* ==========================================================================
    Table Rows
    ========================================================================== */
 .event-status__rows {
-  position: absolute;
-  top: 52px;
-  left: 14px;
-  width: 477px;
   display: flex;
   flex-direction: column;
   gap: 3px;
@@ -128,11 +157,10 @@ body {
   background: rgba(255, 255, 255, 0.12);
   border-radius: 15px;
   padding-left: 7px;
+  flex-shrink: 0;
 }
 
-.event-status__row:nth-child(3),
-.event-status__row:nth-child(4),
-.event-status__row:nth-child(5) {
+.event-status__row:nth-child(n+3) {
   height: 25px;
 }
 
@@ -142,8 +170,11 @@ body {
 .row__indicator {
   width: 11px;
   height: 11px;
+  min-width: 11px;
+  min-height: 11px;
   border-radius: 50%;
   flex-shrink: 0;
+  margin-right: 6px;
 }
 
 .row__indicator--red {
@@ -174,11 +205,12 @@ body {
   letter-spacing: -0.56px;
   line-height: 1.95;
   white-space: nowrap;
+  flex-shrink: 0;
 }
 
+/* 데이터 컬럼 너비 - Figma 메타데이터 기반 */
 .row__cell--time {
   width: 130px;
-  margin-left: 6px;
 }
 
 .row__cell--type {
@@ -192,5 +224,5 @@ body {
 .row__cell--content {
   flex: 1;
   text-align: left;
-  padding-left: 8px;
+  padding-left: 12px;
 }
