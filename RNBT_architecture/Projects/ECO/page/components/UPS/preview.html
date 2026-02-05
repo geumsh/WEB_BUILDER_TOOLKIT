@@ -549,6 +549,7 @@
                             'UPS.INPUT_F_AVG', 'UPS.OUTPUT_F_AVG',
                         ],
                         statsKeys: ['avg'],
+                        timeField: 'time',
                     },
                 },
 
@@ -944,31 +945,34 @@
 
         function renderTrendChart({ response }) {
             const { data } = response;
-            if (!data || !Array.isArray(data) || data.length === 0) {
-                console.warn('[UPS] renderTrendChart: no data');
-                return;
-            }
+            const safeData = Array.isArray(data) ? data : [];
 
-            const { chart } = this.config;
+            const { chart, datasetNames } = this.config;
             const { tabs, series, selectors } = chart;
             const tabConfig = tabs[this._activeTab];
             if (!tabConfig) return;
 
+            // datasetInfo에서 param 가져오기
+            const trendInfo = this.datasetInfo.find((d) => d.datasetName === datasetNames.metricHistory);
+            const { statsKeys, timeField } = trendInfo?.param || {};
+            const statsKey = statsKeys?.[0] || 'avg';
+            const timeKey = timeField || 'time';
+
             // 데이터를 시간별로 그룹핑
             const timeMap = {};
-            data.forEach((row) => {
-                const hour = new Date(row.time).getHours() + '시';
-                if (!timeMap[hour]) timeMap[hour] = {};
-                timeMap[hour][row.metricCode] = row.statsBody?.avg ?? null;
+            safeData.forEach((row) => {
+                const time = row[timeKey];
+                if (!timeMap[time]) timeMap[time] = {};
+                timeMap[time][row.metricCode] = row.statsBody?.[statsKey] ?? null;
             });
 
-            const hours = Object.keys(timeMap);
-            const inputValues = hours.map((h) => {
-                const raw = timeMap[h][tabConfig.inputCode];
+            const times = Object.keys(timeMap);
+            const inputValues = times.map((t) => {
+                const raw = timeMap[t][tabConfig.inputCode];
                 return raw != null ? +(raw).toFixed(2) : null;
             });
-            const outputValues = hours.map((h) => {
-                const raw = timeMap[h][tabConfig.outputCode];
+            const outputValues = times.map((t) => {
+                const raw = timeMap[t][tabConfig.outputCode];
                 return raw != null ? +(raw).toFixed(2) : null;
             });
 
@@ -989,7 +993,7 @@
                 grid: { left: 50, right: 20, top: 40, bottom: 24 },
                 xAxis: {
                     type: 'category',
-                    data: hours,
+                    data: times,
                     axisLine: { lineStyle: { color: '#333' } },
                     axisLabel: { color: '#888', fontSize: 10 },
                 },

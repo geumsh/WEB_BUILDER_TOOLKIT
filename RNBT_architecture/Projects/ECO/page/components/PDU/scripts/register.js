@@ -86,6 +86,7 @@ function initComponent() {
         timeRange: 24 * 60 * 60 * 1000,
         metricCodes: ['DIST.V_LN_AVG', 'DIST.CURRENT_AVG_A', 'DIST.ACTIVE_POWER_TOTAL_KW', 'DIST.FREQUENCY_HZ', 'DIST.ACTIVE_ENERGY_SUM_KWH'],
         statsKeys: ['avg'],
+        timeField: 'time',
       },
     },
 
@@ -281,10 +282,7 @@ function fetchTrendData() {
   const { baseUrl, assetKey, interval, metricCodes, statsKeys, apiEndpoint } = trendInfo.param;
 
   // comparison 탭이 있는지 확인
-  const hasComparison = fx.go(
-    Object.values(chart.tabs),
-    fx.some((tab) => tab.comparison)
-  );
+  const hasComparison = Object.values(chart.tabs).some((tab) => tab.comparison);
 
   if (hasComparison) {
     // 금일/전일 비교가 필요한 경우 2회 fetch
@@ -371,6 +369,9 @@ function fetchComparisonTrendData({ baseUrl, assetKey, interval, metricCodes, st
     })
     .catch((e) => {
       console.warn('[PDU] Comparison trend fetch failed:', e);
+      this._trendData = this._trendData || [];
+      this._trendDataComparison = this._trendDataComparison || { today: [], yesterday: [] };
+      this.renderTrendChart({ response: { data: this._trendData } });
     });
 }
 
@@ -466,29 +467,31 @@ function renderTrendChart({ response }) {
     return;
   }
 
-  // 단일 시리즈 렌더링
-  if (!data || !Array.isArray(data) || data.length === 0) {
-    console.warn('[PDU] renderTrendChart: no data');
-    return;
-  }
+  // 단일 시리즈 렌더링 (데이터 없어도 빈 차트 표시)
+  const safeData = Array.isArray(data) ? data : [];
+  const { datasetNames } = this.config;
+  const trendInfo = this.datasetInfo.find((d) => d.datasetName === datasetNames.metricHistory);
+  const { statsKeys, timeField } = trendInfo?.param || {};
+  const statsKey = statsKeys?.[0] || 'avg';
+  const timeKey = timeField || 'time';
 
-  // data를 시간별로 그룹핑
+  // data를 시간별로 그룹핑 (원본 시간 사용)
   const timeMap = fx.reduce(
     (acc, row) => {
-      const hour = new Date(row.time).getHours() + '시';
-      if (!acc[hour]) acc[hour] = {};
-      acc[hour][row.metricCode] = row.statsBody?.avg ?? null;
+      const time = row[timeKey];
+      if (!acc[time]) acc[time] = {};
+      acc[time][row.metricCode] = row.statsBody?.[statsKey] ?? null;
       return acc;
     },
     {},
-    data
+    safeData
   );
 
-  const hours = Object.keys(timeMap);
+  const times = Object.keys(timeMap);
   const values = fx.go(
-    hours,
-    fx.map((h) => {
-      const raw = timeMap[h][tabConfig.metricCode];
+    times,
+    fx.map((t) => {
+      const raw = timeMap[t]?.[tabConfig.metricCode];
       return raw != null ? +(raw * tabConfig.scale).toFixed(2) : null;
     })
   );
@@ -508,7 +511,7 @@ function renderTrendChart({ response }) {
     grid: { left: 50, right: 20, top: 40, bottom: 24 },
     xAxis: {
       type: 'category',
-      data: hours,
+      data: times,
       axisLine: { lineStyle: { color: '#333' } },
       axisLabel: { color: '#888', fontSize: 10 },
     },
@@ -551,20 +554,19 @@ function renderTrendChart({ response }) {
 function renderComparisonChart(tabConfig, selectors) {
   const { today, yesterday } = this._trendDataComparison;
   const { series } = tabConfig;
+  const { datasetNames } = this.config;
+  const trendInfo = this.datasetInfo.find((d) => d.datasetName === datasetNames.metricHistory);
+  const { statsKeys, timeField } = trendInfo?.param || {};
+  const statsKey = statsKeys?.[0] || 'avg';
+  const timeKey = timeField || 'time';
 
-  // 0시~23시 고정 X축 (시간만 표시, 날짜 제외)
-  const hours = fx.go(
-    fx.range(24),
-    fx.map((h) => h + '시')
-  );
-
-  // 데이터를 시간(hour)별로 그룹핑하는 헬퍼
-  const groupByHour = (data) =>
+  // 데이터를 시간별로 그룹핑하는 헬퍼 (원본 시간 사용)
+  const groupByTime = (data) =>
     fx.reduce(
       (acc, row) => {
-        const hour = new Date(row.time).getHours() + '시';
+        const time = row[timeKey];
         if (row.metricCode === tabConfig.metricCode) {
-          acc[hour] = row.statsBody?.avg ?? null;
+          acc[time] = row.statsBody?.[statsKey] ?? null;
         }
         return acc;
       },
@@ -572,21 +574,24 @@ function renderComparisonChart(tabConfig, selectors) {
       data || []
     );
 
-  const todayMap = groupByHour(today);
-  const yesterdayMap = groupByHour(yesterday);
+  const todayMap = groupByTime(today);
+  const yesterdayMap = groupByTime(yesterday);
+
+  // 금일/전일 데이터의 시간 키 합집합
+  const times = [...new Set([...Object.keys(todayMap), ...Object.keys(yesterdayMap)])];
 
   const todayValues = fx.go(
-    hours,
-    fx.map((h) => {
-      const raw = todayMap[h];
+    times,
+    fx.map((t) => {
+      const raw = todayMap[t];
       return raw != null ? +(raw * tabConfig.scale).toFixed(2) : null;
     })
   );
 
   const yesterdayValues = fx.go(
-    hours,
-    fx.map((h) => {
-      const raw = yesterdayMap[h];
+    times,
+    fx.map((t) => {
+      const raw = yesterdayMap[t];
       return raw != null ? +(raw * tabConfig.scale).toFixed(2) : null;
     })
   );
@@ -606,7 +611,7 @@ function renderComparisonChart(tabConfig, selectors) {
     grid: { left: 50, right: 20, top: 40, bottom: 24 },
     xAxis: {
       type: 'category',
-      data: hours,
+      data: times,
       axisLine: { lineStyle: { color: '#333' } },
       axisLabel: { color: '#888', fontSize: 10 },
     },

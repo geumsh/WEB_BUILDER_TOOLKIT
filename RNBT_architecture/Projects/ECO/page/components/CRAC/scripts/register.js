@@ -78,6 +78,7 @@ function initComponent() {
         timeRange: 24 * 60 * 60 * 1000,
         metricCodes: ['CRAC.RETURN_TEMP', 'CRAC.RETURN_HUMIDITY'],
         statsKeys: ['avg'],
+        timeField: 'time',
       },
     },
 
@@ -336,7 +337,10 @@ function fetchTrendData() {
       }
       fx.each(fn => this[fn]({ response: { data: result.data } }), render);
     })
-    .catch(e => console.warn(`[CRAC] ${datasetName} fetch failed:`, e));
+    .catch(e => {
+      console.warn(`[CRAC] ${datasetName} fetch failed:`, e);
+      fx.each(fn => this[fn]({ response: { data: [] } }), render);
+    });
 }
 
 // ======================
@@ -510,33 +514,37 @@ function renderIndicators({ response }) {
 
 function renderTrendChart({ response }) {
   const { data } = response;
-  if (!data || !Array.isArray(data) || data.length === 0) {
-    console.warn('[CRAC] renderTrendChart: no data');
-    return;
-  }
-
   const { chart } = this.config;
   const { series, selectors } = chart;
   const tempConfig = series.temp;
   const humidConfig = series.humidity;
 
-  // 시간별 그룹핑 + 시리즈 데이터 추출
+  // 단일 시리즈 렌더링 (데이터 없어도 빈 차트 표시)
+  const safeData = Array.isArray(data) ? data : [];
+  const { datasetNames } = this.config;
+  const trendInfo = this.datasetInfo.find((d) => d.datasetName === datasetNames.metricHistory);
+  const { statsKeys, timeField } = trendInfo?.param || {};
+  const statsKey = statsKeys?.[0] || 'avg';
+  const timeKey = timeField || 'time';
+
+  // 시간별 그룹핑 (원본 시간 사용)
   const timeMap = fx.reduce(
     (acc, row) => {
-      const hour = new Date(row.time).getHours() + '시';
-      if (!acc[hour]) acc[hour] = {};
-      acc[hour][row.metricCode] = row.statsBody?.avg ?? null;
+      const time = row[timeKey];
+      if (!acc[time]) acc[time] = {};
+      acc[time][row.metricCode] = row.statsBody?.[statsKey] ?? null;
       return acc;
     },
     {},
-    data
+    safeData
   );
 
-  const hours = Object.keys(timeMap);
-  const extractValues = (code, scale) => fx.map(h => {
-    const raw = timeMap[h][code];
+  const times = Object.keys(timeMap);
+
+  const extractValues = (code, scale) => fx.map(t => {
+    const raw = timeMap[t]?.[code];
     return raw != null ? +(raw * scale).toFixed(1) : null;
-  }, hours);
+  }, times);
 
   const tempData = extractValues(tempConfig.metricCode, tempConfig.scale);
   const humidityData = extractValues(humidConfig.metricCode, humidConfig.scale);
@@ -556,7 +564,7 @@ function renderTrendChart({ response }) {
     grid: { left: 50, right: 50, top: 40, bottom: 24 },
     xAxis: {
       type: 'category',
-      data: hours,
+      data: times,
       axisLine: { lineStyle: { color: '#333' } },
       axisLabel: { color: '#888', fontSize: 10 },
     },

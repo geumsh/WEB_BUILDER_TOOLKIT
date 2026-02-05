@@ -87,6 +87,7 @@ function initComponent() {
         timeRange: 24 * 60 * 60 * 1000,
         metricCodes: ['SENSOR.TEMP', 'SENSOR.HUMIDITY'],
         statsKeys: ['avg'],
+        timeField: 'time',
       },
     },
 
@@ -345,6 +346,7 @@ function fetchTrendData() {
     })
     .catch((e) => {
       console.warn('[TempHumiditySensor] Trend fetch failed:', e);
+      this.renderTrendChart({ response: { data: [] } });
     });
 }
 
@@ -489,42 +491,45 @@ function renderStatusCards({ response }) {
 
 function renderTrendChart({ response }) {
   const { data } = response;
-  if (!data || !Array.isArray(data) || data.length === 0) {
-    console.warn('[TempHumiditySensor] renderTrendChart: no data');
-    return;
-  }
-
   const { chart } = this.config;
   const { series, selectors } = chart;
   const tempConfig = series.temp;
   const humidConfig = series.humidity;
 
-  // 데이터를 시간별로 그룹핑
+  // 단일 시리즈 렌더링 (데이터 없어도 빈 차트 표시)
+  const safeData = Array.isArray(data) ? data : [];
+  const { datasetNames } = this.config;
+  const trendInfo = this.datasetInfo.find((d) => d.datasetName === datasetNames.metricHistory);
+  const { statsKeys, timeField } = trendInfo?.param || {};
+  const statsKey = statsKeys?.[0] || 'avg';
+  const timeKey = timeField || 'time';
+
+  // 데이터를 시간별로 그룹핑 (원본 시간 사용)
   const timeMap = fx.reduce(
     (acc, row) => {
-      const hour = new Date(row.time).getHours() + '시';
-      if (!acc[hour]) acc[hour] = {};
-      acc[hour][row.metricCode] = row.statsBody?.avg ?? null;
+      const time = row[timeKey];
+      if (!acc[time]) acc[time] = {};
+      acc[time][row.metricCode] = row.statsBody?.[statsKey] ?? null;
       return acc;
     },
     {},
-    data
+    safeData
   );
 
-  const hours = Object.keys(timeMap);
+  const times = Object.keys(timeMap);
 
   const tempValues = fx.go(
-    hours,
-    fx.map((h) => {
-      const raw = timeMap[h][tempConfig.metricCode];
+    times,
+    fx.map((t) => {
+      const raw = timeMap[t]?.[tempConfig.metricCode];
       return raw != null ? +(raw * tempConfig.scale).toFixed(1) : null;
     })
   );
 
   const humidValues = fx.go(
-    hours,
-    fx.map((h) => {
-      const raw = timeMap[h][humidConfig.metricCode];
+    times,
+    fx.map((t) => {
+      const raw = timeMap[t]?.[humidConfig.metricCode];
       return raw != null ? +(raw * humidConfig.scale).toFixed(1) : null;
     })
   );
@@ -544,7 +549,7 @@ function renderTrendChart({ response }) {
     grid: { left: 50, right: 50, top: 40, bottom: 24 },
     xAxis: {
       type: 'category',
-      data: hours,
+      data: times,
       axisLine: { lineStyle: { color: '#333' } },
       axisLabel: { color: '#888', fontSize: 10 },
     },

@@ -578,6 +578,7 @@
                         timeRange: 24 * 60 * 60 * 1000,
                         metricCodes: ['CRAC.RETURN_TEMP', 'CRAC.RETURN_HUMIDITY'],
                         statsKeys: ['avg'],
+                        timeField: 'time',
                     },
                 },
 
@@ -982,31 +983,34 @@
 
         function renderTrendChart({ response }) {
             const { data } = response;
-            if (!data || !Array.isArray(data) || data.length === 0) {
-                console.warn('[CRAC] renderTrendChart: no data');
-                return;
-            }
+            const safeData = Array.isArray(data) ? data : [];
 
-            const { chart } = this.config;
+            const { chart, datasetNames } = this.config;
             const { series, selectors } = chart;
             const tempConfig = series.temp;
             const humidConfig = series.humidity;
 
+            // datasetInfo에서 param 가져오기
+            const trendInfo = this.datasetInfo.find((d) => d.datasetName === datasetNames.metricHistory);
+            const { statsKeys, timeField } = trendInfo?.param || {};
+            const statsKey = statsKeys?.[0] || 'avg';
+            const timeKey = timeField || 'time';
+
             // data를 시간별로 그룹핑
             const timeMap = {};
-            data.forEach((row) => {
-                const hour = new Date(row.time).getHours() + '시';
-                if (!timeMap[hour]) timeMap[hour] = {};
-                timeMap[hour][row.metricCode] = row.statsBody?.avg ?? null;
+            safeData.forEach((row) => {
+                const time = row[timeKey];
+                if (!timeMap[time]) timeMap[time] = {};
+                timeMap[time][row.metricCode] = row.statsBody?.[statsKey] ?? null;
             });
 
-            const hours = Object.keys(timeMap);
-            const tempData = hours.map((h) => {
-                const raw = timeMap[h][tempConfig.metricCode];
+            const times = Object.keys(timeMap);
+            const tempData = times.map((t) => {
+                const raw = timeMap[t][tempConfig.metricCode];
                 return raw != null ? +(raw * tempConfig.scale).toFixed(1) : null;
             });
-            const humidityData = hours.map((h) => {
-                const raw = timeMap[h][humidConfig.metricCode];
+            const humidityData = times.map((t) => {
+                const raw = timeMap[t][humidConfig.metricCode];
                 return raw != null ? +(raw * humidConfig.scale).toFixed(1) : null;
             });
 
@@ -1025,7 +1029,7 @@
                 grid: { left: 50, right: 50, top: 40, bottom: 24 },
                 xAxis: {
                     type: 'category',
-                    data: hours,
+                    data: times,
                     axisLine: { lineStyle: { color: '#333' } },
                     axisLabel: { color: '#888', fontSize: 10 },
                 },
