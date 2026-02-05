@@ -34,15 +34,29 @@ this.datasetInfo = [
   timeRange: 24 * 60 * 60 * 1000,  // 24시간 (ms)
   metricCodes: ['UPS.INPUT_A_AVG', 'UPS.OUTPUT_A_AVG', ...],
   statsKeys: ['avg'],
+  timeField: 'time',              // 응답 데이터의 시간 필드명
   apiEndpoint: '/api/v1/mhs/l',
 }
 ```
 
-| 필드 | 설명 |
-|------|------|
-| `datasetName` | 호출할 데이터셋 이름 |
-| `param` | API 요청 파라미터 (모든 값 포함) |
-| `render` | 응답 수신 후 호출할 렌더링 함수 목록 |
+| 필드 | 설명 | 용도 |
+|------|------|------|
+| `datasetName` | 호출할 데이터셋 이름 | fetch |
+| `param` | API 요청 파라미터 (모든 값 포함) | fetch + render |
+| `render` | 응답 수신 후 호출할 렌더링 함수 목록 | render |
+
+### param 필드 상세
+
+| 필드 | 용도 | 설명 |
+|------|------|------|
+| `baseUrl` | fetch | API 서버 주소 |
+| `assetKey` | fetch | 자산 식별자 |
+| `interval` | fetch | 집계 간격 (1h, 5m 등) |
+| `timeRange` | fetch | 조회 시간 범위 (ms) |
+| `metricCodes` | fetch | 조회할 메트릭 코드 목록 |
+| `statsKeys` | fetch + render | 통계 키 목록 (avg, max, min 등) |
+| `timeField` | render | 응답 데이터의 시간 필드명 (기본값: 'time') |
+| `apiEndpoint` | fetch | API 엔드포인트 경로 |
 
 ---
 
@@ -72,6 +86,46 @@ function fetchTrendData() {
   });
 }
 ```
+
+---
+
+## renderTrendChart에서 param 사용
+
+렌더링 함수도 `datasetInfo[].param`에서 값을 읽어 동적으로 데이터를 처리한다:
+
+```javascript
+function renderTrendChart({ response }) {
+  const { data } = response;
+  const { datasetNames } = this.config;
+  const trendInfo = this.datasetInfo.find((d) => d.datasetName === datasetNames.metricHistory);
+
+  // param에서 렌더링 설정 추출
+  const { statsKeys, timeField } = trendInfo?.param || {};
+  const statsKey = statsKeys?.[0] || 'avg';  // 첫 번째 statsKey 사용
+  const timeKey = timeField || 'time';        // 기본값 'time'
+
+  // 시간별 그룹핑 (원본 시간 사용)
+  const timeMap = fx.reduce(
+    (acc, row) => {
+      const time = row[timeKey];              // 동적 시간 필드 접근
+      if (!acc[time]) acc[time] = {};
+      acc[time][row.metricCode] = row.statsBody?.[statsKey] ?? null;  // 동적 stats 필드 접근
+      return acc;
+    },
+    {},
+    safeData
+  );
+
+  const times = Object.keys(timeMap);
+  // xAxis: { data: times }
+}
+```
+
+### 핵심 포인트
+
+1. **동적 필드 접근**: `row[timeKey]`, `row.statsBody?.[statsKey]`로 설정값에 따라 다른 필드 참조
+2. **원본 시간 사용**: `getHours()` 변환 없이 서버 시간 데이터 그대로 사용
+3. **단일 수정 포인트 유지**: fetch와 render 모두 `datasetInfo[].param`에서 설정 읽음
 
 ---
 
@@ -252,9 +306,12 @@ fetchTrendData.call(this);
 
 ### 파라미터 분류
 
-| 파라미터 | 수정 위치 |
-|---------|----------|
-| `timeRange`, `interval`, `metricCodes`, `statsKeys`, `apiEndpoint` | `datasetInfo[].param` |
-| `assetKey`, `baseUrl`, `locale` | `datasetInfo[].param` |
+| 파라미터 | 용도 | 수정 위치 |
+|---------|------|----------|
+| `timeRange`, `interval`, `metricCodes`, `apiEndpoint` | fetch 전용 | `datasetInfo[].param` |
+| `statsKeys` | fetch + render | `datasetInfo[].param` |
+| `timeField` | render 전용 | `datasetInfo[].param` |
+| `assetKey`, `baseUrl`, `locale` | fetch 전용 | `datasetInfo[].param` |
 
 > **모든 파라미터의 수정 위치는 `datasetInfo[].param` 한 곳입니다.**
+> fetch와 render 모두 동일한 param 객체를 참조합니다.
