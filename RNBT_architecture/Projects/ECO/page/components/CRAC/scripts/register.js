@@ -44,7 +44,7 @@ function initComponent() {
   // 1. 내부 상태
   // ======================
   this._defaultAssetKey = this.setter?.assetInfo?.assetKey || this.id;
-  this._baseUrl = '10.23.128.125:4004';
+  this._baseUrl = null;
   this._locale = 'ko';
   this._popupTemplateId = 'popup-crac';
   this._metricRefreshIntervalId = null;
