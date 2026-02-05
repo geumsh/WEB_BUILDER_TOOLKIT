@@ -42,7 +42,7 @@ function initComponent() {
   // 1. 내부 상태
   // ======================
   this._defaultAssetKey = this.setter?.assetInfo?.assetKey || this.id;
-  this._baseUrl = null;
+  this._baseUrl = '10.23.128.140:8811';
   this._locale = 'ko';
   this._popupTemplateId = 'popup-pdu';
   this._trendData = null;
@@ -142,7 +142,7 @@ function initComponent() {
 
   this.datasetInfo = [
     { datasetName: datasetNames.assetDetail, param: { ...baseParam }, render: ['renderBasicInfo'] },
-    { datasetName: datasetNames.metricHistory, param: { ...baseParam, ...api.trendParams }, render: ['renderTrendChart'] },
+    { datasetName: datasetNames.metricHistory, param: { ...baseParam, ...api.trendParams, apiEndpoint: api.trendHistory }, render: ['renderTrendChart'] },
   ];
 
   // ======================
@@ -259,7 +259,7 @@ function switchTab(tabName) {
 // ======================
 
 function fetchTrendData() {
-  const { datasetNames, api } = this.config;
+  const { datasetNames } = this.config;
   const trendInfo = fx.go(
     this.datasetInfo,
     fx.filter((d) => d.datasetName === datasetNames.metricHistory),
@@ -267,11 +267,11 @@ function fetchTrendData() {
   );
   if (!trendInfo) return;
 
-  const { baseUrl, assetKey, interval, timeRange, metricCodes, statsKeys } = trendInfo.param;
+  const { baseUrl, assetKey, interval, timeRange, metricCodes, statsKeys, apiEndpoint } = trendInfo.param;
   const now = new Date();
   const from = new Date(now.getTime() - timeRange);
 
-  fetch(`http://${baseUrl}${api.trendHistory}`, {
+  fetch(`http://${baseUrl}${apiEndpoint}`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({

@@ -43,7 +43,7 @@ function initComponent() {
   // 1. 내부 상태
   // ======================
   this._defaultAssetKey = this.setter?.assetInfo?.assetKey || this.id;
-  this._baseUrl = null;
+  this._baseUrl = '10.23.128.140:8811';
   this._locale = 'ko';
   this._popupTemplateId = 'popup-ups';
   this._trendData = null;
@@ -186,7 +186,7 @@ function initComponent() {
   this.datasetInfo = [
     { datasetName: datasetNames.assetDetail, param: { ...baseParam }, render: ['renderBasicInfo'] },
     { datasetName: datasetNames.metricLatest, param: { ...baseParam }, render: ['renderPowerStatus'] },
-    { datasetName: datasetNames.metricHistory, param: { ...baseParam, ...api.trendParams }, render: ['renderTrendChart'] },
+    { datasetName: datasetNames.metricHistory, param: { ...baseParam, ...api.trendParams, apiEndpoint: api.trendHistory }, render: ['renderTrendChart'] },
   ];
 
   // ======================
@@ -330,15 +330,15 @@ function fetchTrendData() {
   if (!trendInfo) return;
 
   const { datasetName, param, render } = trendInfo;
-  const { baseUrl, assetKey, interval, metricCodes, statsKeys } = param;
+  const { baseUrl, assetKey, interval, metricCodes, statsKeys, timeRange, apiEndpoint } = param;
 
   // timeFrom, timeTo 동적 계산
   const now = new Date();
-  const from = new Date(now.getTime() - this.config.api.trendParams.timeRange);
+  const from = new Date(now.getTime() - timeRange);
   const timeFrom = from.toISOString().replace('T', ' ').slice(0, 19);
   const timeTo = now.toISOString().replace('T', ' ').slice(0, 19);
 
-  fetch(`http://${baseUrl}${this.config.api.trendHistory}`, {
+  fetch(`http://${baseUrl}${apiEndpoint}`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({

@@ -556,7 +556,7 @@
             const baseParam = { baseUrl: this._baseUrl, assetKey: this._defaultAssetKey, locale: this._locale };
             this.datasetInfo = [
                 { datasetName: datasetNames.assetDetail, param: { ...baseParam }, render: ['renderBasicInfo'] },
-                { datasetName: datasetNames.metricHistory, param: { ...baseParam, ...api.trendParams }, render: ['renderTrendChart'] },
+                { datasetName: datasetNames.metricHistory, param: { ...baseParam, ...api.trendParams, apiEndpoint: api.trendHistory }, render: ['renderTrendChart'] },
             ];
 
             // ======================
@@ -674,23 +674,24 @@
         // TREND DATA FETCH
         // ======================
 
-        async function fetchTrendData() {
-            const { api } = this.config;
-            const { interval, metricCodes, statsKeys, timeRange } = api.trendParams;
+        function fetchTrendData() {
+            const { datasetNames } = this.config;
+            const trendInfo = this.datasetInfo.find(d => d.datasetName === datasetNames.metricHistory);
+            if (!trendInfo) return;
+
+            const { param } = trendInfo;
+            const { baseUrl, assetKey, interval, metricCodes, statsKeys, timeRange, apiEndpoint } = param;
+
             const now = new Date();
             const from = new Date(now.getTime() - timeRange);
+            const timeFrom = from.toISOString().replace('T', ' ').slice(0, 19);
+            const timeTo = now.toISOString().replace('T', ' ').slice(0, 19);
 
-            fetch(`http://${this._baseUrl}${api.trendHistory}`, {
+            fetch(`http://${baseUrl}${apiEndpoint}`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
-                    filter: {
-                        assetKey: this._defaultAssetKey,
-                        interval,
-                        metricCodes,
-                        timeFrom: from.toISOString().replace('T', ' ').slice(0, 19),
-                        timeTo: now.toISOString().replace('T', ' ').slice(0, 19),
-                    },
+                    filter: { assetKey, interval, metricCodes, timeFrom, timeTo },
                     statsKeys,
                     sort: [],
                 }),

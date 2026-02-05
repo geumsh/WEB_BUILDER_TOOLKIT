@@ -646,7 +646,7 @@
             this.datasetInfo = [
                 { datasetName: datasetNames.assetDetail, param: { ...baseParam }, render: ['renderBasicInfo'] },
                 { datasetName: datasetNames.metricLatest, param: { ...baseParam }, render: ['renderPowerStatus'] },
-                { datasetName: datasetNames.metricHistory, param: { ...baseParam, ...api.trendParams }, render: ['renderTrendChart'] },
+                { datasetName: datasetNames.metricHistory, param: { ...baseParam, ...api.trendParams, apiEndpoint: api.trendHistory }, render: ['renderTrendChart'] },
             ];
 
             // ======================
@@ -797,12 +797,12 @@
             const trendInfo = this.datasetInfo.find(d => d.datasetName === datasetNames.metricHistory);
             if (!trendInfo) return;
 
-            const { baseUrl, assetKey, interval, metricCodes, statsKeys } = trendInfo.param;
+            const { baseUrl, assetKey, interval, metricCodes, statsKeys, timeRange, apiEndpoint } = trendInfo.param;
             const now = new Date();
-            const from = new Date(now.getTime() - this.config.api.trendParams.timeRange);
+            const from = new Date(now.getTime() - timeRange);
 
             try {
-                const response = await fetch(`http://${baseUrl}${this.config.api.trendHistory}`, {
+                const response = await fetch(`http://${baseUrl}${apiEndpoint}`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
