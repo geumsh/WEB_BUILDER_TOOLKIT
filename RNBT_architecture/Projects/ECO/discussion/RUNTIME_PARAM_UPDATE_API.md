@@ -12,6 +12,7 @@ ECO 컴포넌트(UPS, PDU, CRAC, TempHumiditySensor)의 런타임 파라미터�
 2. **부분 업데이트** — 인자로 넘긴 값만 변경, `undefined` = 변경 없음
 3. **자동 동기화** — 메서드 내부에서 관련 설정(param, chart config, statsKeyMap) 일괄 수정
 4. **외부에서 내부 구조를 몰라도 되는 인터페이스**
+5. **metricCode ↔ statsKey 강제 쌍** — metricCode 변경 시 statsKey 누락하면 경고 후 무시
 
 ### 사용 시점: 등록 시 전용 (config setter)
 
@@ -184,14 +185,16 @@ UPS 전용. 탭의 입/출력 metricCode 쌍을 변경한다.
 ```javascript
 /**
  * UPS 탭의 입/출력 메트릭을 변경한다.
- * inputCode/outputCode + statsKey를 함께 전달해야 한다.
+ * metricCode 변경 시 statsKey 필수 — 누락하면 경고 후 무시.
  * 변경 후 param.metricCodes를 chart config에서 재구축한다.
  *
  * @param {string} tabName - 탭 이름 ('current', 'voltage', 'frequency')
  * @param {Object} options
- * @param {string} [options.inputCode]  - 입력 metricCode
- * @param {string} [options.outputCode] - 출력 metricCode
+ * @param {string} [options.inputCode]  - 입력 metricCode (변경 시 statsKey 필수)
+ * @param {string} [options.outputCode] - 출력 metricCode (변경 시 statsKey 필수)
  * @param {string} [options.statsKey]   - 통계 키 ('avg', 'sum', 'max', ...)
+ * @param {string} [options.label]      - 탭 표시 라벨
+ * @param {string} [options.unit]       - 단위 ('A', 'V', 'Hz', ...)
  */
 function updateUpsTabMetric(tabName, options) {
   const { datasetNames, chart } = this.config;
@@ -203,17 +206,27 @@ function updateUpsTabMetric(tabName, options) {
   const tab = chart.tabs[tabName];
   if (!tab) return;
 
-  const { inputCode, outputCode, statsKey } = options;
+  const { inputCode, outputCode, statsKey, label, unit } = options;
 
-  // ② chart.tabs 업데이트
-  if (inputCode !== undefined)  tab.inputCode = inputCode;
-  if (outputCode !== undefined) tab.outputCode = outputCode;
-
-  // ③ statsKeyMap 업데이트 (변경된 코드에 대해서만)
-  if (statsKey !== undefined) {
-    if (inputCode !== undefined)  this.config.api.statsKeyMap[inputCode] = statsKey;
-    if (outputCode !== undefined) this.config.api.statsKeyMap[outputCode] = statsKey;
+  // metricCode 변경 시 statsKey 필수 검증
+  if ((inputCode !== undefined || outputCode !== undefined) && statsKey === undefined) {
+    console.warn(`[updateUpsTabMetric] metricCode 변경 시 statsKey 필수 (tab: ${tabName})`);
+    return;
   }
+
+  // ② chart.tabs 업데이트 + ③ statsKeyMap 업데이트
+  if (inputCode !== undefined) {
+    tab.inputCode = inputCode;
+    this.config.api.statsKeyMap[inputCode] = statsKey;
+  }
+  if (outputCode !== undefined) {
+    tab.outputCode = outputCode;
+    this.config.api.statsKeyMap[outputCode] = statsKey;
+  }
+
+  // UI 필드 업데이트
+  if (label !== undefined) tab.label = label;
+  if (unit !== undefined)  tab.unit = unit;
 
   // ① param.metricCodes — chart config 전체에서 재구축
   rebuildMetricCodes.call(this, trendInfo);
@@ -237,15 +250,17 @@ function rebuildMetricCodes(trendInfo) {
 
 **사용 예시**:
 ```javascript
-// voltage 탭을 다른 메트릭으로 교체
+// voltage 탭을 배터리 전압으로 교체 (metricCode + statsKey + label + unit)
 this.updateUpsTabMetric('voltage', {
   inputCode: 'UPS.BATT_V_IN',
   outputCode: 'UPS.BATT_V_OUT',
   statsKey: 'avg',
+  label: '입/출력 배터리전압',
+  unit: 'V',
 });
 
-// current 탭의 statsKey만 변경 (metricCode 유지)
-this.updateUpsTabMetric('current', { statsKey: 'max' });
+// label만 변경 (metricCode 유지 — statsKey 불필요)
+this.updateUpsTabMetric('current', { label: '입/출력 전류 (피크)' });
 ```
 
 ---
@@ -257,12 +272,17 @@ PDU 전용. 탭의 단일 metricCode를 변경한다.
 ```javascript
 /**
  * PDU 탭의 메트릭을 변경한다.
+ * metricCode 변경 시 statsKey 필수 — 누락하면 경고 후 무시.
  * PDU는 탭당 단일 metricCode 구조.
  *
  * @param {string} tabName - 탭 이름 ('voltage', 'current', 'power', 'frequency')
  * @param {Object} options
- * @param {string} [options.metricCode] - 메트릭 코드
+ * @param {string} [options.metricCode] - 메트릭 코드 (변경 시 statsKey 필수)
  * @param {string} [options.statsKey]   - 통계 키
+ * @param {string} [options.label]      - 탭 표시 라벨
+ * @param {string} [options.unit]       - 단위 ('V', 'A', 'kW', 'Hz', ...)
+ * @param {string} [options.color]      - 차트 색상
+ * @param {number} [options.scale]      - 값 배율
  */
 function updatePduTabMetric(tabName, options) {
   const { datasetNames, chart } = this.config;
@@ -274,18 +294,25 @@ function updatePduTabMetric(tabName, options) {
   const tab = chart.tabs[tabName];
   if (!tab) return;
 
-  const { metricCode, statsKey } = options;
+  const { metricCode, statsKey, label, unit, color, scale } = options;
 
-  // ② chart.tabs 업데이트
-  if (metricCode !== undefined) tab.metricCode = metricCode;
-
-  // ③ statsKeyMap 업데이트
-  if (statsKey !== undefined && metricCode !== undefined) {
-    this.config.api.statsKeyMap[metricCode] = statsKey;
-  } else if (statsKey !== undefined) {
-    // metricCode 미변경 시 기존 코드의 statsKey만 변경
-    this.config.api.statsKeyMap[tab.metricCode] = statsKey;
+  // metricCode 변경 시 statsKey 필수 검증
+  if (metricCode !== undefined && statsKey === undefined) {
+    console.warn(`[updatePduTabMetric] metricCode 변경 시 statsKey 필수 (tab: ${tabName})`);
+    return;
   }
+
+  // ② chart.tabs 업데이트 + ③ statsKeyMap 업데이트
+  if (metricCode !== undefined) {
+    tab.metricCode = metricCode;
+    this.config.api.statsKeyMap[metricCode] = statsKey;
+  }
+
+  // UI 필드 업데이트
+  if (label !== undefined) tab.label = label;
+  if (unit !== undefined)  tab.unit = unit;
+  if (color !== undefined) tab.color = color;
+  if (scale !== undefined) tab.scale = scale;
 
   // ① param.metricCodes 재구축
   rebuildMetricCodes.call(this, trendInfo);
@@ -308,11 +335,16 @@ function rebuildMetricCodes(trendInfo) {
 
 **사용 예시**:
 ```javascript
-// voltage 탭을 다른 메트릭으로 교체
+// voltage 탭을 선간전압으로 교체
 this.updatePduTabMetric('voltage', {
   metricCode: 'DIST.V_LL_AVG',
   statsKey: 'avg',
+  label: '선간 전압',
+  unit: 'V',
 });
+
+// label만 변경 (metricCode 유지 — statsKey 불필요)
+this.updatePduTabMetric('power', { label: '유효 전력' });
 ```
 
 ---
@@ -324,12 +356,14 @@ CRAC / TempHumiditySensor 각각 전용. 고정 시리즈의 metricCode를 변�
 ```javascript
 /**
  * CRAC(또는 Sensor) 시리즈의 메트릭을 변경한다.
+ * metricCode 변경 시 statsKey 필수 — 누락하면 경고 후 무시.
  *
  * @param {string} seriesName - 시리즈 이름 ('temp', 'humidity')
  * @param {Object} options
- * @param {string} [options.metricCode] - 메트릭 코드
+ * @param {string} [options.metricCode] - 메트릭 코드 (변경 시 statsKey 필수)
  * @param {string} [options.statsKey]   - 통계 키
  * @param {number} [options.scale]      - 값 배율
+ * @param {string} [options.label]      - 시리즈 표시 라벨
  */
 function updateCracSeriesMetric(seriesName, options) {  // Sensor는 updateSensorSeriesMetric
   const { datasetNames, chart } = this.config;
@@ -341,18 +375,23 @@ function updateCracSeriesMetric(seriesName, options) {  // Sensor는 updateSenso
   const seriesConfig = chart.series[seriesName];
   if (!seriesConfig) return;
 
-  const { metricCode, statsKey, scale } = options;
+  const { metricCode, statsKey, scale, label } = options;
 
-  // ② chart.series 업데이트
-  if (metricCode !== undefined) seriesConfig.metricCode = metricCode;
-  if (scale !== undefined)      seriesConfig.scale = scale;
-
-  // ③ statsKeyMap 업데이트
-  if (statsKey !== undefined && metricCode !== undefined) {
-    this.config.api.statsKeyMap[metricCode] = statsKey;
-  } else if (statsKey !== undefined) {
-    this.config.api.statsKeyMap[seriesConfig.metricCode] = statsKey;
+  // metricCode 변경 시 statsKey 필수 검증
+  if (metricCode !== undefined && statsKey === undefined) {
+    console.warn(`[updateCracSeriesMetric] metricCode 변경 시 statsKey 필수 (series: ${seriesName})`);
+    return;
   }
+
+  // ② chart.series 업데이트 + ③ statsKeyMap 업데이트
+  if (metricCode !== undefined) {
+    seriesConfig.metricCode = metricCode;
+    this.config.api.statsKeyMap[metricCode] = statsKey;
+  }
+
+  // UI 필드 업데이트
+  if (scale !== undefined) seriesConfig.scale = scale;
+  if (label !== undefined) seriesConfig.label = label;
 
   // ① param.metricCodes 재구축
   rebuildMetricCodes.call(this, trendInfo);
@@ -375,15 +414,16 @@ function rebuildMetricCodes(trendInfo) {
 
 **사용 예시**:
 ```javascript
-// CRAC: temp 시리즈를 급기온도에서 환기온도로 변경
+// CRAC: temp 시리즈를 환기온도로 변경
 this.updateCracSeriesMetric('temp', {
-  metricCode: 'CRAC.SUPPLY_TEMP_C',
+  metricCode: 'CRAC.RETURN_TEMP_C',
   statsKey: 'avg',
   scale: 0.1,
+  label: '환기온도',
 });
 
-// Sensor: humidity 시리즈의 statsKey만 변경
-this.updateSensorSeriesMetric('humidity', { statsKey: 'max' });
+// Sensor: scale만 변경 (metricCode 유지 — statsKey 불필요)
+this.updateSensorSeriesMetric('humidity', { scale: 0.01 });
 ```
 
 ---
@@ -466,10 +506,10 @@ this.updateRefreshInterval('metricLatest', 0);
 
 | 컴포넌트 | 메서드 | Category | 인자 |
 |----------|--------|----------|------|
-| UPS | `updateUpsTabMetric(tab, opts)` | B | `{ inputCode, outputCode, statsKey }` |
-| PDU | `updatePduTabMetric(tab, opts)` | B | `{ metricCode, statsKey }` |
-| CRAC | `updateCracSeriesMetric(series, opts)` | B | `{ metricCode, statsKey, scale }` |
-| Sensor | `updateSensorSeriesMetric(series, opts)` | B | `{ metricCode, statsKey, scale }` |
+| UPS | `updateUpsTabMetric(tab, opts)` | B | `{ inputCode, outputCode, statsKey, label, unit }` |
+| PDU | `updatePduTabMetric(tab, opts)` | B | `{ metricCode, statsKey, label, unit, color, scale }` |
+| CRAC | `updateCracSeriesMetric(series, opts)` | B | `{ metricCode, statsKey, scale, label }` |
+| Sensor | `updateSensorSeriesMetric(series, opts)` | B | `{ metricCode, statsKey, scale, label }` |
 
 ---
 
@@ -487,13 +527,14 @@ updateTrendParams({ timeRange, interval })
 ### Category B: `updateUpsTabMetric` / `updatePduTabMetric` / `update[Crac|Sensor]SeriesMetric`
 
 ```
-updateUpsTabMetric('voltage', { inputCode, outputCode, statsKey })
+updateUpsTabMetric('voltage', { inputCode, outputCode, statsKey, label, unit })
   │
-  ├─ ② chart.tabs.voltage.inputCode = inputCode
-  ├─ ② chart.tabs.voltage.outputCode = outputCode
+  ├─ metricCode 변경 시 statsKey 필수 검증 (없으면 return)
   │
-  ├─ ③ statsKeyMap[inputCode] = statsKey
-  ├─ ③ statsKeyMap[outputCode] = statsKey
+  ├─ ②③ inputCode 변경 + statsKeyMap[inputCode] = statsKey
+  ├─ ②③ outputCode 변경 + statsKeyMap[outputCode] = statsKey
+  │
+  ├─ UI: label, unit 업데이트
   │
   └─ ① rebuildMetricCodes(trendInfo)
         └─ codes.length = 0
@@ -559,20 +600,24 @@ statsKeyMap = {
 
 ## 제약사항 및 주의사항
 
-### 1. metricCode와 statsKey는 쌍으로 전달
+### 1. metricCode 변경 시 statsKey 필수 (코드에서 강제)
+
+metricCode를 변경하면서 statsKey를 누락하면 **경고 후 전체 호출이 무시**된다. statsKeyMap에 매핑이 없는 metricCode는 렌더링 시 `null`을 반환하므로, 이를 코드 레벨에서 방지한다.
 
 ```javascript
-// ❌ statsKey 없이 metricCode만 변경 → 해당 메트릭의 값이 null
+// ❌ statsKey 누락 → console.warn 출력 후 return (아무 것도 변경되지 않음)
 this.updateUpsTabMetric('voltage', { inputCode: 'UPS.NEW_METRIC' });
 
-// ✅ statsKey 함께 전달
+// ✅ metricCode + statsKey 쌍으로 전달
 this.updateUpsTabMetric('voltage', {
   inputCode: 'UPS.NEW_METRIC',
+  outputCode: 'UPS.NEW_OUT',
   statsKey: 'avg',
 });
-```
 
-> **예외**: 이미 statsKeyMap에 해당 코드가 등록되어 있는 경우 (예: 다른 탭에서 동일 코드를 사용 중)는 statsKey 생략 가능
+// ✅ metricCode 없이 UI 필드만 변경 — statsKey 불필요
+this.updateUpsTabMetric('voltage', { label: '배터리 전압', unit: 'V' });
+```
 
 ### 2. PDU comparison 탭의 특수성
 
@@ -658,4 +703,4 @@ chart: {
 
 ---
 
-*최종 업데이트: 2026-02-06 — 등록 시 전용 config setter 패턴 반영*
+*최종 업데이트: 2026-02-06 — label/unit 추가, metricCode↔statsKey 강제 쌍 적용*
