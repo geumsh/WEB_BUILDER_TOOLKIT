@@ -145,7 +145,7 @@ trendInfo.param.metricCodes = newCodes;
 > **참고**: 방법 2를 사용하면 `api.trendParams.metricCodes`와의 공유가 끊어진다.
 > 이후 `api.trendParams`를 참조하는 다른 로직이 있다면 양쪽 모두 업데이트해야 한다.
 > `config.api.statsKeyMap`도 별도 설정이므로 metricCode를 변경할 경우 동기화 필요.
-> 상세한 수정 가이드는 [RUNTIME_DATASETINFO_MODIFICATION.md](./RUNTIME_DATASETINFO_MODIFICATION.md) 참조.
+> 파라미터 변경 API는 [RUNTIME_PARAM_UPDATE_API.md](./RUNTIME_PARAM_UPDATE_API.md) 참조.
 
 ---
 
