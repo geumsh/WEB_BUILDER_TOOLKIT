@@ -631,7 +631,38 @@ this.updatePduTabMetric('power', {
 });
 ```
 
-### 3. 등록 시 전용 — 런타임 호출 금지
+### 3. tabName / seriesName은 HTML에서 정의
+
+탭 버튼은 HTML 템플릿에서 `data-tab` 속성으로 정의되며, 버튼 텍스트는 비어있다:
+
+```html
+<!-- UPS component.html -->
+<button class="tab-btn" data-tab="current"></button>
+<button class="tab-btn active" data-tab="voltage"></button>
+<button class="tab-btn" data-tab="frequency"></button>
+```
+
+JS가 `renderInitialLabels`에서 `config.chart.tabs[tabKey].label`을 `btn.textContent`에 채운다:
+
+```javascript
+Object.entries(chart.tabs).forEach(([tabKey, cfg]) => {
+  const btn = query(`.tab-btn[data-tab="${tabKey}"]`);
+  btn.textContent = cfg.label;  // config에서 라벨 주입
+});
+```
+
+따라서 `data-tab` 속성값(= `tabName`)은 JS config의 `tabs` 객체 key와 **1:1 매칭되는 식별자**이며, 이 API의 첫 번째 인자로 사용된다.
+
+| 변경 사항 | HTML 수정 필요? | API로 충분? |
+|-----------|:---------------:|:-----------:|
+| 탭 **label/unit/metricCode** 변경 | 불필요 | O |
+| 탭 **추가** | **필요** (`<button data-tab="newTab">` 추가) | X |
+| 탭 **삭제** | **필요** (해당 `<button>` 제거) | X |
+| 탭 **key 변경** (예: `voltage` → `battery`) | **필요** (`data-tab` 값 + config key 양쪽) | X |
+
+> **결론**: 이 API는 **기존 HTML에 정의된 탭의 내용(label, unit, metricCode 등)을 변경**하는 용도다. 탭 자체의 추가/삭제/키 변경은 HTML 수정이 필요하다.
+
+### 4. 등록 시 전용 — 런타임 호출 금지
 
 이 API는 `initComponent` 직후, `showDetail()` 호출 전에만 사용한다. 팝업이 열린 상태(데이터가 fetch되고 setInterval이 동작 중인 상태)에서는 호출하지 않는다.
 
@@ -703,4 +734,4 @@ chart: {
 
 ---
 
-*최종 업데이트: 2026-02-06 — label/unit 추가, metricCode↔statsKey 강제 쌍 적용*
+*최종 업데이트: 2026-02-06 — tabName/HTML 관계 문서화, label/unit 추가, metricCode↔statsKey 강제 쌍 적용*
