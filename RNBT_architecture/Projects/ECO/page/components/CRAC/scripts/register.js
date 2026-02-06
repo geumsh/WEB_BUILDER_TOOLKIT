@@ -202,6 +202,12 @@ function initComponent() {
   this.hideDetail = hideDetail.bind(this);
   this.stopRefresh = stopRefresh.bind(this);
 
+  // Runtime Parameter Update API
+  this.updateTrendParams = updateTrendParams.bind(this);
+  this.updateCracSeriesMetric = updateCracSeriesMetric.bind(this);
+  this.switchAsset = switchAsset.bind(this);
+  this.updateRefreshInterval = updateRefreshInterval.bind(this);
+
   // ======================
   // 7. 3D 이벤트 바인딩
   // ======================
@@ -641,4 +647,78 @@ function renderInitialLabels() {
       if (labelEl) labelEl.textContent = cfg.label;
     })
   );
+}
+
+// ======================================
+// RUNTIME PARAMETER UPDATE API
+// ======================================
+
+function updateTrendParams(options) {
+  const { datasetNames } = this.config;
+  const trendInfo = this.datasetInfo.find(
+    d => d.datasetName === datasetNames.metricHistory
+  );
+  if (!trendInfo) return;
+
+  const { timeRange, interval, apiEndpoint, timeField } = options;
+  if (timeRange !== undefined)   trendInfo.param.timeRange = timeRange;
+  if (interval !== undefined)    trendInfo.param.interval = interval;
+  if (apiEndpoint !== undefined) trendInfo.param.apiEndpoint = apiEndpoint;
+  if (timeField !== undefined)   trendInfo.param.timeField = timeField;
+}
+
+function updateCracSeriesMetric(seriesName, options) {
+  const { datasetNames, chart } = this.config;
+  const trendInfo = this.datasetInfo.find(
+    d => d.datasetName === datasetNames.metricHistory
+  );
+  if (!trendInfo) return;
+
+  const seriesConfig = chart.series[seriesName];
+  if (!seriesConfig) return;
+
+  const { metricCode, statsKey, scale, label } = options;
+
+  // metricCode 변경 시 statsKey 필수 검증
+  if (metricCode !== undefined && statsKey === undefined) {
+    console.warn(`[updateCracSeriesMetric] metricCode 변경 시 statsKey 필수 (series: ${seriesName})`);
+    return;
+  }
+
+  // chart.series 업데이트 + statsKeyMap 업데이트
+  if (metricCode !== undefined) {
+    seriesConfig.metricCode = metricCode;
+    this.config.api.statsKeyMap[metricCode] = statsKey;
+  }
+
+  // UI 필드 업데이트
+  if (scale !== undefined) seriesConfig.scale = scale;
+  if (label !== undefined) seriesConfig.label = label;
+
+  // param.metricCodes 재구축
+  rebuildMetricCodes.call(this, trendInfo);
+}
+
+function rebuildMetricCodes(trendInfo) {
+  const codes = trendInfo.param.metricCodes;
+  codes.length = 0;
+
+  const { series } = this.config.chart;
+  Object.values(series).forEach(s => {
+    if (s.metricCode && !codes.includes(s.metricCode)) codes.push(s.metricCode);
+  });
+}
+
+function switchAsset(assetKey) {
+  if (!assetKey) return;
+  this._defaultAssetKey = assetKey;
+  this.datasetInfo.forEach(d => {
+    d.param.assetKey = assetKey;
+  });
+}
+
+function updateRefreshInterval(datasetName, interval) {
+  const target = this.datasetInfo.find(d => d.datasetName === datasetName);
+  if (!target) return;
+  target.refreshInterval = interval;
 }

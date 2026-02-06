@@ -207,6 +207,12 @@ function initComponent() {
   this.stopRefresh = stopRefresh.bind(this);
   this._switchTab = switchTab.bind(this);
 
+  // Runtime Parameter Update API
+  this.updateTrendParams = updateTrendParams.bind(this);
+  this.updateUpsTabMetric = updateUpsTabMetric.bind(this);
+  this.switchAsset = switchAsset.bind(this);
+  this.updateRefreshInterval = updateRefreshInterval.bind(this);
+
   // ======================
   // 7. 3D 이벤트 바인딩 (라이브러리 강제 네이밍)
   // ======================
@@ -645,4 +651,83 @@ function renderInitialLabels() {
   const outputLegend = this.popupQuery(chart.selectors.legendOutput);
   if (inputLegend) inputLegend.textContent = chart.series.input.label;
   if (outputLegend) outputLegend.textContent = chart.series.output.label;
+}
+
+// ======================================
+// RUNTIME PARAMETER UPDATE API
+// ======================================
+
+function updateTrendParams(options) {
+  const { datasetNames } = this.config;
+  const trendInfo = this.datasetInfo.find(
+    d => d.datasetName === datasetNames.metricHistory
+  );
+  if (!trendInfo) return;
+
+  const { timeRange, interval, apiEndpoint, timeField } = options;
+  if (timeRange !== undefined)   trendInfo.param.timeRange = timeRange;
+  if (interval !== undefined)    trendInfo.param.interval = interval;
+  if (apiEndpoint !== undefined) trendInfo.param.apiEndpoint = apiEndpoint;
+  if (timeField !== undefined)   trendInfo.param.timeField = timeField;
+}
+
+function updateUpsTabMetric(tabName, options) {
+  const { datasetNames, chart } = this.config;
+  const trendInfo = this.datasetInfo.find(
+    d => d.datasetName === datasetNames.metricHistory
+  );
+  if (!trendInfo) return;
+
+  const tab = chart.tabs[tabName];
+  if (!tab) return;
+
+  const { inputCode, outputCode, statsKey, label, unit } = options;
+
+  // metricCode 변경 시 statsKey 필수 검증
+  if ((inputCode !== undefined || outputCode !== undefined) && statsKey === undefined) {
+    console.warn(`[updateUpsTabMetric] metricCode 변경 시 statsKey 필수 (tab: ${tabName})`);
+    return;
+  }
+
+  // chart.tabs 업데이트 + statsKeyMap 업데이트
+  if (inputCode !== undefined) {
+    tab.inputCode = inputCode;
+    this.config.api.statsKeyMap[inputCode] = statsKey;
+  }
+  if (outputCode !== undefined) {
+    tab.outputCode = outputCode;
+    this.config.api.statsKeyMap[outputCode] = statsKey;
+  }
+
+  // UI 필드 업데이트
+  if (label !== undefined) tab.label = label;
+  if (unit !== undefined)  tab.unit = unit;
+
+  // param.metricCodes 재구축
+  rebuildMetricCodes.call(this, trendInfo);
+}
+
+function rebuildMetricCodes(trendInfo) {
+  const codes = trendInfo.param.metricCodes;
+  codes.length = 0;
+
+  const { tabs } = this.config.chart;
+  Object.values(tabs).forEach(tab => {
+    if (tab.inputCode && !codes.includes(tab.inputCode))   codes.push(tab.inputCode);
+    if (tab.outputCode && !codes.includes(tab.outputCode)) codes.push(tab.outputCode);
+  });
+}
+
+function switchAsset(assetKey) {
+  if (!assetKey) return;
+  this._defaultAssetKey = assetKey;
+  this.datasetInfo.forEach(d => {
+    d.param.assetKey = assetKey;
+  });
+}
+
+function updateRefreshInterval(datasetName, interval) {
+  const target = this.datasetInfo.find(d => d.datasetName === datasetName);
+  if (!target) return;
+  target.refreshInterval = interval;
 }
