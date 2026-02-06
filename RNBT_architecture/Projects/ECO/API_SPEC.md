@@ -367,6 +367,8 @@ Content-Type: application/json
       "locationLabel": "서버실 A",
       "serialNumber": "SN-ups-0001",
       "assetModelKey": null,
+      "assetModelName": "PowerEdge R750",
+      "usageCode": "PRIMARY",
       "installDate": "2024-01-15",
       "ownerUserId": null,
       "description": "UPS 0001 (ups)"
@@ -414,6 +416,9 @@ Content-Type: application/json
 | statusType | string | 상태 |
 | locationLabel | string | 위치 이름 |
 | serialNumber | string | 시리얼 번호 |
+| assetModelKey | string\|null | 모델 키 (FK) |
+| assetModelName | string\|null | 모델 이름 (조인) |
+| usageCode | string\|null | 용도 코드 |
 | installDate | string | 설치일 |
 
 **properties 배열**
@@ -432,9 +437,9 @@ Content-Type: application/json
 |------|-----------|----------|------|
 | 자산명 (ID) | 자산명 | `ast/gx` | `asset.name` |
 | 자산타입 | 자산타입 | `ast/gx` | `asset.assetType` |
-| 용도 | 용도 | `ast/gx` | `asset.usageLabel` (API 요청 완료, 필드명 미정) |
+| 모델 | 모델 | `ast/gx` | `asset.assetModelName` |
+| 용도 | 용도 | `ast/gx` | `asset.usageCode` |
 | 제조사명 | 제조사명 | `vdr/g` | `vendor.name` (asset.assetModelKey → mdl/g → vdr/g) |
-| 모델 | 모델 | `mdl/g` | `model.name` (asset.assetModelKey → mdl/g) |
 | 위치 | 위치 | `ast/gx` | `asset.locationLabel` |
 | 상태 | 상태 | `ast/gx` | `asset.statusType` → UI 라벨 변환 |
 | 설치일 | 설치일 | `ast/gx` | `asset.installDate` → 날짜 포맷 변환 |
@@ -1181,3 +1186,4 @@ Available endpoints:
 | 2026-01-28 | /api/v1/mh/gl (자산별 최신 메트릭 조회) API 추가 |
 | 2026-02-03 | /api/v1/vdr/* (자산 벤더 관리), /api/v1/mdl/* (자산 모델 관리) API 추가 |
 | 2026-02-03 | /api/v1/mhs/* (메트릭 통계 조회) API 추가 |
+| 2026-02-06 | ast/gx 응답에 assetModelName, usageCode 필드 추가 반영 |
