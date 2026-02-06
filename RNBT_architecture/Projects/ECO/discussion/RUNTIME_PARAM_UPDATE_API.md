@@ -732,6 +732,25 @@ chart: {
 
 이 경우 `rebuildStatsKeyMap`도 chart config에서 재구축할 수 있어 완전한 단일 소스가 된다.
 
+### 현황카드 API 검토
+
+현재 API는 **트렌드 차트(metricHistory)** 관련만 다룬다. 현황카드(UPS 전력현황, CRAC/Sensor 상태카드)는 3곳 동기화가 불필요하지만, `scale` 등의 프로퍼티 변경을 위해 API를 제공할지 검토 필요.
+
+| 컴포넌트 | config 위치 | 프로퍼티 | API 필요성 |
+|----------|------------|---------|-----------|
+| UPS | `powerStatus.metrics[key]` | `metricCode`, `scale` | 검토 |
+| CRAC | `statusCards.metrics[key]` | `metricCode`, `scale` | 검토 |
+| Sensor | `statusCards.metrics[key]` | `metricCode`, `label`, `unit`, `color`, `scale`, `targetValue` | 검토 |
+
+**현황카드가 API 없이도 되는 이유**:
+- `metricLatest` API는 자산의 전체 메트릭을 반환 → `param.metricCodes` 없음
+- `statsKeyMap` 불필요 → 동기화할 곳이 config 1곳뿐
+- 직접 수정해도 실수 여지가 적음: `this.config.powerStatus.metrics.batterySoc.scale = 0.1`
+
+**그래도 API가 있으면 나은 이유**:
+- 내부 config 구조를 몰라도 되는 일관된 인터페이스
+- 차트 API와 동일한 패턴으로 사용 가능
+
 ---
 
-*최종 업데이트: 2026-02-06 — tabName/HTML 관계 문서화, label/unit 추가, metricCode↔statsKey 강제 쌍 적용*
+*최종 업데이트: 2026-02-06 — 현황카드 API 검토 항목 추가*
