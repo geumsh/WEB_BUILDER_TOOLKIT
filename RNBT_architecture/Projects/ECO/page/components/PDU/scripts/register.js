@@ -84,9 +84,15 @@ function initComponent() {
       trendParams: {
         interval: '1h',
         timeRange: 24 * 60 * 60 * 1000,
-        metricCodes: ['DIST.V_LN_AVG', 'DIST.CURRENT_AVG_A', 'DIST.ACTIVE_POWER_TOTAL_KW', 'DIST.FREQUENCY_HZ', 'DIST.ACTIVE_ENERGY_SUM_KWH'],
-        statsKeys: ['avg'],
+        metricCodes: ['DIST.V_LN_AVG', 'DIST.CURRENT_AVG_A', 'DIST.ACTIVE_POWER_TOTAL_KW', 'DIST.FREQUENCY_HZ'],
+        statsKeys: [],
         timeField: 'time',
+      },
+      statsKeyMap: {
+        'DIST.V_LN_AVG': 'avg',
+        'DIST.CURRENT_AVG_A': 'avg',
+        'DIST.ACTIVE_POWER_TOTAL_KW': 'avg',
+        'DIST.FREQUENCY_HZ': 'avg',
       },
     },
 
@@ -137,7 +143,6 @@ function initComponent() {
           },
         },
         frequency: { metricCode: 'DIST.FREQUENCY_HZ',          label: '주파수',          unit: 'Hz',  color: '#22c55e', scale: 1.0 },
-        energy:    { metricCode: 'DIST.ACTIVE_ENERGY_SUM_KWH', label: '누적 전력사용량', unit: 'kWh', color: '#ef4444', scale: 1.0 },
       },
       selectors: {
         container: '.chart-container',
@@ -153,8 +158,8 @@ function initComponent() {
   const baseParam = { baseUrl: this._baseUrl, assetKey: this._defaultAssetKey, locale: this._locale };
 
   this.datasetInfo = [
-    { datasetName: datasetNames.assetDetail, param: { ...baseParam }, render: ['renderBasicInfo'] },
-    { datasetName: datasetNames.metricHistory, param: { ...baseParam, ...api.trendParams, apiEndpoint: api.trendHistory }, render: ['renderTrendChart'] },
+    { datasetName: datasetNames.assetDetail, param: { ...baseParam }, render: ['renderBasicInfo'], refreshInterval: 0 },
+    { datasetName: datasetNames.metricHistory, param: { ...baseParam, ...api.trendParams, apiEndpoint: api.trendHistory }, render: ['renderTrendChart'], refreshInterval: 5000 },
   ];
 
   // ======================
@@ -169,6 +174,7 @@ function initComponent() {
   // ======================
   this.showDetail = showDetail.bind(this);
   this.hideDetail = hideDetail.bind(this);
+  this.stopRefresh = stopRefresh.bind(this);
   this._switchTab = switchTab.bind(this);
 
   // ======================
@@ -215,35 +221,25 @@ function initComponent() {
 function showDetail() {
   this.showPopup();
 
-  const { datasetNames } = this.config;
-
-  // 1) assetDetailUnified 호출 (섹션별 독립 처리)
-  // metricHistoryStats는 fetchTrendData에서 fetch API로 직접 호출하므로 제외
+  // 전체 데이터셋 fetch
   fx.go(
     this.datasetInfo,
-    fx.filter((d) => d.datasetName !== datasetNames.metricHistory),
-    fx.each(({ datasetName, param, render }) =>
-      fx.go(
-        fetchData(this.page, datasetName, param),
-        (response) => {
-          const data = extractData(response, 'data');
-          if (data === null) {
-            console.warn(`[PDU] ${datasetName} - no data`);
-            return;
-          }
-          fx.each((fn) => this[fn](response), render);
-        }
-      )
-    )
-  ).catch((e) => {
-    console.error('[PDU] Data load error:', e);
-  });
+    fx.each(d => fetchDatasetAndRender.call(this, d))
+  );
 
-  // 2) 트렌드 차트 호출 (mhs/l)
-  fetchTrendData.call(this);
+  // 기존 interval 정리 후 재설정
+  this.stopRefresh();
+  fx.go(
+    this.datasetInfo,
+    fx.filter(d => d.refreshInterval > 0),
+    fx.each(d => {
+      d._intervalId = setInterval(() => fetchDatasetAndRender.call(this, d), d.refreshInterval);
+    })
+  );
 }
 
 function hideDetail() {
+  this.stopRefresh();
   this.hidePopup();
 }
 
@@ -267,112 +263,84 @@ function switchTab(tabName) {
 }
 
 // ======================
-// TREND DATA FETCH
+// DATA FETCH
 // ======================
 
-function fetchTrendData() {
+function fetchDatasetAndRender(d) {
   const { datasetNames, chart } = this.config;
-  const trendInfo = fx.go(
-    this.datasetInfo,
-    fx.filter((d) => d.datasetName === datasetNames.metricHistory),
-    (arr) => arr[0]
-  );
-  if (!trendInfo) return;
+  const { datasetName, param, render } = d;
 
-  const { baseUrl, assetKey, interval, metricCodes, statsKeys, apiEndpoint } = trendInfo.param;
+  if (datasetName === datasetNames.metricHistory) {
+    const hasComparison = Object.values(chart.tabs).some(tab => tab.comparison);
 
-  // comparison 탭이 있는지 확인
-  const hasComparison = Object.values(chart.tabs).some((tab) => tab.comparison);
+    if (hasComparison) {
+      // 금일/전일 비교 fetch (2회 병렬)
+      const now = new Date();
+      const todayStart = new Date(now);
+      todayStart.setHours(0, 0, 0, 0);
 
-  if (hasComparison) {
-    // 금일/전일 비교가 필요한 경우 2회 fetch
-    fetchComparisonTrendData.call(this, { baseUrl, assetKey, interval, metricCodes, statsKeys, apiEndpoint });
-  } else {
-    // 기존 로직: 단일 timeRange 사용
-    const { timeRange } = trendInfo.param;
-    const now = new Date();
-    const from = new Date(now.getTime() - timeRange);
+      const todayFrom = todayStart.toISOString().replace('T', ' ').slice(0, 19);
+      const todayTo = now.toISOString().replace('T', ' ').slice(0, 19);
 
-    fetchSingleTrendData.call(this, {
-      baseUrl, assetKey, interval, metricCodes, statsKeys, apiEndpoint,
-      timeFrom: from.toISOString().replace('T', ' ').slice(0, 19),
-      timeTo: now.toISOString().replace('T', ' ').slice(0, 19),
-    });
+      const yesterdayStart = new Date(todayStart);
+      yesterdayStart.setDate(yesterdayStart.getDate() - 1);
+      const yesterdayEnd = new Date(todayStart);
+      yesterdayEnd.setTime(yesterdayEnd.getTime() - 1000);
+
+      const yesterdayFrom = yesterdayStart.toISOString().replace('T', ' ').slice(0, 19);
+      const yesterdayTo = yesterdayEnd.toISOString().replace('T', ' ').slice(0, 19);
+
+      Promise.all([
+        fetchData(this.page, datasetName, { ...param, timeFrom: todayFrom, timeTo: todayTo }),
+        fetchData(this.page, datasetName, { ...param, timeFrom: yesterdayFrom, timeTo: yesterdayTo }),
+      ])
+        .then(([todayResp, yesterdayResp]) => {
+          const todayData = extractData(todayResp) || [];
+          const yesterdayData = extractData(yesterdayResp) || [];
+          this._trendData = todayData;
+          this._trendDataComparison = { today: todayData, yesterday: yesterdayData };
+          fx.each(fn => this[fn]({ response: { data: todayData } }), render);
+        })
+        .catch(e => console.warn('[PDU] Comparison trend fetch failed:', e));
+    } else {
+      // 단일 timeRange fetch
+      const now = new Date();
+      const from = new Date(now.getTime() - param.timeRange);
+      param.timeFrom = from.toISOString().replace('T', ' ').slice(0, 19);
+      param.timeTo = now.toISOString().replace('T', ' ').slice(0, 19);
+
+      fetchData(this.page, datasetName, param)
+        .then(response => {
+          const data = extractData(response);
+          if (!data) return;
+          this._trendData = data;
+          this._trendDataComparison = null;
+          fx.each(fn => this[fn](response), render);
+        })
+        .catch(e => console.warn('[PDU] Trend fetch failed:', e));
+    }
+    return;
   }
+
+  // 일반 데이터셋 (assetDetail 등)
+  fetchData(this.page, datasetName, param)
+    .then(response => {
+      const data = extractData(response);
+      if (!data) return;
+      fx.each(fn => this[fn](response), render);
+    })
+    .catch(e => console.warn(`[PDU] ${datasetName} fetch failed:`, e));
 }
 
-function fetchSingleTrendData({ baseUrl, assetKey, interval, metricCodes, statsKeys, apiEndpoint, timeFrom, timeTo }) {
-  fetch(`http://${baseUrl}${apiEndpoint}`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      filter: { assetKey, interval, metricCodes, timeFrom, timeTo },
-      statsKeys,
-      sort: [],
-    }),
-  })
-    .then((resp) => resp.json())
-    .then((result) => {
-      if (!result || !result.success) {
-        console.warn('[PDU] Trend data unavailable');
-        return;
-      }
-      this._trendData = result.data;
-      this._trendDataComparison = null;  // 비교 데이터 초기화
-      this.renderTrendChart({ response: { data: result.data } });
+function stopRefresh() {
+  fx.go(
+    this.datasetInfo,
+    fx.filter(d => d._intervalId),
+    fx.each(d => {
+      clearInterval(d._intervalId);
+      d._intervalId = null;
     })
-    .catch((e) => {
-      console.warn('[PDU] Trend fetch failed:', e);
-    });
-}
-
-function fetchComparisonTrendData({ baseUrl, assetKey, interval, metricCodes, statsKeys, apiEndpoint }) {
-  // 금일: 오늘 00:00 ~ 현재
-  const now = new Date();
-  const todayStart = new Date(now);
-  todayStart.setHours(0, 0, 0, 0);
-
-  const todayFrom = todayStart.toISOString().replace('T', ' ').slice(0, 19);
-  const todayTo = now.toISOString().replace('T', ' ').slice(0, 19);
-
-  // 전일: 어제 00:00 ~ 어제 23:59:59
-  const yesterdayStart = new Date(todayStart);
-  yesterdayStart.setDate(yesterdayStart.getDate() - 1);
-  const yesterdayEnd = new Date(todayStart);
-  yesterdayEnd.setTime(yesterdayEnd.getTime() - 1000);  // 오늘 00:00 - 1초 = 어제 23:59:59
-
-  const yesterdayFrom = yesterdayStart.toISOString().replace('T', ' ').slice(0, 19);
-  const yesterdayTo = yesterdayEnd.toISOString().replace('T', ' ').slice(0, 19);
-
-  const fetchPayload = (from, to) => ({
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      filter: { assetKey, interval, metricCodes, timeFrom: from, timeTo: to },
-      statsKeys,
-      sort: [],
-    }),
-  });
-
-  // 금일 + 전일 병렬 fetch
-  Promise.all([
-    fetch(`http://${baseUrl}${apiEndpoint}`, fetchPayload(todayFrom, todayTo)).then((r) => r.json()),
-    fetch(`http://${baseUrl}${apiEndpoint}`, fetchPayload(yesterdayFrom, yesterdayTo)).then((r) => r.json()),
-  ])
-    .then(([todayResult, yesterdayResult]) => {
-      this._trendData = todayResult?.success ? todayResult.data : [];
-      this._trendDataComparison = {
-        today: todayResult?.success ? todayResult.data : [],
-        yesterday: yesterdayResult?.success ? yesterdayResult.data : [],
-      };
-      this.renderTrendChart({ response: { data: this._trendData } });
-    })
-    .catch((e) => {
-      console.warn('[PDU] Comparison trend fetch failed:', e);
-      this._trendData = this._trendData || [];
-      this._trendDataComparison = this._trendDataComparison || { today: [], yesterday: [] };
-      this.renderTrendChart({ response: { data: this._trendData } });
-    });
+  );
 }
 
 // ======================
@@ -471,8 +439,7 @@ function renderTrendChart({ response }) {
   const safeData = Array.isArray(data) ? data : [];
   const { datasetNames } = this.config;
   const trendInfo = this.datasetInfo.find((d) => d.datasetName === datasetNames.metricHistory);
-  const { statsKeys, timeField } = trendInfo?.param || {};
-  const statsKey = statsKeys?.[0] || 'avg';
+  const { timeField } = trendInfo?.param || {};
   const timeKey = timeField || 'time';
 
   // 현재 탭의 metricCode로 필터링
@@ -483,7 +450,8 @@ function renderTrendChart({ response }) {
     (acc, row) => {
       const time = row[timeKey];
       if (!acc[time]) acc[time] = {};
-      acc[time][row.metricCode] = row.statsBody?.[statsKey] ?? null;
+      const statsKey = this.config.api.statsKeyMap[row.metricCode];
+      acc[time][row.metricCode] = statsKey ? (row.statsBody?.[statsKey] ?? null) : null;
       return acc;
     },
     {},
@@ -559,8 +527,8 @@ function renderComparisonChart(tabConfig, selectors) {
   const { series } = tabConfig;
   const { datasetNames } = this.config;
   const trendInfo = this.datasetInfo.find((d) => d.datasetName === datasetNames.metricHistory);
-  const { statsKeys, timeField } = trendInfo?.param || {};
-  const statsKey = statsKeys?.[0] || 'avg';
+  const { timeField } = trendInfo?.param || {};
+  const statsKey = this.config.api.statsKeyMap[tabConfig.metricCode];
   const timeKey = timeField || 'time';
 
   // 데이터를 시간별로 그룹핑하는 헬퍼 (원본 시간 사용)
