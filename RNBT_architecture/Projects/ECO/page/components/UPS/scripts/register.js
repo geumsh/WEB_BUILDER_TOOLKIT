@@ -84,6 +84,14 @@ function initComponent() {
         statsKeys: [],
         timeField: 'time',
       },
+      statsKeyMap: {
+        'UPS.INPUT_A_SUM': 'sum',
+        'UPS.OUTPUT_A_SUM': 'sum',
+        'UPS.INPUT_V_AVG': 'avg',
+        'UPS.OUTPUT_V_AVG': 'avg',
+        'UPS.INPUT_F_AVG': 'avg',
+        'UPS.OUTPUT_F_AVG': 'avg',
+      },
     },
 
     // 상태 매핑
@@ -467,8 +475,8 @@ function renderTrendChart({ response }) {
     (acc, row) => {
       const time = row[timeKey];
       if (!acc[time]) acc[time] = {};
-      const statsKey = row.metricCode.split('_').pop().toLowerCase();
-      acc[time][row.metricCode] = row.statsBody?.[statsKey] ?? null;
+      const statsKey = this.config.api.statsKeyMap[row.metricCode];
+      acc[time][row.metricCode] = statsKey ? (row.statsBody?.[statsKey] ?? null) : null;
       return acc;
     },
     {},
