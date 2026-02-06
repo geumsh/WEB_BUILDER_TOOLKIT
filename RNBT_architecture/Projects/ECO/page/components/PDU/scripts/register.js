@@ -115,13 +115,13 @@ function initComponent() {
       fields: [
         { key: 'name', selector: '.info-name' },
         { key: 'assetType', selector: '.info-type' },
-        { key: 'usageLabel', selector: '.info-usage', fallback: '-' },
+        { key: 'assetModelName', selector: '.info-model', fallback: '-' },
+        { key: 'usageCode', selector: '.info-usage', fallback: '-' },
         { key: 'locationLabel', selector: '.info-location' },
         { key: 'statusType', selector: '.info-status', transform: this.statusTypeToLabel },
         { key: 'installDate', selector: '.info-install-date', transform: this.formatDate },
       ],
       chain: {
-        model: '.info-model',
         vendor: '.info-vendor',
       },
     },
