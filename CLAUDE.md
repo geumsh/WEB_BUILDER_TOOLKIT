@@ -34,6 +34,31 @@ This file provides guidance to Claude Code when working in this repository.
 
 ---
 
+## SKILL 선택 가이드
+
+### Figma 변환 (1-figma)
+
+| 조건 | SKILL |
+|------|-------|
+| 일반 HTML/CSS 변환 | `figma-to-html` |
+| 런타임 색상 제어가 필요한 SVG 심볼/아이콘 | `figma-to-inline-svg` |
+
+### 컴포넌트 생성 (2-component)
+
+| 조건 | SKILL |
+|------|-------|
+| 페이지에서 데이터를 받아 표시 (차트, 테이블, 로그 등) | `create-standard-component` |
+| 컴포넌트가 직접 fetch + 팝업으로 상세 표시 (장비 패널 등) | `create-component-with-popup` |
+| SVG 심볼의 색상/상태를 런타임에서 제어 | `create-symbol-state-component` |
+
+### 페이지 생성 (3-page)
+
+| 조건 | SKILL |
+|------|-------|
+| 여러 컴포넌트를 조합한 대시보드 페이지 생성 | `create-project` |
+
+---
+
 ## 디렉토리별 문서
 
 각 디렉토리는 독립적으로 작업 가능하며, 상세 문서를 포함합니다:
