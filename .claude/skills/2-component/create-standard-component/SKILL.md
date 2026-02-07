@@ -94,6 +94,8 @@ function renderData(config, { response }) {
 
 ### 전체 구조 (LogViewer 패턴 기준)
 
+> **참고:** 단순 컴포넌트(EventStatus 등)는 STATE, 내부 핸들러 섹션을 생략할 수 있습니다.
+
 ```javascript
 const { subscribe } = GlobalDataPublisher;
 const { bindEvents } = Wkit;
@@ -297,7 +299,7 @@ this.customEvents = {
 
 - ❌ 컴포넌트가 직접 fetch (팝업 없이)
 - ❌ 생성 후 정리 누락 (register ↔ beforeDestroy 쌍)
-- ❌ `function(response)` 사용 → `function({ response })` 필수
+- ❌ subscription 콜백에서 `function(response)` 사용 → `function({ response })` 필수
 - ❌ _internalHandlers에 참조 저장 없이 addEventListener 사용
 - ❌ 검증된 CSS를 "비슷하게" 새로 작성
 

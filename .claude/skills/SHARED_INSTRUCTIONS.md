@@ -19,7 +19,7 @@
 ## CSS 공통 규칙
 
 - **px 단위 사용** (rem/em 금지) - RNBT 런타임 호환성 보장
-- **Flexbox 우선** (Grid/absolute 지양)
+- **Flexbox 우선** (Grid는 2D 카드 레이아웃 등 명확한 경우만 허용, absolute 지양)
 - 상세: [CODING_STYLE.md](/.claude/guides/CODING_STYLE.md) CSS 원칙 섹션
 
 ---
@@ -28,15 +28,19 @@
 
 ### 구조분해 응답
 
+**적용 대상:** `this.subscriptions` 또는 `datasetInfo[].render`에 등록된 콜백만
+
 ```javascript
-// ❌ response를 직접 사용
+// ❌ subscription 콜백에서 response를 직접 사용
 function renderData(config, response) { ... }
 
-// ✅ { response }로 구조분해
+// ✅ subscription 콜백은 { response }로 구조분해
 function renderData(config, { response }) {
     const { data } = response;
 }
 ```
+
+직접 호출 메서드(appendLog, clearLogs 등)는 호출자가 전달하는 형식을 따릅니다.
 
 ### fx.go 파이프라인 패턴
 
@@ -180,5 +184,5 @@ body { ... }
 - ❌ 추측하지 않는다 — 데이터 기반으로만 작업
 - ❌ 존재하지 않는 함수를 사용하지 않는다 — grep으로 확인 후 사용
 - ❌ 확인 없이 완료라고 말하지 않는다
-- ❌ `function(response)` 사용 → `function({ response })` 필수
+- ❌ subscription 콜백에서 `function(response)` 사용 → `function({ response })` 필수
 - ❌ 생성 후 정리 누락 (register ↔ beforeDestroy 쌍)

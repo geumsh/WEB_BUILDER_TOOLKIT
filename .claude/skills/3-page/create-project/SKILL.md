@@ -153,7 +153,7 @@ this.globalDataMappings = [
 - ❌ datasetList.json 형식 임의 변경
 - ❌ 생성/정리 불일치
 - ❌ 라이프사이클 순서 위반
-- ❌ `function(response)` 사용 → `function({ response })` 필수
+- ❌ subscription 콜백에서 `function(response)` 사용 → `function({ response })` 필수
 
 ---
 

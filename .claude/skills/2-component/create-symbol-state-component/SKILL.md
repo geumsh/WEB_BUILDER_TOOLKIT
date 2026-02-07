@@ -416,7 +416,7 @@ components/[ComponentName]/
 - ❌ gradient defs를 상태별로 누락
 - ❌ layer 클래스 없이 직접 fill 값 변경
 - ❌ 생성/정리 불일치
-- ❌ `function(response)` 사용 → `function({ response })` 필수
+- ❌ subscription 콜백에서 `function(response)` 사용 → `function({ response })` 필수
 
 ---
 

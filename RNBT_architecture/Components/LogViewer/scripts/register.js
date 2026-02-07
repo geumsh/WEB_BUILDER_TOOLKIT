@@ -41,7 +41,7 @@ this._autoScroll = true;
 this._internalHandlers = {};
 
 // ======================
-// BINDNGS (바인딩)
+// BINDINGS (바인딩)
 // ======================
 
 this.renderData = renderData.bind(this, config);

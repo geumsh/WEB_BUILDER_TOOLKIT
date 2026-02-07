@@ -117,7 +117,7 @@ Figma_Conversion/Static_Components/
 
 핵심 요약:
 - **px 단위 사용** (rem/em 금지) - RNBT 런타임 호환성 보장
-- **Flexbox 우선** (Grid 지양)
+- **Flexbox 우선** (Grid는 2D 카드 레이아웃 등 명확한 경우만 허용, absolute 지양)
 
 ---
 
