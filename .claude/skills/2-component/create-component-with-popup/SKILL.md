@@ -384,6 +384,7 @@ function updateGlobalParams(options) {
     this.datasetInfo.forEach(d => {
         if (assetKey !== undefined) d.param.assetKey = assetKey;
         if (baseUrl !== undefined)  d.param.baseUrl = baseUrl;
+        if (locale !== undefined)   d.param.locale = locale;
     });
 }
 
