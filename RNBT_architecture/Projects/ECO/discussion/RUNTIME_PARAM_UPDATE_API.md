@@ -137,14 +137,14 @@ datasetInfo[]._intervalId      — setInterval ID (내부 관리)
 | 설정 위치 | 컴포넌트 | 프로퍼티 |
 |-----------|----------|---------|
 | `powerStatus.metrics[key]` | UPS | `metricCode`, `label`, `unit`, `scale` |
-| `statusCards.metrics[key]` | CRAC | `metricCode`, `scale` |
+| `statusCards.metrics[key]` | CRAC | `metricCode`, `label`, `unit`, `scale` |
 | `statusCards.metrics[key]` | Sensor | `metricCode`, `label`, `unit`, `color`, `scale`, `targetValue` |
 
 **수정 범위**: config 1곳만 수정
 
 **동기화 불필요**: `metricLatest` API는 자산의 전체 메트릭을 반환하므로 `param.metricCodes` 수정 불필요. `statsKeyMap`도 사용하지 않는다. Category B와 달리 3곳 동기화가 없어 config 직접 수정도 안전하지만, 일관된 인터페이스를 위해 API를 제공한다.
 
-**카드 추가/제거**: UPS, Sensor는 `data-metric` 키 기반이므로 동적 추가/제거 가능. CRAC는 직접 selector 방식 + HTML 하드코딩 라벨이라 update만 지원.
+**카드 추가/제거**: UPS, CRAC, Sensor 모두 `data-metric` 키 기반이므로 동적 추가/제거 가능.
 
 ---
 
@@ -576,16 +576,17 @@ this.updateUpsStatusMetric('batterySoc', {
 
 CRAC 상태카드의 메트릭 설정을 변경한다.
 
-> **CRAC 구조 특이점**: CRAC 상태카드는 `data-metric` 키 방식이 아닌 직접 selector 방식을 사용한다. label/unit은 HTML에 하드코딩되어 config에 포함되지 않으므로 API로 변경할 수 없다.
-
 ```javascript
 /**
  * CRAC 상태카드의 설정을 변경한다.
+ * 인자로 넘긴 값만 변경, undefined는 무시.
  *
  * @param {string} key - 메트릭 키 ('currentTemp', 'setTemp', 'currentHumid', 'setHumid')
  * @param {Object} options
- * @param {string} [options.metricCode] - 메트릭 코드
- * @param {number} [options.scale]      - 스케일 계수
+ * @param {string|null} [options.metricCode] - 메트릭 코드 (null = 값 표시 안함)
+ * @param {string} [options.label]           - 카드 라벨
+ * @param {string} [options.unit]            - 단위
+ * @param {number} [options.scale]           - 스케일 계수
  */
 function updateCracStatusMetric(key, options) {
   const metric = this.config.statusCards.metrics[key];
@@ -594,8 +595,10 @@ function updateCracStatusMetric(key, options) {
     return;
   }
 
-  const { metricCode, scale } = options;
+  const { metricCode, label, unit, scale } = options;
   if (metricCode !== undefined) metric.metricCode = metricCode;
+  if (label !== undefined)      metric.label = label;
+  if (unit !== undefined)       metric.unit = unit;
   if (scale !== undefined)      metric.scale = scale;
 }
 ```
@@ -605,6 +608,7 @@ function updateCracStatusMetric(key, options) {
 // 현재온도 메트릭을 공급 온도로 변경
 this.updateCracStatusMetric('currentTemp', {
   metricCode: 'CRAC.SUPPLY_TEMP',
+  label: '공급온도',
   scale: 0.1,
 });
 ```
@@ -727,7 +731,71 @@ this.removeUpsStatusMetric('batteryVolt');
 
 ---
 
-### 11. `addSensorStatusMetric(key, options)` / `removeSensorStatusMetric(key)` — Category E (Sensor)
+### 11. `addCracStatusMetric(key, options)` / `removeCracStatusMetric(key)` — Category E (CRAC)
+
+카드를 동적으로 추가/제거한다. config만 수정하며, DOM 반영은 `renderInitialLabels` 내부 reconciliation 로직이 담당한다.
+
+```javascript
+/**
+ * CRAC 상태카드를 추가한다.
+ * 이미 존재하는 키이면 경고 후 무시.
+ *
+ * @param {string} key - 새 메트릭 키 (HTML data-metric 속성에 사용)
+ * @param {Object} options
+ * @param {string}      options.label        - 카드 라벨 (필수)
+ * @param {string}      options.unit         - 단위 (필수)
+ * @param {string|null} [options.metricCode] - 메트릭 코드 (기본 null)
+ * @param {number}      [options.scale]      - 스케일 계수 (기본 0.1)
+ */
+function addCracStatusMetric(key, options) {
+  const { metrics } = this.config.statusCards;
+  if (metrics[key]) {
+    console.warn(`[addCracStatusMetric] 이미 존재하는 키: ${key}`);
+    return;
+  }
+
+  const { label, unit, metricCode = null, scale = 0.1 } = options;
+  if (!label || !unit) {
+    console.warn(`[addCracStatusMetric] label과 unit은 필수`);
+    return;
+  }
+
+  metrics[key] = { metricCode, label, unit, scale };
+}
+
+/**
+ * CRAC 상태카드를 제거한다.
+ *
+ * @param {string} key - 제거할 메트릭 키
+ */
+function removeCracStatusMetric(key) {
+  const { metrics } = this.config.statusCards;
+  if (!metrics[key]) {
+    console.warn(`[removeCracStatusMetric] 존재하지 않는 키: ${key}`);
+    return;
+  }
+
+  delete metrics[key];
+}
+```
+
+**사용 예시**:
+```javascript
+// 공급 온도 카드 추가
+this.addCracStatusMetric('supplyTemp', {
+  label: '공급온도',
+  unit: '°C',
+  metricCode: 'CRAC.SUPPLY_TEMP',
+  scale: 0.1,
+});
+
+// 설정습도 카드 제거
+this.removeCracStatusMetric('setHumid');
+```
+
+---
+
+### 12. `addSensorStatusMetric(key, options)` / `removeSensorStatusMetric(key)` — Category E (Sensor)
 
 ```javascript
 /**
@@ -789,8 +857,6 @@ this.addSensorStatusMetric('co2', {
 this.removeSensorStatusMetric('humidity');
 ```
 
-> **CRAC**: add/remove 미지원. CRAC 상태카드는 직접 selector 방식 + HTML 하드코딩 라벨/유닛 구조이므로 동적 추가/제거에 부적합. 필요 시 CRAC의 statusCards를 UPS/Sensor와 같은 `data-metric` 키 방식으로 리팩터링한 후 지원 가능.
-
 ---
 
 ### renderInitialLabels 변경: DOM reconciliation
@@ -844,6 +910,59 @@ function createPowerCardElement(key) {
     <div class="power-card-body">
       <span class="power-card-value">-</span>
       <span class="power-card-unit"></span>
+    </div>
+  `;
+  return card;
+}
+```
+
+#### CRAC renderInitialLabels
+
+```javascript
+function renderInitialLabels() {
+  const { statusCards, indicators } = this.config;
+
+  // ── 상태카드 reconciliation ──
+  const { metrics, selectors } = statusCards;
+  const container = this.popupQuery('.status-cards');
+
+  // 1. config에 있지만 DOM에 없는 카드 → 생성
+  fx.go(
+    Object.entries(metrics),
+    fx.each(([key, cfg]) => {
+      let card = this.popupQuery(`${selectors.card}[data-metric="${key}"]`);
+      if (!card && container) {
+        card = createCracCardElement(key);
+        container.appendChild(card);
+      }
+      if (!card) return;
+      const labelEl = card.querySelector(selectors.label);
+      const unitEl = card.querySelector(selectors.unit);
+      if (labelEl) labelEl.textContent = cfg.label;
+      if (unitEl) unitEl.textContent = cfg.unit;
+    })
+  );
+
+  // 2. DOM에 있지만 config에 없는 카드 → 제거
+  if (container) {
+    container.querySelectorAll(selectors.card).forEach(card => {
+      if (!metrics[card.dataset.metric]) card.remove();
+    });
+  }
+
+  // ── 인디케이터 라벨 ──
+  // ...
+}
+
+function createCracCardElement(key) {
+  const card = document.createElement('div');
+  card.className = 'status-card';
+  card.dataset.metric = key;
+  card.innerHTML = `
+    <div class="status-card-label"></div>
+    <div class="status-card-values">
+      <span class="status-card-value">-</span>
+      <span class="status-card-unit"></span>
     </div>
   `;
   return card;
@@ -934,7 +1053,9 @@ function createSensorCardElement(key, cfg) {
 | UPS | `updateUpsStatusMetric(key, opts)` | update | `{ metricCode, label, unit, scale }` |
 | UPS | `addUpsStatusMetric(key, opts)` | add | `{ label, unit, metricCode?, scale? }` |
 | UPS | `removeUpsStatusMetric(key)` | remove | — |
-| CRAC | `updateCracStatusMetric(key, opts)` | update | `{ metricCode, scale }` |
+| CRAC | `updateCracStatusMetric(key, opts)` | update | `{ metricCode, label, unit, scale }` |
+| CRAC | `addCracStatusMetric(key, opts)` | add | `{ label, unit, metricCode?, scale? }` |
+| CRAC | `removeCracStatusMetric(key)` | remove | — |
 | Sensor | `updateSensorStatusMetric(key, opts)` | update | `{ metricCode, label, unit, color, scale, targetValue }` |
 | Sensor | `addSensorStatusMetric(key, opts)` | add | `{ label, unit, metricCode?, color?, scale?, targetValue? }` |
 | Sensor | `removeSensorStatusMetric(key)` | remove | — |
@@ -1178,6 +1299,8 @@ this.updateUpsStatusMetric = updateUpsStatusMetric.bind(this);     // UPS
 this.addUpsStatusMetric = addUpsStatusMetric.bind(this);           // UPS
 this.removeUpsStatusMetric = removeUpsStatusMetric.bind(this);     // UPS
 // this.updateCracStatusMetric = updateCracStatusMetric.bind(this);     // CRAC
+// this.addCracStatusMetric = addCracStatusMetric.bind(this);           // CRAC
+// this.removeCracStatusMetric = removeCracStatusMetric.bind(this);     // CRAC
 // this.updateSensorStatusMetric = updateSensorStatusMetric.bind(this); // Sensor
 // this.addSensorStatusMetric = addSensorStatusMetric.bind(this);       // Sensor
 // this.removeSensorStatusMetric = removeSensorStatusMetric.bind(this); // Sensor
@@ -1222,9 +1345,9 @@ chart: {
 | 컴포넌트 | update | add/remove | 비고 |
 |----------|--------|------------|------|
 | UPS | `updateUpsStatusMetric` | `addUpsStatusMetric` / `removeUpsStatusMetric` | — |
-| CRAC | `updateCracStatusMetric` | 미지원 | selector 방식, HTML 하드코딩 |
+| CRAC | `updateCracStatusMetric` | `addCracStatusMetric` / `removeCracStatusMetric` | — |
 | Sensor | `updateSensorStatusMetric` | `addSensorStatusMetric` / `removeSensorStatusMetric` | — |
 
 ---
 
-*최종 업데이트: 2026-02-09 — Category E 현황카드 API 설계 추가 (update/add/remove + renderInitialLabels reconciliation)*
+*최종 업데이트: 2026-02-09 — CRAC statusCards를 data-metric 키 방식으로 통일, add/remove 전 컴포넌트 지원*

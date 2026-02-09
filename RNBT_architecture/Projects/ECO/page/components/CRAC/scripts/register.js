@@ -129,12 +129,16 @@ function initComponent() {
     // 상태정보 카드 영역 (온습도 현재값/설정값)
     statusCards: {
       metrics: {
-        currentTemp:  { metricCode: 'CRAC.RETURN_TEMP',     selector: '.current-temp',     scale: 0.1 },
-        setTemp:      { metricCode: 'CRAC.TEMP_SET',        selector: '.set-temp',         scale: 0.1 },
-        currentHumid: { metricCode: 'CRAC.RETURN_HUMIDITY', selector: '.current-humidity', scale: 0.1 },
-        setHumid:     { metricCode: 'CRAC.HUMIDITY_SET',    selector: '.set-humidity',     scale: 0.1 },
+        currentTemp:  { metricCode: 'CRAC.RETURN_TEMP',     label: '현재온도', unit: '°C', scale: 0.1 },
+        setTemp:      { metricCode: 'CRAC.TEMP_SET',        label: '설정온도', unit: '°C', scale: 0.1 },
+        currentHumid: { metricCode: 'CRAC.RETURN_HUMIDITY', label: '현재습도', unit: '%',  scale: 0.1 },
+        setHumid:     { metricCode: 'CRAC.HUMIDITY_SET',    label: '설정습도', unit: '%',  scale: 0.1 },
       },
       selectors: {
+        card: '.status-card',
+        label: '.status-card-label',
+        unit: '.status-card-unit',
+        value: '.status-card-value',
         timestamp: '.section-timestamp',
       },
     },
@@ -203,6 +207,8 @@ function initComponent() {
 
   // Category E: 현황카드 API
   this.updateCracStatusMetric = updateCracStatusMetric.bind(this);
+  this.addCracStatusMetric = addCracStatusMetric.bind(this);
+  this.removeCracStatusMetric = removeCracStatusMetric.bind(this);
 
   // ======================
   // 7. 3D 이벤트 바인딩
@@ -420,21 +426,24 @@ function renderStatusCards({ response }) {
     data
   );
 
-  // 각 카드에 값 설정
+  // 각 카드에 값 설정 (data-metric 키 기반)
   fx.go(
     Object.entries(metrics),
-    fx.each(([_, cfg]) => {
-      const el = this.popupQuery(cfg.selector);
-      if (!el) return;
+    fx.each(([key, cfg]) => {
+      const card = this.popupQuery(`${selectors.card}[data-metric="${key}"]`);
+      if (!card) return;
+
+      const valueEl = card.querySelector(selectors.value);
+      if (!valueEl) return;
 
       const metric = metricMap[cfg.metricCode];
       if (!metric) {
-        el.textContent = '-';
+        valueEl.textContent = '-';
         return;
       }
 
       const value = metric.valueNumber;
-      el.textContent = cfg.scale ? (value * cfg.scale).toFixed(1) : value;
+      valueEl.textContent = cfg.scale ? (value * cfg.scale).toFixed(1) : value;
     })
   );
 }
@@ -650,9 +659,37 @@ function onPopupCreated({ chartSelector, events }) {
 }
 
 function renderInitialLabels() {
-  const { indicators } = this.config;
+  const { statusCards, indicators } = this.config;
 
-  // 인디케이터 라벨
+  // ── 상태카드 reconciliation ──
+  const { metrics, selectors } = statusCards;
+  const container = this.popupQuery('.status-cards');
+
+  // 1. config에 있지만 DOM에 없는 카드 → 생성
+  fx.go(
+    Object.entries(metrics),
+    fx.each(([key, cfg]) => {
+      let card = this.popupQuery(`${selectors.card}[data-metric="${key}"]`);
+      if (!card && container) {
+        card = createCracCardElement(key);
+        container.appendChild(card);
+      }
+      if (!card) return;
+      const labelEl = card.querySelector(selectors.label);
+      const unitEl = card.querySelector(selectors.unit);
+      if (labelEl) labelEl.textContent = cfg.label;
+      if (unitEl) unitEl.textContent = cfg.unit;
+    })
+  );
+
+  // 2. DOM에 있지만 config에 없는 카드 → 제거
+  if (container) {
+    container.querySelectorAll(selectors.card).forEach(card => {
+      if (!metrics[card.dataset.metric]) card.remove();
+    });
+  }
+
+  // ── 인디케이터 라벨 ──
   fx.go(
     Object.entries(indicators.metrics),
     fx.each(([code, cfg]) => {
@@ -755,7 +792,49 @@ function updateCracStatusMetric(key, options) {
     return;
   }
 
-  const { metricCode, scale } = options;
+  const { metricCode, label, unit, scale } = options;
   if (metricCode !== undefined) metric.metricCode = metricCode;
+  if (label !== undefined)      metric.label = label;
+  if (unit !== undefined)       metric.unit = unit;
   if (scale !== undefined)      metric.scale = scale;
+}
+
+function addCracStatusMetric(key, options) {
+  const { metrics } = this.config.statusCards;
+  if (metrics[key]) {
+    console.warn(`[addCracStatusMetric] 이미 존재하는 키: ${key}`);
+    return;
+  }
+
+  const { label, unit, metricCode = null, scale = 0.1 } = options;
+  if (!label || !unit) {
+    console.warn(`[addCracStatusMetric] label과 unit은 필수`);
+    return;
+  }
+
+  metrics[key] = { metricCode, label, unit, scale };
+}
+
+function removeCracStatusMetric(key) {
+  const { metrics } = this.config.statusCards;
+  if (!metrics[key]) {
+    console.warn(`[removeCracStatusMetric] 존재하지 않는 키: ${key}`);
+    return;
+  }
+
+  delete metrics[key];
+}
+
+function createCracCardElement(key) {
+  const card = document.createElement('div');
+  card.className = 'status-card';
+  card.dataset.metric = key;
+  card.innerHTML = `
+    <div class="status-card-label"></div>
+    <div class="status-card-values">
+      <span class="status-card-value">-</span>
+      <span class="status-card-unit"></span>
+    </div>
+  `;
+  return card;
 }
