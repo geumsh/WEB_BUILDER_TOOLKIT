@@ -198,6 +198,11 @@ function initComponent() {
   this.updateGlobalParams = updateGlobalParams.bind(this);
   this.updateRefreshInterval = updateRefreshInterval.bind(this);
 
+  // Category E: 현황카드 API
+  this.updateSensorStatusMetric = updateSensorStatusMetric.bind(this);
+  this.addSensorStatusMetric = addSensorStatusMetric.bind(this);
+  this.removeSensorStatusMetric = removeSensorStatusMetric.bind(this);
+
   // ======================
   // 7. 3D 이벤트 바인딩
   // ======================
@@ -573,15 +578,30 @@ function renderTrendChart({ response }) {
 
 function renderInitialLabels() {
   const { statusCards } = this.config;
+  const { metrics, selectors } = statusCards;
+  const container = this.popupQuery('.status-cards');
+
+  // 상태카드 reconciliation: config 기준으로 DOM 동기화
   fx.go(
-    Object.entries(statusCards.metrics),
+    Object.entries(metrics),
     fx.each(([key, cfg]) => {
-      const card = this.popupQuery(`${statusCards.selectors.card}[data-metric="${key}"]`);
+      let card = this.popupQuery(`${selectors.card}[data-metric="${key}"]`);
+      if (!card && container) {
+        card = createSensorCardElement(key, cfg);
+        container.appendChild(card);
+      }
       if (!card) return;
       const labelEl = card.querySelector('.status-card-label');
       if (labelEl) labelEl.textContent = cfg.label;
     })
   );
+
+  // DOM에 있지만 config에 없는 카드 제거
+  if (container) {
+    container.querySelectorAll(selectors.card).forEach(card => {
+      if (!metrics[card.dataset.metric]) card.remove();
+    });
+  }
 }
 
 // ======================
@@ -708,4 +728,74 @@ function updateRefreshInterval(datasetName, interval) {
   const target = this.datasetInfo.find(d => d.datasetName === datasetName);
   if (!target) return;
   target.refreshInterval = interval;
+}
+
+// ======================================
+// CATEGORY E: 현황카드 API
+// ======================================
+
+function updateSensorStatusMetric(key, options) {
+  const metric = this.config.statusCards.metrics[key];
+  if (!metric) {
+    console.warn(`[updateSensorStatusMetric] 존재하지 않는 키: ${key}`);
+    return;
+  }
+
+  const { metricCode, label, unit, color, scale, targetValue } = options;
+  if (metricCode !== undefined)   metric.metricCode = metricCode;
+  if (label !== undefined)        metric.label = label;
+  if (unit !== undefined)         metric.unit = unit;
+  if (color !== undefined)        metric.color = color;
+  if (scale !== undefined)        metric.scale = scale;
+  if (targetValue !== undefined)  metric.targetValue = targetValue;
+}
+
+function addSensorStatusMetric(key, options) {
+  const { metrics } = this.config.statusCards;
+  if (metrics[key]) {
+    console.warn(`[addSensorStatusMetric] 이미 존재하는 키: ${key}`);
+    return;
+  }
+
+  const { label, unit, metricCode = null, color = '#64748b', scale = 1.0, targetValue = null } = options;
+  if (!label || !unit) {
+    console.warn(`[addSensorStatusMetric] label과 unit은 필수`);
+    return;
+  }
+
+  metrics[key] = { metricCode, label, unit, color, scale, targetValue };
+}
+
+function removeSensorStatusMetric(key) {
+  const { metrics } = this.config.statusCards;
+  if (!metrics[key]) {
+    console.warn(`[removeSensorStatusMetric] 존재하지 않는 키: ${key}`);
+    return;
+  }
+
+  delete metrics[key];
+}
+
+function createSensorCardElement(key, cfg) {
+  const card = document.createElement('div');
+  card.className = 'status-card';
+  card.dataset.metric = key;
+  card.innerHTML = `
+    <div class="status-card-header">
+      <span class="status-card-label"></span>
+    </div>
+    <div class="status-card-body">
+      <div class="status-current">
+        <span class="status-current-label">현재</span>
+        <span class="status-current-value">-</span>
+        <span class="status-current-unit">${cfg.unit}</span>
+      </div>
+      <div class="status-target">
+        <span class="status-target-label">적정</span>
+        <span class="status-target-value">-</span>
+        <span class="status-target-unit">${cfg.unit}</span>
+      </div>
+    </div>
+  `;
+  return card;
 }

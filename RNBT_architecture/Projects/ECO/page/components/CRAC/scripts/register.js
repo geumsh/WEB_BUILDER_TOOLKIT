@@ -201,6 +201,9 @@ function initComponent() {
   this.updateGlobalParams = updateGlobalParams.bind(this);
   this.updateRefreshInterval = updateRefreshInterval.bind(this);
 
+  // Category E: 현황카드 API
+  this.updateCracStatusMetric = updateCracStatusMetric.bind(this);
+
   // ======================
   // 7. 3D 이벤트 바인딩
   // ======================
@@ -739,4 +742,20 @@ function updateRefreshInterval(datasetName, interval) {
   const target = this.datasetInfo.find(d => d.datasetName === datasetName);
   if (!target) return;
   target.refreshInterval = interval;
+}
+
+// ======================================
+// CATEGORY E: 현황카드 API
+// ======================================
+
+function updateCracStatusMetric(key, options) {
+  const metric = this.config.statusCards.metrics[key];
+  if (!metric) {
+    console.warn(`[updateCracStatusMetric] 존재하지 않는 키: ${key}`);
+    return;
+  }
+
+  const { metricCode, scale } = options;
+  if (metricCode !== undefined) metric.metricCode = metricCode;
+  if (scale !== undefined)      metric.scale = scale;
 }

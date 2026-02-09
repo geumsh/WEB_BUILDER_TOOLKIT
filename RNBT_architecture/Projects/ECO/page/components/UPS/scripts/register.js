@@ -205,6 +205,11 @@ function initComponent() {
   this.updateGlobalParams = updateGlobalParams.bind(this);
   this.updateRefreshInterval = updateRefreshInterval.bind(this);
 
+  // Category E: 현황카드 API
+  this.updateUpsStatusMetric = updateUpsStatusMetric.bind(this);
+  this.addUpsStatusMetric = addUpsStatusMetric.bind(this);
+  this.removeUpsStatusMetric = removeUpsStatusMetric.bind(this);
+
   // ======================
   // 7. 3D 이벤트 바인딩 (라이브러리 강제 네이밍)
   // ======================
@@ -627,19 +632,32 @@ function onPopupCreated({ chartSelector, events }) {
 
 function renderInitialLabels() {
   const { powerStatus, chart } = this.config;
+  const { metrics, selectors } = powerStatus;
+  const container = this.popupQuery('.power-cards');
 
-  // 전력현황 카드 라벨/유닛
+  // 전력현황 카드 reconciliation: config 기준으로 DOM 동기화
   fx.go(
-    Object.entries(powerStatus.metrics),
+    Object.entries(metrics),
     fx.each(([key, cfg]) => {
-      const card = this.popupQuery(`${powerStatus.selectors.card}[data-metric="${key}"]`);
+      let card = this.popupQuery(`${selectors.card}[data-metric="${key}"]`);
+      if (!card && container) {
+        card = createPowerCardElement(key);
+        container.appendChild(card);
+      }
       if (!card) return;
-      const labelEl = card.querySelector(powerStatus.selectors.label);
-      const unitEl = card.querySelector(powerStatus.selectors.unit);
+      const labelEl = card.querySelector(selectors.label);
+      const unitEl = card.querySelector(selectors.unit);
       if (labelEl) labelEl.textContent = cfg.label;
       if (unitEl) unitEl.textContent = cfg.unit;
     })
   );
+
+  // DOM에 있지만 config에 없는 카드 제거
+  if (container) {
+    container.querySelectorAll(selectors.card).forEach(card => {
+      if (!metrics[card.dataset.metric]) card.remove();
+    });
+  }
 
   // 탭 버튼 라벨
   fx.go(
@@ -740,4 +758,62 @@ function updateRefreshInterval(datasetName, interval) {
   const target = this.datasetInfo.find(d => d.datasetName === datasetName);
   if (!target) return;
   target.refreshInterval = interval;
+}
+
+// ======================================
+// CATEGORY E: 현황카드 API
+// ======================================
+
+function updateUpsStatusMetric(key, options) {
+  const metric = this.config.powerStatus.metrics[key];
+  if (!metric) {
+    console.warn(`[updateUpsStatusMetric] 존재하지 않는 키: ${key}`);
+    return;
+  }
+
+  const { metricCode, label, unit, scale } = options;
+  if (metricCode !== undefined) metric.metricCode = metricCode;
+  if (label !== undefined)      metric.label = label;
+  if (unit !== undefined)       metric.unit = unit;
+  if (scale !== undefined)      metric.scale = scale;
+}
+
+function addUpsStatusMetric(key, options) {
+  const { metrics } = this.config.powerStatus;
+  if (metrics[key]) {
+    console.warn(`[addUpsStatusMetric] 이미 존재하는 키: ${key}`);
+    return;
+  }
+
+  const { label, unit, metricCode = null, scale = 1.0 } = options;
+  if (!label || !unit) {
+    console.warn(`[addUpsStatusMetric] label과 unit은 필수`);
+    return;
+  }
+
+  metrics[key] = { label, unit, metricCode, scale };
+}
+
+function removeUpsStatusMetric(key) {
+  const { metrics } = this.config.powerStatus;
+  if (!metrics[key]) {
+    console.warn(`[removeUpsStatusMetric] 존재하지 않는 키: ${key}`);
+    return;
+  }
+
+  delete metrics[key];
+}
+
+function createPowerCardElement(key) {
+  const card = document.createElement('div');
+  card.className = 'power-card';
+  card.dataset.metric = key;
+  card.innerHTML = `
+    <div class="power-card-label"></div>
+    <div class="power-card-body">
+      <span class="power-card-value">-</span>
+      <span class="power-card-unit"></span>
+    </div>
+  `;
+  return card;
 }
