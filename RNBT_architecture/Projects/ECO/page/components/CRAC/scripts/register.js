@@ -10,6 +10,7 @@
 
 const { bind3DEvents, fetchData } = Wkit;
 const { applyShadowPopupMixin, applyEChartsMixin } = PopupMixin;
+const { applyHeatmapMixin } = HeatmapMixin;
 
 // ======================
 // TEMPLATE HELPER
@@ -216,6 +217,7 @@ function initComponent() {
     events: {
       click: {
         '.close-btn': () => this.hideDetail(),
+        '.heatmap-btn': () => this.toggleHeatmap(),
       },
     },
   };
@@ -232,6 +234,12 @@ function initComponent() {
   });
 
   applyEChartsMixin(this);
+
+  // 3D Heatmap Surface Mixin
+  applyHeatmapMixin(this, {
+    surfaceSize: { width: 20, depth: 20 },
+    temperatureMetrics: ['SENSOR.TEMP', 'CRAC.RETURN_TEMP'],
+  });
 
   console.log('[CRAC] Registered:', this._defaultAssetKey);
 }

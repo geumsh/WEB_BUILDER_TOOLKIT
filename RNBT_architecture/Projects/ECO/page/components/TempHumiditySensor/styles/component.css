@@ -84,6 +84,32 @@
     color: #ef4444;
 }
 
+.heatmap-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    padding: 0;
+    background: transparent;
+    border: 1px solid #2a3142;
+    border-radius: 6px;
+    color: #8892a0;
+    cursor: pointer;
+    transition: background 0.15s, color 0.15s, border-color 0.15s;
+}
+
+.heatmap-btn:hover {
+    background: #2a3142;
+    color: #e0e6ed;
+}
+
+.heatmap-btn[data-active="true"] {
+    background: rgba(59, 130, 246, 0.2);
+    border-color: rgba(59, 130, 246, 0.5);
+    color: #3b82f6;
+}
+
 .close-btn {
     display: flex;
     align-items: center;
