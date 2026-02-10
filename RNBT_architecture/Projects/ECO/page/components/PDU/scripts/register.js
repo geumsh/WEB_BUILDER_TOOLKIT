@@ -578,11 +578,17 @@ function renderComparisonChart(tabConfig, selectors) {
   const statsKey = this.config.api.statsKeyMap[tabConfig.metricCode];
   const timeKey = timeField || 'time';
 
-  // 데이터를 시간별로 그룹핑하는 헬퍼 (원본 시간 사용)
+  // 시간 부분만 추출 (금일/전일 비교를 위해 날짜 제거)
+  const extractHHMM = (timeStr) => {
+    const d = new Date(timeStr);
+    return String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0');
+  };
+
+  // 데이터를 시간(HH:MM)별로 그룹핑하는 헬퍼
   const groupByTime = (data) =>
     fx.reduce(
       (acc, row) => {
-        const time = row[timeKey];
+        const time = extractHHMM(row[timeKey]);
         if (row.metricCode === tabConfig.metricCode) {
           acc[time] = row.statsBody?.[statsKey] ?? null;
         }
@@ -595,8 +601,8 @@ function renderComparisonChart(tabConfig, selectors) {
   const todayMap = groupByTime(today);
   const yesterdayMap = groupByTime(yesterday);
 
-  // 금일/전일 데이터의 시간 키 합집합
-  const times = [...new Set([...Object.keys(todayMap), ...Object.keys(yesterdayMap)])];
+  // 금일/전일 데이터의 시간 키 합집합 (HH:MM 정렬)
+  const times = [...new Set([...Object.keys(todayMap), ...Object.keys(yesterdayMap)])].sort();
 
   const todayValues = fx.go(
     times,
