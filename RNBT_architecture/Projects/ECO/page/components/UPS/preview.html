@@ -235,6 +235,18 @@
             each: (fn, arr) => {
                 if (arr === undefined) return (arr2) => { arr2.forEach(fn); return arr2; };
                 arr.forEach(fn); return arr;
+            },
+            filter: (fn, arr) => {
+                if (arr === undefined) return (arr2) => arr2.filter(fn);
+                return arr.filter(fn);
+            },
+            reduce: (fn, init, arr) => {
+                if (arr === undefined) return (arr2) => arr2.reduce(fn, init);
+                return arr.reduce(fn, init);
+            },
+            map: (fn, arr) => {
+                if (arr === undefined) return (arr2) => arr2.map(fn);
+                return arr.map(fn);
             }
         };
 
@@ -328,8 +340,8 @@
                 const hour = new Date(now.getTime() - i * 3600000).getHours();
 
                 // 입력/출력 전류 (A)
-                data.push({ time, metricCode: 'UPS.INPUT_A_AVG', statsBody: { avg: 14.5 + Math.random() * 2 - 1 } });
-                data.push({ time, metricCode: 'UPS.OUTPUT_A_AVG', statsBody: { avg: 13.8 + Math.random() * 2 - 1 } });
+                data.push({ time, metricCode: 'UPS.INPUT_A_SUM', statsBody: { sum: 14.5 + Math.random() * 2 - 1 } });
+                data.push({ time, metricCode: 'UPS.OUTPUT_A_SUM', statsBody: { sum: 13.8 + Math.random() * 2 - 1 } });
 
                 // 입력/출력 전압 (V)
                 data.push({ time, metricCode: 'UPS.INPUT_V_AVG', statsBody: { avg: 220 + Math.random() * 6 - 3 } });
@@ -504,12 +516,11 @@
             // 1. 내부 상태
             // ======================
             this._defaultAssetKey = this.setter?.assetInfo?.assetKey || this.id;
-            this._baseUrl = '10.23.128.125:4004';
+            this._baseUrl = '10.23.128.140:8811';
             this._locale = 'ko';
             this._popupTemplateId = 'popup-ups';
             this._trendData = null;
             this._activeTab = 'voltage';
-            this._metricRefreshIntervalId = null;
 
             // ======================
             // 2. 변환 함수 바인딩 (config.fields.transform에서 사용)
@@ -544,32 +555,31 @@
                         interval: '1h',
                         timeRange: 24 * 60 * 60 * 1000,
                         metricCodes: [
-                            'UPS.INPUT_A_AVG', 'UPS.OUTPUT_A_AVG',
+                            'UPS.INPUT_A_SUM', 'UPS.OUTPUT_A_SUM',
                             'UPS.INPUT_V_AVG', 'UPS.OUTPUT_V_AVG',
                             'UPS.INPUT_F_AVG', 'UPS.OUTPUT_F_AVG',
                         ],
-                        statsKeys: ['avg'],
+                        statsKeys: [],
                         timeField: 'time',
+                    },
+                    statsKeyMap: {
+                        'UPS.INPUT_A_SUM': 'sum',
+                        'UPS.OUTPUT_A_SUM': 'sum',
+                        'UPS.INPUT_V_AVG': 'avg',
+                        'UPS.OUTPUT_V_AVG': 'avg',
+                        'UPS.INPUT_F_AVG': 'avg',
+                        'UPS.OUTPUT_F_AVG': 'avg',
                     },
                 },
 
-                // 상태 매핑
+                // 상태 코드별 레이블/속성 매핑
                 statusMap: {
-                    labels: {
-                        ACTIVE: '정상운영',
-                        WARNING: '주의',
-                        CRITICAL: '위험',
-                        INACTIVE: '비활성',
-                        MAINTENANCE: '유지보수',
-                    },
-                    dataAttrs: {
-                        ACTIVE: 'normal',
-                        WARNING: 'warning',
-                        CRITICAL: 'critical',
-                        INACTIVE: 'inactive',
-                        MAINTENANCE: 'maintenance',
-                    },
-                    defaultDataAttr: 'normal',
+                    ACTIVE:      { label: '정상운영', dataAttr: 'normal' },
+                    WARNING:     { label: '주의',     dataAttr: 'warning' },
+                    CRITICAL:    { label: '위험',     dataAttr: 'critical' },
+                    INACTIVE:    { label: '비활성',   dataAttr: 'inactive' },
+                    MAINTENANCE: { label: '유지보수', dataAttr: 'maintenance' },
+                    DEFAULT:     { label: '알 수 없음', dataAttr: 'normal' },
                 },
 
                 // ========================
@@ -591,13 +601,13 @@
                     fields: [
                         { key: 'name', selector: '.info-name' },
                         { key: 'assetType', selector: '.info-type' },
-                        { key: 'usageLabel', selector: '.info-usage', fallback: '-' },
+                        { key: 'assetModelName', selector: '.info-model', fallback: '-' },
+                        { key: 'usageCode', selector: '.info-usage', fallback: '-' },
                         { key: 'locationLabel', selector: '.info-location' },
                         { key: 'statusType', selector: '.info-status', transform: this.statusTypeToLabel },
                         { key: 'installDate', selector: '.info-install-date', transform: this.formatDate },
                     ],
                     chain: {
-                        model: '.info-model',
                         vendor: '.info-vendor',
                     },
                 },
@@ -622,7 +632,7 @@
                 // 트렌드 차트 영역 (3탭)
                 chart: {
                     tabs: {
-                        current:   { label: '입/출력 전류',   unit: 'A',  inputCode: 'UPS.INPUT_A_AVG',  outputCode: 'UPS.OUTPUT_A_AVG' },
+                        current:   { label: '입/출력 전류',   unit: 'A',  inputCode: 'UPS.INPUT_A_SUM',  outputCode: 'UPS.OUTPUT_A_SUM' },
                         voltage:   { label: '입/출력 전압',   unit: 'V',  inputCode: 'UPS.INPUT_V_AVG',  outputCode: 'UPS.OUTPUT_V_AVG' },
                         frequency: { label: '입/출력 주파수', unit: 'Hz', inputCode: 'UPS.INPUT_F_AVG',  outputCode: 'UPS.OUTPUT_F_AVG' },
                     },
@@ -645,9 +655,9 @@
             const { datasetNames, api } = this.config;
             const baseParam = { baseUrl: this._baseUrl, assetKey: this._defaultAssetKey, locale: this._locale };
             this.datasetInfo = [
-                { datasetName: datasetNames.assetDetail, param: { ...baseParam }, render: ['renderBasicInfo'] },
-                { datasetName: datasetNames.metricLatest, param: { ...baseParam }, render: ['renderPowerStatus'] },
-                { datasetName: datasetNames.metricHistory, param: { ...baseParam, ...api.trendParams, apiEndpoint: api.trendHistory }, render: ['renderTrendChart'] },
+                { datasetName: datasetNames.assetDetail, param: { ...baseParam }, render: ['renderBasicInfo'], refreshInterval: 0 },
+                { datasetName: datasetNames.metricLatest, param: { ...baseParam }, render: ['renderPowerStatus'], refreshInterval: 5000 },
+                { datasetName: datasetNames.metricHistory, param: { ...baseParam, ...api.trendParams, apiEndpoint: api.trendHistory }, render: ['renderTrendChart'], refreshInterval: 5000 },
             ];
 
             // ======================
@@ -656,13 +666,13 @@
             this.renderBasicInfo = renderBasicInfo.bind(this);
             this.renderPowerStatus = renderPowerStatus.bind(this);
             this.renderTrendChart = renderTrendChart.bind(this);
+            this.renderInitialLabels = renderInitialLabels.bind(this);
 
             // ======================
             // 6. Public Methods
             // ======================
             this.showDetail = showDetail.bind(this);
             this.hideDetail = hideDetail.bind(this);
-            this.refreshMetrics = refreshMetrics.bind(this);
             this.stopRefresh = stopRefresh.bind(this);
             this._switchTab = switchTab.bind(this);
 
@@ -691,12 +701,7 @@
             const { htmlCode, cssCode } = this.properties.publishCode || {};
             this.getPopupHTML = () => extractTemplate(htmlCode || '', this._popupTemplateId);
             this.getPopupStyles = () => cssCode || '';
-            this.onPopupCreated = () => {
-                renderInitialLabels.call(this);
-                const { chartSelector, events } = popupCreatedConfig;
-                if (chartSelector) this.createChart(chartSelector);
-                if (events) this.bindPopupEvents(events);
-            };
+            this.onPopupCreated = onPopupCreated.bind(this, popupCreatedConfig);
 
             applyShadowPopupMixin(this, {
                 getHTML: this.getPopupHTML,
@@ -712,40 +717,28 @@
         function showDetail() {
             this.showPopup();
 
-            const { datasetNames, refresh } = this.config;
+            // 탭 상태 초기화
+            this._activeTab = 'voltage';
+            const tabBtns = this.popupQueryAll(this.config.chart.selectors.tabBtn);
+            if (tabBtns) {
+                tabBtns.forEach(btn => btn.classList.toggle('active', btn.dataset.tab === 'voltage'));
+            }
 
-            // 1) assetDetailUnified + metricLatest 호출 (섹션별 독립 처리)
-            // metricHistoryStats는 fetchTrendData에서 fetch API로 직접 호출하므로 제외
+            // 모든 datasetInfo를 fetchData로 호출
             fx.go(
-                this.datasetInfo.filter(d => d.datasetName !== datasetNames.metricHistory),
-                fx.each(({ datasetName, param, render }) =>
-                    fx.go(
-                        Wkit.fetchData(this.page, datasetName, param),
-                        (response) => {
-                            if (!response || !response.response) {
-                                console.warn(`[UPS] ${datasetName} fetch failed - no response`);
-                                return;
-                            }
-                            const data = response.response.data;
-                            if (data === null || data === undefined) {
-                                console.warn(`[UPS] ${datasetName} - no data`);
-                                return;
-                            }
-                            fx.each((fn) => this[fn](response), render);
-                        }
-                    )
-                )
-            ).catch(e => {
-                console.error('[UPS] Data load error:', e);
-            });
+                this.datasetInfo,
+                fx.each(d => fetchDatasetAndRender.call(this, d))
+            );
 
-            // 2) 트렌드 차트 호출 (mhs/l)
-            fetchTrendData.call(this);
-
-            // 3) 5초 주기로 메트릭 갱신 시작
+            // refreshInterval > 0인 데이터셋에 대해 주기적 갱신 시작
             this.stopRefresh();
-            this._metricRefreshIntervalId = setInterval(() => this.refreshMetrics(), refresh.interval);
-            console.log('[UPS] Metric refresh started (5s interval)');
+            fx.go(
+                this.datasetInfo,
+                fx.filter(d => d.refreshInterval > 0),
+                fx.each(d => {
+                    d._intervalId = setInterval(() => fetchDatasetAndRender.call(this, d), d.refreshInterval);
+                })
+            );
         }
 
         function hideDetail() {
@@ -753,28 +746,53 @@
             this.hidePopup();
         }
 
-        function refreshMetrics() {
-            const { datasetNames } = this.config;
-            const metricInfo = this.datasetInfo.find(d => d.datasetName === datasetNames.metricLatest);
+        function stopRefresh() {
             fx.go(
-                Wkit.fetchData(this.page, datasetNames.metricLatest, metricInfo.param),
-                (response) => {
-                    if (!response || !response.response) return;
-                    const data = response.response.data;
-                    if (data === null || data === undefined) return;
-                    this.renderPowerStatus(response);
-                }
-            ).catch(e => {
-                console.warn('[UPS] Metric refresh failed:', e);
-            });
+                this.datasetInfo,
+                fx.filter(d => d._intervalId),
+                fx.each(d => {
+                    clearInterval(d._intervalId);
+                    d._intervalId = null;
+                })
+            );
         }
 
-        function stopRefresh() {
-            if (this._metricRefreshIntervalId) {
-                clearInterval(this._metricRefreshIntervalId);
-                this._metricRefreshIntervalId = null;
-                console.log('[UPS] Metric refresh stopped');
+        // ======================
+        // DATASET FETCH HELPER
+        // ======================
+
+        function formatLocalDate(date) {
+            const y = date.getFullYear();
+            const m = String(date.getMonth() + 1).padStart(2, '0');
+            const d = String(date.getDate()).padStart(2, '0');
+            const h = String(date.getHours()).padStart(2, '0');
+            const min = String(date.getMinutes()).padStart(2, '0');
+            const s = String(date.getSeconds()).padStart(2, '0');
+            return y + '-' + m + '-' + d + ' ' + h + ':' + min + ':' + s;
+        }
+
+        function fetchDatasetAndRender(d) {
+            const { datasetNames } = this.config;
+            const { datasetName, param, render } = d;
+
+            // metricHistory는 매번 timeFrom/timeTo 갱신
+            if (datasetName === datasetNames.metricHistory) {
+                const now = new Date();
+                const from = new Date(now.getTime() - param.timeRange);
+                param.timeFrom = formatLocalDate(from);
+                param.timeTo = formatLocalDate(now);
             }
+
+            Wkit.fetchData(this.page, datasetName, param)
+                .then(response => {
+                    const data = extractData(response);
+                    if (!data) return;
+                    if (datasetName === datasetNames.metricHistory) {
+                        this._trendData = data;
+                    }
+                    fx.each(fn => this[fn](response), render);
+                })
+                .catch(e => console.warn(`[UPS] ${datasetName} fetch failed:`, e));
         }
 
         function switchTab(tabName) {
@@ -793,42 +811,14 @@
             }
         }
 
-        async function fetchTrendData() {
-            const { datasetNames } = this.config;
-            const trendInfo = this.datasetInfo.find(d => d.datasetName === datasetNames.metricHistory);
-            if (!trendInfo) return;
-
-            const { baseUrl, assetKey, interval, metricCodes, statsKeys, timeRange, apiEndpoint } = trendInfo.param;
-            const now = new Date();
-            const from = new Date(now.getTime() - timeRange);
-
-            try {
-                const response = await fetch(`http://${baseUrl}${apiEndpoint}`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        filter: {
-                            assetKey,
-                            interval,
-                            metricCodes,
-                            timeFrom: from.toISOString().replace('T', ' ').slice(0, 19),
-                            timeTo: now.toISOString().replace('T', ' ').slice(0, 19),
-                        },
-                        statsKeys,
-                        sort: [],
-                    }),
-                });
-
-                const result = await response.json();
-                if (!result || !result.success) {
-                    console.warn('[UPS] Trend data unavailable');
-                    return;
-                }
-                this._trendData = result.data;
-                this.renderTrendChart({ response: { data: result.data } });
-            } catch (e) {
-                console.warn('[UPS] Trend fetch failed:', e);
-            }
+        /**
+         * extractData - 응답 객체에서 데이터 추출
+         */
+        function extractData(response, path = 'data') {
+            if (!response || !response.response) return null;
+            const data = response.response[path];
+            if (data === null || data === undefined) return null;
+            return data;
         }
 
         function renderBasicInfo({ response }) {
@@ -839,67 +829,68 @@
             }
 
             const asset = data.asset;
-            const { header, infoTable, datasetNames } = this.config;
+            const { header, infoTable } = this.config;
 
             // Header 영역
             fx.go(
                 header.fields,
-                fx.each(({ key, selector, dataAttr, transform }) => {
-                    const el = this.popupQuery(selector);
-                    if (!el) return;
-                    let value = asset[key];
-                    if (transform) value = transform(value);
-                    if (dataAttr) {
-                        el.dataset[dataAttr] = value;
-                    } else {
-                        el.textContent = value;
-                    }
-                })
+                fx.each(field => renderField(this, asset, field))
             );
 
-            // 기본정보 테이블 (config 기반)
+            // 기본정보 테이블
+            fx.go(
+                infoTable.fields,
+                fx.each(field => renderField(this, asset, field))
+            );
+
+            // 제조사명/모델 체이닝
+            fetchModelVendorChain(this, asset, infoTable.chain);
+        }
+
+        function renderField(ctx, data, field) {
+            const el = ctx.popupQuery(field.selector);
+            if (!el) return;
+            let value = data[field.key] ?? field.fallback ?? '-';
+            if (field.transform) value = field.transform(value);
+            if (field.dataAttr) {
+                el.dataset[field.dataAttr] = value;
+            } else {
+                el.textContent = value;
+            }
+        }
+
+        function fetchModelVendorChain(ctx, asset, chainConfig) {
+            const { datasetNames } = ctx.config;
             const setCell = (selector, value) => {
-                const el = this.popupQuery(selector);
+                const el = ctx.popupQuery(selector);
                 if (el) el.textContent = value ?? '-';
             };
 
+            if (!asset.assetModelKey) return;
+
             fx.go(
-                infoTable.fields,
-                fx.each(({ key, selector, transform, fallback }) => {
-                    let value = asset[key] ?? fallback ?? '-';
-                    if (transform) value = transform(value);
-                    setCell(selector, value);
-                })
-            );
+                Wkit.fetchData(ctx.page, datasetNames.modelDetail, { baseUrl: ctx._baseUrl, assetModelKey: asset.assetModelKey }),
+                (modelResp) => {
+                    const model = extractData(modelResp, 'data');
+                    if (!model) return;
 
-            // 제조사명/모델 체이닝: assetModelKey → mdl/g → vdr/g
-            if (asset.assetModelKey) {
-                fx.go(
-                    Wkit.fetchData(this.page, datasetNames.modelDetail, { baseUrl: this._baseUrl, assetModelKey: asset.assetModelKey }),
-                    (modelResp) => {
-                        if (!modelResp?.response?.data) return;
-                        const model = modelResp.response.data;
-                        setCell(infoTable.chain.model, model.name);
-
-                        if (model.assetVendorKey) {
-                            fx.go(
-                                Wkit.fetchData(this.page, datasetNames.vendorDetail, { baseUrl: this._baseUrl, assetVendorKey: model.assetVendorKey }),
-                                (vendorResp) => {
-                                    if (!vendorResp?.response?.data) return;
-                                    setCell(infoTable.chain.vendor, vendorResp.response.data.name);
-                                }
-                            ).catch(() => {});
-                        }
+                    if (model.assetVendorKey) {
+                        fx.go(
+                            Wkit.fetchData(ctx.page, datasetNames.vendorDetail, { baseUrl: ctx._baseUrl, assetVendorKey: model.assetVendorKey }),
+                            (vendorResp) => {
+                                const vendor = extractData(vendorResp, 'data');
+                                if (vendor) setCell(chainConfig.vendor, vendor.name);
+                            }
+                        ).catch(() => {});
                     }
-                ).catch(() => {});
-            }
+                }
+            ).catch(() => {});
         }
 
         function renderPowerStatus({ response }) {
             const { data } = response;
             const { powerStatus } = this.config;
             const { metrics, selectors } = powerStatus;
-            const timestampEl = this.popupQuery(selectors.timestamp);
 
             if (!data || !Array.isArray(data) || data.length === 0) {
                 console.warn('[UPS] renderPowerStatus: no data');
@@ -907,78 +898,79 @@
             }
 
             // 타임스탬프 표시
+            const timestampEl = this.popupQuery(selectors.timestamp);
             if (timestampEl && data[0]?.eventedAt) {
                 timestampEl.textContent = this.formatTimestamp(data[0].eventedAt);
             }
 
-            // 메트릭 코드를 값으로 매핑
-            const metricMap = {};
-            data.forEach((metric) => {
-                const value = metric.valueType === 'NUMBER' ? metric.valueNumber : metric.valueString;
-                metricMap[metric.metricCode] = value;
-            });
+            // 메트릭 코드 → 값 매핑
+            const metricMap = fx.reduce(
+                (acc, m) => (acc[m.metricCode] = m.valueType === 'NUMBER' ? m.valueNumber : m.valueString, acc),
+                {},
+                data
+            );
 
-            // 각 카드에 값 설정
-            Object.entries(metrics).forEach(([key, config]) => {
-                const card = this.popupQuery(`${selectors.card}[data-metric="${key}"]`);
-                if (!card) return;
+            // 카드 업데이트
+            fx.go(
+                Object.entries(metrics),
+                fx.each(([key, cfg]) => updatePowerCard(this, selectors, metricMap, key, cfg))
+            );
+        }
 
-                const valueEl = card.querySelector(selectors.value);
-                if (!valueEl) return;
+        function updatePowerCard(ctx, selectors, metricMap, key, cfg) {
+            const card = ctx.popupQuery(`${selectors.card}[data-metric="${key}"]`);
+            const valueEl = card?.querySelector(selectors.value);
+            if (!valueEl) return;
 
-                // metricCode가 없으면 "-" 표시 (API 미지원)
-                if (!config.metricCode) {
-                    valueEl.textContent = '-';
-                    return;
-                }
+            if (!cfg.metricCode) {
+                valueEl.textContent = '-';
+                return;
+            }
 
-                // 값 표시
-                const rawValue = metricMap[config.metricCode];
-                if (rawValue != null) {
-                    const displayValue = (rawValue * config.scale).toFixed(1);
-                    valueEl.textContent = displayValue;
-                } else {
-                    valueEl.textContent = '-';
-                }
-            });
+            const rawValue = metricMap[cfg.metricCode];
+            valueEl.textContent = rawValue != null ? (rawValue * cfg.scale).toFixed(1) : '-';
         }
 
         function renderTrendChart({ response }) {
             const { data } = response;
-            const safeData = Array.isArray(data) ? data : [];
-
-            const { chart, datasetNames } = this.config;
+            const { chart } = this.config;
             const { tabs, series, selectors } = chart;
             const tabConfig = tabs[this._activeTab];
             if (!tabConfig) return;
 
-            // datasetInfo에서 param 가져오기
+            // 단일 시리즈 렌더링 (데이터 없어도 빈 차트 표시)
+            const safeData = Array.isArray(data) ? data : [];
+            const { datasetNames } = this.config;
             const trendInfo = this.datasetInfo.find((d) => d.datasetName === datasetNames.metricHistory);
-            const { statsKeys, timeField } = trendInfo?.param || {};
-            const statsKey = statsKeys?.[0] || 'avg';
+            const { timeField } = trendInfo?.param || {};
             const timeKey = timeField || 'time';
 
             // 현재 탭의 metricCode로 필터링
             const tabMetricCodes = [tabConfig.inputCode, tabConfig.outputCode];
             const tabData = safeData.filter(row => tabMetricCodes.includes(row.metricCode));
 
-            // 필터링된 데이터를 시간별로 그룹핑
-            const timeMap = {};
-            tabData.forEach((row) => {
-                const time = row[timeKey];
-                if (!timeMap[time]) timeMap[time] = {};
-                timeMap[time][row.metricCode] = row.statsBody?.[statsKey] ?? null;
-            });
+            // 필터링된 데이터로 시간별 그룹핑
+            const timeMap = fx.reduce(
+                (acc, row) => {
+                    const time = row[timeKey];
+                    if (!acc[time]) acc[time] = {};
+                    const statsKey = this.config.api.statsKeyMap[row.metricCode];
+                    acc[time][row.metricCode] = statsKey ? (row.statsBody?.[statsKey] ?? null) : null;
+                    return acc;
+                },
+                {},
+                tabData
+            );
 
             const times = Object.keys(timeMap);
-            const inputValues = times.map((t) => {
-                const raw = timeMap[t][tabConfig.inputCode];
+
+            const extractValues = (code) => fx.map(t => {
+                const raw = timeMap[t]?.[code];
                 return raw != null ? +(raw).toFixed(2) : null;
-            });
-            const outputValues = times.map((t) => {
-                const raw = timeMap[t][tabConfig.outputCode];
-                return raw != null ? +(raw).toFixed(2) : null;
-            });
+            }, times);
+
+            const inputValues = extractValues(tabConfig.inputCode);
+            const outputValues = extractValues(tabConfig.outputCode);
 
             const { input: inputSeries, output: outputSeries } = series;
 
@@ -1066,21 +1058,40 @@
             console.warn('[UPS] renderError:', message);
         }
 
+        function onPopupCreated({ chartSelector, events }) {
+            chartSelector && this.createChart(chartSelector);
+            events && this.bindPopupEvents(events);
+            this.renderInitialLabels();
+        }
+
         function renderInitialLabels() {
             const { powerStatus, chart } = this.config;
+            const { metrics, selectors } = powerStatus;
+            const container = this.popupQuery('.power-cards');
 
-            // 전력현황 카드 라벨/유닛
+            // 전력현황 카드 reconciliation: config 기준으로 DOM 동기화
             fx.go(
-                Object.entries(powerStatus.metrics),
+                Object.entries(metrics),
                 fx.each(([key, cfg]) => {
-                    const card = this.popupQuery(`${powerStatus.selectors.card}[data-metric="${key}"]`);
+                    let card = this.popupQuery(`${selectors.card}[data-metric="${key}"]`);
+                    if (!card && container) {
+                        card = createPowerCardElement(key);
+                        container.appendChild(card);
+                    }
                     if (!card) return;
-                    const labelEl = card.querySelector(powerStatus.selectors.label);
-                    const unitEl = card.querySelector(powerStatus.selectors.unit);
+                    const labelEl = card.querySelector(selectors.label);
+                    const unitEl = card.querySelector(selectors.unit);
                     if (labelEl) labelEl.textContent = cfg.label;
                     if (unitEl) unitEl.textContent = cfg.unit;
                 })
             );
+
+            // DOM에 있지만 config에 없는 카드 제거
+            if (container) {
+                container.querySelectorAll(selectors.card).forEach(card => {
+                    if (!metrics[card.dataset.metric]) card.remove();
+                });
+            }
 
             // 탭 버튼 라벨
             fx.go(
@@ -1098,14 +1109,30 @@
             if (outputLegend) outputLegend.textContent = chart.series.output.label;
         }
 
+        function createPowerCardElement(key) {
+            const card = document.createElement('div');
+            card.className = 'power-card';
+            card.dataset.metric = key;
+            card.innerHTML = `
+                <div class="power-card-label"></div>
+                <div class="power-card-body">
+                    <span class="power-card-value">-</span>
+                    <span class="power-card-unit"></span>
+                </div>
+            `;
+            return card;
+        }
+
         function statusTypeToLabel(statusType) {
-            const { labels } = this.config.statusMap;
-            return labels[statusType] || statusType;
+            const { statusMap } = this.config;
+            const entry = statusMap[statusType] || statusMap.DEFAULT;
+            return entry.label;
         }
 
         function statusTypeToDataAttr(statusType) {
-            const { dataAttrs, defaultDataAttr } = this.config.statusMap;
-            return dataAttrs[statusType] || defaultDataAttr;
+            const { statusMap } = this.config;
+            const entry = statusMap[statusType] || statusMap.DEFAULT;
+            return entry.dataAttr;
         }
 
         function formatDate(dateStr) {

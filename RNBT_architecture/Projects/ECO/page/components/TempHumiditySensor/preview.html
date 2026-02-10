@@ -67,6 +67,12 @@
                                 <span class="sensor-zone">-</span>
                             </div>
                             <div class="header-actions">
+                                <button class="heatmap-btn" type="button" aria-label="Heatmap" data-active="false">
+                                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+                                        <path d="M12 2C8.13 2 5 5.13 5 9c0 2.38 1.19 4.47 3 5.74V17c0 .55.45 1 1 1h6c.55 0 1-.45 1-1v-2.26c1.81-1.27 3-3.36 3-5.74 0-3.87-3.13-7-7-7z" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+                                        <path d="M9 21h6M10 17v4M14 17v4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+                                    </svg>
+                                </button>
                                 <span class="sensor-status" data-status="normal">Normal</span>
                                 <button class="close-btn" type="button" aria-label="Close">
                                     <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
@@ -195,6 +201,20 @@
             .sensor-status[data-status="normal"] { background: rgba(34, 197, 94, 0.15); color: #22c55e; }
             .sensor-status[data-status="warning"] { background: rgba(234, 179, 8, 0.15); color: #eab308; }
             .sensor-status[data-status="critical"] { background: rgba(239, 68, 68, 0.15); color: #ef4444; }
+
+            .heatmap-btn {
+                display: flex; align-items: center; justify-content: center;
+                width: 32px; height: 32px; padding: 0;
+                background: transparent; border: 1px solid #2a3142; border-radius: 6px;
+                color: #8892a0; cursor: pointer;
+                transition: background 0.15s, color 0.15s, border-color 0.15s;
+            }
+            .heatmap-btn:hover { background: #2a3142; color: #e0e6ed; }
+            .heatmap-btn[data-active="true"] {
+                background: rgba(59, 130, 246, 0.2);
+                border-color: rgba(59, 130, 246, 0.5);
+                color: #3b82f6;
+            }
 
             .close-btn {
                 display: flex; align-items: center; justify-content: center;
@@ -506,6 +526,23 @@
             }
         };
 
+        // Mock HeatmapMixin
+        const HeatmapMixin = {
+            applyHeatmapMixin: (ctx, options) => {
+                ctx.toggleHeatmap = () => {
+                    const btn = ctx.popupQuery('.heatmap-btn');
+                    if (btn) {
+                        const active = btn.dataset.active === 'true';
+                        btn.dataset.active = String(!active);
+                    }
+                    console.log('[HeatmapMixin] Heatmap toggled (mock)');
+                };
+                ctx.destroyHeatmap = () => console.log('[HeatmapMixin] Heatmap destroyed (mock)');
+                console.log('[HeatmapMixin] Applied:', options);
+            },
+        };
+        const { applyHeatmapMixin } = HeatmapMixin;
+
         // ======================
         // TEMPLATE HELPER
         // ======================
@@ -552,13 +589,15 @@
         // ======================
 
         function statusTypeToLabel(statusType) {
-            const cfg = this.config.statusMap[statusType];
-            return cfg ? cfg.label : statusType;
+            const { statusMap } = this.config;
+            const entry = statusMap[statusType] || statusMap.DEFAULT;
+            return entry.label;
         }
 
         function statusTypeToDataAttr(statusType) {
-            const cfg = this.config.statusMap[statusType];
-            return cfg ? cfg.dataAttr : 'normal';
+            const { statusMap } = this.config;
+            const entry = statusMap[statusType] || statusMap.DEFAULT;
+            return entry.dataAttr;
         }
 
         function formatDate(dateStr) {
@@ -585,10 +624,9 @@
             // 1. 내부 상태
             // ======================
             this._defaultAssetKey = this.setter?.assetInfo?.assetKey || this.id;
-            this._baseUrl = '10.23.128.125:4004';
+            this._baseUrl = '10.23.128.140:8811';
             this._locale = 'ko';
             this._popupTemplateId = 'popup-sensor';
-            this._metricRefreshIntervalId = null;
 
             // ======================
             // 2. 변환 함수 바인딩
@@ -623,6 +661,7 @@
                     CRITICAL:    { label: '위험',     dataAttr: 'critical' },
                     INACTIVE:    { label: '비활성',   dataAttr: 'inactive' },
                     MAINTENANCE: { label: '유지보수', dataAttr: 'maintenance' },
+                    DEFAULT:     { label: '알 수 없음', dataAttr: 'normal' },
                 },
 
                 // API 파라미터
@@ -632,8 +671,12 @@
                         interval: '1h',
                         timeRange: 24 * 60 * 60 * 1000,
                         metricCodes: ['SENSOR.TEMP', 'SENSOR.HUMIDITY'],
-                        statsKeys: ['avg'],
+                        statsKeys: [],
                         timeField: 'time',
+                    },
+                    statsKeyMap: {
+                        'SENSOR.TEMP': 'avg',
+                        'SENSOR.HUMIDITY': 'avg',
                     },
                 },
 
@@ -656,13 +699,13 @@
                     fields: [
                         { key: 'name', selector: '.info-name' },
                         { key: 'assetType', selector: '.info-type' },
-                        { key: 'usageLabel', selector: '.info-usage', fallback: '-' },
+                        { key: 'assetModelName', selector: '.info-model', fallback: '-' },
+                        { key: 'usageCode', selector: '.info-usage', fallback: '-' },
                         { key: 'locationLabel', selector: '.info-location' },
                         { key: 'statusType', selector: '.info-status', transform: this.statusTypeToLabel },
                         { key: 'installDate', selector: '.info-install-date', transform: this.formatDate },
                     ],
                     chain: {
-                        model: '.info-model',
                         vendor: '.info-vendor',
                     },
                 },
@@ -713,9 +756,9 @@
             const { datasetNames, api } = this.config;
             const baseParam = { baseUrl: this._baseUrl, assetKey: this._defaultAssetKey, locale: this._locale };
             this.datasetInfo = [
-                { datasetName: datasetNames.assetDetail, param: { ...baseParam }, render: ['renderBasicInfo'] },
-                { datasetName: datasetNames.metricLatest, param: { ...baseParam }, render: ['renderStatusCards'] },
-                { datasetName: datasetNames.metricHistory, param: { ...baseParam, ...api.trendParams, apiEndpoint: api.trendHistory }, render: ['renderTrendChart'] },
+                { datasetName: datasetNames.assetDetail, param: { ...baseParam }, render: ['renderBasicInfo'], refreshInterval: 0 },
+                { datasetName: datasetNames.metricLatest, param: { ...baseParam }, render: ['renderStatusCards'], refreshInterval: 5000 },
+                { datasetName: datasetNames.metricHistory, param: { ...baseParam, ...api.trendParams, apiEndpoint: api.trendHistory }, render: ['renderTrendChart'], refreshInterval: 5000 },
             ];
 
             // ======================
@@ -731,7 +774,6 @@
             // ======================
             this.showDetail = showDetail.bind(this);
             this.hideDetail = hideDetail.bind(this);
-            this.refreshMetrics = refreshMetricsOnly.bind(this);
             this.stopRefresh = stopRefresh.bind(this);
 
             // ======================
@@ -748,6 +790,7 @@
                 events: {
                     click: {
                         '.close-btn': () => this.hideDetail(),
+                        '.heatmap-btn': () => this.toggleHeatmap(),
                     },
                 },
             };
@@ -755,12 +798,7 @@
             const { htmlCode, cssCode } = this.properties.publishCode || {};
             this.getPopupHTML = () => extractTemplate(htmlCode || '', this._popupTemplateId);
             this.getPopupStyles = () => cssCode || '';
-            this.onPopupCreated = () => {
-                const { chartSelector, events } = popupCreatedConfig;
-                if (chartSelector) this.createChart(chartSelector);
-                if (events) this.bindPopupEvents(events);
-                this.renderInitialLabels();
-            };
+            this.onPopupCreated = onPopupCreated.bind(this, popupCreatedConfig);
 
             applyShadowPopupMixin(this, {
                 getHTML: this.getPopupHTML,
@@ -769,6 +807,12 @@
             });
 
             applyEChartsMixin(this);
+
+            // 3D Heatmap Surface Mixin
+            applyHeatmapMixin(this, {
+                surfaceSize: { width: 20, depth: 20 },
+                temperatureMetrics: ['SENSOR.TEMP', 'CRAC.RETURN_TEMP'],
+            });
 
             console.log('[TempHumiditySensor] Registered:', this._defaultAssetKey);
         }
@@ -819,20 +863,65 @@
             ).catch(() => {});
         }
 
+        function onPopupCreated({ chartSelector, events }) {
+            chartSelector && this.createChart(chartSelector);
+            events && this.bindPopupEvents(events);
+            this.renderInitialLabels();
+        }
+
         /**
-         * renderInitialLabels - 팝업 생성 시 동적 레이블 렌더링
+         * renderInitialLabels - 팝업 생성 시 동적 레이블 렌더링 + reconciliation
          */
         function renderInitialLabels() {
             const { statusCards } = this.config;
+            const { metrics, selectors } = statusCards;
+            const container = this.popupQuery('.status-cards');
+
+            // config에 있지만 DOM에 없는 카드 → 생성
             fx.go(
-                Object.entries(statusCards.metrics),
+                Object.entries(metrics),
                 fx.each(([key, cfg]) => {
-                    const card = this.popupQuery(`${statusCards.selectors.card}[data-metric="${key}"]`);
+                    let card = this.popupQuery(`${selectors.card}[data-metric="${key}"]`);
+                    if (!card && container) {
+                        card = createSensorCardElement(key, cfg);
+                        container.appendChild(card);
+                    }
                     if (!card) return;
                     const labelEl = card.querySelector('.status-card-label');
                     if (labelEl) labelEl.textContent = cfg.label;
                 })
             );
+
+            // DOM에 있지만 config에 없는 카드 → 제거
+            if (container) {
+                container.querySelectorAll(selectors.card).forEach(card => {
+                    if (!metrics[card.dataset.metric]) card.remove();
+                });
+            }
+        }
+
+        function createSensorCardElement(key, cfg) {
+            const card = document.createElement('div');
+            card.className = 'status-card';
+            card.dataset.metric = key;
+            card.innerHTML = `
+                <div class="status-card-header">
+                    <span class="status-card-label"></span>
+                </div>
+                <div class="status-card-body">
+                    <div class="status-current">
+                        <span class="status-current-label">현재</span>
+                        <span class="status-current-value">-</span>
+                        <span class="status-current-unit">${cfg.unit}</span>
+                    </div>
+                    <div class="status-target">
+                        <span class="status-target-label">적정</span>
+                        <span class="status-target-value">-</span>
+                        <span class="status-target-unit">${cfg.unit}</span>
+                    </div>
+                </div>
+            `;
+            return card;
         }
 
         function renderBasicInfo({ response }) {
@@ -917,8 +1006,7 @@
 
             // datasetInfo에서 param 가져오기
             const trendInfo = this.datasetInfo.find((d) => d.datasetName === datasetNames.metricHistory);
-            const { statsKeys, timeField } = trendInfo?.param || {};
-            const statsKey = statsKeys?.[0] || 'avg';
+            const { timeField } = trendInfo?.param || {};
             const timeKey = timeField || 'time';
 
             // 차트에 표시할 metricCode로 필터링
@@ -930,7 +1018,8 @@
                 (acc, row) => {
                     const time = row[timeKey];
                     if (!acc[time]) acc[time] = {};
-                    acc[time][row.metricCode] = row.statsBody?.[statsKey] ?? null;
+                    const statsKey = this.config.api.statsKeyMap[row.metricCode];
+                    acc[time][row.metricCode] = statsKey ? (row.statsBody?.[statsKey] ?? null) : null;
                     return acc;
                 },
                 {},
@@ -1021,72 +1110,21 @@
         function showDetail() {
             this.showPopup();
 
-            const { datasetNames, refresh } = this.config;
-
-            // 1) assetDetailUnified + metricLatest 호출 (섹션별 독립 처리)
-            // metricHistoryStats는 fetchTrendData에서 fetch API로 직접 호출하므로 제외
+            // 모든 datasetInfo를 fetchData로 호출
             fx.go(
                 this.datasetInfo,
-                fx.filter(d => d.datasetName !== datasetNames.metricHistory),
-                fx.each(({ datasetName, param, render }) =>
-                    fx.go(
-                        Wkit.fetchData(this.page, datasetName, param),
-                        (response) => {
-                            const data = extractData(response);
-                            if (data === null) {
-                                console.warn(`[TempHumiditySensor] ${datasetName} - no data`);
-                                return;
-                            }
-                            fx.each((fn) => this[fn](response), render);
-                        }
-                    )
-                )
-            ).catch(e => {
-                console.error('[TempHumiditySensor] Data load error:', e);
-            });
+                fx.each(d => fetchDatasetAndRender.call(this, d))
+            );
 
-            // 2) 트렌드 차트 호출 (mhs/l)
-            fetchTrendData.call(this);
-
-            // 3) 5초 주기로 메트릭 갱신 시작
+            // refreshInterval > 0인 데이터셋에 대해 주기적 갱신 시작
             this.stopRefresh();
-            this._metricRefreshIntervalId = setInterval(() => this.refreshMetrics(), refresh.interval);
-            console.log('[TempHumiditySensor] Metric refresh started (5s interval)');
-        }
-
-        async function fetchTrendData() {
-            const { datasetNames } = this.config;
-            const trendInfo = this.datasetInfo.find(d => d.datasetName === datasetNames.metricHistory);
-            if (!trendInfo) return;
-
-            const { param } = trendInfo;
-            const { baseUrl, assetKey, interval, metricCodes, statsKeys, timeRange, apiEndpoint } = param;
-
-            const now = new Date();
-            const from = new Date(now.getTime() - timeRange);
-            const timeFrom = from.toISOString().replace('T', ' ').slice(0, 19);
-            const timeTo = now.toISOString().replace('T', ' ').slice(0, 19);
-
-            try {
-                const response = await fetch(`http://${baseUrl}${apiEndpoint}`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        filter: { assetKey, interval, metricCodes, timeFrom, timeTo },
-                        statsKeys,
-                        sort: [],
-                    }),
-                });
-
-                const result = await response.json();
-                if (!result || !result.success) {
-                    console.warn('[TempHumiditySensor] Trend data unavailable');
-                    return;
-                }
-                this.renderTrendChart({ response: { data: result.data } });
-            } catch (e) {
-                console.warn('[TempHumiditySensor] Trend fetch failed:', e);
-            }
+            fx.go(
+                this.datasetInfo,
+                fx.filter(d => d.refreshInterval > 0),
+                fx.each(d => {
+                    d._intervalId = setInterval(() => fetchDatasetAndRender.call(this, d), d.refreshInterval);
+                })
+            );
         }
 
         function hideDetail() {
@@ -1094,32 +1132,50 @@
             this.hidePopup();
         }
 
-        function refreshMetricsOnly() {
-            const { datasetNames } = this.config;
-            const metricInfo = fx.go(
-                this.datasetInfo,
-                fx.filter(d => d.datasetName === datasetNames.metricLatest)
-            )[0];
-            if (!metricInfo) return;
-
+        function stopRefresh() {
             fx.go(
-                Wkit.fetchData(this.page, datasetNames.metricLatest, metricInfo.param),
-                (response) => {
-                    const data = extractData(response);
-                    if (data === null) return;
-                    this.renderStatusCards(response);
-                }
-            ).catch(e => {
-                console.warn('[TempHumiditySensor] Metric refresh failed:', e);
-            });
+                this.datasetInfo,
+                fx.filter(d => d._intervalId),
+                fx.each(d => {
+                    clearInterval(d._intervalId);
+                    d._intervalId = null;
+                })
+            );
         }
 
-        function stopRefresh() {
-            if (this._metricRefreshIntervalId) {
-                clearInterval(this._metricRefreshIntervalId);
-                this._metricRefreshIntervalId = null;
-                console.log('[TempHumiditySensor] Metric refresh stopped');
+        // ======================
+        // DATASET FETCH HELPER
+        // ======================
+
+        function formatLocalDate(date) {
+            const y = date.getFullYear();
+            const m = String(date.getMonth() + 1).padStart(2, '0');
+            const d = String(date.getDate()).padStart(2, '0');
+            const h = String(date.getHours()).padStart(2, '0');
+            const min = String(date.getMinutes()).padStart(2, '0');
+            const s = String(date.getSeconds()).padStart(2, '0');
+            return y + '-' + m + '-' + d + ' ' + h + ':' + min + ':' + s;
+        }
+
+        function fetchDatasetAndRender(d) {
+            const { datasetNames } = this.config;
+            const { datasetName, param, render } = d;
+
+            // metricHistory는 매번 timeFrom/timeTo 갱신
+            if (datasetName === datasetNames.metricHistory) {
+                const now = new Date();
+                const from = new Date(now.getTime() - param.timeRange);
+                param.timeFrom = formatLocalDate(from);
+                param.timeTo = formatLocalDate(now);
             }
+
+            Wkit.fetchData(this.page, datasetName, param)
+                .then(response => {
+                    const data = extractData(response);
+                    if (!data) return;
+                    fx.each(fn => this[fn](response), render);
+                })
+                .catch(e => console.warn(`[TempHumiditySensor] ${datasetName} fetch failed:`, e));
         }
 
         function onInstanceUnLoad() {
