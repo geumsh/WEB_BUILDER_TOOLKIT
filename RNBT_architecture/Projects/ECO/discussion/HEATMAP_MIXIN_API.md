@@ -8,9 +8,11 @@ simpleheat(인라인 포함)로 2D 히트맵을 생성하고, THREE.ShaderMateri
 ## 개요
 
 팝업 내 버튼 클릭 시 클릭한 인스턴스 위치를 중심으로 주변 온도 분포를 히트맵 서피스로 토글 표시.
+히트맵 갱신은 `renderStatusCards` 콜백에 연동되어 카드와 동일 시점/동일 데이터로 동기화.
 
 ```
-팝업 히트맵 버튼 클릭 → toggleHeatmap() → mesh 생성 (인스턴스 위치 중심) → 센서 데이터 수집 → 렌더링
+팝업 히트맵 버튼 클릭 → toggleHeatmap() → mesh 생성 → 최초 데이터 수집 → 렌더링
+이후 갱신: renderStatusCards → 캐시 + 히트맵 갱신 트리거 (카드와 동기화)
 ```
 
 ---
@@ -85,7 +87,6 @@ applyHeatmapMixin(this, {
     blur:               25,
     opacity:            0.75,
     temperatureMetrics: ['SENSOR.TEMP', 'CRAC.RETURN_TEMP'],
-    refreshInterval:    5000,
 });
 ```
 
@@ -333,33 +334,30 @@ temperatureMetrics: ['SENSOR.HUMIDITY']
 
 ---
 
-#### `refreshInterval` — 자동 데이터 갱신 주기
+#### 데이터 동기화 (renderStatusCards 연동)
 
-| 타입 | 기본값 | 범위 |
-|------|--------|------|
-| number | `5000` | 0 = 비활성, 1000 이상 권장 |
+히트맵은 독립적 `setInterval`을 사용하지 않습니다.
+대신 `renderStatusCards` 콜백에 연동되어 **카드와 동일 시점에 동일 데이터로** 갱신됩니다.
 
-히트맵 활성(ON) 상태에서 센서 데이터를 주기적으로 재수집하여 히트맵을 갱신하는 간격 (ms).
-`0`으로 설정하면 자동 갱신을 비활성화 (최초 1회 렌더링만).
-
-```javascript
-refreshInterval: 5000     // 기본 (5초마다 갱신, 카드 새로고침과 동일 주기)
-refreshInterval: 10000    // 10초마다 갱신 (부하 감소)
-refreshInterval: 0        // 자동 갱신 비활성화 (최초 1회만)
+**동기화 흐름:**
+```
+datasetInfo의 metricLatest 갱신 (5초 주기, 프레임워크 제어)
+  → renderStatusCards({ response }) 호출
+    → 카드 값 업데이트
+    → response 캐싱 (instance._cachedMetricLatest)
+    → 히트맵 활성 시 refreshHeatmapData() 트리거
+      → collectSensorData()
+        → 팝업 소유 인스턴스: 캐시 데이터 사용 (API 중복 호출 없음)
+        → 기타 인스턴스: metricLatest API 호출
+      → renderHeatmap(dataPoints)
 ```
 
-갱신 흐름:
-```
-toggleHeatmap() ON
-  → 최초 collectSensorData + renderHeatmap
-  → setInterval(refreshInterval)
-    → collectSensorData → renderHeatmap (반복)
-  ...
-toggleHeatmap() OFF / destroyHeatmap()
-  → clearInterval
-```
+**이점:**
+- 카드와 히트맵이 항상 같은 값을 표시 (동일 API 응답 사용)
+- 갱신 타이밍이 프레임워크의 `datasetInfo.refreshInterval`에 의해 통일
+- 팝업 소유 인스턴스는 API 중복 호출 없음 (캐시 재사용)
 
-> `updateHeatmapConfig({ refreshInterval: 10000 })` 호출 시 기존 인터벌을 중지하고 새 주기로 재시작.
+> 갱신 주기를 변경하려면 `datasetInfo`의 `refreshInterval`을 조정하세요.
 
 ---
 
@@ -380,15 +378,15 @@ this.toggleHeatmap();
 **ON 시**:
 1. 기존 활성 히트맵 제거 (싱글톤 — 동시에 하나만 존재)
 2. PlaneGeometry + ShaderMaterial mesh 생성 (클릭한 인스턴스 위치 중심)
-3. 모든 3D 인스턴스에서 `temperatureMetrics` 데이터 수집 (metricLatest API)
+3. 모든 3D 인스턴스에서 `temperatureMetrics` 데이터 수집 (최초 1회 즉시 fetch)
 4. simpleheat → colorTexture + displacementTexture 생성
-5. 자동 갱신 인터벌 시작 (`refreshInterval > 0`인 경우)
-6. 버튼 `data-active="true"` 설정
+5. 버튼 `data-active="true"` 설정
+6. 이후 갱신은 `renderStatusCards` 콜백에 의해 자동 트리거
 
 **OFF 시**:
-1. 자동 갱신 인터벌 중지
-2. mesh, geometry, material, texture 모두 dispose
-3. 씬에서 제거
+1. mesh, geometry, material, texture 모두 dispose
+2. 씬에서 제거
+3. 캐시 데이터 정리
 4. 버튼 `data-active="false"` 설정
 
 ### destroyHeatmap()
@@ -397,7 +395,7 @@ this.toggleHeatmap();
 this.destroyHeatmap();
 ```
 
-리소스 정리 전용. 자동 갱신 인터벌 중지 포함.
+리소스 정리 전용. 캐시 데이터 정리 포함.
 `destroyPopup()` 체인에 자동 포함되어 팝업 닫기 시 자동 호출됨.
 
 ### updateHeatmapConfig(options)
@@ -411,8 +409,7 @@ this.updateHeatmapConfig({ radius: 80, blur: 40 });
 | 반영 방식 | 옵션 | 설명 |
 |-----------|------|------|
 | **즉시 반영** (셰이더 uniform) | `displacementScale`, `baseHeight`, `opacity` | GPU 값만 변경. 메시 재생성 없음 |
-| **인터벌 재시작** | `refreshInterval` | 기존 인터벌 중지 → 새 주기로 재시작. 메시 변경 없음 |
-| **재생성** (메시 + 데이터 재수집) | 그 외 모든 옵션 | destroy → 재생성 → 데이터 수집 → 렌더링 → 인터벌 재시작 |
+| **재생성** (메시 + 데이터 재수집) | 그 외 모든 옵션 | destroy → 재생성 → 데이터 수집 → 렌더링 |
 
 히트맵이 꺼진 상태에서 호출하면 config만 업데이트하고 다음 `toggleHeatmap()` 시 반영.
 
@@ -424,10 +421,6 @@ this.updateHeatmapConfig({ displacementScale: 5, baseHeight: 1 });
 // 재생성 (메시 재구성 필요)
 this.updateHeatmapConfig({ radius: 100, blur: 50 });
 this.updateHeatmapConfig({ surfaceSize: { width: 30, depth: 30 } });
-
-// 인터벌만 변경 (메시 재생성 없음)
-this.updateHeatmapConfig({ refreshInterval: 10000 });
-this.updateHeatmapConfig({ refreshInterval: 0 });  // 자동 갱신 중지
 
 // 혼합 시 재생성으로 처리 (uniform + non-uniform)
 this.updateHeatmapConfig({ opacity: 0.5, radius: 80 });
@@ -455,7 +448,9 @@ this.updateHeatmapConfig({ opacity: 0.5, radius: 80 });
 Wkit.makeIterator(page, 'threeLayer')
   → 모든 3D 인스턴스 순회
   → inst.config.statusCards.metrics에서 temperatureMetrics 매칭
-  → 매칭된 인스턴스별 Wkit.fetchData(page, 'metricLatest', { baseUrl, assetKey })
+  → 매칭된 인스턴스별 데이터 수집:
+    → 팝업 소유 인스턴스: _cachedMetricLatest 캐시 사용 (카드와 동일 데이터)
+    → 기타 인스턴스: Wkit.fetchData(page, 'metricLatest', { baseUrl, assetKey })
   → Promise.all 수집
   → [{ worldX, worldZ, temperature }] 반환
 ```
@@ -500,12 +495,12 @@ mesh.raycast = function () {};
 
 `destroyPopup()` 호출 시 자동 정리 (체인 확장):
 
-- 자동 갱신 인터벌 clearInterval
 - PlaneGeometry dispose
 - ShaderMaterial dispose
 - colorTexture, displacementTexture dispose
 - 씬에서 mesh 제거
 - 내부 캔버스, simpleheat 인스턴스 해제
+- 캐시 데이터 정리 (`_cachedMetricLatest = null`)
 
 ```javascript
 // beforeDestroy에서 (자동으로 연결됨)

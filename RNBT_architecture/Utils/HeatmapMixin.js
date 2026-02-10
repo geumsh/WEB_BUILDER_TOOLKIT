@@ -18,6 +18,17 @@
  * - applyShadowPopupMixin 이후 호출 (destroyPopup 체인 확장)
  *
  * ─────────────────────────────────────────────────────────────
+ * 데이터 동기화
+ * ─────────────────────────────────────────────────────────────
+ *
+ * 히트맵은 독립적 타이머 대신 renderStatusCards 콜백에 연동됩니다.
+ * datasetInfo의 metricLatest 갱신 시 카드와 히트맵이 동시에 같은
+ * 데이터로 업데이트되므로 표시값 불일치가 발생하지 않습니다.
+ *
+ * 팝업 소유 인스턴스: renderStatusCards 응답 캐시 사용 (API 중복 호출 없음)
+ * 기타 인스턴스: 동일 시점에 metricLatest API 호출 (동시성 보장)
+ *
+ * ─────────────────────────────────────────────────────────────
  * 사용 예시
  * ─────────────────────────────────────────────────────────────
  *
@@ -241,7 +252,6 @@ HeatmapMixin.applyHeatmapMixin = function (instance, options) {
       blur: 25,
       opacity: 0.75,
       temperatureMetrics: ['SENSOR.TEMP', 'CRAC.RETURN_TEMP'],
-      refreshInterval: 5000,
     },
     options
   );
@@ -255,7 +265,6 @@ HeatmapMixin.applyHeatmapMixin = function (instance, options) {
     heat: null,
     colorTexture: null,
     displacementTexture: null,
-    refreshIntervalId: null,
     config: config,
   };
 
@@ -421,14 +430,28 @@ HeatmapMixin.applyHeatmapMixin = function (instance, options) {
       }
     }
 
-    // 각 대상에 대해 metricLatest fetch
+    // 각 대상에 대해 metricLatest 데이터 수집
+    // - 팝업 소유 인스턴스: _cachedMetricLatest 캐시 사용 (카드와 동일 데이터)
+    // - 기타 인스턴스: metricLatest API 호출
     const fetchPromises = targets.map(function (target) {
-      return Wkit.fetchData(instance.page, 'metricLatest', {
-        baseUrl: target.instance._baseUrl,
-        assetKey: target.instance._defaultAssetKey,
-      })
-        .then(function (response) {
-          const data = response?.response?.data;
+      let dataPromise;
+
+      if (target.instance === instance && instance._cachedMetricLatest) {
+        // 팝업 소유 인스턴스: renderStatusCards에서 캐싱된 응답 사용
+        dataPromise = Promise.resolve(instance._cachedMetricLatest);
+      } else {
+        // 기타 인스턴스: API 호출
+        dataPromise = Wkit.fetchData(instance.page, 'metricLatest', {
+          baseUrl: target.instance._baseUrl,
+          assetKey: target.instance._defaultAssetKey,
+        }).then(function (response) {
+          return response?.response;
+        });
+      }
+
+      return dataPromise
+        .then(function (responseData) {
+          const data = responseData?.data;
           if (!data || !Array.isArray(data)) return null;
 
           const worldPos = new THREE.Vector3();
@@ -491,7 +514,7 @@ HeatmapMixin.applyHeatmapMixin = function (instance, options) {
   }
 
   // ────────────────────────────────────────
-  // 실시간 갱신
+  // 히트맵 데이터 갱신 (renderStatusCards에서 트리거)
   // ────────────────────────────────────────
 
   function refreshHeatmapData() {
@@ -503,20 +526,6 @@ HeatmapMixin.applyHeatmapMixin = function (instance, options) {
         renderHeatmap(dataPoints);
       }
     });
-  }
-
-  function startRefreshInterval() {
-    stopRefreshInterval();
-    if (config.refreshInterval > 0) {
-      instance._heatmap.refreshIntervalId = setInterval(refreshHeatmapData, config.refreshInterval);
-    }
-  }
-
-  function stopRefreshInterval() {
-    if (instance._heatmap.refreshIntervalId) {
-      clearInterval(instance._heatmap.refreshIntervalId);
-      instance._heatmap.refreshIntervalId = null;
-    }
   }
 
   // ────────────────────────────────────────
@@ -559,7 +568,6 @@ HeatmapMixin.applyHeatmapMixin = function (instance, options) {
         } else {
           console.warn('[HeatmapMixin] No sensor data collected');
         }
-        startRefreshInterval();
       });
     }
   };
@@ -575,17 +583,9 @@ HeatmapMixin.applyHeatmapMixin = function (instance, options) {
 
     if (!instance._heatmap.visible) return;
 
-    // refreshInterval 변경 시 인터벌 재시작
-    if (newOptions.refreshInterval !== undefined) {
-      startRefreshInterval();
-    }
-
     var hm = instance._heatmap;
 
-    // refreshInterval 제외한 키로 rebuild 판별
-    var effectKeys = Object.keys(newOptions).filter(function (key) {
-      return key !== 'refreshInterval';
-    });
+    var effectKeys = Object.keys(newOptions);
     if (effectKeys.length === 0) return;
 
     var onlyUniforms = effectKeys.every(function (key) {
@@ -610,7 +610,6 @@ HeatmapMixin.applyHeatmapMixin = function (instance, options) {
         if (dataPoints.length > 0) {
           renderHeatmap(dataPoints);
         }
-        startRefreshInterval();
       });
     }
   };
@@ -620,7 +619,6 @@ HeatmapMixin.applyHeatmapMixin = function (instance, options) {
   // ────────────────────────────────────────
 
   instance.destroyHeatmap = function () {
-    stopRefreshInterval();
     var hm = instance._heatmap;
 
     if (hm.mesh) {
@@ -650,11 +648,33 @@ HeatmapMixin.applyHeatmapMixin = function (instance, options) {
     hm.displacementCanvas = null;
     hm.heat = null;
     hm.visible = false;
+    instance._cachedMetricLatest = null;
 
     if (HeatmapMixin._activeInstance === instance) {
       HeatmapMixin._activeInstance = null;
     }
   };
+
+  // ────────────────────────────────────────
+  // renderStatusCards 체인 확장
+  // (카드 데이터와 히트맵 데이터 동기화)
+  // ────────────────────────────────────────
+
+  if (instance.renderStatusCards) {
+    var originalRenderStatusCards = instance.renderStatusCards;
+    instance.renderStatusCards = function (responseData) {
+      // 원본 카드 렌더링 먼저 실행
+      originalRenderStatusCards.call(instance, responseData);
+
+      // metricLatest 응답 캐싱 (collectSensorData에서 재사용)
+      instance._cachedMetricLatest = responseData.response;
+
+      // 히트맵 활성 시 동기 갱신 트리거
+      if (instance._heatmap && instance._heatmap.visible && instance._heatmap.mesh) {
+        refreshHeatmapData();
+      }
+    };
+  }
 
   // ────────────────────────────────────────
   // destroyPopup 체인 확장
