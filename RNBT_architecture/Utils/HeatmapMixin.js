@@ -35,7 +35,7 @@
  *   const { applyHeatmapMixin } = HeatmapMixin;
  *
  *   applyHeatmapMixin(this, {
- *       surfaceSize: { width: 20, depth: 20 },
+ *       surfaceSize: 'auto',
  *       temperatureMetrics: ['SENSOR.TEMP', 'CRAC.RETURN_TEMP'],
  *   });
  *
@@ -241,17 +241,18 @@ const DEFAULT_GRADIENT = {
 HeatmapMixin.applyHeatmapMixin = function (instance, options) {
   const config = Object.assign(
     {
-      surfaceSize: { width: 20, depth: 20 },
+      surfaceSize: 'auto',
       temperatureRange: { min: 17, max: 31 },
       gradient: null,
       heatmapResolution: 256,
       segments: 64,
       displacementScale: 3,
-      baseHeight: 2,
-      radius: 60,
+      baseHeight: 50,
+      radius: 'auto',
       blur: 25,
       opacity: 0.75,
       temperatureMetrics: ['SENSOR.TEMP', 'CRAC.RETURN_TEMP'],
+      refreshInterval: 0, // ms, 0 = renderStatusCards 체인 사용 (기존 방식)
     },
     options
   );
@@ -267,14 +268,30 @@ HeatmapMixin.applyHeatmapMixin = function (instance, options) {
     displacementTexture: null,
     surface: null,
     config: config,
+    refreshTimer: null,
   };
+
+  // ────────────────────────────────────────
+  // radius 계산 (센서 개수 기반)
+  // 'auto': heatmapResolution / sqrt(count) * 0.5
+  // 숫자: 고정값 사용
+  // ────────────────────────────────────────
+
+  function computeRadius(sensorCount) {
+    if (config.radius !== 'auto') return config.radius;
+
+    const resolution = config.heatmapResolution;
+    const count = Math.max(1, sensorCount);
+    const r = Math.round(resolution / Math.sqrt(count) * 0.5);
+    return Math.max(15, Math.min(Math.round(resolution * 0.4), r));
+  }
 
   // ────────────────────────────────────────
   // 숨겨진 캔버스 + simpleheat 초기화
   // ────────────────────────────────────────
 
   function initHeatmapCanvas() {
-    const { heatmapResolution, radius, blur } = config;
+    const { heatmapResolution, blur } = config;
 
     const colorCanvas = document.createElement('canvas');
     colorCanvas.width = heatmapResolution;
@@ -285,7 +302,7 @@ HeatmapMixin.applyHeatmapMixin = function (instance, options) {
     displacementCanvas.height = heatmapResolution;
 
     const heat = simpleheat(colorCanvas);
-    heat.radius(radius, blur);
+    heat.radius(computeRadius(1), blur);
     heat.max(1);
     heat.gradient(config.gradient || DEFAULT_GRADIENT);
 
@@ -295,23 +312,36 @@ HeatmapMixin.applyHeatmapMixin = function (instance, options) {
   }
 
   // ────────────────────────────────────────
-  // appendElement 스케일 기반 서피스 크기 계산
-  // surfaceSize는 로컬 단위, scale을 곱해 월드 단위로 변환
+  // 서피스 크기 계산
+  // 'auto': appendElement BoundingBox에서 산출
+  // { width, depth }: 로컬 단위 × scale → 월드 단위
   // ────────────────────────────────────────
 
   function computeDynamicSurface() {
-    var scaleX = instance.appendElement.scale.x;
-    var scaleZ = instance.appendElement.scale.z;
-
-    var worldPos = new THREE.Vector3();
+    const worldPos = new THREE.Vector3();
     instance.appendElement.getWorldPosition(worldPos);
+
+    let width, depth;
+
+    if (config.surfaceSize === 'auto') {
+      const box = new THREE.Box3().setFromObject(instance.appendElement);
+      const size = new THREE.Vector3();
+      box.getSize(size);
+      width = size.x;
+      depth = size.z;
+    } else {
+      const scaleX = instance.appendElement.scale.x;
+      const scaleZ = instance.appendElement.scale.z;
+      width = config.surfaceSize.width * scaleX;
+      depth = config.surfaceSize.depth * scaleZ;
+    }
 
     return {
       centerX: worldPos.x,
       centerY: worldPos.y,
       centerZ: worldPos.z,
-      width: config.surfaceSize.width * scaleX,
-      depth: config.surfaceSize.depth * scaleZ,
+      width: width,
+      depth: depth,
     };
   }
 
@@ -326,7 +356,7 @@ HeatmapMixin.applyHeatmapMixin = function (instance, options) {
     initHeatmapCanvas();
 
     // 센서 분포 기반 동적 서피스 크기 계산
-    var surface = computeDynamicSurface();
+    const surface = computeDynamicSurface();
     instance._heatmap.surface = surface;
 
     const colorTexture = new THREE.CanvasTexture(instance._heatmap.colorCanvas);
@@ -375,13 +405,13 @@ HeatmapMixin.applyHeatmapMixin = function (instance, options) {
   // ────────────────────────────────────────
 
   function worldToCanvas(worldX, worldZ, centerX, centerZ) {
-    var surface = instance._heatmap.surface;
-    var heatmapResolution = config.heatmapResolution;
-    var halfW = surface.width / 2;
-    var halfD = surface.depth / 2;
+    const surface = instance._heatmap.surface;
+    const heatmapResolution = config.heatmapResolution;
+    const halfW = surface.width / 2;
+    const halfD = surface.depth / 2;
 
-    var canvasX = ((worldX - centerX + halfW) / surface.width) * heatmapResolution;
-    var canvasY = ((worldZ - centerZ + halfD) / surface.depth) * heatmapResolution;
+    const canvasX = ((worldX - centerX + halfW) / surface.width) * heatmapResolution;
+    const canvasY = ((worldZ - centerZ + halfD) / surface.depth) * heatmapResolution;
     return [canvasX, canvasY];
   }
 
@@ -526,7 +556,8 @@ HeatmapMixin.applyHeatmapMixin = function (instance, options) {
       return [coords[0], coords[1], normalized];
     });
 
-    // simpleheat 렌더링
+    // simpleheat 렌더링 (센서 수 기반 동적 radius)
+    hm.heat.radius(computeRadius(dataPoints.length), config.blur);
     hm.heat.clear();
     hm.heat.data(canvasData);
     hm.heat.draw(0.05);
@@ -540,7 +571,8 @@ HeatmapMixin.applyHeatmapMixin = function (instance, options) {
   }
 
   // ────────────────────────────────────────
-  // 히트맵 데이터 갱신 (renderStatusCards에서 트리거)
+  // 히트맵 데이터 갱신
+  // renderStatusCards 체인 또는 독립 타이머에서 트리거
   // ────────────────────────────────────────
 
   function refreshHeatmapData() {
@@ -555,11 +587,31 @@ HeatmapMixin.applyHeatmapMixin = function (instance, options) {
   }
 
   // ────────────────────────────────────────
+  // 독립 타이머 (refreshInterval > 0일 때 사용)
+  // ────────────────────────────────────────
+
+  function startRefreshTimer() {
+    stopRefreshTimer();
+    if (config.refreshInterval > 0) {
+      instance._heatmap.refreshTimer = setInterval(function () {
+        refreshHeatmapData();
+      }, config.refreshInterval);
+    }
+  }
+
+  function stopRefreshTimer() {
+    if (instance._heatmap.refreshTimer) {
+      clearInterval(instance._heatmap.refreshTimer);
+      instance._heatmap.refreshTimer = null;
+    }
+  }
+
+  // ────────────────────────────────────────
   // 버튼 active 상태 동기화
   // ────────────────────────────────────────
 
   function syncButtonState(active) {
-    var btn = instance.popupQuery?.('.heatmap-btn');
+    const btn = instance.popupQuery?.('.heatmap-btn');
     if (btn) {
       btn.dataset.active = active ? 'true' : 'false';
     }
@@ -578,7 +630,7 @@ HeatmapMixin.applyHeatmapMixin = function (instance, options) {
       // 기존 활성 히트맵 제거 (싱글톤)
       if (HeatmapMixin._activeInstance && HeatmapMixin._activeInstance !== instance) {
         HeatmapMixin._activeInstance.destroyHeatmap();
-        var prevBtn = HeatmapMixin._activeInstance.popupQuery?.('.heatmap-btn');
+        const prevBtn = HeatmapMixin._activeInstance.popupQuery?.('.heatmap-btn');
         if (prevBtn) prevBtn.dataset.active = 'false';
       }
 
@@ -594,6 +646,7 @@ HeatmapMixin.applyHeatmapMixin = function (instance, options) {
         } else {
           console.warn('[HeatmapMixin] No sensor data collected');
         }
+        startRefreshTimer();
       });
     }
   };
@@ -602,25 +655,25 @@ HeatmapMixin.applyHeatmapMixin = function (instance, options) {
   // Public: updateHeatmapConfig
   // ────────────────────────────────────────
 
-  var UNIFORM_KEYS = ['displacementScale', 'baseHeight', 'opacity'];
+  const UNIFORM_KEYS = ['displacementScale', 'baseHeight', 'opacity'];
 
   instance.updateHeatmapConfig = function (newOptions) {
     Object.assign(config, newOptions);
 
     if (!instance._heatmap.visible) return;
 
-    var hm = instance._heatmap;
+    const hm = instance._heatmap;
 
-    var effectKeys = Object.keys(newOptions);
+    const effectKeys = Object.keys(newOptions);
     if (effectKeys.length === 0) return;
 
-    var onlyUniforms = effectKeys.every(function (key) {
+    const onlyUniforms = effectKeys.every(function (key) {
       return UNIFORM_KEYS.indexOf(key) !== -1;
     });
 
     if (onlyUniforms && hm.mesh) {
       // Hot update: 셰이더 uniform만 즉시 반영
-      var uniforms = hm.mesh.material.uniforms;
+      const uniforms = hm.mesh.material.uniforms;
       if (newOptions.displacementScale !== undefined) uniforms.displacementScale.value = newOptions.displacementScale;
       if (newOptions.baseHeight !== undefined) uniforms.baseHeight.value = newOptions.baseHeight;
       if (newOptions.opacity !== undefined) uniforms.opacity.value = newOptions.opacity;
@@ -636,6 +689,7 @@ HeatmapMixin.applyHeatmapMixin = function (instance, options) {
         if (dataPoints.length > 0) {
           renderHeatmap(dataPoints);
         }
+        startRefreshTimer();
       });
     }
   };
@@ -645,10 +699,12 @@ HeatmapMixin.applyHeatmapMixin = function (instance, options) {
   // ────────────────────────────────────────
 
   instance.destroyHeatmap = function () {
-    var hm = instance._heatmap;
+    stopRefreshTimer();
+
+    const hm = instance._heatmap;
 
     if (hm.mesh) {
-      var scene = wemb.threeElements.scene;
+      const scene = wemb.threeElements.scene;
 
       // geometry dispose
       if (hm.mesh.geometry) hm.mesh.geometry.dispose();
@@ -688,7 +744,7 @@ HeatmapMixin.applyHeatmapMixin = function (instance, options) {
   // ────────────────────────────────────────
 
   if (instance.renderStatusCards) {
-    var originalRenderStatusCards = instance.renderStatusCards;
+    const originalRenderStatusCards = instance.renderStatusCards;
     instance.renderStatusCards = function (responseData) {
       // 원본 카드 렌더링 먼저 실행
       originalRenderStatusCards.call(instance, responseData);
@@ -708,7 +764,7 @@ HeatmapMixin.applyHeatmapMixin = function (instance, options) {
   // ────────────────────────────────────────
 
   if (instance.destroyPopup) {
-    var originalDestroyPopup = instance.destroyPopup;
+    const originalDestroyPopup = instance.destroyPopup;
     instance.destroyPopup = function () {
       instance.destroyHeatmap();
       originalDestroyPopup.call(instance);
