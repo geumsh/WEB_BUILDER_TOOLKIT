@@ -280,7 +280,13 @@
                     usageCode: '랙 전원 분배', installDate: '2025-10-23T00:00:00.000Z',
                     assetModelKey: 'model-pdu-001', assetModelName: 'SUS-PDB-800'
                 },
-                properties: []
+                properties: [
+                    { fieldKey: 'rated_voltage', label: '정격전압', value: '380V', helpText: '정격 전압', displayOrder: 1 },
+                    { fieldKey: 'rated_current', label: '정격전류', value: '800A', helpText: '정격 전류', displayOrder: 2 },
+                    { fieldKey: 'phase', label: '상', value: '3Ø (3상)', helpText: '상 구성', displayOrder: 3 },
+                    { fieldKey: 'main_breaker_capacity', label: '주 차단기 용량', value: '1000A', helpText: '주 차단기 정격 용량', displayOrder: 4 },
+                    { fieldKey: 'upstream_equipment', label: '상위전원장비', value: 'UPS-01', helpText: '전원 공급 상위 장비', displayOrder: 5 },
+                ]
             },
             warning: {
                 asset: {
@@ -289,7 +295,13 @@
                     usageCode: '냉각장치 전원', installDate: '2024-08-15T00:00:00.000Z',
                     assetModelKey: 'model-pdu-001', assetModelName: 'SUS-PDB-800'
                 },
-                properties: []
+                properties: [
+                    { fieldKey: 'rated_voltage', label: '정격전압', value: '380V', helpText: '정격 전압', displayOrder: 1 },
+                    { fieldKey: 'rated_current', label: '정격전류', value: '800A', helpText: '정격 전류', displayOrder: 2 },
+                    { fieldKey: 'phase', label: '상', value: '3Ø (3상)', helpText: '상 구성', displayOrder: 3 },
+                    { fieldKey: 'main_breaker_capacity', label: '주 차단기 용량', value: '1000A', helpText: '주 차단기 정격 용량', displayOrder: 4 },
+                    { fieldKey: 'upstream_equipment', label: '상위전원장비', value: 'UPS-01', helpText: '전원 공급 상위 장비', displayOrder: 5 },
+                ]
             },
             critical: {
                 asset: {
@@ -298,7 +310,13 @@
                     usageCode: '서버 전원', installDate: '2024-03-10T00:00:00.000Z',
                     assetModelKey: 'model-pdu-002', assetModelName: 'PDU-4200'
                 },
-                properties: []
+                properties: [
+                    { fieldKey: 'rated_voltage', label: '정격전압', value: '380V', helpText: '정격 전압', displayOrder: 1 },
+                    { fieldKey: 'rated_current', label: '정격전류', value: '800A', helpText: '정격 전류', displayOrder: 2 },
+                    { fieldKey: 'phase', label: '상', value: '3Ø (3상)', helpText: '상 구성', displayOrder: 3 },
+                    { fieldKey: 'main_breaker_capacity', label: '주 차단기 용량', value: '1000A', helpText: '주 차단기 정격 용량', displayOrder: 4 },
+                    { fieldKey: 'upstream_equipment', label: '상위전원장비', value: 'UPS-01', helpText: '전원 공급 상위 장비', displayOrder: 5 },
+                ]
             }
         };
 
@@ -909,6 +927,28 @@
 
             // 제조사명/모델 체이닝
             fetchModelVendorChain(this, asset, infoTable.chain);
+
+            // properties 동적 렌더링 (기본정보 테이블에 행 추가)
+            renderPropertiesRows(this, data.properties);
+        }
+
+        function renderPropertiesRows(ctx, properties) {
+            if (!properties || properties.length === 0) return;
+
+            const tbody = ctx.popupQuery('.info-table tbody');
+            if (!tbody) return;
+
+            tbody.querySelectorAll('tr[data-property]').forEach(tr => tr.remove());
+
+            [...properties]
+                .sort((a, b) => (a.displayOrder || 0) - (b.displayOrder || 0))
+                .forEach(({ fieldKey, label, value, helpText }) => {
+                    const tr = document.createElement('tr');
+                    tr.dataset.property = fieldKey;
+                    if (helpText) tr.title = helpText;
+                    tr.innerHTML = `<th>${label}</th><td>${value ?? '-'}</td>`;
+                    tbody.appendChild(tr);
+                });
         }
 
         // ======================

@@ -428,6 +428,28 @@ function renderBasicInfo({ response }) {
 
   // 제조사명 직접 조회 (gx가 assetVendorKey 반환)
   fetchVendorDirect(this, asset, infoTable.chain);
+
+  // properties 동적 렌더링 (기본정보 테이블에 행 추가)
+  renderPropertiesRows(this, data.properties);
+}
+
+function renderPropertiesRows(ctx, properties) {
+  if (!properties || properties.length === 0) return;
+
+  const tbody = ctx.popupQuery('.info-table tbody');
+  if (!tbody) return;
+
+  tbody.querySelectorAll('tr[data-property]').forEach(tr => tr.remove());
+
+  [...properties]
+    .sort((a, b) => (a.displayOrder || 0) - (b.displayOrder || 0))
+    .forEach(({ fieldKey, label, value, helpText }) => {
+      const tr = document.createElement('tr');
+      tr.dataset.property = fieldKey;
+      if (helpText) tr.title = helpText;
+      tr.innerHTML = `<th>${label}</th><td>${value ?? '-'}</td>`;
+      tbody.appendChild(tr);
+    });
 }
 
 // ======================

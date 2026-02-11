@@ -152,6 +152,8 @@
    ====================== */
 .info-section .info-content {
     padding: 16px;
+    max-height: 280px;
+    overflow-y: auto;
 }
 
 .info-layout {

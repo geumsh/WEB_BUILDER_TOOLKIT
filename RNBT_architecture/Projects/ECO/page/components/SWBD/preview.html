@@ -263,7 +263,12 @@
                     assetModelKey: 'model-swbd-001', assetModelName: 'SUSOL MCC Panel',
                     assetVendorKey: 'vendor-ls'
                 },
-                properties: []
+                properties: [
+                    { fieldKey: 'rated_voltage', label: '정격전압', value: '22.9 kV', helpText: '정격 전압', displayOrder: 1 },
+                    { fieldKey: 'rated_current', label: '정격전류', value: '1,250 A', helpText: '정격 전류', displayOrder: 2 },
+                    { fieldKey: 'rated_breaking_current', label: '정격차단전류', value: '25 kA', helpText: '정격 차단 전류', displayOrder: 3 },
+                    { fieldKey: 'breaker_type', label: '차단기 타입', value: 'VCB', helpText: '차단기 종류', displayOrder: 4 },
+                ]
             },
             warning: {
                 asset: {
@@ -273,7 +278,12 @@
                     assetModelKey: 'model-swbd-001', assetModelName: 'SUSOL MCC Panel',
                     assetVendorKey: 'vendor-ls'
                 },
-                properties: []
+                properties: [
+                    { fieldKey: 'rated_voltage', label: '정격전압', value: '22.9 kV', helpText: '정격 전압', displayOrder: 1 },
+                    { fieldKey: 'rated_current', label: '정격전류', value: '1,250 A', helpText: '정격 전류', displayOrder: 2 },
+                    { fieldKey: 'rated_breaking_current', label: '정격차단전류', value: '25 kA', helpText: '정격 차단 전류', displayOrder: 3 },
+                    { fieldKey: 'breaker_type', label: '차단기 타입', value: 'VCB', helpText: '차단기 종류', displayOrder: 4 },
+                ]
             },
             critical: {
                 asset: {
@@ -283,7 +293,12 @@
                     assetModelKey: 'model-swbd-002', assetModelName: 'VCB Panel HV-24',
                     assetVendorKey: 'vendor-hyundai'
                 },
-                properties: []
+                properties: [
+                    { fieldKey: 'rated_voltage', label: '정격전압', value: '22.9 kV', helpText: '정격 전압', displayOrder: 1 },
+                    { fieldKey: 'rated_current', label: '정격전류', value: '1,250 A', helpText: '정격 전류', displayOrder: 2 },
+                    { fieldKey: 'rated_breaking_current', label: '정격차단전류', value: '25 kA', helpText: '정격 차단 전류', displayOrder: 3 },
+                    { fieldKey: 'breaker_type', label: '차단기 타입', value: 'VCB', helpText: '차단기 종류', displayOrder: 4 },
+                ]
             }
         };
 
@@ -819,6 +834,28 @@
             );
 
             fetchVendorDirect(this, asset, infoTable.chain);
+
+            // properties 동적 렌더링 (기본정보 테이블에 행 추가)
+            renderPropertiesRows(this, data.properties);
+        }
+
+        function renderPropertiesRows(ctx, properties) {
+            if (!properties || properties.length === 0) return;
+
+            const tbody = ctx.popupQuery('.info-table tbody');
+            if (!tbody) return;
+
+            tbody.querySelectorAll('tr[data-property]').forEach(tr => tr.remove());
+
+            [...properties]
+                .sort((a, b) => (a.displayOrder || 0) - (b.displayOrder || 0))
+                .forEach(({ fieldKey, label, value, helpText }) => {
+                    const tr = document.createElement('tr');
+                    tr.dataset.property = fieldKey;
+                    if (helpText) tr.title = helpText;
+                    tr.innerHTML = `<th>${label}</th><td>${value ?? '-'}</td>`;
+                    tbody.appendChild(tr);
+                });
         }
 
         // ======================

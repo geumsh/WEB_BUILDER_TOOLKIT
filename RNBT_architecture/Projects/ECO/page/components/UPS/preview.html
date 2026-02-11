@@ -274,6 +274,13 @@
                     assetModelKey: 'mdl-ups-001',
                     assetModelName: 'Galaxy 8000',
                 },
+                properties: [
+                    { fieldKey: 'rated_capacity', label: '정격 용량', value: '500kVA', helpText: 'UPS 정격 용량', displayOrder: 1 },
+                    { fieldKey: 'output_voltage', label: '출력 전압', value: '380V', helpText: '출력 전압', displayOrder: 2 },
+                    { fieldKey: 'output_phase', label: '출력 상', value: '3상', helpText: '출력 상 구성', displayOrder: 3 },
+                    { fieldKey: 'ups_type', label: 'UPS 타입', value: '온라인', helpText: 'UPS 동작 방식', displayOrder: 4 },
+                    { fieldKey: 'battery_type', label: '배터리 구성', value: '리튬이온', helpText: '배터리 종류', displayOrder: 5 },
+                ],
             },
             warning: {
                 asset: {
@@ -286,6 +293,13 @@
                     assetModelKey: 'mdl-ups-002',
                     assetModelName: '9PX 8000',
                 },
+                properties: [
+                    { fieldKey: 'rated_capacity', label: '정격 용량', value: '300kVA', helpText: 'UPS 정격 용량', displayOrder: 1 },
+                    { fieldKey: 'output_voltage', label: '출력 전압', value: '220V', helpText: '출력 전압', displayOrder: 2 },
+                    { fieldKey: 'output_phase', label: '출력 상', value: '단상', helpText: '출력 상 구성', displayOrder: 3 },
+                    { fieldKey: 'ups_type', label: 'UPS 타입', value: '라인 인터랙티브', helpText: 'UPS 동작 방식', displayOrder: 4 },
+                    { fieldKey: 'battery_type', label: '배터리 구성', value: '납축전지', helpText: '배터리 종류', displayOrder: 5 },
+                ],
             },
             critical: {
                 asset: {
@@ -298,6 +312,13 @@
                     assetModelKey: 'mdl-ups-003',
                     assetModelName: 'SRT 10000',
                 },
+                properties: [
+                    { fieldKey: 'rated_capacity', label: '정격 용량', value: '750kVA', helpText: 'UPS 정격 용량', displayOrder: 1 },
+                    { fieldKey: 'output_voltage', label: '출력 전압', value: '380V', helpText: '출력 전압', displayOrder: 2 },
+                    { fieldKey: 'output_phase', label: '출력 상', value: '3상', helpText: '출력 상 구성', displayOrder: 3 },
+                    { fieldKey: 'ups_type', label: 'UPS 타입', value: '온라인', helpText: 'UPS 동작 방식', displayOrder: 4 },
+                    { fieldKey: 'battery_type', label: '배터리 구성', value: '리튬이온', helpText: '배터리 종류', displayOrder: 5 },
+                ],
             }
         };
 
@@ -848,6 +869,28 @@
 
             // 제조사명/모델 체이닝
             fetchModelVendorChain(this, asset, infoTable.chain);
+
+            // properties 동적 렌더링 (기본정보 테이블에 행 추가)
+            renderPropertiesRows(this, data.properties);
+        }
+
+        function renderPropertiesRows(ctx, properties) {
+            if (!properties || properties.length === 0) return;
+
+            const tbody = ctx.popupQuery('.info-table tbody');
+            if (!tbody) return;
+
+            tbody.querySelectorAll('tr[data-property]').forEach(tr => tr.remove());
+
+            [...properties]
+                .sort((a, b) => (a.displayOrder || 0) - (b.displayOrder || 0))
+                .forEach(({ fieldKey, label, value, helpText }) => {
+                    const tr = document.createElement('tr');
+                    tr.dataset.property = fieldKey;
+                    if (helpText) tr.title = helpText;
+                    tr.innerHTML = `<th>${label}</th><td>${value ?? '-'}</td>`;
+                    tbody.appendChild(tr);
+                });
         }
 
         function renderField(ctx, data, field) {
