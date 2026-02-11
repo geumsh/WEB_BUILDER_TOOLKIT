@@ -337,6 +337,27 @@ function renderField(ctx, data, field) {
   }
 }
 
+function renderPropertiesRows(ctx, properties) {
+  if (!properties || properties.length === 0) return;
+
+  const tbody = ctx.popupQuery('.info-table tbody');
+  if (!tbody) return;
+
+  // 기존 동적 행 제거 (재렌더링 대비)
+  tbody.querySelectorAll('tr[data-property]').forEach(tr => tr.remove());
+
+  // displayOrder 정렬 후 행 추가
+  [...properties]
+    .sort((a, b) => (a.displayOrder || 0) - (b.displayOrder || 0))
+    .forEach(({ fieldKey, label, value, helpText }) => {
+      const tr = document.createElement('tr');
+      tr.dataset.property = fieldKey;
+      if (helpText) tr.title = helpText;
+      tr.innerHTML = `<th>${label}</th><td>${value ?? '-'}</td>`;
+      tbody.appendChild(tr);
+    });
+}
+
 function fetchModelVendorChain(ctx, asset, chainConfig) {
   const { datasetNames } = ctx.config;
   const setCell = (selector, value) => {
@@ -394,6 +415,9 @@ function renderBasicInfo({ response }) {
 
   // 제조사명/모델 체이닝
   fetchModelVendorChain(this, asset, infoTable.chain);
+
+  // properties 동적 렌더링 (기본정보 테이블에 행 추가)
+  renderPropertiesRows(this, data.properties);
 }
 
 // ======================

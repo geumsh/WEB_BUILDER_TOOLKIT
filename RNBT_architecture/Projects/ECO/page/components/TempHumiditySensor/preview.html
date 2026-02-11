@@ -334,7 +334,12 @@
                     installDate: '2025-03-23',
                     assetModelKey: 'model-001',
                     assetModelName: 'HMP110',
-                }
+                },
+                properties: [
+                    { fieldKey: 'measurement_range', label: '측정범위', value: '-10 ~ 60 ℃ / 0 ~ 95 %RH', helpText: '센서 측정 가능 범위', displayOrder: 1 },
+                    { fieldKey: 'accuracy', label: '정확도', value: '±0.3 ℃ / ±2 %RH', helpText: '센서 측정 정확도', displayOrder: 2 },
+                    { fieldKey: 'install_position_type', label: '설치 위치 유형', value: '랙 전면 흡입부', helpText: '센서가 설치된 위치 유형', displayOrder: 3 },
+                ]
             },
             warning: {
                 asset: {
@@ -346,7 +351,12 @@
                     installDate: '2024-06-15',
                     assetModelKey: 'model-002',
                     assetModelName: 'TH-3000',
-                }
+                },
+                properties: [
+                    { fieldKey: 'measurement_range', label: '측정범위', value: '-20 ~ 70 ℃ / 0 ~ 100 %RH', helpText: '센서 측정 가능 범위', displayOrder: 1 },
+                    { fieldKey: 'accuracy', label: '정확도', value: '±0.5 ℃ / ±3 %RH', helpText: '센서 측정 정확도', displayOrder: 2 },
+                    { fieldKey: 'install_position_type', label: '설치 위치 유형', value: '냉각 장치 배기구', helpText: '센서가 설치된 위치 유형', displayOrder: 3 },
+                ]
             },
             critical: {
                 asset: {
@@ -358,7 +368,12 @@
                     installDate: '2023-11-01',
                     assetModelKey: 'model-003',
                     assetModelName: 'SHT40',
-                }
+                },
+                properties: [
+                    { fieldKey: 'measurement_range', label: '측정범위', value: '-40 ~ 80 ℃ / 0 ~ 100 %RH', helpText: '센서 측정 가능 범위', displayOrder: 1 },
+                    { fieldKey: 'accuracy', label: '정확도', value: '±0.2 ℃ / ±1.8 %RH', helpText: '센서 측정 정확도', displayOrder: 2 },
+                    { fieldKey: 'install_position_type', label: '설치 위치 유형', value: '배터리 랙 상단', helpText: '센서가 설치된 위치 유형', displayOrder: 3 },
+                ]
             }
         };
 
@@ -839,6 +854,27 @@
         /**
          * fetchModelVendorChain - 모델/제조사 체인 API 호출
          */
+        function renderPropertiesRows(ctx, properties) {
+            if (!properties || properties.length === 0) return;
+
+            const tbody = ctx.popupQuery('.info-table tbody');
+            if (!tbody) return;
+
+            // 기존 동적 행 제거 (재렌더링 대비)
+            tbody.querySelectorAll('tr[data-property]').forEach(tr => tr.remove());
+
+            // displayOrder 정렬 후 행 추가
+            [...properties]
+                .sort((a, b) => (a.displayOrder || 0) - (b.displayOrder || 0))
+                .forEach(({ fieldKey, label, value, helpText }) => {
+                    const tr = document.createElement('tr');
+                    tr.dataset.property = fieldKey;
+                    if (helpText) tr.title = helpText;
+                    tr.innerHTML = `<th>${label}</th><td>${value ?? '-'}</td>`;
+                    tbody.appendChild(tr);
+                });
+        }
+
         function fetchModelVendorChain(ctx, asset, chainConfig) {
             if (!asset.assetModelKey) return;
             const { datasetNames } = ctx.config;
@@ -945,6 +981,9 @@
 
             // 제조사명/모델 체이닝
             fetchModelVendorChain(this, asset, infoTable.chain);
+
+            // properties 동적 렌더링 (기본정보 테이블에 행 추가)
+            renderPropertiesRows(this, data.properties);
         }
 
         function renderStatusCards({ response }) {
