@@ -1,0 +1,500 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AssetTree Preview</title>
+    <!-- Pretendard Font -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable.min.css" />
+    <!-- Component CSS -->
+    <link rel="stylesheet" href="styles/component.css">
+    <style>
+        /* Reset & Base */
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Pretendard Variable', 'Pretendard', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: #0f172a;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+        }
+    </style>
+</head>
+<body>
+    <!-- 컨테이너 ID: #asset-tree-container -->
+    <div id="asset-tree-container" style="width: 240px; height: 485px;">
+        <!-- views/component.html 내용 -->
+        <div class="asset-tree-panel">
+            <div class="tree-header">
+                <span class="tree-title">Asset Tree</span>
+                <button class="refresh-btn" type="button" title="Refresh">↻</button>
+            </div>
+            <div class="tree-search">
+                <input type="text" class="tree-search-input" placeholder="Search...">
+            </div>
+            <div class="tree-container">
+                <ul class="tree-root"></ul>
+            </div>
+            <div class="tree-empty" hidden>배치된 장비가 없습니다</div>
+        </div>
+    </div>
+
+    <script>
+        // ======================
+        // MOCK: 3D 인스턴스 (배치된 장비)
+        // ======================
+
+        // 각 인스턴스는 setter.assetInfo와 showDetail()을 가진다
+        const mockInstances = [
+            {
+                appendElement: true,
+                setter: {
+                    assetInfo: {
+                        assetKey: 'UPS-001',
+                        name: 'UPS #1',
+                        assetType: 'UPS',
+                        statusType: 'ACTIVE',
+                        ancestorKeys: ['BLD-001', 'FLR-001', 'RM-001'],
+                    },
+                },
+                showDetail() { console.log('[Mock] showDetail() called for UPS-001'); },
+            },
+            {
+                appendElement: true,
+                setter: {
+                    assetInfo: {
+                        assetKey: 'UPS-002',
+                        name: 'UPS #2',
+                        assetType: 'UPS',
+                        statusType: 'WARNING',
+                        ancestorKeys: ['BLD-001', 'FLR-001', 'RM-001'],
+                    },
+                },
+                showDetail() { console.log('[Mock] showDetail() called for UPS-002'); },
+            },
+            {
+                appendElement: true,
+                setter: {
+                    assetInfo: {
+                        assetKey: 'PDU-001',
+                        name: 'PDU #1',
+                        assetType: 'PDU',
+                        statusType: 'ACTIVE',
+                        ancestorKeys: ['BLD-001', 'FLR-001', 'RM-002'],
+                    },
+                },
+                showDetail() { console.log('[Mock] showDetail() called for PDU-001'); },
+            },
+            {
+                appendElement: true,
+                setter: {
+                    assetInfo: {
+                        assetKey: 'CRAC-001',
+                        name: 'CRAC #1',
+                        assetType: 'CRAC',
+                        statusType: 'CRITICAL',
+                        ancestorKeys: ['BLD-001', 'FLR-002', 'RM-003'],
+                    },
+                },
+                showDetail() { console.log('[Mock] showDetail() called for CRAC-001'); },
+            },
+            {
+                appendElement: true,
+                setter: {
+                    assetInfo: {
+                        assetKey: 'SENSOR-001',
+                        name: 'Temp Sensor #1',
+                        assetType: 'SENSOR',
+                        statusType: 'ACTIVE',
+                        ancestorKeys: ['BLD-001', 'FLR-002', 'RM-003'],
+                    },
+                },
+                showDetail() { console.log('[Mock] showDetail() called for SENSOR-001'); },
+            },
+            {
+                appendElement: true,
+                setter: {
+                    assetInfo: {
+                        assetKey: 'SWBD-001',
+                        name: 'SWBD #1',
+                        assetType: 'SWBD',
+                        statusType: 'ACTIVE',
+                        ancestorKeys: ['BLD-001', 'FLR-001', 'RM-001'],
+                    },
+                },
+                showDetail() { console.log('[Mock] showDetail() called for SWBD-001'); },
+            },
+        ];
+
+        // ======================
+        // MOCK: 전체 자산 목록 (ast/l API 응답)
+        // ======================
+
+        const mockAssets = [
+            // 위치 계층
+            { assetKey: 'BLD-001', name: 'Main Building', assetType: 'BUILDING', statusType: 'ACTIVE' },
+            { assetKey: 'FLR-001', name: '1st Floor', assetType: 'FLOOR', statusType: 'ACTIVE' },
+            { assetKey: 'FLR-002', name: '2nd Floor', assetType: 'FLOOR', statusType: 'WARNING' },
+            { assetKey: 'RM-001', name: 'Server Room A', assetType: 'ROOM', statusType: 'ACTIVE' },
+            { assetKey: 'RM-002', name: 'Server Room B', assetType: 'ROOM', statusType: 'ACTIVE' },
+            { assetKey: 'RM-003', name: 'Cooling Room', assetType: 'ROOM', statusType: 'CRITICAL' },
+            // 장비 (배치된 인스턴스와 동일)
+            { assetKey: 'UPS-001', name: 'UPS #1', assetType: 'UPS', statusType: 'ACTIVE' },
+            { assetKey: 'UPS-002', name: 'UPS #2', assetType: 'UPS', statusType: 'WARNING' },
+            { assetKey: 'PDU-001', name: 'PDU #1', assetType: 'PDU', statusType: 'ACTIVE' },
+            { assetKey: 'CRAC-001', name: 'CRAC #1', assetType: 'CRAC', statusType: 'CRITICAL' },
+            { assetKey: 'SENSOR-001', name: 'Temp Sensor #1', assetType: 'SENSOR', statusType: 'ACTIVE' },
+            { assetKey: 'SWBD-001', name: 'SWBD #1', assetType: 'SWBD', statusType: 'ACTIVE' },
+        ];
+
+        // ======================
+        // MOCK: Wkit API
+        // ======================
+
+        const Wkit = {
+            makeIterator: function* (page, layerName) {
+                console.log(`[Mock Wkit] makeIterator(page, '${layerName}')`);
+                for (const inst of mockInstances) {
+                    yield inst;
+                }
+            },
+            fetchData: async function (page, datasetName, param) {
+                console.log(`[Mock Wkit] fetchData(page, '${datasetName}', `, param, ')');
+
+                if (datasetName === 'assetList') {
+                    return { response: { data: mockAssets } };
+                }
+                return { response: { data: [] } };
+            },
+            bindEvents: function () {},
+        };
+
+        // ======================
+        // STATUS TRANSFORM
+        // ======================
+
+        function statusTypeToDataAttr(statusType) {
+            const map = {
+                ACTIVE: 'normal',
+                WARNING: 'warning',
+                CRITICAL: 'critical',
+                INACTIVE: 'inactive',
+                MAINTENANCE: 'maintenance',
+            };
+            return map[statusType] || 'normal';
+        }
+    </script>
+
+    <!-- Render Test -->
+    <script>
+        const container = document.getElementById('asset-tree-container');
+        const panel = container.querySelector('.asset-tree-panel');
+
+        // State
+        let _assetCache = new Map();
+        let _treeData = [];
+        let _instanceMap = new Map();
+        let _expandedNodes = new Set();
+        let _searchTerm = '';
+
+        // ==================
+        // COLLECT AND BUILD
+        // ==================
+
+        async function collectAndBuild() {
+            const emptyEl = panel.querySelector('.tree-empty');
+            const containerEl = panel.querySelector('.tree-container');
+
+            // 1. 3D 인스턴스 수집
+            const iter = Wkit.makeIterator(null, 'threeLayer');
+            const placedItems = [];
+            const ancestorKeySet = new Set();
+
+            for (const inst of iter) {
+                const assetInfo = inst.setter?.assetInfo;
+                if (!assetInfo || !assetInfo.assetKey) continue;
+
+                const { assetKey, name, assetType, statusType, ancestorKeys } = assetInfo;
+                if (!ancestorKeys || !Array.isArray(ancestorKeys)) continue;
+
+                placedItems.push({ assetKey, name, assetType, statusType, ancestorKeys, instance: inst });
+                _instanceMap.set(assetKey, inst);
+
+                ancestorKeys.forEach((key) => ancestorKeySet.add(key));
+            }
+
+            console.log('[AssetTree] Placed items:', placedItems.length, '/ Unique ancestors:', ancestorKeySet.size);
+
+            if (placedItems.length === 0) {
+                _treeData = [];
+                if (emptyEl) emptyEl.hidden = false;
+                if (containerEl) containerEl.style.display = 'none';
+                return;
+            }
+
+            if (emptyEl) emptyEl.hidden = true;
+            if (containerEl) containerEl.style.display = '';
+
+            // 2. ast/l API로 자산 조회
+            try {
+                const result = await Wkit.fetchData(null, 'assetList', { baseUrl: '10.23.128.125:4004' });
+                const assets = result?.response?.data || [];
+
+                assets.forEach((asset) => {
+                    _assetCache.set(asset.assetKey, {
+                        name: asset.name,
+                        assetType: asset.assetType,
+                        statusType: asset.statusType,
+                    });
+                });
+
+                console.log('[AssetTree] Asset cache populated:', _assetCache.size);
+            } catch (error) {
+                console.error('[AssetTree] Failed to fetch asset list:', error);
+            }
+
+            // 배치된 장비도 캐시에 추가
+            placedItems.forEach(({ assetKey, name, assetType, statusType }) => {
+                if (!_assetCache.has(assetKey)) {
+                    _assetCache.set(assetKey, { name, assetType, statusType });
+                }
+            });
+
+            // 3. 트리 빌드
+            buildTree(placedItems);
+        }
+
+        // ==================
+        // TREE BUILD
+        // ==================
+
+        function buildTree(placedItems) {
+            const rootMap = new Map();
+
+            placedItems.forEach(({ assetKey, ancestorKeys }) => {
+                const path = [...ancestorKeys, assetKey];
+                let currentLevel = rootMap;
+
+                path.forEach((key, idx) => {
+                    if (!currentLevel.has(key)) {
+                        const cached = _assetCache.get(key);
+                        const isEquipment = idx === path.length - 1;
+
+                        currentLevel.set(key, {
+                            assetKey: key,
+                            name: cached?.name || key,
+                            assetType: cached?.assetType || (isEquipment ? 'EQUIPMENT' : 'LOCATION'),
+                            statusType: cached?.statusType || 'ACTIVE',
+                            isEquipment,
+                            children: new Map(),
+                        });
+                    }
+
+                    currentLevel = currentLevel.get(key).children;
+                });
+            });
+
+            // Map → Array 변환
+            function mapToArray(nodeMap) {
+                const arr = [];
+                nodeMap.forEach((node) => {
+                    const childArray = mapToArray(node.children);
+                    arr.push({
+                        assetKey: node.assetKey,
+                        name: node.name,
+                        assetType: node.assetType,
+                        statusType: node.statusType,
+                        isEquipment: node.isEquipment,
+                        children: childArray,
+                    });
+                });
+                arr.sort((a, b) => a.name.localeCompare(b.name));
+                return arr;
+            }
+
+            _treeData = mapToArray(rootMap);
+            console.log('[AssetTree] Tree built:', _treeData.length, 'root nodes');
+
+            renderTree();
+        }
+
+        // ==================
+        // TREE RENDER
+        // ==================
+
+        function renderTree() {
+            const rootEl = panel.querySelector('.tree-root');
+            if (!rootEl) return;
+
+            rootEl.innerHTML = '';
+            const searchTerm = _searchTerm.toLowerCase().trim();
+
+            _treeData.forEach((item) => {
+                const nodeEl = createTreeNode(item, searchTerm);
+                if (nodeEl) rootEl.appendChild(nodeEl);
+            });
+        }
+
+        function createTreeNode(item, searchTerm) {
+            const { assetKey, assetType, statusType, name, isEquipment, children = [] } = item;
+            const hasChildren = children.length > 0;
+            const isExpanded = _expandedNodes.has(assetKey);
+
+            const matchesSearch = !searchTerm || name.toLowerCase().includes(searchTerm);
+            const hasMatchingDescendants = hasChildren && checkDescendants(children, searchTerm);
+
+            if (searchTerm && !matchesSearch && !hasMatchingDescendants) {
+                return null;
+            }
+
+            const li = document.createElement('li');
+            li.className = 'tree-node';
+            li.dataset.nodeId = assetKey;
+            li.dataset.isEquipment = isEquipment;
+
+            const content = document.createElement('div');
+            content.className = 'node-content';
+            if (isEquipment) content.classList.add('equipment');
+
+            const toggle = document.createElement('span');
+            toggle.className = 'node-toggle';
+            if (hasChildren) {
+                if (isExpanded) toggle.classList.add('expanded');
+            } else {
+                toggle.classList.add('leaf');
+            }
+
+            const icon = document.createElement('span');
+            icon.className = 'node-icon';
+            icon.dataset.type = assetType.toLowerCase();
+
+            const label = document.createElement('span');
+            label.className = 'node-label';
+            label.textContent = name;
+
+            content.appendChild(toggle);
+            content.appendChild(icon);
+            content.appendChild(label);
+
+            if (hasChildren) {
+                const count = document.createElement('span');
+                count.className = 'node-child-count';
+                count.textContent = `(${children.length})`;
+                content.appendChild(count);
+            }
+
+            const statusDot = document.createElement('span');
+            statusDot.className = `node-status ${statusTypeToDataAttr(statusType)}`;
+            content.appendChild(statusDot);
+
+            li.appendChild(content);
+
+            if (hasChildren) {
+                const childrenUl = document.createElement('ul');
+                childrenUl.className = 'node-children';
+                if (isExpanded || (searchTerm && hasMatchingDescendants)) {
+                    childrenUl.classList.add('expanded');
+                }
+
+                children.forEach((child) => {
+                    const childEl = createTreeNode(child, searchTerm);
+                    if (childEl) childrenUl.appendChild(childEl);
+                });
+
+                li.appendChild(childrenUl);
+            }
+
+            return li;
+        }
+
+        function checkDescendants(children, searchTerm) {
+            if (!searchTerm) return false;
+            return children.some((child) => {
+                if (child.name.toLowerCase().includes(searchTerm)) return true;
+                return child.children && checkDescendants(child.children, searchTerm);
+            });
+        }
+
+        // ==================
+        // NODE ACTIONS
+        // ==================
+
+        function toggleNode(assetKey) {
+            if (_expandedNodes.has(assetKey)) {
+                _expandedNodes.delete(assetKey);
+            } else {
+                _expandedNodes.add(assetKey);
+            }
+
+            const nodeEl = panel.querySelector(`[data-node-id="${assetKey}"]`);
+            if (!nodeEl) return;
+
+            const toggle = nodeEl.querySelector(':scope > .node-content > .node-toggle');
+            const children = nodeEl.querySelector(':scope > .node-children');
+            const isExpanded = _expandedNodes.has(assetKey);
+
+            if (toggle) toggle.classList.toggle('expanded', isExpanded);
+            if (children) children.classList.toggle('expanded', isExpanded);
+        }
+
+        function handleEquipmentClick(assetKey) {
+            const inst = _instanceMap.get(assetKey);
+            if (inst && typeof inst.showDetail === 'function') {
+                console.log('[AssetTree] showDetail() called for:', assetKey);
+                inst.showDetail();
+            } else {
+                console.warn('[AssetTree] No showDetail() for:', assetKey);
+            }
+        }
+
+        // ==================
+        // EVENT HANDLERS
+        // ==================
+
+        function setupEventHandlers() {
+            // Tree click (event delegation)
+            panel.querySelector('.tree-container')?.addEventListener('click', (e) => {
+                const nodeContent = e.target.closest('.node-content');
+                if (!nodeContent) return;
+
+                const nodeEl = nodeContent.closest('.tree-node');
+                if (!nodeEl) return;
+
+                const assetKey = nodeEl.dataset.nodeId;
+                const isEquipment = nodeEl.dataset.isEquipment === 'true';
+
+                if (isEquipment) {
+                    handleEquipmentClick(assetKey);
+                } else {
+                    toggleNode(assetKey);
+                }
+            });
+
+            // Search
+            panel.querySelector('.tree-search-input')?.addEventListener('input', (e) => {
+                _searchTerm = e.target.value;
+                renderTree();
+            });
+
+            // Refresh
+            panel.querySelector('.refresh-btn')?.addEventListener('click', () => {
+                _assetCache.clear();
+                _instanceMap.clear();
+                _expandedNodes.clear();
+                _treeData = [];
+                collectAndBuild();
+            });
+        }
+
+        // ==================
+        // INIT
+        // ==================
+
+        window.onload = () => {
+            setupEventHandlers();
+            collectAndBuild();
+        };
+    </script>
+</body>
+</html>
