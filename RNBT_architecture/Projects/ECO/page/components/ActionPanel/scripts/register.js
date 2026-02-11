@@ -4,8 +4,8 @@
  * 기능:
  * 1. "온습도현황" / "온도분포도" 탭 전환
  * 2. 각 탭은 히트맵 모드를 전환 (습도 ↔ 온도)
- *    - 온습도현황: 습도 기반 히트맵 (SENSOR.HUMIDITY)
- *    - 온도분포도: 온도 기반 히트맵 (SENSOR.TEMP, CRAC.RETURN_TEMP)
+ *    - 온습도현황(humidity): 습도 기반 히트맵 (SENSOR.HUMIDITY)
+ *    - 온도분포도(temperature): 온도 기반 히트맵 (SENSOR.TEMP, CRAC.RETURN_TEMP)
  * 3. 중심 인스턴스는 this._centerComponentName으로 지정 (ins.name 매칭, 런타임 설정)
  *
  * 속성 (런타임 설정):
@@ -21,7 +21,7 @@ const { applyHeatmapMixin } = HeatmapMixin;
 // ======================
 
 const HEATMAP_PRESETS = {
-  status: {
+  humidity: {
     temperatureMetrics: ['SENSOR.HUMIDITY', 'CRAC.RETURN_HUMIDITY'],
     gradient: {
       0.00: '#154360',
@@ -33,7 +33,7 @@ const HEATMAP_PRESETS = {
     },
     temperatureRange: { min: 20, max: 71 },
   },
-  heatmap: {
+  temperature: {
     temperatureMetrics: ['SENSOR.TEMP', 'CRAC.RETURN_TEMP'],
     gradient: null,
     temperatureRange: { min: 17, max: 31 },
@@ -46,7 +46,7 @@ function initComponent() {
   // ======================
   // 1. STATE
   // ======================
-  this._activeTab = null; // null | 'status' | 'heatmap'
+  this._activeTab = null; // null | 'humidity' | 'temperature'
   this._centerComponentName = ''; // 히트맵 중심 3D 컴포넌트 이름 (런타임 설정)
   this._refreshInterval = 30000; // 히트맵 데이터 갱신 주기 (ms)
   this._centerInstance = null; // 중심 3D 인스턴스 참조
