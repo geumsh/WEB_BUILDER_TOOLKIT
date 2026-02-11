@@ -247,7 +247,7 @@ HeatmapMixin.applyHeatmapMixin = function (instance, options) {
       heatmapResolution: 256,
       segments: 64,
       displacementScale: 3,
-      baseHeight: 0.5,
+      baseHeight: 2,
       radius: 60,
       blur: 25,
       opacity: 0.75,
@@ -265,6 +265,7 @@ HeatmapMixin.applyHeatmapMixin = function (instance, options) {
     heat: null,
     colorTexture: null,
     displacementTexture: null,
+    surface: null,
     config: config,
   };
 
@@ -294,14 +295,39 @@ HeatmapMixin.applyHeatmapMixin = function (instance, options) {
   }
 
   // ────────────────────────────────────────
+  // appendElement 스케일 기반 서피스 크기 계산
+  // surfaceSize는 로컬 단위, scale을 곱해 월드 단위로 변환
+  // ────────────────────────────────────────
+
+  function computeDynamicSurface() {
+    var scaleX = instance.appendElement.scale.x;
+    var scaleZ = instance.appendElement.scale.z;
+
+    var worldPos = new THREE.Vector3();
+    instance.appendElement.getWorldPosition(worldPos);
+
+    return {
+      centerX: worldPos.x,
+      centerY: worldPos.y,
+      centerZ: worldPos.z,
+      width: config.surfaceSize.width * scaleX,
+      depth: config.surfaceSize.depth * scaleZ,
+    };
+  }
+
+  // ────────────────────────────────────────
   // 3D Mesh 생성
   // ────────────────────────────────────────
 
   function createHeatmapMesh() {
-    const { surfaceSize, segments, displacementScale, baseHeight, opacity } = config;
+    const { segments, displacementScale, baseHeight, opacity } = config;
     const { scene } = wemb.threeElements;
 
     initHeatmapCanvas();
+
+    // 센서 분포 기반 동적 서피스 크기 계산
+    var surface = computeDynamicSurface();
+    instance._heatmap.surface = surface;
 
     const colorTexture = new THREE.CanvasTexture(instance._heatmap.colorCanvas);
     const displacementTexture = new THREE.CanvasTexture(instance._heatmap.displacementCanvas);
@@ -310,8 +336,8 @@ HeatmapMixin.applyHeatmapMixin = function (instance, options) {
     instance._heatmap.displacementTexture = displacementTexture;
 
     const geometry = new THREE.PlaneGeometry(
-      surfaceSize.width,
-      surfaceSize.depth,
+      surface.width,
+      surface.depth,
       segments,
       segments
     );
@@ -334,9 +360,8 @@ HeatmapMixin.applyHeatmapMixin = function (instance, options) {
     const mesh = new THREE.Mesh(geometry, material);
     mesh.rotation.x = -Math.PI / 2;
 
-    const worldPos = new THREE.Vector3();
-    instance.appendElement.getWorldPosition(worldPos);
-    mesh.position.set(worldPos.x, 0, worldPos.z);
+    // appendElement의 월드 위치에 배치
+    mesh.position.set(surface.centerX, surface.centerY, surface.centerZ);
 
     // 레이캐스팅 무시 (아래 3D 오브젝트 클릭 가능)
     mesh.raycast = function () {};
@@ -350,12 +375,13 @@ HeatmapMixin.applyHeatmapMixin = function (instance, options) {
   // ────────────────────────────────────────
 
   function worldToCanvas(worldX, worldZ, centerX, centerZ) {
-    const { surfaceSize, heatmapResolution } = config;
-    const halfW = surfaceSize.width / 2;
-    const halfD = surfaceSize.depth / 2;
+    var surface = instance._heatmap.surface;
+    var heatmapResolution = config.heatmapResolution;
+    var halfW = surface.width / 2;
+    var halfD = surface.depth / 2;
 
-    const canvasX = ((worldX - centerX + halfW) / surfaceSize.width) * heatmapResolution;
-    const canvasY = ((worldZ - centerZ + halfD) / surfaceSize.depth) * heatmapResolution;
+    var canvasX = ((worldX - centerX + halfW) / surface.width) * heatmapResolution;
+    var canvasY = ((worldZ - centerZ + halfD) / surface.depth) * heatmapResolution;
     return [canvasX, canvasY];
   }
 
@@ -647,6 +673,7 @@ HeatmapMixin.applyHeatmapMixin = function (instance, options) {
     hm.colorCanvas = null;
     hm.displacementCanvas = null;
     hm.heat = null;
+    hm.surface = null;
     hm.visible = false;
     instance._cachedMetricLatest = null;
 
