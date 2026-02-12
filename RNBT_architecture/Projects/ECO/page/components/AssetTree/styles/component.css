@@ -224,17 +224,17 @@
     .node-status.critical { background: #f85149; }
 
     /* ===== Equipment Node (Interactive Leaf) ===== */
-    .node-content.equipment .node-label {
+    .node-content.placed .node-label {
         color: #60ebff;
     }
 
-    .node-content.equipment .node-toggle.leaf::after {
+    .node-content.placed .node-toggle.leaf::after {
         background: #60ebff;
         box-shadow: 0px 0px 8px 0px rgba(96, 165, 250, 0.6);
     }
 
     /* Equipment hover → Figma selected state */
-    .node-content.equipment:hover {
+    .node-content.placed:hover {
         background:
             linear-gradient(0deg, rgba(129, 225, 197, 0) 12.5%, rgba(129, 225, 197, 0.2) 137.5%),
             linear-gradient(90deg, rgba(96, 235, 255, 0.2) 0%, rgba(96, 235, 255, 0.2) 100%),
@@ -242,7 +242,7 @@
     }
 
     /* Equipment hover → left tag */
-    .node-content.equipment:hover::before {
+    .node-content.placed:hover::before {
         content: '';
         position: absolute;
         left: 0;

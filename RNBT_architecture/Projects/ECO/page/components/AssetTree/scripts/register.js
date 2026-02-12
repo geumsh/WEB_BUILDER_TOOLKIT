@@ -174,7 +174,7 @@ function buildAncestorKeys(assetKey, parentMap) {
  *   예: ['building-001', 'floor-001', 'room-001', 'ups-001']
  *
  * 트리 노드 구조:
- *   { assetKey, name, assetType, statusType, isEquipment, children: [] }
+ *   { assetKey, name, assetType, statusType, isPlaced, children: [] }
  */
 function buildTree(placedItems) {
   const rootMap = new Map(); // assetKey → node (루트 레벨)
@@ -183,19 +183,22 @@ function buildTree(placedItems) {
     const path = [...ancestorKeys, assetKey];
     let currentLevel = rootMap;
 
-    path.forEach((key, idx) => {
+    path.forEach((key) => {
       if (!currentLevel.has(key)) {
         const cached = this._assetCache.get(key);
-        const isEquipment = idx === path.length - 1;
+        const isPlaced = this._instanceMap.has(key);
 
         currentLevel.set(key, {
           assetKey: key,
           name: cached?.name || key,
-          assetType: cached?.assetType || (isEquipment ? 'EQUIPMENT' : 'LOCATION'),
+          assetType: cached?.assetType || (isPlaced ? 'EQUIPMENT' : 'LOCATION'),
           statusType: cached?.statusType || 'ACTIVE',
-          isEquipment,
+          isPlaced,
           children: new Map(),
         });
+      } else if (this._instanceMap.has(key)) {
+        // 이미 ancestor로 생성된 노드가 실제 배치 자산이면 플래그 갱신
+        currentLevel.get(key).isPlaced = true;
       }
 
       currentLevel = currentLevel.get(key).children;
@@ -212,7 +215,7 @@ function buildTree(placedItems) {
         name: node.name,
         assetType: node.assetType,
         statusType: node.statusType,
-        isEquipment: node.isEquipment,
+        isPlaced: node.isPlaced,
         children: childArray,
       });
     });
@@ -280,7 +283,7 @@ function handleTreeDblClick(e) {
   const nodeEl = nodeContent.closest('.tree-node');
   if (!nodeEl) return;
 
-  if (nodeEl.dataset.isEquipment !== 'true') return;
+  if (nodeEl.dataset.isPlaced !== 'true') return;
 
   const assetKey = nodeEl.dataset.nodeId;
   handleEquipmentClick.call(this, assetKey);
@@ -333,7 +336,7 @@ function renderTree() {
 }
 
 function createTreeNode(item, searchTerm) {
-  const { assetKey, assetType, statusType, name, isEquipment, children = [] } = item;
+  const { assetKey, assetType, statusType, name, isPlaced, children = [] } = item;
   const hasChildren = children.length > 0;
   const isExpanded = this._expandedNodes.has(assetKey);
 
@@ -348,12 +351,12 @@ function createTreeNode(item, searchTerm) {
   const li = document.createElement('li');
   li.className = 'tree-node';
   li.dataset.nodeId = assetKey;
-  li.dataset.isEquipment = isEquipment;
+  li.dataset.isPlaced = isPlaced;
 
   // Node Content
   const content = document.createElement('div');
   content.className = 'node-content';
-  if (isEquipment) content.classList.add('equipment');
+  if (isPlaced) content.classList.add('placed');
 
   // Toggle
   const toggle = document.createElement('span');
