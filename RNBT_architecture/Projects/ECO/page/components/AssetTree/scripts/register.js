@@ -3,8 +3,8 @@
  *
  * 기능:
  * 1. threeLayer에서 배치된 3D 인스턴스 수집
- * 2. 각 인스턴스의 setter.assetInfo.ancestorKeys로 위치 계층 구성
- * 3. ast/l API로 조상 자산 이름/타입 조회
+ * 2. assetList + relationList API로 자산 정보 및 관계(LOCATED_IN) 동적 조회
+ * 3. 관계 데이터에서 부모 체인을 따라 ancestorKeys 동적 구성
  * 4. Building → Floor → Room → Equipment 트리 렌더링
  * 5. 장비 노드 클릭 시 해당 3D 인스턴스의 showDetail() 호출
  */
@@ -18,7 +18,6 @@ function initComponent() {
   // 1. STATE
   // ======================
   this._baseUrl = wemb.configManager.assetApiUrl.replace(/^https?:\/\//, '');
-  this._datasetName = 'assetList';
   this._assetCache = new Map();      // assetKey → { name, assetType, statusType }
   this._treeData = [];               // 렌더링용 트리 구조
   this._instanceMap = new Map();     // assetKey → 3D instance 참조 (클릭용)
@@ -60,7 +59,7 @@ function initComponent() {
 // ======================
 
 /**
- * 3D 인스턴스 수집 → 자산 조회 → 트리 빌드
+ * 3D 인스턴스 수집 → assetList + relationList API 조회 → 트리 빌드
  */
 async function collectAndBuild() {
   const root = this.appendElement;
@@ -69,24 +68,17 @@ async function collectAndBuild() {
 
   // 1. threeLayer에서 배치된 3D 인스턴스 수집
   const iter = makeIterator(this.page, 'threeLayer');
-  const placedItems = [];      // { assetKey, name, assetType, statusType, ancestorKeys, instance }
-  const ancestorKeySet = new Set();
+  const placedItems = [];      // { assetKey, instance }
 
   for (const inst of iter) {
     const assetInfo = inst.setter?.assetInfo;
     if (!assetInfo || !assetInfo.assetKey) continue;
 
-    const { assetKey, name, assetType, statusType, ancestorKeys } = assetInfo;
-    if (!ancestorKeys || !Array.isArray(ancestorKeys)) continue;
-
-    placedItems.push({ assetKey, name, assetType, statusType, ancestorKeys, instance: inst });
-    this._instanceMap.set(assetKey, inst);
-
-    // 조상 키 수집
-    ancestorKeys.forEach((key) => ancestorKeySet.add(key));
+    placedItems.push({ assetKey: assetInfo.assetKey, instance: inst });
+    this._instanceMap.set(assetInfo.assetKey, inst);
   }
 
-  console.log('[AssetTree] Placed items:', placedItems.length, '/ Unique ancestors:', ancestorKeySet.size);
+  console.log('[AssetTree] Placed items:', placedItems.length);
 
   // 배치된 장비 없음
   if (placedItems.length === 0) {
@@ -99,11 +91,17 @@ async function collectAndBuild() {
   if (emptyEl) emptyEl.hidden = true;
   if (containerEl) containerEl.style.display = '';
 
-  // 2. ast/l API로 전체 자산 조회 → 조상 이름/타입 매핑
-  try {
-    const result = await fetchData(this.page, this._datasetName, { baseUrl: this._baseUrl });
-    const assets = result?.response?.data || [];
+  // 2. assetList + relationList API 동시 호출
+  let parentMap;
 
+  try {
+    const results = await Promise.all([
+      fetchData(this.page, 'assetList', { baseUrl: this._baseUrl }),
+      fetchData(this.page, 'relationList', { baseUrl: this._baseUrl, relationType: 'LOCATED_IN' }),
+    ]);
+
+    // 자산 캐시
+    const assets = results[0]?.response?.data || [];
     assets.forEach((asset) => {
       this._assetCache.set(asset.assetKey, {
         name: asset.name,
@@ -112,20 +110,56 @@ async function collectAndBuild() {
       });
     });
 
-    console.log('[AssetTree] Asset cache populated:', this._assetCache.size);
+    // 관계 처리: parentMap (childKey → parentKey)
+    const relations = results[1]?.response?.data || [];
+    parentMap = new Map();
+    relations.forEach((rel) => {
+      parentMap.set(rel.fromAssetKey, rel.toAssetKey);
+    });
+
+    console.log('[AssetTree] Assets:', this._assetCache.size, '/ Relations:', relations.length);
   } catch (error) {
-    console.error('[AssetTree] Failed to fetch asset list:', error);
+    console.error('[AssetTree] Failed to fetch data:', error);
+    return;
   }
 
-  // 배치된 장비 자체도 캐시에 추가 (API에 없을 수 있으므로)
-  placedItems.forEach(({ assetKey, name, assetType, statusType }) => {
-    if (!this._assetCache.has(assetKey)) {
-      this._assetCache.set(assetKey, { name, assetType, statusType });
-    }
+  // 3. 각 배치 장비의 ancestorKeys를 관계 데이터에서 동적 구성
+  const enrichedItems = placedItems.map((item) => {
+    const ancestorKeys = buildAncestorKeys(item.assetKey, parentMap);
+    const cached = this._assetCache.get(item.assetKey);
+
+    return {
+      assetKey: item.assetKey,
+      name: cached?.name || item.assetKey,
+      assetType: cached?.assetType || 'EQUIPMENT',
+      statusType: cached?.statusType || 'ACTIVE',
+      ancestorKeys,
+      instance: item.instance,
+    };
   });
 
-  // 3. 트리 빌드
-  buildTree.call(this, placedItems);
+  // 4. 트리 빌드
+  buildTree.call(this, enrichedItems);
+}
+
+/**
+ * 관계 데이터에서 부모 체인을 따라 올라가며 ancestorKeys 배열 구성
+ * 결과: [root, ..., directParent] (top → bottom 순서)
+ */
+function buildAncestorKeys(assetKey, parentMap) {
+  const ancestors = [];
+  let current = assetKey;
+  const visited = new Set(); // 순환 참조 방지
+
+  while (parentMap.has(current)) {
+    const parent = parentMap.get(current);
+    if (visited.has(parent)) break;
+    visited.add(parent);
+    ancestors.unshift(parent);
+    current = parent;
+  }
+
+  return ancestors;
 }
 
 // ======================
