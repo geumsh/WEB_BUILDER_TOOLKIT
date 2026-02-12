@@ -362,7 +362,7 @@ function createTreeNode(item, searchTerm) {
   const toggle = document.createElement('span');
   toggle.className = 'node-toggle';
   if (hasChildren) {
-    if (isExpanded) toggle.classList.add('expanded');
+    if (isExpanded || (searchTerm && hasMatchingDescendants)) toggle.classList.add('expanded');
   } else {
     toggle.classList.add('leaf');
   }
