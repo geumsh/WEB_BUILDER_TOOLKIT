@@ -157,11 +157,19 @@ function activateHeatmap(action) {
   }
 
   const preset = HEATMAP_PRESETS[action];
+  if (!preset) {
+    console.warn('[ActionPanel] Unknown heatmap preset:', action);
+    return;
+  }
 
   // mixin 최초 적용 (1회)
   if (!this._heatmapApplied) {
+    const ctx = this;
     applyHeatmapMixin(this._centerInstance, Object.assign({
       refreshInterval: this._refreshInterval || 30000,
+      onLoadingChange: function (isLoading) {
+        syncLoadingUI.call(ctx, isLoading);
+      },
     }, preset));
     this._heatmapApplied = true;
     console.log('[ActionPanel] HeatmapMixin applied to:', this._centerComponentName);
@@ -176,6 +184,22 @@ function activateHeatmap(action) {
     if (!this._centerInstance._heatmap.visible) {
       this._centerInstance.toggleHeatmap();
     }
+  }
+}
+
+// ======================
+// LOADING UI
+// ======================
+
+function syncLoadingUI(isLoading) {
+  const root = this.appendElement;
+  const activeBtn = root.querySelector('.action-btn.active');
+  if (!activeBtn) return;
+
+  if (isLoading) {
+    activeBtn.classList.add('loading');
+  } else {
+    activeBtn.classList.remove('loading');
   }
 }
 

@@ -247,12 +247,13 @@ HeatmapMixin.applyHeatmapMixin = function (instance, options) {
       heatmapResolution: 256,
       segments: 64,
       displacementScale: 3,
-      baseHeight: 50,
+      baseHeight: 2,
       radius: 'auto',
       blur: 25,
       opacity: 0.75,
       temperatureMetrics: ['SENSOR.TEMP', 'CRAC.RETURN_TEMP'],
       refreshInterval: 0, // ms, 0 = renderStatusCards 체인 사용 (기존 방식)
+      onLoadingChange: null, // callback(isLoading: boolean) - 데이터 로딩 상태 알림
     },
     options
   );
@@ -617,6 +618,12 @@ HeatmapMixin.applyHeatmapMixin = function (instance, options) {
     }
   }
 
+  function notifyLoading(isLoading) {
+    if (typeof config.onLoadingChange === 'function') {
+      config.onLoadingChange(isLoading);
+    }
+  }
+
   // ────────────────────────────────────────
   // Public: toggleHeatmap
   // ────────────────────────────────────────
@@ -639,8 +646,10 @@ HeatmapMixin.applyHeatmapMixin = function (instance, options) {
       instance._heatmap.visible = true;
       HeatmapMixin._activeInstance = instance;
       syncButtonState(true);
+      notifyLoading(true);
 
       collectSensorData().then(function (dataPoints) {
+        notifyLoading(false);
         if (dataPoints.length > 0) {
           renderHeatmap(dataPoints);
         } else {
@@ -684,8 +693,10 @@ HeatmapMixin.applyHeatmapMixin = function (instance, options) {
       instance._heatmap.visible = true;
       HeatmapMixin._activeInstance = instance;
       syncButtonState(true);
+      notifyLoading(true);
 
       collectSensorData().then(function (dataPoints) {
+        notifyLoading(false);
         if (dataPoints.length > 0) {
           renderHeatmap(dataPoints);
         }

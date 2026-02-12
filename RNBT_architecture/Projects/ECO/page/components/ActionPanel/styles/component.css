@@ -48,3 +48,20 @@
   color: #1e202c;
   font-weight: 600;
 }
+
+/* ── Loading ── */
+.action-btn.loading::after {
+  content: '';
+  display: inline-block;
+  width: 14px;
+  height: 14px;
+  margin-left: 6px;
+  border: 2px solid rgba(30, 32, 44, 0.25);
+  border-top-color: #1e202c;
+  border-radius: 50%;
+  animation: action-btn-spin 0.6s linear infinite;
+}
+
+@keyframes action-btn-spin {
+  to { transform: rotate(360deg); }
+}
