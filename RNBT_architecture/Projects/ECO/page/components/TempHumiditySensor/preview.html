@@ -175,15 +175,16 @@
 
         const cssCode = `
             .popup-overlay {
-                position: absolute; top: 0; right: 0; height: 100%;
-                pointer-events: none; z-index: 1000;
+                position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
+                background: rgba(0, 0, 0, 0.6);
+                display: flex; align-items: center; justify-content: center; z-index: 1000;
             }
             .popup-content {
                 background: #131521; border-radius: 16px;
-                width: 560px; height: 100%;
+                width: 560px; max-width: 90vw; height: 90vh;
                 overflow: hidden; box-shadow: 0px 0px 24px 0px rgba(0, 0, 0, 0.45);
                 border: 1px solid #6b6b70;
-                display: flex; flex-direction: column; pointer-events: auto;
+                display: flex; flex-direction: column;
             }
             .popup-header {
                 display: flex; justify-content: space-between; align-items: center;
@@ -523,6 +524,9 @@
                     if (container) {
                         const chart = echarts.init(container);
                         ctx._setChartRef(chart);
+                        const ro = new ResizeObserver(() => chart.resize());
+                        ro.observe(container);
+                        ctx._chartResizeObserver = ro;
                         console.log('[EChartsMixin] Chart created');
                     }
                 };
@@ -534,6 +538,9 @@
                         if (container) {
                             chart = echarts.init(container);
                             ctx._setChartRef(chart);
+                            const ro = new ResizeObserver(() => chart.resize());
+                            ro.observe(container);
+                            ctx._chartResizeObserver = ro;
                         }
                     }
                     if (chart) {
