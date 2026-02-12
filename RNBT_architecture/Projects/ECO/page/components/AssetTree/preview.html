@@ -192,6 +192,8 @@
         const panel = container.querySelector('.asset-tree-panel');
 
         // State
+        let _baseUrl = '10.23.128.140:8811';
+        let _datasetName = 'assetList';
         let _assetCache = new Map();
         let _treeData = [];
         let _instanceMap = new Map();
@@ -238,7 +240,7 @@
 
             // 2. ast/l API로 자산 조회
             try {
-                const result = await Wkit.fetchData(null, 'assetList', { baseUrl: '10.23.128.125:4004' });
+                const result = await Wkit.fetchData(null, _datasetName, { baseUrl: _baseUrl });
                 const assets = result?.response?.data || [];
 
                 assets.forEach((asset) => {
@@ -452,24 +454,37 @@
         // EVENT HANDLERS
         // ==================
 
+        function handleTreeClick(e) {
+            const nodeContent = e.target.closest('.node-content');
+            if (!nodeContent) return;
+
+            const nodeEl = nodeContent.closest('.tree-node');
+            if (!nodeEl) return;
+
+            const assetKey = nodeEl.dataset.nodeId;
+            toggleNode(assetKey);
+        }
+
+        function handleTreeDblClick(e) {
+            const nodeContent = e.target.closest('.node-content');
+            if (!nodeContent) return;
+
+            const nodeEl = nodeContent.closest('.tree-node');
+            if (!nodeEl) return;
+
+            if (nodeEl.dataset.isEquipment !== 'true') return;
+
+            const assetKey = nodeEl.dataset.nodeId;
+            handleEquipmentClick(assetKey);
+        }
+
         function setupEventHandlers() {
-            // Tree click (event delegation)
-            panel.querySelector('.tree-container')?.addEventListener('click', (e) => {
-                const nodeContent = e.target.closest('.node-content');
-                if (!nodeContent) return;
+            const treeContainer = panel.querySelector('.tree-container');
 
-                const nodeEl = nodeContent.closest('.tree-node');
-                if (!nodeEl) return;
-
-                const assetKey = nodeEl.dataset.nodeId;
-                const isEquipment = nodeEl.dataset.isEquipment === 'true';
-
-                if (isEquipment) {
-                    handleEquipmentClick(assetKey);
-                } else {
-                    toggleNode(assetKey);
-                }
-            });
+            // Tree click → toggle (all nodes)
+            if (treeContainer) treeContainer.addEventListener('click', handleTreeClick);
+            // Tree dblclick → equipment showDetail
+            if (treeContainer) treeContainer.addEventListener('dblclick', handleTreeDblClick);
 
             // Search
             panel.querySelector('.tree-search-input')?.addEventListener('input', (e) => {
@@ -488,12 +503,35 @@
         }
 
         // ==================
+        // DESTROY
+        // ==================
+
+        function onInstanceUnLoad() {
+            // Event cleanup
+            const treeContainer = panel.querySelector('.tree-container');
+            if (treeContainer) {
+                treeContainer.removeEventListener('click', handleTreeClick);
+                treeContainer.removeEventListener('dblclick', handleTreeDblClick);
+            }
+            panel.querySelector('.tree-search-input')?.removeEventListener('input', null);
+            panel.querySelector('.refresh-btn')?.removeEventListener('click', null);
+
+            // State cleanup
+            _assetCache = null;
+            _treeData = null;
+            _instanceMap = null;
+            _expandedNodes = null;
+            _searchTerm = null;
+        }
+
+        // ==================
         // INIT
         // ==================
 
         window.onload = () => {
             setupEventHandlers();
             collectAndBuild();
+            console.log('[AssetTree] Registered');
         };
     </script>
 </body>

@@ -624,6 +624,12 @@
             this.stopRefresh = stopRefresh.bind(this);
             this._switchTab = switchTab.bind(this);
 
+            // Runtime Parameter Update API
+            this.updateTrendParams = updateTrendParams.bind(this);
+            this.updateSwbdTabMetric = updateSwbdTabMetric.bind(this);
+            this.updateGlobalParams = updateGlobalParams.bind(this);
+            this.updateRefreshInterval = updateRefreshInterval.bind(this);
+
             // ======================
             // 7. 3D 이벤트 바인딩
             // ======================
@@ -917,13 +923,10 @@
             );
 
             const times = Object.keys(timeMap);
-            const values = fx.map(
-                (t) => {
-                    const raw = timeMap[t]?.[tabConfig.metricCode];
-                    return raw != null ? +(raw * tabConfig.scale).toFixed(2) : null;
-                },
-                times
-            );
+            const values = fx.map((t) => {
+                const raw = timeMap[t]?.[tabConfig.metricCode];
+                return raw != null ? +(raw * tabConfig.scale).toFixed(2) : null;
+            }, times);
 
             const option = {
                 tooltip: {
@@ -1012,21 +1015,15 @@
 
             const times = [...new Set([...Object.keys(todayMap), ...Object.keys(yesterdayMap)])].sort();
 
-            const todayValues = fx.map(
-                (t) => {
-                    const raw = todayMap[t];
-                    return raw != null ? +(raw * tabConfig.scale).toFixed(2) : null;
-                },
-                times
-            );
+            const todayValues = fx.map((t) => {
+                const raw = todayMap[t];
+                return raw != null ? +(raw * tabConfig.scale).toFixed(2) : null;
+            }, times);
 
-            const yesterdayValues = fx.map(
-                (t) => {
-                    const raw = yesterdayMap[t];
-                    return raw != null ? +(raw * tabConfig.scale).toFixed(2) : null;
-                },
-                times
-            );
+            const yesterdayValues = fx.map((t) => {
+                const raw = yesterdayMap[t];
+                return raw != null ? +(raw * tabConfig.scale).toFixed(2) : null;
+            }, times);
 
             const option = {
                 tooltip: {
@@ -1115,7 +1112,90 @@
         function onInstanceUnLoad() {
             this.stopRefresh();
             this.destroyPopup();
-            console.log('[SWBD] Destroyed:', this.id);
+
+            // 캐시 데이터 해제
+            this._trendData = null;
+            this._trendDataComparison = null;
+
+            console.log('[SWBD] Destroyed:', this._defaultAssetKey);
+        }
+
+        // ======================================
+        // RUNTIME PARAMETER UPDATE API
+        // ======================================
+
+        function updateTrendParams(options) {
+            const { datasetNames } = this.config;
+            const trendInfo = this.datasetInfo.find(
+                d => d.datasetName === datasetNames.metricHistory
+            );
+            if (!trendInfo) return;
+
+            const { timeRange, interval, apiEndpoint, timeField } = options;
+            if (timeRange !== undefined)   trendInfo.param.timeRange = timeRange;
+            if (interval !== undefined)    trendInfo.param.interval = interval;
+            if (apiEndpoint !== undefined) trendInfo.param.apiEndpoint = apiEndpoint;
+            if (timeField !== undefined)   trendInfo.param.timeField = timeField;
+        }
+
+        function updateSwbdTabMetric(tabName, options) {
+            const { datasetNames, chart } = this.config;
+            const trendInfo = this.datasetInfo.find(
+                d => d.datasetName === datasetNames.metricHistory
+            );
+            if (!trendInfo) return;
+
+            const tab = chart.tabs[tabName];
+            if (!tab) return;
+
+            const { metricCode, statsKey, label, unit, color, scale } = options;
+
+            if (metricCode !== undefined && statsKey === undefined) {
+                console.warn(`[updateSwbdTabMetric] metricCode 변경 시 statsKey 필수 (tab: ${tabName})`);
+                return;
+            }
+
+            if (metricCode !== undefined) {
+                tab.metricCode = metricCode;
+                this.config.api.statsKeyMap[metricCode] = statsKey;
+            }
+
+            if (label !== undefined) tab.label = label;
+            if (unit !== undefined)  tab.unit = unit;
+            if (color !== undefined) tab.color = color;
+            if (scale !== undefined) tab.scale = scale;
+
+            rebuildMetricCodes.call(this, trendInfo);
+        }
+
+        function rebuildMetricCodes(trendInfo) {
+            const codes = trendInfo.param.metricCodes;
+            codes.length = 0;
+
+            const { tabs } = this.config.chart;
+            Object.values(tabs).forEach(tab => {
+                if (tab.metricCode && !codes.includes(tab.metricCode)) codes.push(tab.metricCode);
+            });
+        }
+
+        function updateGlobalParams(options) {
+            const { assetKey, baseUrl, locale } = options;
+
+            if (assetKey !== undefined) this._defaultAssetKey = assetKey;
+            if (baseUrl !== undefined)  this._baseUrl = baseUrl;
+            if (locale !== undefined)   this._locale = locale;
+
+            this.datasetInfo.forEach(d => {
+                if (assetKey !== undefined) d.param.assetKey = assetKey;
+                if (baseUrl !== undefined)  d.param.baseUrl = baseUrl;
+                if (locale !== undefined)   d.param.locale = locale;
+            });
+        }
+
+        function updateRefreshInterval(datasetName, interval) {
+            const target = this.datasetInfo.find(d => d.datasetName === datasetName);
+            if (!target) return;
+            target.refreshInterval = interval;
         }
 
         // ======================

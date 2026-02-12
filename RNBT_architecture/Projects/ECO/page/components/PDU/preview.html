@@ -75,8 +75,13 @@
                             </div>
                         </div>
                         <div class="popup-body">
+                            <!-- Section 1: 기본정보 (이미지 + 테이블) -->
                             <div class="section info-section">
-                                <div class="info-layout">
+                                <div class="section-header">
+                                    <span class="section-title">기본정보</span>
+                                </div>
+                                <div class="info-content">
+                                    <div class="info-layout">
                                     <div class="switch-panel">
                                         <div class="switch-panel-header">
                                             <span class="switch-panel-title">회로 차단기</span>
@@ -98,8 +103,10 @@
                                             <tr><th>설치일</th><td class="info-install-date">-</td></tr>
                                         </tbody>
                                     </table>
+                                    </div>
                                 </div>
                             </div>
+                            <!-- Section 2: 실시간 전력추이현황 (4탭 트렌드 차트) -->
                             <div class="section chart-section">
                                 <div class="section-header">
                                     <span class="section-title">실시간 전력추이현황</span>
@@ -532,7 +539,7 @@
             // 1. 내부 상태
             // ======================
             this._defaultAssetKey = this.setter?.assetInfo?.assetKey || this.id;
-            this._baseUrl = '10.23.128.125:4004';
+            this._baseUrl = '10.23.128.140:8811';
             this._locale = 'ko';
             this._popupTemplateId = 'popup-pdu';
             this._trendData = null;
@@ -686,6 +693,12 @@
             this.hideDetail = hideDetail.bind(this);
             this.stopRefresh = stopRefresh.bind(this);
             this._switchTab = switchTab.bind(this);
+
+            // Runtime Parameter Update API
+            this.updateTrendParams = updateTrendParams.bind(this);
+            this.updatePduTabMetric = updatePduTabMetric.bind(this);
+            this.updateGlobalParams = updateGlobalParams.bind(this);
+            this.updateRefreshInterval = updateRefreshInterval.bind(this);
 
             // ======================
             // 7. 3D 이벤트 바인딩
@@ -1279,10 +1292,97 @@
             this.renderInitialLabels();
         }
 
+        // ======================================
+        // RUNTIME PARAMETER UPDATE API
+        // ======================================
+
+        function updateTrendParams(options) {
+            const { datasetNames } = this.config;
+            const trendInfo = this.datasetInfo.find(
+                d => d.datasetName === datasetNames.metricHistory
+            );
+            if (!trendInfo) return;
+
+            const { timeRange, interval, apiEndpoint, timeField } = options;
+            if (timeRange !== undefined)   trendInfo.param.timeRange = timeRange;
+            if (interval !== undefined)    trendInfo.param.interval = interval;
+            if (apiEndpoint !== undefined) trendInfo.param.apiEndpoint = apiEndpoint;
+            if (timeField !== undefined)   trendInfo.param.timeField = timeField;
+        }
+
+        function updatePduTabMetric(tabName, options) {
+            const { datasetNames, chart } = this.config;
+            const trendInfo = this.datasetInfo.find(
+                d => d.datasetName === datasetNames.metricHistory
+            );
+            if (!trendInfo) return;
+
+            const tab = chart.tabs[tabName];
+            if (!tab) return;
+
+            const { metricCode, statsKey, label, unit, color, scale } = options;
+
+            if (metricCode !== undefined && statsKey === undefined) {
+                console.warn(`[updatePduTabMetric] metricCode 변경 시 statsKey 필수 (tab: ${tabName})`);
+                return;
+            }
+
+            if (metricCode !== undefined) {
+                tab.metricCode = metricCode;
+                this.config.api.statsKeyMap[metricCode] = statsKey;
+            }
+
+            if (label !== undefined) tab.label = label;
+            if (unit !== undefined)  tab.unit = unit;
+            if (color !== undefined) tab.color = color;
+            if (scale !== undefined) tab.scale = scale;
+
+            rebuildMetricCodes.call(this, trendInfo);
+        }
+
+        function rebuildMetricCodes(trendInfo) {
+            const codes = trendInfo.param.metricCodes;
+            codes.length = 0;
+
+            const { tabs } = this.config.chart;
+            Object.values(tabs).forEach(tab => {
+                if (tab.metricCode && !codes.includes(tab.metricCode)) codes.push(tab.metricCode);
+            });
+        }
+
+        function updateGlobalParams(options) {
+            const { assetKey, baseUrl, locale } = options;
+
+            if (assetKey !== undefined) this._defaultAssetKey = assetKey;
+            if (baseUrl !== undefined)  this._baseUrl = baseUrl;
+            if (locale !== undefined)   this._locale = locale;
+
+            this.datasetInfo.forEach(d => {
+                if (assetKey !== undefined) d.param.assetKey = assetKey;
+                if (baseUrl !== undefined)  d.param.baseUrl = baseUrl;
+                if (locale !== undefined)   d.param.locale = locale;
+            });
+        }
+
+        function updateRefreshInterval(datasetName, interval) {
+            const target = this.datasetInfo.find(d => d.datasetName === datasetName);
+            if (!target) return;
+            target.refreshInterval = interval;
+        }
+
+        // ======================
+        // INSTANCE LIFECYCLE
+        // ======================
+
         function onInstanceUnLoad() {
             this.stopRefresh();
             this.destroyPopup();
-            console.log('[PDU] Destroyed:', this.id);
+
+            // 캐시 데이터 해제
+            this._trendData = null;
+            this._trendDataComparison = null;
+
+            console.log('[PDU] Destroyed:', this._defaultAssetKey);
         }
 
         // ======================
