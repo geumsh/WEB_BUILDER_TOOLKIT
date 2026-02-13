@@ -2751,12 +2751,15 @@ console.log('[Verify] 3D resources disposed');
 | 항목 | 처리 방식 |
 |------|----------|
 | subscriptions | unsubscribe 호출 |
-| customEvents | 참조 제거 |
-| datasetInfo | 참조 제거 |
 | geometry | dispose() 호출 |
 | material | dispose() 호출 |
 | texture | dispose() 호출 |
 | Scene background | 정리 |
+
+> **Note:** 인스턴스 속성(`customEvents`, `datasetInfo` 등)의 수동 null 처리는 수행하지 않는다.
+> 인스턴스가 GC될 때 속성도 함께 수거되며, 외부에서 속성을 null 처리하면
+> `_onViewerDestroy()`의 정리 로직이 실패할 수 있다.
+> 상세: [INSTANCE_LIFECYCLE_GC.md](/RNBT_architecture/docs/INSTANCE_LIFECYCLE_GC.md) 부록 A
 
 **통과 기준:**
 - disposeAllThreeResources 호출 시 에러 없음
@@ -5364,9 +5367,13 @@ console.assert(this._popup.charts.size === 0, '정리 후: charts 비워짐');
 
 ---
 
-#### TC-SC-015: 3D 컴포넌트 customEvents/datasetInfo 참조 정리 검증
+#### TC-SC-015: disposeAllThreeResources가 인스턴스 속성을 보존하는지 검증
 
-**목적:** 3D 컴포넌트 정리 시 참조가 null로 설정되는지 검증
+**목적:** disposeAllThreeResources 호출 후에도 인스턴스 속성(customEvents, datasetInfo 등)이
+유지되어 `_onViewerDestroy()`의 정리 로직이 정상 동작하는지 검증
+
+**배경:** 외부에서 인스턴스 속성을 null 처리하면 내부 정리 로직(예: stopRefresh)이 실패할 수 있다.
+상세: [INSTANCE_LIFECYCLE_GC.md](/RNBT_architecture/docs/INSTANCE_LIFECYCLE_GC.md) 부록 A
 
 **사전 조건:**
 - disposeAllThreeResources가 호출됨
@@ -5374,7 +5381,7 @@ console.assert(this._popup.charts.size === 0, '정리 후: charts 비워짐');
 **테스트 순서:**
 1. customEvents, datasetInfo 정의
 2. disposeAllThreeResources 호출 (Page의 before_unload.js)
-3. 참조 null 확인
+3. 속성이 null이 아닌지 확인 (GC가 처리)
 
 **검증 코드:**
 ```javascript
@@ -5388,27 +5395,19 @@ this.datasetInfo = [
 ];
 
 // before_unload.js (Page)에서 disposeAllThreeResources 호출 시
-// 각 3D 컴포넌트에 대해 아래 정리 수행
+// subscriptions 해제와 3D 리소스 dispose만 수행
+// 인스턴스 속성은 건드리지 않음
 
-// disposeAllThreeResources 시뮬레이션
-function cleanupComponent(component) {
-    // subscriptions 해제는 내부에서 처리
-
-    // 참조 제거
-    component.customEvents = null;
-    component.datasetInfo = null;
-}
-
-cleanupComponent(this);
-
-// 검증
-console.assert(this.customEvents === null, 'customEvents null');
-console.assert(this.datasetInfo === null, 'datasetInfo null');
+// 검증: disposeAllThreeResources 호출 후에도 속성이 유지됨
+console.assert(this.customEvents !== null, 'customEvents preserved');
+console.assert(this.datasetInfo !== null, 'datasetInfo preserved');
+// → 이 속성들은 이후 _onViewerDestroy()에서 정리되거나, 인스턴스 GC 시 함께 수거됨
 ```
 
 **통과 기준:**
-- customEvents 참조가 null
-- datasetInfo 참조가 null
+- disposeAllThreeResources 호출 후 customEvents, datasetInfo가 유지됨
+- subscriptions의 unsubscribe는 정상 수행됨
+- 이후 `_onViewerDestroy()`에서 내부 정리 로직이 정상 동작함
 
 ---
 

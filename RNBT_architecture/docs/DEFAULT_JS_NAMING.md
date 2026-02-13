@@ -15,8 +15,7 @@ Default JS 템플릿에서 사용하는 객체명 중 일부는 라이브러리(
 | 속성명 | 강제 이유 | 참조 코드 |
 |--------|----------|----------|
 | `this.customEvents` | makeHandler/make3DHandler가 `targetInstance.customEvents` 참조 | Wkit.js:245, 284 |
-| `this.subscriptions` | disposeAllThreeResources가 `instance.subscriptions` 참조 | Wkit.js:108 |
-| `this.datasetInfo` | disposeAllThreeResources가 `instance.datasetInfo` 참조 | Wkit.js:118 |
+| `this.subscriptions` | disposeAllThreeResources가 `instance.subscriptions` 참조하여 구독 해제 | Wkit.js:108 |
 
 **이 이름들을 변경하면 라이브러리가 찾지 못해 동작하지 않는다.**
 
@@ -146,6 +145,7 @@ Wkit.onEventBusHandlers = function (eventBusHandlers) {
 
 | 객체명 | 역할 | 대안 예시 |
 |--------|------|----------|
+| `this.datasetInfo` | 컴포넌트 데이터셋 정보 저장 | `this.datasets`, `this.dataConfig` |
 | `this.currentParams` | topic별 param 저장 | `this.params`, `this.topicParams` |
 | `this.refreshIntervals` | interval ID 저장 | `this.intervals`, `this.timers` |
 | `this.startAllIntervals` | interval 시작 함수 | `this.startRefresh`, `this.beginPolling` |
@@ -170,7 +170,6 @@ Wkit.onEventBusHandlers = function (eventBusHandlers) {
 |------|------|------|
 | 이름 | `this.customEvents` | - |
 | 이름 | `this.subscriptions` | - |
-| 이름 | `this.datasetInfo` | - |
 | 형태 | customEvents (2D) | `{ eventType: { selector: '@trigger' } }` |
 | 형태 | customEvents (3D) | `{ eventType: '@trigger' }` |
 | 형태 | datasetInfo 요소 | `{ datasetName, param }` |
@@ -179,7 +178,9 @@ Wkit.onEventBusHandlers = function (eventBusHandlers) {
 
 ### 자유롭게 변경 가능
 
-`currentParams`, `refreshIntervals`, `startAllIntervals`, `stopAllIntervals`, `raycastingEvents`, `renderData`, `_internalHandlers`, `eventBusHandlers`(변수명), `globalDataMappings`(변수명)
+`datasetInfo`(변수명), `currentParams`, `refreshIntervals`, `startAllIntervals`, `stopAllIntervals`, `raycastingEvents`, `renderData`, `_internalHandlers`, `eventBusHandlers`(변수명), `globalDataMappings`(변수명)
+
+> **Note:** `this.datasetInfo`의 변수명은 자유이지만, 내부 키(`datasetName`, `param`)는 라이브러리가 강제한다 (섹션 2.2 참조).
 
 ---
 

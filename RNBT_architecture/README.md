@@ -22,6 +22,7 @@
 - [부록 C: 컴포넌트 내부 이벤트 패턴](#부록-c-컴포넌트-내부-이벤트-패턴)
 - [부록 D: Configuration 설계 원칙](#부록-d-configuration-설계-원칙)
 - [부록 E: PopupMixin 패턴](#부록-e-popupmixin-패턴)
+- [부록 F: 인스턴스 스코프, 생명주기, GC 분석](#부록-f-인스턴스-스코프-생명주기-gc-분석)
 
 ---
 
@@ -494,10 +495,14 @@ bind3DEvents(this, this.customEvents);
 > **Note:** 3D 컴포넌트의 정리
 > - 3D 리소스: 페이지 `before_unload.js`의 `disposeAllThreeResources()`에서 일괄 정리
 >   - subscriptions 해제
->   - customEvents, datasetInfo 참조 제거
 >   - geometry, material, texture dispose
+>   - Scene background 정리
 > - DOM 리소스: 팝업 컴포넌트(Shadow DOM 팝업 등)는 `beforeDestroy.js`에서 직접 정리
 >   - `this.destroyPopup()` 등 컴포넌트가 생성한 DOM 리소스 정리
+>
+> **주의:** `disposeAllThreeResources`는 인스턴스 속성(`customEvents`, `datasetInfo` 등)을 null 처리하지 않는다.
+> 외부에서 속성을 null 처리하면 `_onViewerDestroy()`의 정리 로직이 실패할 수 있다.
+> 상세: [INSTANCE_LIFECYCLE_GC.md](/RNBT_architecture/docs/INSTANCE_LIFECYCLE_GC.md)
 
 ### 3. 페이지 Default JS
 
@@ -726,7 +731,6 @@ withSelector(this.appendElement, 'canvas', canvas => {
 
 // 한 줄로 모든 3D 컴포넌트 정리:
 // - subscriptions 해제
-// - customEvents, datasetInfo 참조 제거
 // - geometry, material, texture dispose
 // - Scene background 정리
 disposeAllThreeResources(this);
@@ -1353,4 +1357,28 @@ Config는 **추상화된 구조에 다형성을 부여하기 위한 주입 옵�
 3D 컴포넌트에 Shadow DOM 팝업, 차트, 테이블 기능을 Mixin으로 조합하여 팝업을 사용한 패턴.
 
 > **참조:** [Utils/PopupMixin.js](/RNBT_architecture/Utils/PopupMixin.js), [Projects/ECO/page/components/UPS/](/RNBT_architecture/Projects/ECO/page/components/UPS/)
+
+---
+
+## 부록 F: 인스턴스 스코프, 생명주기, GC 분석
+
+뷰어 런타임에서 컴포넌트 인스턴스(2D/3D)의 스코프 체인, GC 판정 조건, 그리고
+외부에서 인스턴스 속성을 null 처리할 때 발생하는 캡슐화 위반 문제를 분석한 문서.
+
+> **상세 문서:** [INSTANCE_LIFECYCLE_GC.md](/RNBT_architecture/docs/INSTANCE_LIFECYCLE_GC.md)
+
+**핵심 요약:**
+- 인스턴스는 레이어의 `_childs[]`와 역참조 Map에 의해 참조되며, `removeChildAll()` 후 GC 대상이 됨
+- 인스턴스가 GC되면 모든 속성도 함께 수거되므로, 수동 null 처리는 불필요
+- 외부에서 `instance.datasetInfo = null` 등으로 속성을 직접 null 처리하면, 컴포넌트 내부의 정리 로직(`_onViewerDestroy`)이 실패할 수 있음 (캡슐화 위반)
+
+**외부 접근 원칙:**
+
+| 패턴 | 예시 | 안전성 |
+|------|------|--------|
+| 읽기 | `targetInstance.datasetInfo` | 안전 |
+| 메서드 호출 | `targetInstance.showDetail()` | 안전 |
+| 공유 리소스 해제 | `unsubscribe(topic, instance)` | 안전 |
+| Mixin 소유 쓰기 | `instance._popup.host = null` | 안전 (생성자 = 정리자) |
+| 비소유 속성 직접 null | `instance.datasetInfo = null` | 위험 (소유권 불일치) |
 

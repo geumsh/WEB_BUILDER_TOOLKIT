@@ -146,9 +146,13 @@ Wkit.disposeAllThreeResources(this.page);
 
 **정리 순서:**
 1. `instance.subscriptions` → GlobalDataPublisher 구독 해제
-2. `instance.customEvents`, `instance.datasetInfo` → null
-3. `instance.appendElement` → `dispose3DTree` 호출
-4. `scene.background` → 정리
+2. `instance.appendElement` → `dispose3DTree` 호출
+3. `scene.background` → 정리
+
+> **Note:** 인스턴스 속성(`customEvents`, `datasetInfo` 등)의 수동 null 처리는 수행하지 않는다.
+> 인스턴스 자체가 GC될 때 속성도 함께 수거되며, 외부에서 속성을 null 처리하면
+> 컴포넌트 내부 정리 로직(`_onViewerDestroy`)의 전제 조건을 깨뜨릴 수 있다.
+> 상세: [INSTANCE_LIFECYCLE_GC.md](/RNBT_architecture/docs/INSTANCE_LIFECYCLE_GC.md) 부록 A
 
 ---
 
