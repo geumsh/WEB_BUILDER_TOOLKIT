@@ -170,6 +170,24 @@ instance.cleanup();
 인스턴스 메서드는 내부 의존 관계를 알고 있으므로,
 필요한 선행 작업을 수행한 후 데이터를 정리할 수 있다.
 
+더 중요한 점은, **소유자가 cleanup을 작성하면 `datasetInfo = null` 코드 자체가 작성되지 않는다**는 것이다:
+
+```javascript
+// cleanup() 내부를 작성하는 사람 = 인스턴스의 생명주기를 아는 사람
+cleanup() {
+  stopRefresh();              // datasetInfo를 사용해서 인터벌 해제
+  // this.datasetInfo = null; // ← 쓸 이유가 없음. 곧 GC될 테니까.
+}
+```
+
+외부에서 `instance.datasetInfo = null`을 쓴 이유는 인스턴스 내부를 모르기 때문에
+"정리 = null 할당"이라고 생각한 것이다. 내부를 아는 소유자라면 `stopRefresh()`가
+필요한 전부이고, null 할당은 GC가 할 일을 중복하는 것이라는 걸 알기 때문에
+애초에 그 코드를 쓰지 않는다.
+
+**캡슐화의 실질적 이점이 여기에 있다** — 소유자가 정리를 담당하면
+불필요한 코드가 자연스럽게 사라지고, 외부가 담당하면 몰라서 쓰는 코드가 오히려 해를 끼친다.
+
 이것은 TC39의 Explicit Resource Management 제안이 언어 수준에서 공식화한 원칙과 동일하다:
 
 > *"Explicit Resource Management — Indicates a system whereby the lifetime
