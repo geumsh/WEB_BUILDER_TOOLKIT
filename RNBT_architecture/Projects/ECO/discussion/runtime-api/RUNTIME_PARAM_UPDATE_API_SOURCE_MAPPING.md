@@ -571,6 +571,35 @@ const tabMetricCodes = [tabConfig.inputCode, tabConfig.outputCode];
 
 ---
 
+## 8. 알려진 이슈
+
+### 8.1 CRAC `addCracStatusMetric` default scale 불일치
+
+```
+CRAC/scripts/register.js:840
+```
+
+```javascript
+const { label, unit, metricCode = null, scale = 0.1 } = options;
+//                                       ^^^^^^^^ 다른 컴포넌트는 1.0
+```
+
+| 컴포넌트 | add 메서드 default scale | 기존 상태카드 scale |
+|----------|:----------------------:|:-----------------:|
+| UPS | 1.0 | 1.0 |
+| CRAC | **0.1** | 1.0 |
+| SENSOR | 1.0 | 1.0 |
+
+CRAC의 기존 상태카드 4개(`RETURN_TEMP`, `TEMP_SET`, `RETURN_HUMIDITY`, `HUMIDITY_SET`)는 모두 `scale: 1.0`이다. `addCracStatusMetric()`의 default가 `0.1`인 것은 불일치이며, scale을 명시하지 않고 호출하면 값이 10분의 1로 표시된다.
+
+**영향**: scale을 명시적으로 전달하면 문제없음. 생략 시에만 발생.
+
+### 8.2 stale statsKeyMap 잔존 (무해)
+
+metricCode를 교체하면 옛 코드의 statsKeyMap 항목이 삭제되지 않고 남는다. 그러나 `rebuildMetricCodes()`가 `param.metricCodes`에서 옛 코드를 제거하므로, 서버 응답에 옛 코드가 포함되지 않아 **조회되지 않는다**. 기능상 무해하며 메모리 누적도 미미하다.
+
+---
+
 ## 관련 문서
 
 | 문서 | 내용 |
