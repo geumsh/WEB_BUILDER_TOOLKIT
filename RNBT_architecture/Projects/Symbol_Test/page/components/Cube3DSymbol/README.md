@@ -4,7 +4,7 @@
 
 ## 특징
 
-- 복잡한 linearGradient 사용으로 **상태별 전체 SVG 교체 방식** 적용
+- 복잡한 linearGradient 사용, **data-status 속성 + CSS 셀렉터** 방식으로 색상 전환
 - Figma node-id: 1:102 (green), 1:178 (yellow), 1:140 (red)
 
 ## 상태
@@ -78,21 +78,19 @@ Cube3DSymbol/
 
 ## 구현 방식
 
-이 컴포넌트는 복잡한 linearGradient (10개)를 사용하여 CSS 변수만으로 색상을 제어하기 어렵습니다.
-따라서 **상태별 전체 SVG 교체 방식**을 사용합니다.
+이 컴포넌트는 복잡한 linearGradient (10개)를 사용합니다.
+상태별 gradient를 `<defs>`에 모두 정의하고, `data-status` 속성 + CSS 셀렉터로 색상을 전환합니다.
 
 ```javascript
 // register.js 내부
-const svgTemplates = {
-    green: '...green SVG...',
-    yellow: '...yellow SVG...',
-    red: '...red SVG...'
-};
-
-function setStatus(status) {
-    symbolContainer.innerHTML = svgTemplates[status];
+function setStatus(config, status) {
+    const container = this.appendElement.querySelector('.symbol-container');
+    container.dataset.status = status;  // CSS가 색상 전환
+    this._currentStatus = status;
 }
 ```
+
+**장점:** innerHTML 교체 없이 속성만 변경 (DOM 효율적)
 
 ## 원본 Figma
 

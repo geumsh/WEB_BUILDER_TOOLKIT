@@ -168,10 +168,8 @@ https://www.figma.com/design/VNqtXrH6ydqcDgYBsVFLbg/...?node-id=25-1393&m=dev
 Claude가 node-id 추출: "25-1393" (또는 "25:1393")
          ↓
 MCP 도구 호출
-  - get_metadata("25:1393")  → 크기, 위치 정보
-  - get_code("25:1393")      → HTML/CSS 코드
-  - get_image("25:1393")     → 스크린샷
-  - get_variable_defs()      → 디자인 토큰
+  - get_design_context("25:1393")  → 구조, 수치, 코드, 에셋
+  - get_screenshot("25:1393")      → 디자인 스크린샷
          ↓
 Figma Desktop 앱에서 데이터 반환
          ↓
@@ -190,30 +188,27 @@ Claude가 정확한 코드 생성
 
 ## 🛠️ 제공 도구
 
-MCP 서버가 Claude에게 제공하는 **4가지 핵심 도구**:
+MCP 서버가 Claude에게 제공하는 **2가지 핵심 도구**:
 
-| 도구 이름 | 역할 | 입력 | 출력 예시 |
-|----------|------|------|----------|
-| **get_metadata** | 크기/위치 정보 | node-id | `{width: 1860, height: 75, x: 29, y: -1}` |
-| **get_code** | 코드 생성 | node-id | HTML/CSS/React 코드 |
-| **get_image** | 스크린샷 | node-id | PNG 이미지 (시각적 확인용) |
-| **get_variable_defs** | 디자인 토큰 | - | 색상, 간격, 폰트 변수 |
+| 도구 이름 | 역할 | 입력 | 출력 |
+|----------|------|------|------|
+| **get_design_context** | 디자인 구조, 수치, 코드, 에셋 다운로드 | nodeId, dirForAssetWrites 등 | 레이아웃 정보 + HTML/CSS + 에셋 파일 |
+| **get_screenshot** | 디자인 스크린샷 (시각 비교 기준) | nodeId | PNG 이미지 |
 
 ### 도구 사용 예시
 
 ```javascript
 // Claude가 내부적으로 이렇게 호출합니다
-mcp__figma-dev-mode-mcp-server__get_metadata("25:1393")
-// → { width: 1860, height: 430, x: 30, y: 66 }
+mcp__figma-desktop__get_design_context({
+  nodeId: "25:1393",
+  clientLanguages: "html,css",
+  clientFrameworks: "vanilla",
+  dirForAssetWrites: "./assets"
+})
+// → 디자인 구조, 수치, 코드, 에셋 자동 다운로드
 
-mcp__figma-dev-mode-mcp-server__get_code("25:1393")
-// → <div class="header">...</div> + CSS
-
-mcp__figma-dev-mode-mcp-server__get_image("25:1393")
+mcp__figma-desktop__get_screenshot({ nodeId: "25:1393" })
 // → 실제 디자인 스크린샷 (비교용)
-
-mcp__figma-dev-mode-mcp-server__get_variable_defs()
-// → { colors: { primary: "#7b4bff" }, spacing: { gap: "20px" } }
 ```
 
 ---
