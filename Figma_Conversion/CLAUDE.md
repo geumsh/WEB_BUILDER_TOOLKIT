@@ -762,7 +762,7 @@ const { chromium } = require('playwright');
 2. **파일을 미리 열어두기**
 3. **정확한 node-id 또는 링크 제공**
 4. **원하는 프레임워크 명시** (React/Vue/HTML 등)
-5. **get_image로 시각적 확인** (정확도 향상)
+5. **get_screenshot로 시각적 확인** (정확도 향상)
 
 이제 Figma 디자인을 Claude Code로 변환할 준비가 되었습니다! 🚀
 

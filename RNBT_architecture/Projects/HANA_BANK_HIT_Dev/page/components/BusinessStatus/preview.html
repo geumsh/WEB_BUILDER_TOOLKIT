@@ -4,7 +4,312 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>BusinessStatus - Preview</title>
-    <link rel="stylesheet" href="styles/component.css">
+    <style>
+        /* === component.css (inline) === */
+        /* Business Status Component */
+        /* Font: Pretendard */
+        @import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css');
+
+        #business-status-container {
+            /* Main container - 런타임에서 컨테이너가 제공하는 크기를 따름 */
+            .business-status {
+                width: 100%;
+                height: 100%;
+                position: relative;
+                display: flex;
+                flex-direction: column;
+                align-items: flex-start;
+                justify-content: flex-start;
+                gap: 4px;
+                padding: 14px 24px 20px 24px;
+                border-radius: 16px;
+                border: 0.3px solid #778985;
+                background-color: rgba(42, 42, 42, 0.5);
+                box-shadow: inset 4px 4px 4px 0px rgba(0, 0, 0, 0.06);
+                font-family: 'Pretendard', sans-serif;
+            }
+
+            /* Header section */
+            .group {
+                width: 100%;
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                justify-content: center;
+                flex-shrink: 0;
+            }
+
+            .header {
+                width: 100%;
+                height: 38px;
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+                flex-shrink: 0;
+            }
+
+            /* Title */
+            .title {
+                display: flex;
+                align-items: center;
+                gap: 9px;
+                flex-shrink: 0;
+            }
+
+            .icon {
+                width: 16.681px;
+                height: 18.27px;
+                flex-shrink: 0;
+            }
+
+            .icon img {
+                display: block;
+                width: 100%;
+                height: 100%;
+                max-width: none;
+            }
+
+            .title-text {
+                font-weight: 600;
+                font-size: 18px;
+                color: #e9ebeb;
+                white-space: nowrap;
+                line-height: normal;
+            }
+
+            /* Date badge */
+            .date {
+                width: 123px;
+                height: 22px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                gap: 8px;
+                padding: 5.7px 12px;
+                border-radius: 40px;
+                border: 1px solid #566761;
+                background: linear-gradient(90deg, rgba(0, 0, 0, 0.3) 0%, rgba(0, 0, 0, 0.3) 100%),
+                            linear-gradient(90deg, rgba(59, 76, 70, 0.1) 0%, rgba(59, 76, 70, 0.1) 100%);
+                font-weight: 400;
+                font-size: 12px;
+                line-height: normal;
+                white-space: nowrap;
+            }
+
+            .date .gray {
+                color: #9c9c9c;
+            }
+
+            .date .tps-peak {
+                color: #1fccb0;
+            }
+
+            /* Container */
+            .container {
+                width: 100%;
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                justify-content: center;
+                gap: 10px;
+                flex-shrink: 0;
+            }
+
+            /* Contents */
+            .contents {
+                display: flex;
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 19px;
+                flex-shrink: 0;
+            }
+
+            /* Item section */
+            .item {
+                width: 411px;
+                display: flex;
+                flex-direction: column;
+                align-items: flex-end;
+                gap: 6px;
+                flex-shrink: 0;
+            }
+
+            /* Item header */
+            .item-header {
+                display: flex;
+                align-items: center;
+                gap: 5px;
+                flex-shrink: 0;
+            }
+
+            .item-title {
+                width: 137px;
+                height: 21px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                gap: 11.205px;
+                padding: 3.362px 12.326px;
+                border-radius: 6px;
+                background-color: #3b4c46;
+                flex-shrink: 0;
+            }
+
+            .item-title p {
+                font-weight: 600;
+                font-size: 14px;
+                color: #e9ebeb;
+                text-align: center;
+                white-space: nowrap;
+                line-height: normal;
+            }
+
+            /* List */
+            .list {
+                width: 100%;
+                display: flex;
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 6px;
+                flex-shrink: 0;
+                line-height: 0;
+            }
+
+            /* Row - using CSS Grid to match Figma's grid layout */
+            .row {
+                display: grid;
+                grid-template-columns: max-content;
+                grid-template-rows: max-content;
+                place-items: start;
+                position: relative;
+                flex-shrink: 0;
+            }
+
+            .row > * {
+                grid-area: 1 / 1;
+            }
+
+            /* Label block (동시 사용자 수, 초당처리량, 평균수행시간) */
+            .label-block {
+                width: 112px;
+                height: 22px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                padding: 0 16px;
+                border-radius: 40px;
+                background-color: #2f5044;
+                margin-left: 0;
+                margin-top: 0;
+            }
+
+            .label-block p {
+                font-weight: 500;
+                font-size: 14px;
+                color: #e9ebeb;
+                white-space: nowrap;
+                line-height: normal;
+            }
+
+            /* Value block */
+            .value-block {
+                width: 137px;
+                height: 22px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                gap: 8px;
+                padding: 5.7px 12px;
+                border-radius: 40px;
+                border: 1px solid #566761;
+                background: linear-gradient(90deg, rgba(0, 0, 0, 0.3) 0%, rgba(0, 0, 0, 0.3) 100%),
+                            linear-gradient(90deg, rgba(59, 76, 70, 0.1) 0%, rgba(59, 76, 70, 0.1) 100%);
+                font-weight: 600;
+                font-size: 14px;
+                line-height: normal;
+                white-space: nowrap;
+            }
+
+            .value-block.alt-bg {
+                background: linear-gradient(90deg, rgba(0, 0, 0, 0.3) 0%, rgba(0, 0, 0, 0.3) 100%),
+                            linear-gradient(90deg, rgba(59, 76, 70, 0.2) 0%, rgba(59, 76, 70, 0.2) 100%);
+            }
+
+            .value-block.first {
+                margin-left: 132px;
+                margin-top: 0;
+            }
+
+            .value-block.second {
+                margin-left: 274px;
+                margin-top: 0;
+            }
+
+            .value-block .gray {
+                color: #9c9c9c;
+                letter-spacing: -0.28px;
+            }
+
+            .value-block .slash {
+                color: #9c9c9c;
+            }
+
+            .value-block .cyan {
+                color: #0defcb;
+                letter-spacing: -0.28px;
+            }
+
+            .value-block .blue {
+                color: #0de7ef;
+                letter-spacing: -0.28px;
+            }
+
+            /* Arrow images */
+            .arrow {
+                height: 0;
+                position: relative;
+            }
+
+            .arrow.first {
+                width: 19.621px;
+                margin-left: 112px;
+                margin-top: 11.36px;
+            }
+
+            .arrow.first-alt {
+                width: 19.621px;
+                margin-left: 112px;
+                margin-top: 12.36px;
+            }
+
+            .arrow.second {
+                width: 5px;
+                margin-left: 269px;
+                margin-top: 11.36px;
+            }
+
+            .arrow.second-alt {
+                width: 5px;
+                margin-left: 269px;
+                margin-top: 12.36px;
+            }
+
+            .arrow-inner {
+                position: absolute;
+                top: -0.5px;
+                left: 0;
+                right: 0;
+                bottom: -0.5px;
+            }
+
+            .arrow-inner img {
+                display: block;
+                width: 100%;
+                height: 100%;
+                max-width: none;
+            }
+        }
+    </style>
     <style>
         * {
             margin: 0;
