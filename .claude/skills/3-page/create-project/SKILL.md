@@ -68,46 +68,46 @@ Examples/[project_name]/
 
 Master와 Page는 **동일한 `this` 인스턴스를 공유**합니다.
 
-```javascript
-// Page loaded.js에서 초기화
-this.currentParams = {};
-
-// Master before_load.js에서 접근/수정 가능
-this.currentParams.tasks = { ...filters };
-```
-
 - Master와 Page는 별도 레이어지만 하나의 페이지 인스턴스
-- Page에서 초기화한 상태를 Master에서 직접 수정 가능
 - 이벤트 핸들러는 등록 시점이 아닌 실행 시점에 `this` 참조
 
-### ⚠️ 덮어쓰기 방지 (필수)
+### ⚠️ 덮어쓰기 방지 — 접두사 분리 패턴
 
-Master와 Page 모두 같은 변수명을 사용하면 **나중에 실행되는 쪽이 덮어씀**.
+Master와 Page가 같은 변수명을 쓰면 나중에 실행되는 쪽이 덮어씁니다.
+**접두사로 변수를 분리**하여 충돌을 원천 방지합니다.
 
 ```javascript
-// ❌ 잘못된 예: Page가 Master의 핸들러를 덮어씀
 // Master before_load.js
-this.eventBusHandlers = { '@filterApplied': ... };
-// Page before_load.js
-this.eventBusHandlers = { '@taskClicked': ... };  // Master 핸들러 사라짐!
+const { onEventBusHandlers } = Wkit;
 
-// ✅ 올바른 예: Object.assign으로 병합
-// Page before_load.js
-this.eventBusHandlers = Object.assign(this.eventBusHandlers || {}, {
-    '@taskClicked': ...
-});
+this.masterEventBusHandlers = {
+    '@userMenuClicked': ({ event }) => { ... },
+    '@navItemClicked': ({ event }) => { ... }
+};
+onEventBusHandlers(this.masterEventBusHandlers);
 
-// ✅ 올바른 예: spread로 배열 병합
-// Page loaded.js
-this.globalDataMappings = [
-    ...(this.globalDataMappings || []),
-    { topic: 'tasks', ... }
-];
+// Page before_load.js
+const { onEventBusHandlers } = Wkit;
+
+this.pageParams = {
+    tableData: { category: 'all' },
+    chartData: { period: '7d' }
+};
+
+this.pageEventBusHandlers = {
+    '@cardClicked': ({ event }) => { ... },
+    '@filterChanged': ({ event }) => {
+        this.pageParams.tableData = { category: event.target.value };
+        GlobalDataPublisher.fetchAndPublish('tableData', this, this.pageParams.tableData);
+    }
+};
+onEventBusHandlers(this.pageEventBusHandlers);
 ```
 
-**병합이 필요한 변수:**
-- `eventBusHandlers` → `Object.assign(this.eventBusHandlers || {}, {...})`
-- `globalDataMappings` → `[...(this.globalDataMappings || []), ...]`
+**핵심 규칙:**
+- 이벤트 핸들러: `this.masterEventBusHandlers` / `this.pageEventBusHandlers` (접두사 분리)
+- 파라미터: `this.pageParams` (Page 전용)
+- 등록: `onEventBusHandlers()` 함수로 런타임에 등록 (Wkit 제공)
 
 ---
 

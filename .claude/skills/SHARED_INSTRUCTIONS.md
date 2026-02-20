@@ -162,7 +162,7 @@ body { ... }
 
 ## preview.html 작성 규칙
 
-- **inline 방식** (LogViewer 패턴) — 외부 파일 로드 금지
+- **inline 방식** — CSS는 `<style>` 태그로 인라인, `<link rel="stylesheet" href="...">` 로컬 파일 참조 금지 (CDN 폰트 등 외부 라이브러리는 허용)
 - register.js 내용을 복사해서 붙여넣기
 - fx는 최소 기능만 inline 구현
 - mockThis 컨텍스트에서 IIFE로 실행

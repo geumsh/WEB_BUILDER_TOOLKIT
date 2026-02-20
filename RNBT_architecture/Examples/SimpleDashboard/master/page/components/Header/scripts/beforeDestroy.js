@@ -19,9 +19,7 @@ const { removeCustomEvents } = Wkit;
 if (this.subscriptions) {
     fx.go(
         Object.entries(this.subscriptions),
-        fx.each(([topic, fnList]) =>
-            fx.each(fn => this[fn] && unsubscribe(topic, this, this[fn]), fnList)
-        )
+        fx.each(([topic, _]) => unsubscribe(topic, this))
     );
     this.subscriptions = null;
 }

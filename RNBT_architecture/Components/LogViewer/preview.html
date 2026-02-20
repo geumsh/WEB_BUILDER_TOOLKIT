@@ -4,8 +4,97 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>LogViewer Preview</title>
-    <link rel="stylesheet" href="styles/component.css">
     <style>
+        /* === component.css (inline) === */
+        .log-viewer {
+            display: flex;
+            flex-direction: column;
+            background: #1a1f2e;
+            border-radius: 8px;
+            overflow: hidden;
+            min-width: 300px;
+            min-height: 200px;
+        }
+        .log-viewer .log-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 16px;
+            background: #232a3b;
+            border-bottom: 1px solid #2a3142;
+        }
+        .log-viewer .log-title {
+            font-size: 14px;
+            font-weight: 600;
+            color: #e0e6ed;
+        }
+        .log-viewer .log-controls {
+            display: flex;
+            gap: 8px;
+        }
+        .log-viewer .log-controls button {
+            padding: 4px 12px;
+            font-size: 12px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        .log-viewer .btn-clear {
+            background: #3b4252;
+            color: #e0e6ed;
+        }
+        .log-viewer .btn-clear:hover {
+            background: #4c566a;
+        }
+        .log-viewer .btn-scroll {
+            background: #4ade80;
+            color: #1a1f2e;
+        }
+        .log-viewer .btn-scroll.disabled {
+            background: #3b4252;
+            color: #8b95a5;
+        }
+        .log-viewer .log-container {
+            flex: 1;
+            overflow-y: auto;
+            padding: 8px 0;
+        }
+        .log-viewer .log-list {
+            margin: 0;
+            padding: 0;
+            list-style: none;
+            font-family: 'Consolas', 'Monaco', monospace;
+            font-size: 12px;
+        }
+        .log-viewer .log-item {
+            display: flex;
+            padding: 4px 16px;
+            border-bottom: 1px solid #2a3142;
+        }
+        .log-viewer .log-item:hover {
+            background: #232a3b;
+        }
+        .log-viewer .log-time {
+            color: #8b95a5;
+            margin-right: 12px;
+            white-space: nowrap;
+        }
+        .log-viewer .log-level {
+            width: 50px;
+            margin-right: 12px;
+            font-weight: 600;
+        }
+        .log-viewer .log-level.info { color: #4ade80; }
+        .log-viewer .log-level.warn { color: #fbbf24; }
+        .log-viewer .log-level.error { color: #f87171; }
+        .log-viewer .log-level.debug { color: #60a5fa; }
+        .log-viewer .log-message {
+            color: #e0e6ed;
+            word-break: break-all;
+        }
+
+        /* === preview-specific === */
         body {
             margin: 0;
             padding: 40px;
