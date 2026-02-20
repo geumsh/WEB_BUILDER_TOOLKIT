@@ -123,9 +123,9 @@ onEventBusHandlers(this.pageEventBusHandlers);
     ↓
   리소스 로딩 → 컴포넌트 completed
     ↓
-  PAGE loaded
-    ↓
   MASTER loaded
+    ↓
+  PAGE loaded
 
 [페이지 언로드]
   MASTER before_unload

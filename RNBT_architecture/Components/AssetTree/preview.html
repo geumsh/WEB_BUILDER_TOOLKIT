@@ -6,16 +6,20 @@
     <title>AssetTree Preview</title>
     <style>
         /* === component.css (inline) === */
-        .asset-tree {
-            display: flex;
-            flex-direction: column;
-            background: #1a1f2e;
-            border-radius: 8px;
-            overflow: hidden;
+        #asset-tree-container {
             min-width: 280px;
             min-height: 200px;
         }
-        .asset-tree .tree-header {
+        #asset-tree-container .asset-tree {
+            display: flex;
+            flex-direction: column;
+            width: 100%;
+            height: 100%;
+            background: #1a1f2e;
+            border-radius: 8px;
+            overflow: hidden;
+        }
+        #asset-tree-container .tree-header {
             display: flex;
             justify-content: space-between;
             align-items: center;
@@ -23,16 +27,16 @@
             background: #232a3b;
             border-bottom: 1px solid #2a3142;
         }
-        .asset-tree .tree-title {
+        #asset-tree-container .tree-title {
             font-size: 14px;
             font-weight: 600;
             color: #e0e6ed;
         }
-        .asset-tree .tree-controls {
+        #asset-tree-container .tree-controls {
             display: flex;
             gap: 4px;
         }
-        .asset-tree .tree-controls button {
+        #asset-tree-container .tree-controls button {
             width: 28px;
             height: 28px;
             padding: 0;
@@ -44,15 +48,15 @@
             cursor: pointer;
             transition: background 0.2s;
         }
-        .asset-tree .tree-controls button:hover { background: #4c566a; }
-        .asset-tree .tree-search {
+        #asset-tree-container .tree-controls button:hover { background: #4c566a; }
+        #asset-tree-container .tree-search {
             display: flex;
             align-items: center;
             padding: 8px 16px;
             background: #1a1f2e;
             border-bottom: 1px solid #2a3142;
         }
-        .asset-tree .search-input {
+        #asset-tree-container .search-input {
             flex: 1;
             padding: 8px 12px;
             font-size: 13px;
@@ -63,29 +67,29 @@
             outline: none;
             transition: border-color 0.2s;
         }
-        .asset-tree .search-input::placeholder { color: #6b7280; }
-        .asset-tree .search-input:focus { border-color: #4ade80; }
-        .asset-tree .search-icon {
+        #asset-tree-container .search-input::placeholder { color: #6b7280; }
+        #asset-tree-container .search-input:focus { border-color: #4ade80; }
+        #asset-tree-container .search-icon {
             margin-left: 8px;
             font-size: 14px;
             opacity: 0.6;
         }
-        .asset-tree .tree-container {
+        #asset-tree-container .tree-container {
             flex: 1;
             overflow-y: auto;
             padding: 8px 0;
         }
-        .asset-tree .tree-root {
+        #asset-tree-container .tree-root {
             margin: 0;
             padding: 0;
             list-style: none;
         }
-        .asset-tree .tree-node {
+        #asset-tree-container .tree-node {
             margin: 0;
             padding: 0;
             list-style: none;
         }
-        .asset-tree .node-content {
+        #asset-tree-container .node-content {
             display: flex;
             align-items: center;
             padding: 6px 12px;
@@ -93,10 +97,10 @@
             transition: background 0.15s;
             user-select: none;
         }
-        .asset-tree .node-content:hover { background: #232a3b; }
-        .asset-tree .node-content.selected { background: #2a3a4a; }
-        .asset-tree .node-content.highlight { background: #3a4a2a; }
-        .asset-tree .node-toggle {
+        #asset-tree-container .node-content:hover { background: #232a3b; }
+        #asset-tree-container .node-content.selected { background: #2a3a4a; }
+        #asset-tree-container .node-content.highlight { background: #3a4a2a; }
+        #asset-tree-container .node-toggle {
             width: 16px;
             height: 16px;
             display: flex;
@@ -107,9 +111,9 @@
             transition: transform 0.2s;
             flex-shrink: 0;
         }
-        .asset-tree .node-toggle.expanded { transform: rotate(90deg); }
-        .asset-tree .node-toggle.leaf { visibility: hidden; }
-        .asset-tree .node-icon {
+        #asset-tree-container .node-toggle.expanded { transform: rotate(90deg); }
+        #asset-tree-container .node-toggle.leaf { visibility: hidden; }
+        #asset-tree-container .node-icon {
             width: 20px;
             height: 20px;
             display: flex;
@@ -119,7 +123,7 @@
             font-size: 14px;
             flex-shrink: 0;
         }
-        .asset-tree .node-label {
+        #asset-tree-container .node-label {
             flex: 1;
             font-size: 13px;
             color: #e0e6ed;
@@ -127,27 +131,27 @@
             overflow: hidden;
             text-overflow: ellipsis;
         }
-        .asset-tree .node-label.dimmed { opacity: 0.4; }
-        .asset-tree .node-children {
+        #asset-tree-container .node-label.dimmed { opacity: 0.4; }
+        #asset-tree-container .node-children {
             margin: 0;
             padding: 0;
             padding-left: 20px;
             list-style: none;
             display: none;
         }
-        .asset-tree .node-children.expanded { display: block; }
-        .asset-tree .node-icon[data-type="folder"]::before { content: "📁"; }
-        .asset-tree .node-icon[data-type="equipment"]::before { content: "⚙️"; }
-        .asset-tree .node-icon[data-type="sensor"]::before { content: "📡"; }
-        .asset-tree .node-icon[data-type="zone"]::before { content: "🏢"; }
-        .asset-tree .node-icon[data-type="device"]::before { content: "💻"; }
-        .asset-tree .node-icon[data-type="meter"]::before { content: "📊"; }
-        .asset-tree .node-icon[data-type="alarm"]::before { content: "🔔"; }
-        .asset-tree .node-icon[data-type="default"]::before { content: "📄"; }
-        .asset-tree .tree-container::-webkit-scrollbar { width: 6px; }
-        .asset-tree .tree-container::-webkit-scrollbar-track { background: #1a1f2e; }
-        .asset-tree .tree-container::-webkit-scrollbar-thumb { background: #3b4252; border-radius: 3px; }
-        .asset-tree .tree-container::-webkit-scrollbar-thumb:hover { background: #4c566a; }
+        #asset-tree-container .node-children.expanded { display: block; }
+        #asset-tree-container .node-icon[data-type="folder"]::before { content: "📁"; }
+        #asset-tree-container .node-icon[data-type="equipment"]::before { content: "⚙️"; }
+        #asset-tree-container .node-icon[data-type="sensor"]::before { content: "📡"; }
+        #asset-tree-container .node-icon[data-type="zone"]::before { content: "🏢"; }
+        #asset-tree-container .node-icon[data-type="device"]::before { content: "💻"; }
+        #asset-tree-container .node-icon[data-type="meter"]::before { content: "📊"; }
+        #asset-tree-container .node-icon[data-type="alarm"]::before { content: "🔔"; }
+        #asset-tree-container .node-icon[data-type="default"]::before { content: "📄"; }
+        #asset-tree-container .tree-container::-webkit-scrollbar { width: 6px; }
+        #asset-tree-container .tree-container::-webkit-scrollbar-track { background: #1a1f2e; }
+        #asset-tree-container .tree-container::-webkit-scrollbar-thumb { background: #3b4252; border-radius: 3px; }
+        #asset-tree-container .tree-container::-webkit-scrollbar-thumb:hover { background: #4c566a; }
 
         /* === preview-specific === */
         body {
@@ -157,8 +161,7 @@
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
         }
         h1 { color: #e0e6ed; margin-bottom: 24px; }
-        .preview-container { width: 350px; height: 500px; }
-        .preview-container .asset-tree { height: 100%; }
+        #asset-tree-container { width: 350px; height: 500px; }
         .controls { margin-top: 24px; display: flex; gap: 8px; flex-wrap: wrap; }
         .controls button {
             padding: 8px 16px;
@@ -177,7 +180,7 @@
 </head>
 <body>
     <h1>AssetTree Component Preview</h1>
-    <div id="component-root" class="preview-container"></div>
+    <div id="asset-tree-container"></div>
     <div class="controls">
         <button onclick="sendMockData()">Load Data</button>
         <button onclick="sendLargeData()" class="secondary">Large Data</button>
@@ -190,7 +193,7 @@
         // ======================
 
         const mockThis = {
-            appendElement: document.getElementById('component-root')
+            appendElement: document.getElementById('asset-tree-container')
         };
 
         // HTML 삽입 (views/component.html 내용)

@@ -6,16 +6,20 @@
     <title>LogViewer Preview</title>
     <style>
         /* === component.css (inline) === */
-        .log-viewer {
-            display: flex;
-            flex-direction: column;
-            background: #1a1f2e;
-            border-radius: 8px;
-            overflow: hidden;
+        #log-viewer-container {
             min-width: 300px;
             min-height: 200px;
         }
-        .log-viewer .log-header {
+        #log-viewer-container .log-viewer {
+            display: flex;
+            flex-direction: column;
+            width: 100%;
+            height: 100%;
+            background: #1a1f2e;
+            border-radius: 8px;
+            overflow: hidden;
+        }
+        #log-viewer-container .log-header {
             display: flex;
             justify-content: space-between;
             align-items: center;
@@ -23,16 +27,16 @@
             background: #232a3b;
             border-bottom: 1px solid #2a3142;
         }
-        .log-viewer .log-title {
+        #log-viewer-container .log-title {
             font-size: 14px;
             font-weight: 600;
             color: #e0e6ed;
         }
-        .log-viewer .log-controls {
+        #log-viewer-container .log-controls {
             display: flex;
             gap: 8px;
         }
-        .log-viewer .log-controls button {
+        #log-viewer-container .log-controls button {
             padding: 4px 12px;
             font-size: 12px;
             border: none;
@@ -40,56 +44,56 @@
             cursor: pointer;
             transition: background 0.2s;
         }
-        .log-viewer .btn-clear {
+        #log-viewer-container .btn-clear {
             background: #3b4252;
             color: #e0e6ed;
         }
-        .log-viewer .btn-clear:hover {
+        #log-viewer-container .btn-clear:hover {
             background: #4c566a;
         }
-        .log-viewer .btn-scroll {
+        #log-viewer-container .btn-scroll {
             background: #4ade80;
             color: #1a1f2e;
         }
-        .log-viewer .btn-scroll.disabled {
+        #log-viewer-container .btn-scroll.disabled {
             background: #3b4252;
             color: #8b95a5;
         }
-        .log-viewer .log-container {
+        #log-viewer-container .log-container {
             flex: 1;
             overflow-y: auto;
             padding: 8px 0;
         }
-        .log-viewer .log-list {
+        #log-viewer-container .log-list {
             margin: 0;
             padding: 0;
             list-style: none;
             font-family: 'Consolas', 'Monaco', monospace;
             font-size: 12px;
         }
-        .log-viewer .log-item {
+        #log-viewer-container .log-item {
             display: flex;
             padding: 4px 16px;
             border-bottom: 1px solid #2a3142;
         }
-        .log-viewer .log-item:hover {
+        #log-viewer-container .log-item:hover {
             background: #232a3b;
         }
-        .log-viewer .log-time {
+        #log-viewer-container .log-time {
             color: #8b95a5;
             margin-right: 12px;
             white-space: nowrap;
         }
-        .log-viewer .log-level {
+        #log-viewer-container .log-level {
             width: 50px;
             margin-right: 12px;
             font-weight: 600;
         }
-        .log-viewer .log-level.info { color: #4ade80; }
-        .log-viewer .log-level.warn { color: #fbbf24; }
-        .log-viewer .log-level.error { color: #f87171; }
-        .log-viewer .log-level.debug { color: #60a5fa; }
-        .log-viewer .log-message {
+        #log-viewer-container .log-level.info { color: #4ade80; }
+        #log-viewer-container .log-level.warn { color: #fbbf24; }
+        #log-viewer-container .log-level.error { color: #f87171; }
+        #log-viewer-container .log-level.debug { color: #60a5fa; }
+        #log-viewer-container .log-message {
             color: #e0e6ed;
             word-break: break-all;
         }
@@ -102,8 +106,7 @@
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
         }
         h1 { color: #e0e6ed; margin-bottom: 24px; }
-        .preview-container { width: 600px; height: 400px; }
-        .preview-container .log-viewer { height: 100%; }
+        #log-viewer-container { width: 600px; height: 400px; }
         .controls { margin-top: 24px; }
         .controls button {
             padding: 8px 16px;
@@ -119,7 +122,7 @@
 </head>
 <body>
     <h1>LogViewer Component Preview</h1>
-    <div id="component-root" class="preview-container"></div>
+    <div id="log-viewer-container"></div>
     <div class="controls">
         <button onclick="sendMockData()">Send Initial Data</button>
         <button onclick="addRandomLog()">Add Random Log</button>
@@ -132,7 +135,7 @@
         // ======================
 
         const mockThis = {
-            appendElement: document.getElementById('component-root')
+            appendElement: document.getElementById('log-viewer-container')
         };
 
         // HTML 삽입

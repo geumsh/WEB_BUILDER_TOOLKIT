@@ -43,9 +43,9 @@ RENOBIT에서 컴포넌트는 클래스다. 클래스는 data와 data를 다루�
 ### 핵심 원칙
 
 **페이지 = 오케스트레이터**
-- 데이터 정의 (globalDataMappings)
-- Interval 관리 (refreshIntervals)
-- Param 관리 (currentParams)
+- 데이터 정의 (pageDataMappings)
+- Interval 관리 (pageIntervals)
+- Param 관리 (pageParams)
 
 **컴포넌트 = 독립적 구독자**
 - 필요한 topic만 구독
@@ -70,15 +70,15 @@ RENOBIT에서 컴포넌트는 클래스다. 클래스는 data와 data를 다루�
   리소스 로딩 → 컴포넌트 completed
     ↓
   MASTER loaded → PAGE loaded
-    → 데이터셋 정의 (globalDataMappings)
-    → currentParams 초기화
+    → 데이터셋 정의 (pageDataMappings)
+    → pageParams 초기화
     → GlobalDataPublisher.registerMapping()
     → 최초 데이터 발행 (fetchAndPublish)
     → Interval 시작 (startAllIntervals)
 
 [User Interaction]
   → DOM Event → Weventbus.emit() → Page EventBus Handler
-  → currentParams 업데이트 → 즉시 fetchAndPublish
+  → pageParams 업데이트 → 즉시 fetchAndPublish
 
 [페이지 언로드]
   MASTER before_unload → PAGE before_unload
@@ -221,13 +221,13 @@ class MyChart extends WVDOMComponent {
 
 | 생성 (before_load / loaded) | 정리 (before_unload) |
 |-----------------------------|----------------------|
-| `this.eventBusHandlers = {...}` | `this.eventBusHandlers = null` |
+| `this.pageEventBusHandlers = {...}` | `this.pageEventBusHandlers = null` |
 | `onEventBusHandlers(handlers)` | `offEventBusHandlers(handlers)` |
-| `this.globalDataMappings = [...]` | `this.globalDataMappings = null` |
+| `this.pageDataMappings = [...]` | `this.pageDataMappings = null` |
 | `registerMapping(mapping)` | `unregisterMapping(topic)` |
-| `this.currentParams = {}` | `this.currentParams = null` |
+| `this.pageParams = {}` | `this.pageParams = null` |
 | `this.startAllIntervals()` | `this.stopAllIntervals()` |
-| `this.refreshIntervals = {}` | `this.refreshIntervals = null` |
+| `this.pageIntervals = {}` | `this.pageIntervals = null` |
 | `initThreeRaycasting(canvas, type)` | `canvas.removeEventListener(type, handler)` |
 | `this.raycastingEvents = [...]` | `this.raycastingEvents = null` |
 | *(3D 컴포넌트 존재 시)* | `disposeAllThreeResources(this)` |
@@ -236,16 +236,16 @@ class MyChart extends WVDOMComponent {
 
 **문제:** param은 호출 시점마다 달라질 수 있어야 함 (필터, 시간 범위 등)
 
-**해결:** `this.currentParams`로 topic별 param 관리
+**해결:** `pageParams`로 topic별 param 관리
 
 ```javascript
 // Initialize param storage
-this.currentParams = {};
+this.pageParams = {};
 
 fx.go(
-    this.globalDataMappings,
+    this.pageDataMappings,
     each(GlobalDataPublisher.registerMapping),           // 1. Register
-    each(({ topic }) => this.currentParams[topic] = {}), // 2. Init params
+    each(({ topic }) => this.pageParams[topic] = {}), // 2. Init params
     each(({ topic }) => GlobalDataPublisher.fetchAndPublish(topic, this)) // 3. Fetch
 );
 ```
@@ -253,25 +253,25 @@ fx.go(
 | 항목 | 설명 |
 |------|------|
 | 관리 주체 | 페이지 (데이터셋 정보를 소유하므로) |
-| 관리 구조 | `this.currentParams[topic]` |
-| 사용 | `fetchAndPublish(topic, this, this.currentParams[topic])` |
+| 관리 구조 | `this.pageParams[topic]` |
+| 사용 | `fetchAndPublish(topic, this, this.pageParams[topic])` |
 
 #### 동적 Param 변경
 
-**핵심: Stop/Start 불필요!** `currentParams`는 참조(Reference)이므로 interval이 자동으로 업데이트된 param을 사용합니다.
+**핵심: Stop/Start 불필요!** `pageParams`는 참조(Reference)이므로 interval이 자동으로 업데이트된 param을 사용합니다.
 
 ```javascript
 '@filterChanged': ({ event }) => {
     const filter = event.target.value;
 
-    // 1. Update currentParams
-    this.currentParams['myTopic'] = {
-        ...this.currentParams['myTopic'],
+    // 1. Update pageParams
+    this.pageParams['myTopic'] = {
+        ...this.pageParams['myTopic'],
         filter
     };
 
     // 2. Immediate fetch - 사용자가 즉시 새 데이터 봄
-    GlobalDataPublisher.fetchAndPublish('myTopic', this, this.currentParams['myTopic']);
+    GlobalDataPublisher.fetchAndPublish('myTopic', this, this.pageParams['myTopic']);
 
     // 3. Interval은 자동으로 업데이트된 param 사용
 }
@@ -285,17 +285,17 @@ fx.go(
 
 ```javascript
 this.startAllIntervals = () => {
-    this.refreshIntervals = {};
+    this.pageIntervals = {};
 
     fx.go(
-        this.globalDataMappings,
+        this.pageDataMappings,
         each(({ topic, refreshInterval }) => {
             if (refreshInterval) {
-                this.refreshIntervals[topic] = setInterval(() => {
+                this.pageIntervals[topic] = setInterval(() => {
                     GlobalDataPublisher.fetchAndPublish(
                         topic,
                         this,
-                        this.currentParams[topic] || {}
+                        this.pageParams[topic] || {}
                     );
                 }, refreshInterval);
             }
@@ -305,7 +305,7 @@ this.startAllIntervals = () => {
 
 this.stopAllIntervals = () => {
     fx.go(
-        Object.values(this.refreshIntervals || {}),
+        Object.values(this.pageIntervals || {}),
         each(interval => clearInterval(interval))
     );
 };
@@ -353,7 +353,7 @@ this.startAllIntervals();
 | `this.renderData = fn.bind(this)` | `this.renderData = null` |
 | `this._state = value` | `this._state = null` |
 | `createPopup(this, config)` | `destroyPopup(this)` |
-| `this.eventBusHandlers = {...}` | `this.eventBusHandlers = null` |
+| `this.pageEventBusHandlers = {...}` | `this.pageEventBusHandlers = null` |
 | `onEventBusHandlers(handlers)` | `offEventBusHandlers(handlers)` |
 
 ---
@@ -515,7 +515,7 @@ const { onEventBusHandlers, fetchData } = Wkit;
 // EVENT BUS HANDLERS
 // ======================
 
-this.eventBusHandlers = {
+this.pageEventBusHandlers = {
     // 샘플: Primitive 조합 패턴
     // '@itemClicked': async ({ event, targetInstance }) => {
     //     const { datasetInfo } = targetInstance;
@@ -530,15 +530,15 @@ this.eventBusHandlers = {
     // 샘플: Param 업데이트 패턴
     // '@filterChanged': ({ event }) => {
     //     const filter = event.target.value;
-    //     this.currentParams['myTopic'] = {
-    //         ...this.currentParams['myTopic'],
+    //     this.pageParams['myTopic'] = {
+    //         ...this.pageParams['myTopic'],
     //         filter
     //     };
-    //     GlobalDataPublisher.fetchAndPublish('myTopic', this, this.currentParams['myTopic']);
+    //     GlobalDataPublisher.fetchAndPublish('myTopic', this, this.pageParams['myTopic']);
     // }
 };
 
-onEventBusHandlers(this.eventBusHandlers);
+onEventBusHandlers(this.pageEventBusHandlers);
 ```
 
 #### loaded.js
@@ -551,7 +551,7 @@ const { each, go } = fx;
 // DATA MAPPINGS
 // ======================
 
-this.globalDataMappings = [
+this.pageDataMappings = [
     // {
     //     topic: 'myTopic',
     //     datasetInfo: {
@@ -566,12 +566,12 @@ this.globalDataMappings = [
 // PARAM MANAGEMENT
 // ======================
 
-this.currentParams = {};
+this.pageParams = {};
 
 go(
-    this.globalDataMappings,
+    this.pageDataMappings,
     each(registerMapping),
-    each(({ topic }) => this.currentParams[topic] = {}),
+    each(({ topic }) => this.pageParams[topic] = {}),
     each(({ topic }) =>
         fetchAndPublish(topic, this)
             .catch(err => console.error(`[fetchAndPublish:${topic}]`, err))
@@ -583,17 +583,17 @@ go(
 // ======================
 
 this.startAllIntervals = () => {
-    this.refreshIntervals = {};
+    this.pageIntervals = {};
 
     go(
-        this.globalDataMappings,
+        this.pageDataMappings,
         each(({ topic, refreshInterval }) => {
             if (refreshInterval) {
-                this.refreshIntervals[topic] = setInterval(() => {
+                this.pageIntervals[topic] = setInterval(() => {
                     fetchAndPublish(
                         topic,
                         this,
-                        this.currentParams[topic] || {}
+                        this.pageParams[topic] || {}
                     ).catch(err => console.error(`[fetchAndPublish:${topic}]`, err));
                 }, refreshInterval);
             }
@@ -603,7 +603,7 @@ this.startAllIntervals = () => {
 
 this.stopAllIntervals = () => {
     go(
-        Object.values(this.refreshIntervals || {}),
+        Object.values(this.pageIntervals || {}),
         each(interval => clearInterval(interval))
     );
 };
@@ -622,20 +622,20 @@ const { each, go } = fx;
 // EVENT BUS CLEANUP
 // ======================
 
-offEventBusHandlers(this.eventBusHandlers);
-this.eventBusHandlers = null;
+offEventBusHandlers(this.pageEventBusHandlers);
+this.pageEventBusHandlers = null;
 
 // ======================
 // DATA PUBLISHER CLEANUP
 // ======================
 
 go(
-    this.globalDataMappings,
+    this.pageDataMappings,
     each(({ topic }) => unregisterMapping(topic))
 );
 
-this.globalDataMappings = null;
-this.currentParams = null;
+this.pageDataMappings = null;
+this.pageParams = null;
 
 // ======================
 // INTERVAL CLEANUP
@@ -644,7 +644,7 @@ this.currentParams = null;
 if (this.stopAllIntervals) {
     this.stopAllIntervals();
 }
-this.refreshIntervals = null;
+this.pageIntervals = null;
 ```
 
 ### 4. 페이지 3D Default JS ( 페이지 Default JS를 기반으로 )
@@ -660,7 +660,7 @@ const { onEventBusHandlers, initThreeRaycasting, fetchData } = Wkit;
 // EVENT BUS HANDLERS (3D 핸들러 추가)
 // ======================
 
-this.eventBusHandlers = {
+this.pageEventBusHandlers = {
     // ... 기존 핸들러 ...
 
     // 3D 객체 클릭 핸들러
@@ -678,7 +678,7 @@ this.eventBusHandlers = {
     }
 };
 
-onEventBusHandlers(this.eventBusHandlers);
+onEventBusHandlers(this.pageEventBusHandlers);
 
 // ======================
 // 3D RAYCASTING SETUP
@@ -1284,7 +1284,7 @@ _onViewerReady() {
 
 **페이지 (before_load.js):**
 ```javascript
-this.eventBusHandlers = {
+this.pageEventBusHandlers = {
   '@componentReady': async ({ event, targetInstance }) => {
     // 컴포넌트의 datasetInfo를 사용하여 데이터 fetch
     const { datasetInfo } = targetInstance;
@@ -1297,7 +1297,7 @@ this.eventBusHandlers = {
   }
 };
 
-onEventBusHandlers(this.eventBusHandlers);
+onEventBusHandlers(this.pageEventBusHandlers);
 ```
 
 ### 패턴 선택 가이드

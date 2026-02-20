@@ -7,20 +7,24 @@
     <link href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css" rel="stylesheet">
     <style>
         /* === component.css (inline) === */
-        .event-status {
-            position: relative;
+        #event-status-container {
             width: 511px;
             height: 203px;
             overflow: visible;
         }
-        .event-status__bg {
+        #event-status-container .event-status {
+            position: relative;
+            width: 100%;
+            height: 100%;
+        }
+        #event-status-container .event-status__bg {
             position: absolute;
             inset: 0;
             background: rgba(208, 225, 255, 0.2);
             border-radius: 20px;
             z-index: 0;
         }
-        .event-status__content {
+        #event-status-container .event-status__content {
             position: relative;
             z-index: 1;
             display: flex;
@@ -29,32 +33,32 @@
             padding: 12px 14px 14px 14px;
             overflow: visible;
         }
-        .event-status__title {
+        #event-status-container .event-status__title {
             display: flex;
             align-items: center;
             gap: 8px;
             margin-bottom: 7px;
         }
-        .event-status .title__bullet {
+        #event-status-container .title__bullet {
             width: 6px;
             height: 6px;
             background-color: #c8deff;
             border-radius: 50%;
             flex-shrink: 0;
         }
-        .event-status .title__text {
+        #event-status-container .title__text {
             font-weight: 600;
             font-size: 17px;
             color: #c8deff;
             letter-spacing: -0.68px;
             line-height: 1;
         }
-        .event-status__table {
+        #event-status-container .event-status__table {
             display: flex;
             flex-direction: column;
             flex: 1;
         }
-        .event-status__header {
+        #event-status-container .event-status__header {
             display: flex;
             align-items: center;
             height: 18px;
@@ -63,7 +67,7 @@
             margin-bottom: 3px;
             flex-shrink: 0;
         }
-        .event-status .header__cell {
+        #event-status-container .header__cell {
             font-weight: 600;
             font-size: 11px;
             color: #c8deff;
@@ -72,17 +76,17 @@
             line-height: 1.95;
             flex-shrink: 0;
         }
-        .event-status .header__cell--indicator { width: 24px; }
-        .event-status .header__cell--time { width: 130px; }
-        .event-status .header__cell--type { width: 50px; }
-        .event-status .header__cell--device { width: 55px; }
-        .event-status .header__cell--content { flex: 1; text-align: center; }
-        .event-status__rows {
+        #event-status-container .header__cell--indicator { width: 24px; }
+        #event-status-container .header__cell--time { width: 130px; }
+        #event-status-container .header__cell--type { width: 50px; }
+        #event-status-container .header__cell--device { width: 55px; }
+        #event-status-container .header__cell--content { flex: 1; text-align: center; }
+        #event-status-container .event-status__rows {
             display: flex;
             flex-direction: column;
             gap: 3px;
         }
-        .event-status__row {
+        #event-status-container .event-status__row {
             display: flex;
             align-items: center;
             height: 24px;
@@ -91,8 +95,8 @@
             padding-left: 7px;
             flex-shrink: 0;
         }
-        .event-status__row:nth-child(n+3) { height: 25px; }
-        .event-status .row__indicator {
+        #event-status-container .event-status__row:nth-child(n+3) { height: 25px; }
+        #event-status-container .row__indicator {
             width: 11px;
             height: 11px;
             min-width: 11px;
@@ -101,11 +105,11 @@
             flex-shrink: 0;
             margin-right: 6px;
         }
-        .event-status .row__indicator--red { background-color: #ff3a3a; }
-        .event-status .row__indicator--green { background-color: #6fff3a; }
-        .event-status .row__indicator--yellow { background-color: #ffde3a; }
-        .event-status .row__indicator--white { background-color: #22ff00; }
-        .event-status .row__cell {
+        #event-status-container .row__indicator--red { background-color: #ff3a3a; }
+        #event-status-container .row__indicator--green { background-color: #6fff3a; }
+        #event-status-container .row__indicator--yellow { background-color: #ffde3a; }
+        #event-status-container .row__indicator--white { background-color: #22ff00; }
+        #event-status-container .row__cell {
             font-weight: 500;
             font-size: 14px;
             color: #ffffff;
@@ -115,10 +119,10 @@
             white-space: nowrap;
             flex-shrink: 0;
         }
-        .event-status .row__cell--time { width: 130px; }
-        .event-status .row__cell--type { width: 50px; }
-        .event-status .row__cell--device { width: 55px; }
-        .event-status .row__cell--content { flex: 1; text-align: left; padding-left: 12px; }
+        #event-status-container .row__cell--time { width: 130px; }
+        #event-status-container .row__cell--type { width: 50px; }
+        #event-status-container .row__cell--device { width: 55px; }
+        #event-status-container .row__cell--content { flex: 1; text-align: left; padding-left: 12px; }
 
         /* === preview-specific === */
         * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -144,7 +148,7 @@
 </head>
 <body>
     <h1>EventStatus Component Preview</h1>
-    <div id="component-root"></div>
+    <div id="event-status-container"></div>
     <div class="controls">
         <button onclick="sendMockData()">Load Data</button>
         <button onclick="addRandomEvent()">Add Event</button>
@@ -157,7 +161,7 @@
         // ======================
 
         const mockThis = {
-            appendElement: document.getElementById('component-root')
+            appendElement: document.getElementById('event-status-container')
         };
 
         // HTML 삽입
