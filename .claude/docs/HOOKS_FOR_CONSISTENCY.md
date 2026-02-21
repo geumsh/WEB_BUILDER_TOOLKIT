@@ -2,15 +2,23 @@
 
 ## 0. Hook이란
 
-Claude Code Hook은 **라이프사이클 특정 시점에서 자동 실행되는 셸 명령**이다.
-LLM의 판단에 의존하지 않고, 도구가 호출될 때마다 **결정론적으로** 실행된다.
+Vue의 라이프사이클 훅과 같은 개념이다.
+**특정 시점(이벤트)에 매칭되는 도구가 호출되면 등록된 핸들러가 자동 실행**된다.
+
+핸들러는 JSON 설정으로 등록하며, 3가지 type이 있다:
+
+| type | 실행 방식 | 설정 필드 |
+|------|----------|----------|
+| **`command`** | 셸 스크립트 실행 (LLM 토큰 소모 없음) | `command` |
+| **`prompt`** | LLM에 프롬프트 전달 (단일 턴 평가) | `prompt` |
+| **`agent`** | 서브에이전트 생성 (다중 턴, 도구 사용 가능) | `prompt` |
 
 ### 핵심 이벤트
 
-| 이벤트 | 시점 | 용도 |
+| 이벤트 | 시점 | 역할 |
 |--------|------|------|
-| **PreToolUse** | 도구 실행 **전** | 도구 호출 자체를 허용/차단 결정 (`permissionDecision: "allow" / "deny"`) |
-| **PostToolUse** | 도구 실행 **후** | 쓰인 결과를 검사하고 Claude에 피드백 제공 |
+| **PreToolUse** | 도구 실행 **전** | 도구 호출 자체를 허용/차단 결정 (gate) |
+| **PostToolUse** | 도구 실행 **후** | 쓰인 결과를 검사하고 Claude에 피드백 제공 (feedback) |
 
 ### 동작 방식
 
@@ -24,14 +32,33 @@ Claude가 Write/Edit 도구 호출
 [PostToolUse Hook] → 파일 검사 → 위반 시 피드백 → Claude가 수정
 ```
 
-### 설정 위치
+### 설정 구조
 
+```json
+{
+  "hooks": {
+    "PostToolUse": [          // ← 시점 (lifecycle event)
+      {
+        "matcher": "Write",   // ← 매칭할 도구
+        "hooks": [
+          {
+            "type": "command",          // ← 핸들러 type
+            "command": "스크립트경로.sh"  // ← 실행할 코드
+          }
+        ]
+      }
+    ]
+  }
+}
+```
+
+설정 파일 위치:
 ```
 .claude/settings.json         ← 프로젝트 공유 (git 추적)
 .claude/settings.local.json   ← 로컬 전용 (gitignored)
 ```
 
-### 스크립트 입출력
+### 스크립트 입출력 (type: command)
 
 - **입력:** stdin으로 JSON (`tool_name`, `tool_input` 등)
 - **출력:** stdout으로 JSON + exit code
