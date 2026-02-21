@@ -139,22 +139,16 @@ onEventBusHandlers(this.pageEventBusHandlers);
 
 ## 이벤트 처리 원칙
 
-**질문: "이 동작의 결과를 페이지가 알아야 하는가?"**
-
-| 답변 | 처리 방식 | 예시 |
-|------|----------|------|
-| 아니오 | `_internalHandlers` | Clear, Toggle |
-| 예 | `customEvents` | 필터 변경, 행 선택 |
-| 둘 다 | 둘 다 | 노드 클릭 → 선택 표시 + 상세 요청 |
+> **상세: [SHARED_INSTRUCTIONS.md](/.claude/skills/SHARED_INSTRUCTIONS.md#이벤트-처리-이중-구조) 참조**
 
 ---
 
 ## 금지 사항
 
+> 공통 금지 사항: [SHARED_INSTRUCTIONS.md](/.claude/skills/SHARED_INSTRUCTIONS.md#금지-사항-전체-공통) 참조
+
 - ❌ datasetList.json 형식 임의 변경
-- ❌ 생성/정리 불일치
 - ❌ 라이프사이클 순서 위반
-- ❌ datasetName 기반 데이터 응답을 받는 함수에서 `function(response)` 사용 → `function({ response })` 필수
 
 ---
 

@@ -467,12 +467,13 @@ components/[ComponentName]/
 
 ## 금지 사항
 
+> 공통 금지 사항: [SHARED_INSTRUCTIONS.md](/.claude/skills/SHARED_INSTRUCTIONS.md#금지-사항-전체-공통) 참조
+
 - ❌ 팝업 없이 컴포넌트가 직접 fetch
 - ❌ datasetInfo의 render 배열 누락
 - ❌ refreshInterval > 0인데 stopRefresh 미구현
 - ❌ metricCode 변경 시 statsKey 없이 변경
 - ❌ destroyPopup() 호출 누락
-- ❌ datasetName 기반 데이터 응답을 받는 함수에서 `function(response)` 사용 → `function({ response })` 필수
 
 ---
 
