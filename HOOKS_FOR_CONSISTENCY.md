@@ -1,5 +1,45 @@
 # Hooks를 활용한 프로젝트 일관성 보장
 
+## 0. Hook이란
+
+Claude Code Hook은 **라이프사이클 특정 시점에서 자동 실행되는 셸 명령**이다.
+LLM의 판단에 의존하지 않고, 도구가 호출될 때마다 **결정론적으로** 실행된다.
+
+### 핵심 이벤트
+
+| 이벤트 | 시점 | 용도 |
+|--------|------|------|
+| **PreToolUse** | 도구 실행 **전** | 도구 호출 자체를 허용/차단 결정 (`permissionDecision: "allow" / "deny"`) |
+| **PostToolUse** | 도구 실행 **후** | 쓰인 결과를 검사하고 Claude에 피드백 제공 |
+
+### 동작 방식
+
+```
+Claude가 Write/Edit 도구 호출
+    ↓
+[PreToolUse Hook]  → tool_input 검사 → deny하면 실행 자체 차단
+    ↓ (허용 시)
+도구 실행 (파일 쓰기)
+    ↓
+[PostToolUse Hook] → 파일 검사 → 위반 시 피드백 → Claude가 수정
+```
+
+### 설정 위치
+
+```
+.claude/settings.json         ← 프로젝트 공유 (git 추적)
+.claude/settings.local.json   ← 로컬 전용 (gitignored)
+```
+
+### 스크립트 입출력
+
+- **입력:** stdin으로 JSON (`tool_name`, `tool_input` 등)
+- **출력:** stdout으로 JSON + exit code
+  - `exit 0` → 성공 (JSON 파싱됨)
+  - `exit 2` → 차단 (stderr이 Claude에 피드백)
+
+---
+
 ## 1. 문제: 텍스트 규칙의 한계
 
 ### 1.1 현재 구조
@@ -80,20 +120,26 @@ Claude Code가 참조 문서를 읽었더라도:
 
 ## 3. 구체적 적용: 이번 감사에서 발견된 불일치별 Hook 설계
 
+> **Phase 1 전략:** PostToolUse로 도구 실행 후 파일을 검사하여 피드백 제공.
+> Claude가 피드백을 받고 스스로 수정한다. (파일이 일시적으로 위반 상태일 수 있음)
+>
+> **Phase 2 전략:** PreToolUse로 tool_input을 검사하여 위반 코드 쓰기 자체를 차단.
+> (오탐 리스크가 있으므로 Phase 1에서 패턴을 충분히 검증한 후 전환)
+
 ### 3.1 preview.html 로컬 CSS `<link>` 방지
 
 **문제:** 10개 preview.html이 `<link href="styles/component.css">`를 사용
-**현재 방식:** SKILL.md에 "CSS는 인라인으로" 텍스트 규칙
+**현재 방식:** SHARED_INSTRUCTIONS.md에 "CSS는 인라인으로" 텍스트 규칙
 **Hook 해결:**
 
 ```
 이벤트:   PostToolUse (matcher: Write|Edit)
-트리거:   preview.html 파일이 수정될 때
-동작:     로컬 CSS <link> 패턴이 있으면 경고 메시지 반환
-효과:     Claude가 즉시 인라인으로 수정
+트리거:   preview.html 파일이 수정된 후
+동작:     파일에 로컬 CSS <link> 패턴이 있으면 Claude에 피드백
+효과:     Claude가 피드백을 받고 인라인으로 수정
 ```
 
-**스크립트 로직 (의사코드):**
+**스크립트 (Phase 1 — PostToolUse):**
 
 ```bash
 #!/bin/bash
@@ -101,38 +147,16 @@ Claude Code가 참조 문서를 읽었더라도:
 INPUT=$(cat)
 FILE_PATH=$(echo "$INPUT" | jq -r '.tool_input.file_path // empty')
 
-# preview.html 파일만 대상
 if [[ "$FILE_PATH" != *"preview.html" ]]; then
   exit 0
 fi
 
-# 로컬 CSS <link> 패턴 검사 (CDN 제외)
 if grep -q '<link.*href="styles/' "$FILE_PATH" 2>/dev/null; then
-  echo '{"decision":"block","reason":"preview.html에 로컬 CSS <link>가 발견되었습니다. CSS는 반드시 <style> 태그로 인라인해야 합니다. styles/component.css 내용을 읽어서 <style> 블록으로 교체해주세요."}'
-  exit 0
+  echo "preview.html에 로컬 CSS <link>가 발견되었습니다. CSS는 반드시 <style> 태그로 인라인해야 합니다." >&2
+  exit 2
 fi
 
 exit 0
-```
-
-**설정:**
-
-```json
-{
-  "hooks": {
-    "PostToolUse": [
-      {
-        "matcher": "Write|Edit",
-        "hooks": [
-          {
-            "type": "command",
-            "command": ".claude/hooks/validate-preview-css.sh"
-          }
-        ]
-      }
-    ]
-  }
-}
 ```
 
 **Hook 도입 효과:**
@@ -158,7 +182,7 @@ Hook: 파일 수정 시 자동 검증 → 읽지 않아도 위반 차단
 효과:     Claude가 즉시 2-arg로 수정
 ```
 
-**스크립트 로직 (의사코드):**
+**스크립트 (Phase 1 — PostToolUse):**
 
 ```bash
 #!/bin/bash
@@ -166,17 +190,14 @@ Hook: 파일 수정 시 자동 검증 → 읽지 않아도 위반 차단
 INPUT=$(cat)
 FILE_PATH=$(echo "$INPUT" | jq -r '.tool_input.file_path // empty')
 
-# beforeDestroy.js 파일만 대상
 if [[ "$FILE_PATH" != *"beforeDestroy.js" ]]; then
   exit 0
 fi
 
-# unsubscribe 3-arg 패턴 검사
-# 정상: unsubscribe(topic, this)
-# 위반: unsubscribe(topic, this, handler)
+# 정상: unsubscribe(topic, this)  |  위반: unsubscribe(topic, this, handler)
 if grep -P 'unsubscribe\([^)]+,[^)]+,[^)]+\)' "$FILE_PATH" 2>/dev/null; then
-  echo '{"decision":"block","reason":"beforeDestroy.js에서 unsubscribe 3-arg 패턴이 발견되었습니다. GlobalDataPublisher.unsubscribe()는 (topic, instance) 2개 인자만 받습니다. 3번째 인자를 제거해주세요."}'
-  exit 0
+  echo "unsubscribe 3-arg 패턴이 발견되었습니다. (topic, instance) 2개 인자만 사용하세요." >&2
+  exit 2
 fi
 
 exit 0
@@ -204,7 +225,7 @@ Hook: beforeDestroy.js 수정 시 3-arg 패턴 자동 차단
 효과:     Claude가 즉시 현재 도구명으로 수정
 ```
 
-**스크립트 로직 (의사코드):**
+**스크립트 (Phase 1 — PostToolUse):**
 
 ```bash
 #!/bin/bash
@@ -212,16 +233,14 @@ Hook: beforeDestroy.js 수정 시 3-arg 패턴 자동 차단
 INPUT=$(cat)
 FILE_PATH=$(echo "$INPUT" | jq -r '.tool_input.file_path // empty')
 
-# .md 파일만 대상
 if [[ "$FILE_PATH" != *.md ]]; then
   exit 0
 fi
 
-# 폐기된 MCP 도구명 검사
 DEPRECATED_NAMES="get_metadata|get_code|get_image|get_variable_defs"
 if grep -qE "$DEPRECATED_NAMES" "$FILE_PATH" 2>/dev/null; then
-  echo '{"decision":"block","reason":"폐기된 MCP 도구명이 발견되었습니다. 현재 도구: get_design_context (디자인 정보+코드), get_screenshot (PNG 캡처). 폐기된 이름을 현재 이름으로 교체해주세요."}'
-  exit 0
+  echo "폐기된 MCP 도구명이 발견되었습니다. 현재 도구: get_design_context, get_screenshot" >&2
+  exit 2
 fi
 
 exit 0
@@ -250,7 +269,7 @@ Hook: .md 파일 수정 시 폐기된 도구명 자동 차단
 효과:     Claude가 즉시 { response } 패턴으로 수정
 ```
 
-**스크립트 로직 (의사코드):**
+**스크립트 (Phase 1 — PostToolUse):**
 
 ```bash
 #!/bin/bash
@@ -258,17 +277,14 @@ Hook: .md 파일 수정 시 폐기된 도구명 자동 차단
 INPUT=$(cat)
 FILE_PATH=$(echo "$INPUT" | jq -r '.tool_input.file_path // empty')
 
-# register.js 파일만 대상
 if [[ "$FILE_PATH" != *"register.js" ]]; then
   exit 0
 fi
 
-# subscribe 콜백에서 (response) 패턴 검사 (구조분해가 아닌 경우)
-# 정상: ({ response }) => { ... }
-# 위반: (response) => { ... }
+# 정상: ({ response }) => { ... }  |  위반: (response) => { ... }
 if grep -P 'subscribe\([^)]*,\s*\(response\)\s*=>' "$FILE_PATH" 2>/dev/null; then
-  echo '{"decision":"block","reason":"register.js에서 subscribe 콜백이 (response) 패턴을 사용합니다. ({ response }) 구조분해 패턴을 사용해주세요. datasetName 기반 { response } 패턴이 표준입니다."}'
-  exit 0
+  echo "({ response }) 구조분해 패턴을 사용하세요. (response)는 위반입니다." >&2
+  exit 2
 fi
 
 exit 0
@@ -329,7 +345,7 @@ Hook:   컨텍스트와 무관하게 항상 동작
     └── validate-response-pattern.sh
 ```
 
-### 5.2 settings.json Hook 설정
+### 5.2 settings.json Hook 설정 (Phase 1)
 
 ```json
 {
@@ -340,23 +356,19 @@ Hook:   컨텍스트와 무관하게 항상 동작
         "hooks": [
           {
             "type": "command",
-            "command": ".claude/hooks/validate-preview-css.sh",
-            "statusMessage": "preview.html CSS 검증 중..."
+            "command": "\"$CLAUDE_PROJECT_DIR\"/.claude/hooks/validate-preview-css.sh"
           },
           {
             "type": "command",
-            "command": ".claude/hooks/validate-unsubscribe.sh",
-            "statusMessage": "unsubscribe 패턴 검증 중..."
+            "command": "\"$CLAUDE_PROJECT_DIR\"/.claude/hooks/validate-unsubscribe.sh"
           },
           {
             "type": "command",
-            "command": ".claude/hooks/validate-mcp-names.sh",
-            "statusMessage": "MCP 도구명 검증 중..."
+            "command": "\"$CLAUDE_PROJECT_DIR\"/.claude/hooks/validate-mcp-names.sh"
           },
           {
             "type": "command",
-            "command": ".claude/hooks/validate-response-pattern.sh",
-            "statusMessage": "{ response } 패턴 검증 중..."
+            "command": "\"$CLAUDE_PROJECT_DIR\"/.claude/hooks/validate-response-pattern.sh"
           }
         ]
       }
@@ -368,15 +380,18 @@ Hook:   컨텍스트와 무관하게 항상 동작
 ### 5.3 도입 단계
 
 ```
-Phase 1: 경고 모드 (현재 계획)
-         → PostToolUse에서 위반 감지 시 경고 메시지 반환
-         → Claude가 자발적으로 수정
-         → 개발 흐름을 차단하지 않음
+Phase 1: 피드백 모드 (현재 계획)
+         이벤트: PostToolUse
+         동작:   도구 실행 후 파일 검사 → 위반 시 stderr로 피드백 (exit 2)
+         효과:   Claude가 피드백을 받고 다음 턴에서 수정
+         장점:   파일이 쓰인 후 검사하므로 오탐 리스크 낮음
 
 Phase 2: 차단 모드 (안정화 후)
-         → PreToolUse에서 위반 감지 시 실행 자체를 차단
-         → 위반 코드가 파일에 쓰이기 전에 방지
-         → 더 강력하지만, 오탐(false positive) 가능성 주의
+         이벤트: PreToolUse
+         동작:   tool_input 검사 → 위반 시 permissionDecision: "deny"
+         효과:   위반 코드가 파일에 쓰이기 전에 차단
+         장점:   더 강력. 단, 오탐 시 정상 코드도 차단됨
+         전제:   Phase 1에서 패턴을 충분히 검증한 후 전환
 ```
 
 ---
