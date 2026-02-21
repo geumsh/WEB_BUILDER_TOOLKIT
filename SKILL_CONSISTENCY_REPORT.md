@@ -297,4 +297,45 @@ Wkit.onEventBusHandlers(this);
 
 ---
 
+## 후속 조치: SKILL 문서 중복 제거 (2026-02-21)
+
+> 커밋: `5a349ad` | 6개 SKILL 파일에서 422줄 삭제 → 108줄로 정리
+
+### 조치 내용
+
+이 보고서에서 발견된 불일치의 **구조적 원인** — 동일 규칙이 여러 문서에 중복 존재 — 을 해결하기 위해 SKILL 문서를 정리:
+
+| SKILL | 변경 | 삭제된 중복 내용 |
+|-------|------|----------------|
+| figma-to-html | 대폭 축소 (280→72줄) | 워크플로우, MCP 도구, 추측금지, 에셋규칙, Playwright 등 |
+| figma-to-inline-svg | 중간 축소 | MCP 도구, CSS 원칙, 추측금지, Playwright 등 |
+| create-standard-component | 소폭 축소 | 이벤트 이중구조 테이블, 공통 금지사항 |
+| create-component-with-popup | 금지사항 1줄 삭제 | `{ response }` 필수 |
+| create-symbol-state-component | 금지사항 2줄 삭제 | 생성/정리 불일치, `{ response }` 필수 |
+| create-project | 소폭 축소 | 이벤트 처리 원칙 테이블, 공통 금지사항 |
+
+### 원칙
+
+- 참조 문서(SHARED_INSTRUCTIONS.md, Figma_Conversion/CLAUDE.md)에 존재하는 내용은 SKILL에서 삭제
+- SKILL에는 참조 링크 + 해당 SKILL 고유 내용만 유지
+- 금지 사항은 `> 공통 금지 사항: SHARED 참조` + SKILL 고유 항목으로 통일
+
+### 이 보고서 항목과의 관계
+
+| # | 불일치 | 중복 제거로 해결? |
+|---|--------|-----------------|
+| 1-2 | MCP 서버명/도구명 | 부분적 — Figma_Conversion/CLAUDE.md에 단일 출처화. SKILL에서 중복 삭제 |
+| 3 | preview.html CSS | 예 — SHARED_INSTRUCTIONS.md 1곳에만 규칙 존재 |
+| 4 | unsubscribe 인수 | 예 — SHARED_INSTRUCTIONS.md 1곳에만 규칙 존재 |
+| 5 | Cube3DSymbol 방식 | 해당 없음 — README 자체의 오류 (중복과 무관) |
+| 6-8 | SKILL 템플릿 | 해당 없음 — 이미 SKILL 내용으로 수정 완료 |
+
+### 남은 과제
+
+- SKILL 테스트: Claude가 참조 문서를 실제로 읽는지 관찰 필요
+- Hook 도입: 텍스트 규칙의 강제력 보완 (HOOKS_FOR_CONSISTENCY.md 참조)
+
+---
+
 *작성: 2026-02-20 | 관련 감사: CLAUDE_CODE_AUDIT.md*
+*업데이트: 2026-02-21 | 후속 조치: SKILL 중복 제거 (5a349ad)*
