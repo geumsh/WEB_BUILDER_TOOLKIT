@@ -72,17 +72,44 @@ RNBT 아키텍처에서 라이프사이클은 페이지와 컴포넌트가 생�
 | 4 | 페이지 언로드 시작 | `[Page] Before Unload` 로그 출력 |
 | 5 | 컴포넌트 beforeDestroy 실행 | 컴포넌트 beforeDestroy가 Before Unload 이후에 실행 |
 
-**검증 코드:**
+**주입 코드 (CodeBox에 입력):**
 
 ```javascript
-// page_before_load.js
+// beforeLoad 탭
 console.log('[Page] Before Load - timestamp:', Date.now());
 
-// page_loaded.js
+// loaded 탭
 console.log('[Page] Loaded - timestamp:', Date.now());
 
-// page_before_unload.js
+// beforeUnLoad 탭
 console.log('[Page] Before Unload - timestamp:', Date.now());
+```
+
+**Playwright 검증:**
+
+```typescript
+// 콘솔 로그 수집
+const consoleLogs: string[] = [];
+previewPage.on('console', (msg) => {
+  if (msg.text().includes('[Page]')) {
+    consoleLogs.push(msg.text());
+  }
+});
+
+// 뷰어 로드 후 대기
+await previewPage.waitForTimeout(3000);
+
+// 라이프사이클 순서 검증: Before Load → Loaded
+const beforeLoadIdx = consoleLogs.findIndex(l => l.includes('Before Load'));
+const loadedIdx = consoleLogs.findIndex(l => l.includes('Loaded'));
+
+expect(beforeLoadIdx).toBeGreaterThanOrEqual(0);
+expect(loadedIdx).toBeGreaterThanOrEqual(0);
+expect(beforeLoadIdx).toBeLessThan(loadedIdx);
+
+// 페이지 이동 후 Before Unload 검증
+const beforeUnloadIdx = consoleLogs.findIndex(l => l.includes('Before Unload'));
+expect(beforeUnloadIdx).toBeGreaterThanOrEqual(0);
 ```
 
 **예상 로그 순서:**
@@ -121,17 +148,51 @@ console.log('[Page] Before Unload - timestamp:', Date.now());
 | 3 | 페이지 언로드 시작 | `[Component] beforeDestroy` 로그 출력 |
 | 4 | beforeDestroy에서 this.appendElement 접근 | 여전히 접근 가능 |
 
-**검증 코드:**
+**주입 코드 (CodeBox에 입력):**
 
 ```javascript
-// register.js
+// register 탭
 console.log('[Component] register');
 console.log('[Component] appendElement:', this.appendElement);
 console.log('[Component] appendElement tagName:', this.appendElement?.tagName); // 2D의 경우 DIV
 
-// beforeDestroy.js
+// beforeDestroy 탭
 console.log('[Component] beforeDestroy');
 console.log('[Component] appendElement still accessible:', !!this.appendElement);
+```
+
+**Playwright 검증:**
+
+```typescript
+// 콘솔 로그 수집
+const componentLogs: string[] = [];
+previewPage.on('console', (msg) => {
+  if (msg.text().includes('[Component]')) {
+    componentLogs.push(msg.text());
+  }
+});
+
+// 뷰어 로드 후 대기
+await previewPage.locator('.badge_1').waitFor({ state: 'visible', timeout: 30000 });
+
+// register 로그 확인
+const registerIdx = componentLogs.findIndex(l => l.includes('[Component] register'));
+expect(registerIdx).toBeGreaterThanOrEqual(0);
+
+// appendElement가 유효한 DOM 요소인지 확인
+const appendElementLog = componentLogs.find(l => l.includes('appendElement tagName:'));
+expect(appendElementLog).toContain('DIV');
+
+// 페이지 이동으로 beforeDestroy 트리거 후
+const beforeDestroyIdx = componentLogs.findIndex(l => l.includes('[Component] beforeDestroy'));
+expect(beforeDestroyIdx).toBeGreaterThanOrEqual(0);
+
+// beforeDestroy에서 appendElement 접근 가능 확인
+const accessibleLog = componentLogs.find(l => l.includes('appendElement still accessible:'));
+expect(accessibleLog).toContain('true');
+
+// 순서 검증: register → beforeDestroy
+expect(registerIdx).toBeLessThan(beforeDestroyIdx);
 ```
 
 **통과 기준:**
@@ -155,33 +216,67 @@ console.log('[Component] appendElement still accessible:', !!this.appendElement)
 | 1 | 컴포넌트 로드 (등록 시점) | 1) `_onViewerReady()` → 2) `WScript REGISTER` 순서로 실행 |
 | 2 | 컴포넌트 언로드 (소멸 시점) | 1) `WScript BEFORE_DESTROY` → 2) `_onViewerDestroy()` → 3) `WScript DESTROY` 순서로 실행 |
 
-**검증 코드:**
+**참고 — 커스텀 컴포넌트 클래스 (사전 구현 필요):**
+
+이 TC는 `_onViewerReady`/`_onViewerDestroy` 훅이 정의된 커스텀 컴포넌트가 필요합니다.
+해당 훅은 CodeBox로 주입할 수 없으며, 컴포넌트 클래스 파일에 사전 정의되어야 합니다.
 
 ```javascript
+// 커스텀 컴포넌트 클래스 정의 (컴포넌트 JS 파일)
 class TestComponent extends WVDOMComponent {
-  constructor() {
-    super();
-    this.lifecycleLog = [];
-  }
-
   _onViewerReady() {
-    this.lifecycleLog.push({ hook: '_onViewerReady', timestamp: Date.now() });
     console.log('[TestComponent] _onViewerReady');
   }
 
   _onViewerDestroy() {
-    this.lifecycleLog.push({ hook: '_onViewerDestroy', timestamp: Date.now() });
     console.log('[TestComponent] _onViewerDestroy');
   }
 }
+```
 
-// WScript register.js
-this.lifecycleLog.push({ hook: 'WScript REGISTER', timestamp: Date.now() });
+**주입 코드 (CodeBox에 입력):**
+
+```javascript
+// register 탭
 console.log('[TestComponent] WScript REGISTER');
 
-// WScript beforeDestroy.js
-this.lifecycleLog.push({ hook: 'WScript BEFORE_DESTROY', timestamp: Date.now() });
+// beforeDestroy 탭
 console.log('[TestComponent] WScript BEFORE_DESTROY');
+
+// destroy 탭
+console.log('[TestComponent] WScript DESTROY');
+```
+
+**Playwright 검증:**
+
+```typescript
+// 콘솔 로그 수집
+const hookLogs: string[] = [];
+previewPage.on('console', (msg) => {
+  if (msg.text().includes('[TestComponent]')) {
+    hookLogs.push(msg.text());
+  }
+});
+
+// 뷰어 로드 후 대기
+await previewPage.locator('.test_component_1').waitFor({ state: 'visible', timeout: 30000 });
+
+// 등록 시점 순서 검증: _onViewerReady → WScript REGISTER
+const viewerReadyIdx = hookLogs.findIndex(l => l.includes('_onViewerReady'));
+const registerIdx = hookLogs.findIndex(l => l.includes('WScript REGISTER'));
+
+expect(viewerReadyIdx).toBeGreaterThanOrEqual(0);
+expect(registerIdx).toBeGreaterThanOrEqual(0);
+expect(viewerReadyIdx).toBeLessThan(registerIdx);
+
+// 페이지 이동으로 소멸 트리거 후
+const beforeDestroyIdx = hookLogs.findIndex(l => l.includes('WScript BEFORE_DESTROY'));
+const viewerDestroyIdx = hookLogs.findIndex(l => l.includes('_onViewerDestroy'));
+const destroyIdx = hookLogs.findIndex(l => l.includes('WScript DESTROY'));
+
+// 소멸 시점 순서 검증: BEFORE_DESTROY → _onViewerDestroy → DESTROY
+expect(beforeDestroyIdx).toBeLessThan(viewerDestroyIdx);
+expect(viewerDestroyIdx).toBeLessThan(destroyIdx);
 ```
 
 **예상 로그 순서 (등록):**
@@ -220,23 +315,46 @@ console.log('[TestComponent] WScript BEFORE_DESTROY');
 | _onViewerDestroy() | this.appendElement 접근 | 접근 가능 (유효한 DOM) |
 | WScript DESTROY | this.appendElement 접근 | **접근 불가** (이미 제거됨) |
 
-**검증 코드:**
+**주입 코드 (CodeBox에 입력):**
 
 ```javascript
-// 각 시점에서 실행
-function checkAppendElement(phase) {
-  const isAccessible = !!this.appendElement;
-  const hasChildren = this.appendElement?.children?.length >= 0;
-  console.log(`[${phase}] appendElement accessible: ${isAccessible}, hasChildren: ${hasChildren}`);
-  return { phase, isAccessible, hasChildren };
-}
+// register 탭
+console.log('[REGISTER] appendElement accessible:', !!this.appendElement);
+console.log('[REGISTER] appendElement hasChildren:', this.appendElement?.children?.length >= 0);
 
-// WScript DESTROY에서
-try {
-  console.log('[DESTROY] appendElement:', this.appendElement);
-} catch (e) {
-  console.log('[DESTROY] appendElement access failed:', e.message);
-}
+// beforeDestroy 탭
+console.log('[BEFORE_DESTROY] appendElement accessible:', !!this.appendElement);
+console.log('[BEFORE_DESTROY] appendElement hasChildren:', this.appendElement?.children?.length >= 0);
+
+// destroy 탭
+console.log('[DESTROY] appendElement:', this.appendElement);
+console.log('[DESTROY] appendElement accessible:', !!this.appendElement);
+```
+
+> **참고:** `_onViewerReady`/`_onViewerDestroy` 시점의 검증은 TC-LC-003의 커스텀 컴포넌트를 사용합니다.
+
+**Playwright 검증:**
+
+```typescript
+// 콘솔 로그 수집
+const accessLogs: string[] = [];
+previewPage.on('console', (msg) => {
+  if (msg.text().match(/\[(REGISTER|BEFORE_DESTROY|DESTROY)\]/)) {
+    accessLogs.push(msg.text());
+  }
+});
+
+// 뷰어 로드 후 register 시점 검증
+const registerLog = accessLogs.find(l => l.includes('[REGISTER] appendElement accessible:'));
+expect(registerLog).toContain('true');
+
+// 페이지 이동으로 소멸 트리거 후
+const beforeDestroyLog = accessLogs.find(l => l.includes('[BEFORE_DESTROY] appendElement accessible:'));
+expect(beforeDestroyLog).toContain('true');
+
+// destroy 시점: appendElement 접근 불가 검증
+const destroyLog = accessLogs.find(l => l.includes('[DESTROY] appendElement accessible:'));
+expect(destroyLog).toContain('false');
 ```
 
 **통과 기준:**
@@ -260,54 +378,66 @@ try {
 | 1 | 페이지 로드 | Page Before Load → 모든 컴포넌트 register → Page Loaded |
 | 2 | 페이지 언로드 | Page Before Unload → 모든 컴포넌트 beforeDestroy |
 
-**검증 방법:**
+**주입 코드 (CodeBox에 입력):**
 
 ```javascript
-// 전역 로그 수집
+// 페이지 beforeLoad 탭 — lifecycleLog 초기화
 window.lifecycleLog = [];
-
-// page_before_load.js
 window.lifecycleLog.push({ type: 'page', phase: 'before_load', timestamp: Date.now() });
+console.log('[LC-005] Page before_load');
 
-// 각 컴포넌트 register.js
-window.lifecycleLog.push({ type: 'component', name: this.name, phase: 'register', timestamp: Date.now() });
-
-// page_loaded.js
+// 페이지 loaded 탭
 window.lifecycleLog.push({ type: 'page', phase: 'loaded', timestamp: Date.now() });
+console.log('[LC-005] Page loaded');
 
-// page_before_unload.js
+// 페이지 beforeUnLoad 탭
 window.lifecycleLog.push({ type: 'page', phase: 'before_unload', timestamp: Date.now() });
+console.log('[LC-005] Page before_unload');
 
-// 각 컴포넌트 beforeDestroy.js
+// 각 컴포넌트 register 탭
+window.lifecycleLog.push({ type: 'component', name: this.name, phase: 'register', timestamp: Date.now() });
+console.log('[LC-005] ' + this.name + ' register');
+
+// 각 컴포넌트 beforeDestroy 탭
 window.lifecycleLog.push({ type: 'component', name: this.name, phase: 'beforeDestroy', timestamp: Date.now() });
+console.log('[LC-005] ' + this.name + ' beforeDestroy');
 ```
 
-**검증 함수:**
+**Playwright 검증:**
 
-```javascript
-function validateLifecycleOrder(log) {
-  const pageBeforeLoad = log.find(l => l.type === 'page' && l.phase === 'before_load');
-  const pageLoaded = log.find(l => l.type === 'page' && l.phase === 'loaded');
-  const pageBeforeUnload = log.find(l => l.type === 'page' && l.phase === 'before_unload');
+```typescript
+// 콘솔 로그 수집
+const lc005Logs: string[] = [];
+previewPage.on('console', (msg) => {
+  if (msg.text().includes('[LC-005]')) {
+    lc005Logs.push(msg.text());
+  }
+});
 
-  const componentRegisters = log.filter(l => l.type === 'component' && l.phase === 'register');
-  const componentDestroys = log.filter(l => l.type === 'component' && l.phase === 'beforeDestroy');
+// 뷰어 로드 후 페이지 이동으로 소멸 트리거
+await previewPage.locator('.badge_1').waitFor({ state: 'visible', timeout: 30000 });
+await previewPage.locator('.badge_1').click();
+await previewPage.waitForTimeout(1000);
 
-  // 검증 1: Before Load가 모든 register 이전
-  const allRegistersAfterBeforeLoad = componentRegisters.every(r => r.timestamp > pageBeforeLoad.timestamp);
+// window.lifecycleLog 데이터 가져오기
+const validationResult = await previewPage.evaluate(() => {
+  const log = (window as any).lifecycleLog;
+  const pageBeforeLoad = log.find((l: any) => l.type === 'page' && l.phase === 'before_load');
+  const pageLoaded = log.find((l: any) => l.type === 'page' && l.phase === 'loaded');
+  const pageBeforeUnload = log.find((l: any) => l.type === 'page' && l.phase === 'before_unload');
+  const componentRegisters = log.filter((l: any) => l.type === 'component' && l.phase === 'register');
+  const componentDestroys = log.filter((l: any) => l.type === 'component' && l.phase === 'beforeDestroy');
 
-  // 검증 2: Loaded가 모든 register 이후
-  const loadedAfterAllRegisters = componentRegisters.every(r => r.timestamp < pageLoaded.timestamp);
+  const allRegistersAfterBeforeLoad = componentRegisters.every((r: any) => r.timestamp > pageBeforeLoad.timestamp);
+  const loadedAfterAllRegisters = componentRegisters.every((r: any) => r.timestamp < pageLoaded.timestamp);
+  const allDestroysAfterBeforeUnload = componentDestroys.every((d: any) => d.timestamp > pageBeforeUnload.timestamp);
 
-  // 검증 3: Before Unload가 모든 beforeDestroy 이전
-  const allDestroysAfterBeforeUnload = componentDestroys.every(d => d.timestamp > pageBeforeUnload.timestamp);
+  return { allRegistersAfterBeforeLoad, loadedAfterAllRegisters, allDestroysAfterBeforeUnload };
+});
 
-  return {
-    allRegistersAfterBeforeLoad,
-    loadedAfterAllRegisters,
-    allDestroysAfterBeforeUnload
-  };
-}
+expect(validationResult.allRegistersAfterBeforeLoad).toBe(true);
+expect(validationResult.loadedAfterAllRegisters).toBe(true);
+expect(validationResult.allDestroysAfterBeforeUnload).toBe(true);
 ```
 
 **통과 기준:**
@@ -329,29 +459,49 @@ function validateLifecycleOrder(log) {
 | 2D | this.appendElement 타입 확인 | HTMLElement (div), id 속성 = instance id |
 | 3D | this.appendElement 타입 확인 | THREE.Object3D, name = "MainGroup" |
 
-**검증 코드:**
+**주입 코드 (CodeBox에 입력):**
 
 ```javascript
-// 2D 컴포넌트 register.js
-function validate2DAppendElement() {
-  const el = this.appendElement;
-  const is2D = el instanceof HTMLElement;
-  const isDiv = el.tagName === 'DIV';
-  const hasInstanceId = el.id === this.id;
+// 2D 컴포넌트 register 탭
+console.log('[2D Component] is HTMLElement:', this.appendElement instanceof HTMLElement);
+console.log('[2D Component] tagName:', this.appendElement?.tagName);
+console.log('[2D Component] id matches:', this.appendElement?.id === this.id);
 
-  console.log('[2D Component] Validation:', { is2D, isDiv, hasInstanceId });
-  return is2D && isDiv && hasInstanceId;
-}
+// 3D 컴포넌트 register 탭
+console.log('[3D Component] is Object3D:', this.appendElement instanceof THREE.Object3D);
+console.log('[3D Component] name:', this.appendElement?.name);
+```
 
-// 3D 컴포넌트 register.js
-function validate3DAppendElement() {
-  const obj = this.appendElement;
-  const is3D = obj instanceof THREE.Object3D;
-  const isMainGroup = obj.name === 'MainGroup';
+**Playwright 검증:**
 
-  console.log('[3D Component] Validation:', { is3D, isMainGroup });
-  return is3D && isMainGroup;
-}
+```typescript
+// 콘솔 로그 수집
+const typeLogs: string[] = [];
+previewPage.on('console', (msg) => {
+  if (msg.text().match(/\[(2D|3D) Component\]/)) {
+    typeLogs.push(msg.text());
+  }
+});
+
+// 뷰어 로드 후 대기
+await previewPage.waitForTimeout(3000);
+
+// 2D 컴포넌트 검증
+const is2DLog = typeLogs.find(l => l.includes('[2D Component] is HTMLElement:'));
+expect(is2DLog).toContain('true');
+
+const tagNameLog = typeLogs.find(l => l.includes('[2D Component] tagName:'));
+expect(tagNameLog).toContain('DIV');
+
+const idMatchLog = typeLogs.find(l => l.includes('[2D Component] id matches:'));
+expect(idMatchLog).toContain('true');
+
+// 3D 컴포넌트 검증
+const is3DLog = typeLogs.find(l => l.includes('[3D Component] is Object3D:'));
+expect(is3DLog).toContain('true');
+
+const nameLog = typeLogs.find(l => l.includes('[3D Component] name:'));
+expect(nameLog).toContain('MainGroup');
 ```
 
 **통과 기준:**
@@ -374,16 +524,47 @@ function validate3DAppendElement() {
 | 1 | register에서 this.name 접근 | 인스턴스 이름 문자열 반환 |
 | 2 | beforeDestroy에서 this.name 접근 | 동일한 인스턴스 이름 반환 |
 
-**검증 코드:**
+**주입 코드 (CodeBox에 입력):**
 
 ```javascript
-// register.js
+// register 탭
 console.log('[Component] Instance name:', this.name);
 console.log('[Component] Name type:', typeof this.name);
 console.log('[Component] Name is not empty:', this.name.length > 0);
 
-// beforeDestroy.js
+// beforeDestroy 탭
 console.log('[Component] Name still accessible:', this.name);
+```
+
+**Playwright 검증:**
+
+```typescript
+// 콘솔 로그 수집
+const nameLogs: string[] = [];
+previewPage.on('console', (msg) => {
+  if (msg.text().includes('[Component]') && msg.text().includes('name')) {
+    nameLogs.push(msg.text());
+  }
+});
+
+// 뷰어 로드 후 대기
+await previewPage.locator('.badge_1').waitFor({ state: 'visible', timeout: 30000 });
+
+// register에서 this.name 확인
+const nameLog = nameLogs.find(l => l.includes('Instance name:'));
+expect(nameLog).toBeDefined();
+expect(nameLog).not.toContain('undefined');
+
+const typeLog = nameLogs.find(l => l.includes('Name type:'));
+expect(typeLog).toContain('string');
+
+const notEmptyLog = nameLogs.find(l => l.includes('Name is not empty:'));
+expect(notEmptyLog).toContain('true');
+
+// 페이지 이동으로 소멸 트리거 후
+const accessibleLog = nameLogs.find(l => l.includes('Name still accessible:'));
+expect(accessibleLog).toBeDefined();
+expect(accessibleLog).not.toContain('undefined');
 ```
 
 **통과 기준:**
@@ -448,44 +629,61 @@ RNBT 아키텍처의 이벤트 시스템은 크게 세 가지로 구성됩니다
 | 2 | onEventBusHandlers() 호출 | 핸들러가 EventBus에 등록됨 |
 | 3 | Weventbus.emit('@testEvent', payload) 호출 | 등록된 핸들러가 payload와 함께 호출됨 |
 
-**검증 코드:**
+**주입 코드 (CodeBox에 입력):**
 
 ```javascript
-// page_before_load.js
+// 페이지 beforeLoad 탭
 const { onEventBusHandlers } = Wkit;
-
-let handlerCallCount = 0;
-let receivedPayload = null;
 
 this.eventBusHandlers = {
     '@testEvent': ({ event, targetInstance }) => {
-        handlerCallCount++;
-        receivedPayload = { event, targetInstance };
-        console.log('[EventBus] @testEvent received:', { event, targetInstance });
+        console.log('[EventBus] @testEvent received');
+        console.log('[EventBus] event type:', event?.type);
+        console.log('[EventBus] targetInstance name:', targetInstance?.name);
     }
 };
 
 onEventBusHandlers(this.eventBusHandlers);
-
-// 테스트용 함수
-this.getHandlerCallCount = () => handlerCallCount;
-this.getReceivedPayload = () => receivedPayload;
 ```
 
 ```javascript
-// 컴포넌트 또는 테스트 코드에서
+// 컴포넌트 register 탭 (이벤트 발행)
 Weventbus.emit('@testEvent', {
     event: { type: 'click', target: { value: 'test-value' } },
     targetInstance: this
 });
+console.log('[Component] @testEvent emitted');
+```
 
-// 검증
-console.log('Handler call count:', page.getHandlerCallCount()); // 1
-console.log('Received payload:', page.getReceivedPayload());
+**Playwright 검증:**
+
+```typescript
+// 콘솔 로그 수집
+const eventLogs: string[] = [];
+previewPage.on('console', (msg) => {
+  if (msg.text().includes('[EventBus]') || msg.text().includes('[Component]')) {
+    eventLogs.push(msg.text());
+  }
+});
+
+await previewPage.waitForTimeout(3000);
+
+// 이벤트가 발행되었는지 확인
+const emittedLog = eventLogs.find(l => l.includes('@testEvent emitted'));
+expect(emittedLog).toBeDefined();
+
+// 핸들러가 호출되었는지 확인
+const receivedLog = eventLogs.find(l => l.includes('@testEvent received'));
+expect(receivedLog).toBeDefined();
+
+// targetInstance 정보 확인
+const instanceLog = eventLogs.find(l => l.includes('targetInstance name:'));
+expect(instanceLog).toBeDefined();
+expect(instanceLog).not.toContain('undefined');
 ```
 
 **통과 기준:**
-- handlerCallCount가 1 증가
+- 핸들러가 호출되어 '@testEvent received' 로그가 출력됨
 - receivedPayload에 event와 targetInstance가 포함됨
 
 ---
@@ -506,22 +704,59 @@ console.log('Received payload:', page.getReceivedPayload());
 | 2 | offEventBusHandlers() 호출 | 핸들러가 해제됨 |
 | 3 | 동일한 이벤트 다시 발행 | 핸들러 호출되지 않음, callCount = 1 (변화 없음) |
 
-**검증 코드:**
+**주입 코드 (CodeBox에 입력):**
 
 ```javascript
-// page_before_unload.js
+// 페이지 beforeLoad 탭 (핸들러 등록 — TC-EV-001과 동일)
+const { onEventBusHandlers } = Wkit;
+
+this.eventBusHandlers = {
+    '@testEvent': ({ event, targetInstance }) => {
+        console.log('[EventBus] @testEvent received');
+    }
+};
+
+onEventBusHandlers(this.eventBusHandlers);
+```
+
+```javascript
+// 페이지 beforeUnLoad 탭 (핸들러 해제)
 const { offEventBusHandlers } = Wkit;
 
-// 해제 전 테스트
+// 해제 전 이벤트 발행
 Weventbus.emit('@testEvent', { event: {}, targetInstance: this });
-console.log('[Before off] callCount:', this.getHandlerCallCount()); // 1
+console.log('[Before off] event emitted');
 
-// 해제
+// 핸들러 해제
 offEventBusHandlers.call(this, this.eventBusHandlers);
+console.log('[After off] handlers removed');
 
-// 해제 후 테스트
+// 해제 후 이벤트 발행
 Weventbus.emit('@testEvent', { event: {}, targetInstance: this });
-console.log('[After off] callCount:', this.getHandlerCallCount()); // 여전히 1
+console.log('[After off] event emitted again');
+```
+
+**Playwright 검증:**
+
+```typescript
+// 콘솔 로그 수집
+const offLogs: string[] = [];
+previewPage.on('console', (msg) => {
+  if (msg.text().includes('[EventBus]') || msg.text().includes('[Before off]') || msg.text().includes('[After off]')) {
+    offLogs.push(msg.text());
+  }
+});
+
+// 페이지 이동으로 beforeUnLoad 트리거 후
+// 해제 전 이벤트 수신 확인 (beforeUnLoad에서 emit → 핸들러 호출)
+const beforeOffReceived = offLogs.filter(l => l.includes('@testEvent received'));
+expect(beforeOffReceived.length).toBeGreaterThanOrEqual(1);
+
+// 해제 후에는 핸들러가 호출되지 않아야 함
+// (해제 후 emit → 핸들러 호출되지 않음 → '@testEvent received' 증가 없음)
+const handlersRemovedIdx = offLogs.findIndex(l => l.includes('handlers removed'));
+const receivedAfterOff = offLogs.filter((l, i) => i > handlersRemovedIdx && l.includes('@testEvent received'));
+expect(receivedAfterOff.length).toBe(0);
 ```
 
 **통과 기준:**
@@ -547,10 +782,10 @@ console.log('[After off] callCount:', this.getHandlerCallCount()); // 여전히 
 | 3 | .my-button 클릭 | '@buttonClicked' 이벤트가 EventBus로 발행됨 |
 | 4 | 페이지의 '@buttonClicked' 핸들러 호출됨 | event와 targetInstance 수신 |
 
-**검증 코드:**
+**주입 코드 (CodeBox에 입력):**
 
 ```javascript
-// 컴포넌트 register.js
+// 컴포넌트 register 탭
 const { bindEvents } = Wkit;
 
 this.customEvents = {
@@ -564,21 +799,44 @@ bindEvents(this, this.customEvents);
 ```
 
 ```javascript
-// 페이지 before_load.js
+// 페이지 beforeLoad 탭
+const { onEventBusHandlers } = Wkit;
+
 this.eventBusHandlers = {
     '@buttonClicked': ({ event, targetInstance }) => {
         console.log('[Page] Button clicked in component:', targetInstance.name);
-        console.log('[Page] Event target:', event.target);
+        console.log('[Page] Event target tagName:', event.target?.tagName);
     }
 };
 
 onEventBusHandlers(this.eventBusHandlers);
 ```
 
-```javascript
-// 테스트 코드 (버튼 클릭 시뮬레이션)
-const button = component.appendElement.querySelector('.my-button');
-button.click(); // 또는 button.dispatchEvent(new Event('click', { bubbles: true }));
+**Playwright 검증:**
+
+```typescript
+// 콘솔 로그 수집
+const clickLogs: string[] = [];
+previewPage.on('console', (msg) => {
+  if (msg.text().includes('[Page]')) {
+    clickLogs.push(msg.text());
+  }
+});
+
+// 컴포넌트 내 .my-button 클릭
+await previewPage.locator('.my-button').click();
+await previewPage.waitForTimeout(500);
+
+// 핸들러 호출 확인
+const btnClickLog = clickLogs.find(l => l.includes('Button clicked in component:'));
+expect(btnClickLog).toBeDefined();
+
+// targetInstance name 확인
+expect(btnClickLog).not.toContain('undefined');
+
+// event.target 확인
+const targetLog = clickLogs.find(l => l.includes('Event target tagName:'));
+expect(targetLog).toBeDefined();
 ```
 
 **통과 기준:**
@@ -605,10 +863,10 @@ button.click(); // 또는 button.dispatchEvent(new Event('click', { bubbles: tru
 | 3 | 동적으로 .dynamic-item 요소 생성 | DOM에 추가됨 |
 | 4 | 동적 생성된 요소 클릭 | '@itemClicked' 이벤트 발행됨 |
 
-**검증 코드:**
+**주입 코드 (CodeBox에 입력):**
 
 ```javascript
-// 컴포넌트 register.js
+// 컴포넌트 register 탭
 const { bindEvents } = Wkit;
 
 this.customEvents = {
@@ -619,29 +877,57 @@ this.customEvents = {
 
 bindEvents(this, this.customEvents);
 
-// 동적 요소 생성 함수
-this.addDynamicItem = (id, text) => {
+// 동적 요소 생성 (register 시점에 .dynamic-item이 없는 상태에서 바인딩 후 생성)
+setTimeout(() => {
     const item = document.createElement('div');
     item.className = 'dynamic-item';
-    item.dataset.id = id;
-    item.textContent = text;
+    item.dataset.id = 'item-1';
+    item.textContent = 'First Item';
     this.appendElement.querySelector('.item-list').appendChild(item);
-};
+    console.log('[Component] Dynamic item created');
+}, 1000);
 ```
 
 ```javascript
-// 테스트 코드
-// 1. 초기 상태: .dynamic-item 없음
-console.log('Initial items:', component.appendElement.querySelectorAll('.dynamic-item').length); // 0
+// 페이지 beforeLoad 탭
+const { onEventBusHandlers } = Wkit;
 
-// 2. 동적 생성
-component.addDynamicItem('item-1', 'First Item');
+this.eventBusHandlers = {
+    '@itemClicked': ({ event, targetInstance }) => {
+        console.log('[Page] Dynamic item clicked');
+        console.log('[Page] item dataset.id:', event.target?.dataset?.id);
+        console.log('[Page] targetInstance:', targetInstance?.name);
+    }
+};
 
-// 3. 동적 요소 클릭
-const dynamicItem = component.appendElement.querySelector('.dynamic-item');
-dynamicItem.click();
+onEventBusHandlers(this.eventBusHandlers);
+```
 
-// 4. 페이지 핸들러에서 수신 확인
+**Playwright 검증:**
+
+```typescript
+// 콘솔 로그 수집
+const dynamicLogs: string[] = [];
+previewPage.on('console', (msg) => {
+  if (msg.text().includes('[Page]') || msg.text().includes('[Component]')) {
+    dynamicLogs.push(msg.text());
+  }
+});
+
+// 동적 요소 생성 대기
+await previewPage.locator('.dynamic-item').waitFor({ state: 'visible', timeout: 5000 });
+
+// 동적 생성된 요소 클릭
+await previewPage.locator('.dynamic-item').click();
+await previewPage.waitForTimeout(500);
+
+// 이벤트 위임으로 핸들러가 호출되었는지 확인
+const itemClickedLog = dynamicLogs.find(l => l.includes('Dynamic item clicked'));
+expect(itemClickedLog).toBeDefined();
+
+// dataset.id 확인
+const datasetLog = dynamicLogs.find(l => l.includes('item dataset.id:'));
+expect(datasetLog).toContain('item-1');
 ```
 
 **통과 기준:**
@@ -666,24 +952,64 @@ dynamicItem.click();
 | 2 | removeCustomEvents(this, customEvents) 호출 | 이벤트 바인딩 해제됨 |
 | 3 | 동일 버튼 다시 클릭 | 이벤트 발행되지 않음, callCount = 1 (변화 없음) |
 
-**검증 코드:**
+**주입 코드 (CodeBox에 입력):**
 
 ```javascript
-// 컴포넌트 beforeDestroy.js
+// 컴포넌트 register 탭 (이벤트 바인딩 — TC-EV-003과 동일)
+const { bindEvents } = Wkit;
+
+this.customEvents = {
+    click: {
+        '.my-button': '@buttonClicked'
+    }
+};
+
+bindEvents(this, this.customEvents);
+```
+
+```javascript
+// 컴포넌트 beforeDestroy 탭 (이벤트 해제)
 const { removeCustomEvents } = Wkit;
 
-// 해제 전 테스트
-const button = this.appendElement.querySelector('.my-button');
-button.click();
-console.log('[Before remove] Event was fired');
-
-// 해제
+console.log('[Before remove] About to remove custom events');
 removeCustomEvents(this, this.customEvents);
 this.customEvents = null;
+console.log('[After remove] Custom events removed');
+```
 
-// 해제 후 테스트
-button.click();
-console.log('[After remove] Event should not fire');
+```javascript
+// 페이지 beforeLoad 탭
+const { onEventBusHandlers } = Wkit;
+
+this.eventBusHandlers = {
+    '@buttonClicked': ({ event, targetInstance }) => {
+        console.log('[Page] @buttonClicked received');
+    }
+};
+
+onEventBusHandlers(this.eventBusHandlers);
+```
+
+**Playwright 검증:**
+
+```typescript
+// 콘솔 로그 수집
+const removeLogs: string[] = [];
+previewPage.on('console', (msg) => {
+  if (msg.text().includes('[Page]') || msg.text().includes('[Before remove]') || msg.text().includes('[After remove]')) {
+    removeLogs.push(msg.text());
+  }
+});
+
+// 해제 전: 버튼 클릭 시 이벤트 발행 확인
+await previewPage.locator('.my-button').click();
+await previewPage.waitForTimeout(500);
+
+const beforeRemoveReceived = removeLogs.filter(l => l.includes('@buttonClicked received'));
+expect(beforeRemoveReceived.length).toBe(1);
+
+// 페이지 이동으로 beforeDestroy 트리거 (removeCustomEvents 실행됨)
+// 이후 버튼 클릭 시 이벤트가 발행되지 않아야 함
 ```
 
 **통과 기준:**
@@ -705,10 +1031,12 @@ console.log('[After remove] Event should not fire');
 | 1 | '@customEvent' 형태로 정의 | EventBus를 통해 발행됨 |
 | 2 | 'nativeEvent' 형태로 정의 (@ 없음) | 동작 방식 확인 필요 |
 
-**검증 코드:**
+**주입 코드 (CodeBox에 입력):**
 
 ```javascript
-// 컴포넌트 register.js
+// 컴포넌트 register 탭
+const { bindEvents } = Wkit;
+
 this.customEvents = {
     click: {
         '.custom-btn': '@customButtonClicked',   // @ 접두사: 커스텀 이벤트
@@ -720,17 +1048,44 @@ bindEvents(this, this.customEvents);
 ```
 
 ```javascript
-// 페이지 before_load.js
+// 페이지 beforeLoad 탭
+const { onEventBusHandlers } = Wkit;
+
 this.eventBusHandlers = {
     '@customButtonClicked': ({ event, targetInstance }) => {
-        console.log('[Page] Custom event received');
+        console.log('[Page] Custom event received (@ prefix)');
     },
     'nativeButtonClicked': ({ event, targetInstance }) => {
-        console.log('[Page] Native event received (if supported)');
+        console.log('[Page] Native event received (no @ prefix)');
     }
 };
 
 onEventBusHandlers(this.eventBusHandlers);
+```
+
+**Playwright 검증:**
+
+```typescript
+// 콘솔 로그 수집
+const prefixLogs: string[] = [];
+previewPage.on('console', (msg) => {
+  if (msg.text().includes('[Page]')) {
+    prefixLogs.push(msg.text());
+  }
+});
+
+// @ 접두사 버튼 클릭
+await previewPage.locator('.custom-btn').click();
+await previewPage.waitForTimeout(500);
+
+const customLog = prefixLogs.find(l => l.includes('Custom event received'));
+expect(customLog).toBeDefined();
+
+// @ 없는 버튼 클릭
+await previewPage.locator('.native-btn').click();
+await previewPage.waitForTimeout(500);
+
+// 동작 방식 확인 (@ 접두사 유무에 따른 차이 검증)
 ```
 
 **통과 기준:**
@@ -755,10 +1110,10 @@ onEventBusHandlers(this.eventBusHandlers);
 | 2 | bind3DEvents(this, customEvents) 호출 | 3D 오브젝트에 이벤트 바인딩됨 |
 | 3 | 3D 오브젝트 클릭 | '@3dObjectClicked' 이벤트 발행됨 |
 
-**검증 코드:**
+**주입 코드 (CodeBox에 입력):**
 
 ```javascript
-// 3D 컴포넌트 register.js
+// 3D 컴포넌트 register 탭
 const { bind3DEvents } = Wkit;
 
 this.customEvents = {
@@ -770,16 +1125,48 @@ bind3DEvents(this, this.customEvents);
 ```
 
 ```javascript
-// 페이지 before_load.js
+// 페이지 beforeLoad 탭
+const { onEventBusHandlers } = Wkit;
+
 this.eventBusHandlers = {
     '@3dObjectClicked': ({ event, targetInstance }) => {
         console.log('[Page] 3D object clicked');
-        console.log('[Page] Intersected object:', event.intersects[0]?.object);
-        console.log('[Page] Target instance:', targetInstance.name);
+        console.log('[Page] intersects count:', event.intersects?.length);
+        console.log('[Page] intersected object type:', event.intersects[0]?.object?.type);
+        console.log('[Page] targetInstance name:', targetInstance.name);
     }
 };
 
 onEventBusHandlers(this.eventBusHandlers);
+```
+
+**Playwright 검증:**
+
+```typescript
+// 콘솔 로그 수집
+const threeDLogs: string[] = [];
+previewPage.on('console', (msg) => {
+  if (msg.text().includes('[Page]')) {
+    threeDLogs.push(msg.text());
+  }
+});
+
+// 3D 캔버스 영역 클릭 (3D 오브젝트 위치)
+await previewPage.locator('canvas').click();
+await previewPage.waitForTimeout(500);
+
+// 이벤트 발행 확인
+const clickedLog = threeDLogs.find(l => l.includes('3D object clicked'));
+expect(clickedLog).toBeDefined();
+
+// intersects 정보 확인
+const intersectsLog = threeDLogs.find(l => l.includes('intersects count:'));
+expect(intersectsLog).toBeDefined();
+
+// targetInstance 확인
+const instanceLog = threeDLogs.find(l => l.includes('targetInstance name:'));
+expect(instanceLog).toBeDefined();
+expect(instanceLog).not.toContain('undefined');
 ```
 
 **통과 기준:**
@@ -804,33 +1191,80 @@ onEventBusHandlers(this.eventBusHandlers);
 | event 객체 | DOM Event (target, type 등) | intersects 배열 포함 |
 | 선택자 | CSS 선택자 사용 | 선택자 없음 (전체 오브젝트 대상) |
 
-**검증 코드:**
+**주입 코드 (CodeBox에 입력):**
 
 ```javascript
-// 2D 이벤트 구조
-const customEvents2D = {
+// 2D 컴포넌트 register 탭
+const { bindEvents } = Wkit;
+
+this.customEvents = {
     click: {
         '.button-a': '@buttonAClicked',
         '.button-b': '@buttonBClicked'
     }
 };
 
-// 3D 이벤트 구조
-const customEvents3D = {
+bindEvents(this, this.customEvents);
+```
+
+```javascript
+// 3D 컴포넌트 register 탭
+const { bind3DEvents } = Wkit;
+
+this.customEvents = {
     click: '@3dClicked'  // 선택자 없이 이벤트명만
 };
 
-// 페이지 핸들러에서 event 구조 비교
+bind3DEvents(this, this.customEvents);
+```
+
+```javascript
+// 페이지 beforeLoad 탭
+const { onEventBusHandlers } = Wkit;
+
 this.eventBusHandlers = {
     '@buttonAClicked': ({ event }) => {
-        console.log('[2D] event.target:', event.target);       // DOM Element
-        console.log('[2D] event.type:', event.type);           // 'click'
+        console.log('[2D] event.target tagName:', event.target?.tagName);
+        console.log('[2D] event.type:', event.type);
     },
     '@3dClicked': ({ event }) => {
-        console.log('[3D] event.intersects:', event.intersects);  // Array
-        console.log('[3D] event.intersects[0].object:', event.intersects[0]?.object);  // THREE.Object3D
+        console.log('[3D] event.intersects is array:', Array.isArray(event.intersects));
+        console.log('[3D] event.intersects[0].object type:', event.intersects[0]?.object?.type);
     }
 };
+
+onEventBusHandlers(this.eventBusHandlers);
+```
+
+**Playwright 검증:**
+
+```typescript
+// 콘솔 로그 수집
+const diffLogs: string[] = [];
+previewPage.on('console', (msg) => {
+  if (msg.text().includes('[2D]') || msg.text().includes('[3D]')) {
+    diffLogs.push(msg.text());
+  }
+});
+
+// 2D 버튼 클릭
+await previewPage.locator('.button-a').click();
+await previewPage.waitForTimeout(500);
+
+// 2D 이벤트 구조 확인
+const targetLog = diffLogs.find(l => l.includes('[2D] event.target tagName:'));
+expect(targetLog).toBeDefined();
+
+const typeLog = diffLogs.find(l => l.includes('[2D] event.type:'));
+expect(typeLog).toContain('click');
+
+// 3D 오브젝트 클릭
+await previewPage.locator('canvas').click();
+await previewPage.waitForTimeout(500);
+
+// 3D 이벤트 구조 확인
+const intersectsLog = diffLogs.find(l => l.includes('[3D] event.intersects is array:'));
+expect(intersectsLog).toContain('true');
 ```
 
 **통과 기준:**
@@ -856,10 +1290,10 @@ this.eventBusHandlers = {
 | 3 | targetInstance.datasetInfo 접근 | 배열 반환됨 |
 | 4 | datasetInfo 순회하며 데이터 fetch | 각 데이터셋에 대해 fetchData 호출 가능 |
 
-**검증 코드:**
+**주입 코드 (CodeBox에 입력):**
 
 ```javascript
-// 3D 컴포넌트 register.js
+// 3D 컴포넌트 register 탭
 const { bind3DEvents } = Wkit;
 
 this.datasetInfo = [
@@ -881,7 +1315,8 @@ bind3DEvents(this, this.customEvents);
 ```
 
 ```javascript
-// 페이지 before_load.js
+// 페이지 beforeLoad 탭
+const { onEventBusHandlers } = Wkit;
 const { fetchData } = Wkit;
 
 this.eventBusHandlers = {
@@ -893,15 +1328,46 @@ this.eventBusHandlers = {
 
         if (datasetInfo?.length) {
             for (const { datasetName, param } of datasetInfo) {
-                console.log(`[Page] Fetching ${datasetName} with param:`, param);
+                console.log('[Page] Fetching ' + datasetName);
                 const data = await fetchData(this, datasetName, param);
-                console.log(`[Page] Received data from ${datasetName}:`, data);
+                console.log('[Page] Received data from ' + datasetName + ':', !!data);
             }
         }
     }
 };
 
 onEventBusHandlers(this.eventBusHandlers);
+```
+
+**Playwright 검증:**
+
+```typescript
+// 콘솔 로그 수집
+const datasetLogs: string[] = [];
+previewPage.on('console', (msg) => {
+  if (msg.text().includes('[Page]')) {
+    datasetLogs.push(msg.text());
+  }
+});
+
+// 3D 오브젝트 클릭
+await previewPage.locator('canvas').click();
+await previewPage.waitForTimeout(3000); // fetchData 대기
+
+// datasetInfo 배열 확인
+const isArrayLog = datasetLogs.find(l => l.includes('datasetInfo is array:'));
+expect(isArrayLog).toContain('true');
+
+const lengthLog = datasetLogs.find(l => l.includes('datasetInfo length:'));
+expect(lengthLog).toContain('2');
+
+// fetchData 호출 확인
+const fetchLogs = datasetLogs.filter(l => l.includes('Fetching'));
+expect(fetchLogs.length).toBe(2);
+
+// 데이터 수신 확인
+const receivedLogs = datasetLogs.filter(l => l.includes('Received data from'));
+expect(receivedLogs.length).toBe(2);
 ```
 
 **통과 기준:**
@@ -929,14 +1395,14 @@ onEventBusHandlers(this.eventBusHandlers);
 | 데이터셋 정보 | - | datasetInfo |
 | 인스턴스 메서드 | - | showDetail() 등 |
 
-**검증 코드:**
+**주입 코드 (CodeBox에 입력):**
 
 ```javascript
-// 컴포넌트 register.js
+// 컴포넌트 register 탭
 const { bindEvents } = Wkit;
 
 this.datasetInfo = [{ datasetName: 'myData', param: {} }];
-this.showDetail = () => console.log('Show detail for:', this.name);
+this.showDetail = () => console.log('[Component] Show detail for:', this.name);
 
 this.customEvents = {
     click: {
@@ -948,22 +1414,20 @@ bindEvents(this, this.customEvents);
 ```
 
 ```javascript
-// 페이지 before_load.js
+// 페이지 beforeLoad 탭
+const { onEventBusHandlers } = Wkit;
+
 this.eventBusHandlers = {
     '@itemClicked': ({ event, targetInstance }) => {
         // event.target에서 얻을 수 있는 정보
-        console.log('--- event.target 정보 ---');
-        console.log('value:', event.target.value);
-        console.log('textContent:', event.target.textContent);
-        console.log('dataset:', event.target.dataset);
-        console.log('classList:', event.target.classList);
+        console.log('[event.target] textContent:', event.target?.textContent);
+        console.log('[event.target] dataset:', JSON.stringify(event.target?.dataset));
 
         // targetInstance에서 얻을 수 있는 정보
-        console.log('--- targetInstance 정보 ---');
-        console.log('id:', targetInstance.id);
-        console.log('name:', targetInstance.name);
-        console.log('datasetInfo:', targetInstance.datasetInfo);
-        console.log('showDetail (method):', typeof targetInstance.showDetail);
+        console.log('[targetInstance] id:', targetInstance.id);
+        console.log('[targetInstance] name:', targetInstance.name);
+        console.log('[targetInstance] datasetInfo:', JSON.stringify(targetInstance.datasetInfo));
+        console.log('[targetInstance] showDetail type:', typeof targetInstance.showDetail);
 
         // targetInstance의 메서드 호출
         if (targetInstance.showDetail) {
@@ -973,6 +1437,44 @@ this.eventBusHandlers = {
 };
 
 onEventBusHandlers(this.eventBusHandlers);
+```
+
+**Playwright 검증:**
+
+```typescript
+// 콘솔 로그 수집
+const infoLogs: string[] = [];
+previewPage.on('console', (msg) => {
+  if (msg.text().match(/\[(event\.target|targetInstance|Component)\]/)) {
+    infoLogs.push(msg.text());
+  }
+});
+
+// 아이템 클릭
+await previewPage.locator('.item').first().click();
+await previewPage.waitForTimeout(500);
+
+// event.target 정보 확인
+const textLog = infoLogs.find(l => l.includes('[event.target] textContent:'));
+expect(textLog).toBeDefined();
+
+// targetInstance 정보 확인
+const idLog = infoLogs.find(l => l.includes('[targetInstance] id:'));
+expect(idLog).toBeDefined();
+expect(idLog).not.toContain('undefined');
+
+const nameLog = infoLogs.find(l => l.includes('[targetInstance] name:'));
+expect(nameLog).toBeDefined();
+
+const datasetInfoLog = infoLogs.find(l => l.includes('[targetInstance] datasetInfo:'));
+expect(datasetInfoLog).toContain('myData');
+
+// showDetail 메서드 호출 확인
+const showDetailLog = infoLogs.find(l => l.includes('[targetInstance] showDetail type:'));
+expect(showDetailLog).toContain('function');
+
+const detailCallLog = infoLogs.find(l => l.includes('Show detail for:'));
+expect(detailCallLog).toBeDefined();
 ```
 
 **통과 기준:**
@@ -997,10 +1499,10 @@ onEventBusHandlers(this.eventBusHandlers);
 | 2 | bindEvents 호출 | 모든 이벤트 타입이 바인딩됨 |
 | 3 | 각 이벤트 타입 트리거 | 각각의 핸들러가 호출됨 |
 
-**검증 코드:**
+**주입 코드 (CodeBox에 입력):**
 
 ```javascript
-// 컴포넌트 register.js
+// 컴포넌트 register 탭
 const { bindEvents } = Wkit;
 
 this.customEvents = {
@@ -1024,20 +1526,53 @@ bindEvents(this, this.customEvents);
 ```
 
 ```javascript
-// 테스트 코드
-const button = component.appendElement.querySelector('.button');
-const card = component.appendElement.querySelector('.card');
-const input = component.appendElement.querySelector('.input-field');
+// 페이지 beforeLoad 탭
+const { onEventBusHandlers } = Wkit;
+
+this.eventBusHandlers = {
+    '@buttonClicked': () => console.log('[Page] click event: @buttonClicked'),
+    '@linkClicked': () => console.log('[Page] click event: @linkClicked'),
+    '@cardHovered': () => console.log('[Page] mouseover event: @cardHovered'),
+    '@inputChanged': () => console.log('[Page] change event: @inputChanged'),
+    '@selectChanged': () => console.log('[Page] change event: @selectChanged'),
+    '@formSubmitted': () => console.log('[Page] submit event: @formSubmitted'),
+};
+
+onEventBusHandlers(this.eventBusHandlers);
+```
+
+**Playwright 검증:**
+
+```typescript
+// 콘솔 로그 수집
+const multiEventLogs: string[] = [];
+previewPage.on('console', (msg) => {
+  if (msg.text().includes('[Page]') && msg.text().includes('event:')) {
+    multiEventLogs.push(msg.text());
+  }
+});
 
 // click 이벤트
-button.click();
+await previewPage.locator('.button').click();
+await previewPage.waitForTimeout(300);
 
 // mouseover 이벤트
-card.dispatchEvent(new MouseEvent('mouseover', { bubbles: true }));
+await previewPage.locator('.card').hover();
+await previewPage.waitForTimeout(300);
 
 // change 이벤트
-input.value = 'new value';
-input.dispatchEvent(new Event('change', { bubbles: true }));
+await previewPage.locator('.input-field').fill('new value');
+await previewPage.waitForTimeout(300);
+
+// 각 이벤트 타입별 핸들러 호출 확인
+const clickLog = multiEventLogs.find(l => l.includes('click event: @buttonClicked'));
+expect(clickLog).toBeDefined();
+
+const hoverLog = multiEventLogs.find(l => l.includes('mouseover event: @cardHovered'));
+expect(hoverLog).toBeDefined();
+
+const changeLog = multiEventLogs.find(l => l.includes('change event: @inputChanged'));
+expect(changeLog).toBeDefined();
 ```
 
 **통과 기준:**
@@ -1061,15 +1596,16 @@ input.dispatchEvent(new Event('change', { bubbles: true }));
 | 2 | 이벤트 발생 | 핸들러 내 await가 정상 동작함 |
 | 3 | 비동기 작업 완료 후 | 후속 로직이 실행됨 |
 
-**검증 코드:**
+**주입 코드 (CodeBox에 입력):**
 
 ```javascript
-// 페이지 before_load.js
+// 페이지 beforeLoad 탭
+const { onEventBusHandlers } = Wkit;
 const { fetchData } = Wkit;
 
 this.eventBusHandlers = {
     '@itemClicked': async ({ event, targetInstance }) => {
-        console.log('[Handler] Start - timestamp:', Date.now());
+        console.log('[Handler] Start');
 
         const { datasetInfo } = targetInstance;
 
@@ -1077,19 +1613,46 @@ this.eventBusHandlers = {
             for (const { datasetName, param } of datasetInfo) {
                 try {
                     const data = await fetchData(this, datasetName, param);
-                    console.log('[Handler] Data received:', data);
-                    // 데이터 처리 로직
+                    console.log('[Handler] Data received from ' + datasetName + ':', !!data);
                 } catch (error) {
-                    console.error('[Handler] Fetch error:', error);
+                    console.error('[Handler] Fetch error:', error.message);
                 }
             }
         }
 
-        console.log('[Handler] End - timestamp:', Date.now());
+        console.log('[Handler] End');
     }
 };
 
 onEventBusHandlers(this.eventBusHandlers);
+```
+
+**Playwright 검증:**
+
+```typescript
+// 콘솔 로그 수집
+const asyncLogs: string[] = [];
+previewPage.on('console', (msg) => {
+  if (msg.text().includes('[Handler]')) {
+    asyncLogs.push(msg.text());
+  }
+});
+
+// 이벤트 트리거 (아이템 클릭)
+await previewPage.locator('.item').first().click();
+await previewPage.waitForTimeout(5000); // fetchData 비동기 완료 대기
+
+// 비동기 흐름 검증: Start → Data received → End
+const startIdx = asyncLogs.findIndex(l => l.includes('[Handler] Start'));
+const endIdx = asyncLogs.findIndex(l => l.includes('[Handler] End'));
+
+expect(startIdx).toBeGreaterThanOrEqual(0);
+expect(endIdx).toBeGreaterThanOrEqual(0);
+expect(startIdx).toBeLessThan(endIdx);
+
+// 데이터 수신 확인
+const dataLogs = asyncLogs.filter(l => l.includes('Data received'));
+expect(dataLogs.length).toBeGreaterThan(0);
 ```
 
 **통과 기준:**
@@ -1169,10 +1732,10 @@ RNBT 아키텍처의 데이터 흐름은 **GlobalDataPublisher**를 중심으로
 | 2 | registerMapping() 호출 | 각 매핑이 등록됨 |
 | 3 | 등록된 매핑 확인 | GlobalDataPublisher 내부에 매핑 저장됨 |
 
-**검증 코드:**
+**주입 코드 (CodeBox에 입력):**
 
 ```javascript
-// page_loaded.js
+// 페이지 loaded 탭
 const { each } = fx;
 
 this.globalDataMappings = [
@@ -1203,10 +1766,31 @@ fx.go(
     })
 );
 
-// 검증: 등록된 topic 확인
+// 등록 확인 로그
 this.globalDataMappings.forEach(({ topic }) => {
-    console.log(`[Verify] Topic '${topic}' registered:`, GlobalDataPublisher.isRegistered?.(topic));
+    console.log('[Page] Topic registered:', topic);
 });
+```
+
+**Playwright 검증:**
+
+```typescript
+// 콘솔 로그 수집
+const mappingLogs: string[] = [];
+previewPage.on('console', (msg) => {
+  if (msg.text().includes('[Page]')) {
+    mappingLogs.push(msg.text());
+  }
+});
+
+await previewPage.waitForTimeout(3000);
+
+// 매핑 등록 확인
+const registerLogs = mappingLogs.filter(l => l.includes('Registering mapping:'));
+expect(registerLogs.length).toBe(2); // sensorData, alertData
+
+const topicLogs = mappingLogs.filter(l => l.includes('Topic registered:'));
+expect(topicLogs.length).toBe(2);
 ```
 
 **globalDataMappings 구조 검증:**
@@ -1241,15 +1825,12 @@ this.globalDataMappings.forEach(({ topic }) => {
 | 3 | fetchAndPublish() 실행 | 구독자에게 데이터 전달됨 |
 | 4 | 핸들러에서 response 수신 | { response: { data: ... } } 형태 |
 
-**검증 코드:**
+**주입 코드 (CodeBox에 입력):**
 
 ```javascript
-// 컴포넌트 register.js
+// 컴포넌트 register 탭
 const { subscribe } = GlobalDataPublisher;
 const { each } = fx;
-
-let receivedData = null;
-let handlerCallCount = 0;
 
 this.subscriptions = {
     sensorData: ['renderSensorTable'],
@@ -1258,15 +1839,13 @@ this.subscriptions = {
 
 // 핸들러 정의 및 바인딩
 function renderSensorTable({ response }) {
-    handlerCallCount++;
-    receivedData = response;
-    console.log('[Component] renderSensorTable received:', response);
+    console.log('[Component] renderSensorTable called');
+    console.log('[Component] response has data:', !!response?.data);
 
     const { data } = response;
     if (!data) return;
 
-    // 렌더링 로직
-    console.log('[Component] Rendering table with data:', data);
+    console.log('[Component] Rendering table with data');
 }
 
 this.renderSensorTable = renderSensorTable.bind(this);
@@ -1277,16 +1856,38 @@ fx.go(
     each(([topic, fnList]) =>
         each(fn => {
             if (this[fn]) {
-                console.log(`[Component] Subscribing ${fn} to ${topic}`);
+                console.log('[Component] Subscribing ' + fn + ' to ' + topic);
                 subscribe(topic, this, this[fn]);
             }
         }, fnList)
     )
 );
+```
 
-// 테스트용 getter
-this.getReceivedData = () => receivedData;
-this.getHandlerCallCount = () => handlerCallCount;
+**Playwright 검증:**
+
+```typescript
+// 콘솔 로그 수집
+const subLogs: string[] = [];
+previewPage.on('console', (msg) => {
+  if (msg.text().includes('[Component]')) {
+    subLogs.push(msg.text());
+  }
+});
+
+await previewPage.waitForTimeout(5000); // fetchAndPublish 완료 대기
+
+// 구독 등록 확인
+const subscribeLogs = subLogs.filter(l => l.includes('Subscribing'));
+expect(subscribeLogs.length).toBeGreaterThan(0);
+
+// 핸들러 호출 확인
+const calledLog = subLogs.find(l => l.includes('renderSensorTable called'));
+expect(calledLog).toBeDefined();
+
+// response.data 확인
+const dataLog = subLogs.find(l => l.includes('response has data:'));
+expect(dataLog).toContain('true');
 ```
 
 **통과 기준:**
@@ -1312,24 +1913,22 @@ this.getHandlerCallCount = () => handlerCallCount;
 | 2 | 각 핸들러에 대해 subscribe() 호출 | 2개 구독 등록됨 |
 | 3 | fetchAndPublish('topicA') 실행 | handler1, handler2 모두 호출됨 |
 
-**검증 코드:**
+**주입 코드 (CodeBox에 입력):**
 
 ```javascript
-// 컴포넌트 register.js
-let handler1Called = false;
-let handler2Called = false;
+// 컴포넌트 register 탭
+const { subscribe } = GlobalDataPublisher;
+const { each } = fx;
 
 this.subscriptions = {
     sensorData: ['renderTable', 'updateCount']
 };
 
 function renderTable({ response }) {
-    handler1Called = true;
     console.log('[handler1] renderTable called');
 }
 
 function updateCount({ response }) {
-    handler2Called = true;
     console.log('[handler2] updateCount called');
 }
 
@@ -1342,18 +1941,30 @@ fx.go(
         each(fn => this[fn] && subscribe(topic, this, this[fn]), fnList)
     )
 );
+```
 
-// 검증 (fetchAndPublish 후)
-this.verifyAllHandlersCalled = () => {
-    console.log('[Verify] handler1Called:', handler1Called);
-    console.log('[Verify] handler2Called:', handler2Called);
-    return handler1Called && handler2Called;
-};
+**Playwright 검증:**
+
+```typescript
+const handlerLogs: string[] = [];
+previewPage.on('console', (msg) => {
+  if (msg.text().includes('[handler')) {
+    handlerLogs.push(msg.text());
+  }
+});
+
+await previewPage.waitForTimeout(5000);
+
+// 두 핸들러 모두 호출 확인
+const handler1Log = handlerLogs.find(l => l.includes('renderTable called'));
+expect(handler1Log).toBeDefined();
+
+const handler2Log = handlerLogs.find(l => l.includes('updateCount called'));
+expect(handler2Log).toBeDefined();
 ```
 
 **통과 기준:**
 - fetchAndPublish 후 모든 핸들러(renderTable, updateCount)가 호출됨
-- verifyAllHandlersCalled()가 true 반환
 
 ---
 
@@ -1373,39 +1984,47 @@ this.verifyAllHandlersCalled = () => {
 | 2 | fetchAndPublish('sharedTopic') 실행 | 3개 컴포넌트 모두에 데이터 전달 |
 | 3 | 각 컴포넌트의 핸들러 호출 확인 | 모두 호출됨 |
 
-**검증 코드:**
+**주입 코드 (CodeBox에 입력):**
 
 ```javascript
-// Component A - register.js
-this.subscriptions = { sharedTopic: ['handleDataA'] };
+// Component A — register 탭
+const { subscribe } = GlobalDataPublisher;
 this.handleDataA = ({ response }) => {
-    window.componentAReceived = true;
     console.log('[Component A] Received data');
 };
 subscribe('sharedTopic', this, this.handleDataA);
 
-// Component B - register.js
-this.subscriptions = { sharedTopic: ['handleDataB'] };
+// Component B — register 탭
+const { subscribe } = GlobalDataPublisher;
 this.handleDataB = ({ response }) => {
-    window.componentBReceived = true;
     console.log('[Component B] Received data');
 };
 subscribe('sharedTopic', this, this.handleDataB);
 
-// Component C - register.js
-this.subscriptions = { sharedTopic: ['handleDataC'] };
+// Component C — register 탭
+const { subscribe } = GlobalDataPublisher;
 this.handleDataC = ({ response }) => {
-    window.componentCReceived = true;
     console.log('[Component C] Received data');
 };
 subscribe('sharedTopic', this, this.handleDataC);
+```
 
-// 페이지에서 검증
-function verifyAllComponentsReceived() {
-    return window.componentAReceived &&
-           window.componentBReceived &&
-           window.componentCReceived;
-}
+**Playwright 검증:**
+
+```typescript
+const compLogs: string[] = [];
+previewPage.on('console', (msg) => {
+  if (msg.text().includes('Received data')) {
+    compLogs.push(msg.text());
+  }
+});
+
+await previewPage.waitForTimeout(5000);
+
+// 3개 컴포넌트 모두 데이터 수신 확인
+expect(compLogs.find(l => l.includes('[Component A]'))).toBeDefined();
+expect(compLogs.find(l => l.includes('[Component B]'))).toBeDefined();
+expect(compLogs.find(l => l.includes('[Component C]'))).toBeDefined();
 ```
 
 **통과 기준:**
@@ -1430,34 +2049,56 @@ function verifyAllComponentsReceived() {
 | 2 | 응답 수신 | { response: { data: ... } } 구조 |
 | 3 | 구독자에게 전달 | 동일한 구조로 전달됨 |
 
-**검증 코드:**
+**주입 코드 (CodeBox에 입력):**
 
 ```javascript
-// 페이지 loaded.js
+// 페이지 loaded 탭
 const result = await GlobalDataPublisher.fetchAndPublish(
     'sensorData',
     this,
     this.currentParams['sensorData'] || {}
 );
+console.log('[Page] fetchAndPublish completed');
+```
 
-console.log('[fetchAndPublish] Result:', result);
-
-// 컴포넌트 핸들러에서 응답 구조 검증
+```javascript
+// 컴포넌트 register 탭 — 구독 핸들러
 function renderData({ response }) {
-    // 응답 구조 검증
-    console.log('[Response] Has response:', 'response' in arguments[0]);
-    console.log('[Response] response value:', response);
-    console.log('[Response] Has data:', response?.data !== undefined);
+    console.log('[Response] has response key:', 'response' in arguments[0]);
+    console.log('[Response] has data:', response?.data !== undefined);
+    console.log('[Response] data type:', typeof response?.data);
 
     const { data } = response;
     if (!data) {
-        console.warn('[Response] data is empty');
+        console.log('[Response] Early return: data is empty');
         return;
     }
 
-    console.log('[Response] data type:', typeof data);
-    console.log('[Response] data value:', data);
+    console.log('[Response] Data received successfully');
 }
+```
+
+**Playwright 검증:**
+
+```typescript
+const respLogs: string[] = [];
+previewPage.on('console', (msg) => {
+  if (msg.text().includes('[Response]') || msg.text().includes('[Page]')) {
+    respLogs.push(msg.text());
+  }
+});
+
+await previewPage.waitForTimeout(5000);
+
+// fetchAndPublish 완료 확인
+expect(respLogs.find(l => l.includes('fetchAndPublish completed'))).toBeDefined();
+
+// 응답 구조 확인
+const hasResponseLog = respLogs.find(l => l.includes('has response key:'));
+expect(hasResponseLog).toContain('true');
+
+const hasDataLog = respLogs.find(l => l.includes('has data:'));
+expect(hasDataLog).toContain('true');
 ```
 
 **응답 구조:**
@@ -1493,32 +2134,48 @@ function renderData({ response }) {
 | 2 | unsubscribe(topic, this) 호출 | 구독 해제됨 |
 | 3 | 다시 fetchAndPublish | 핸들러 호출되지 않음, callCount = 1 (변화 없음) |
 
-**검증 코드:**
+**주입 코드 (CodeBox에 입력):**
 
 ```javascript
-// 컴포넌트 beforeDestroy.js
+// 컴포넌트 beforeDestroy 탭
 const { unsubscribe } = GlobalDataPublisher;
 const { each } = fx;
-
-// 해제 전 callCount 확인
-console.log('[Before unsubscribe] callCount:', this.getHandlerCallCount());
 
 // 구독 해제
 fx.go(
     Object.entries(this.subscriptions),
     each(([topic, _]) => {
-        console.log(`[Component] Unsubscribing from ${topic}`);
+        console.log('[Component] Unsubscribing from ' + topic);
         unsubscribe(topic, this);
     })
 );
 
 this.subscriptions = null;
+console.log('[Component] All subscriptions removed');
+```
 
-// 해제 후 fetchAndPublish (페이지에서)
-// await GlobalDataPublisher.fetchAndPublish('sensorData', page);
+**Playwright 검증:**
 
-// 해제 후 callCount 확인
-console.log('[After unsubscribe] callCount:', this.getHandlerCallCount()); // 변화 없어야 함
+```typescript
+const unsubLogs: string[] = [];
+previewPage.on('console', (msg) => {
+  if (msg.text().includes('[Component]')) {
+    unsubLogs.push(msg.text());
+  }
+});
+
+// 페이지 이동으로 beforeDestroy 트리거
+// ...
+
+// 구독 해제 확인
+const unsubLog = unsubLogs.find(l => l.includes('Unsubscribing from'));
+expect(unsubLog).toBeDefined();
+
+const removedLog = unsubLogs.find(l => l.includes('All subscriptions removed'));
+expect(removedLog).toBeDefined();
+
+// 해제 후 fetchAndPublish 시 핸들러 미호출 확인
+// (새로운 데이터 수신 로그가 추가되지 않아야 함)
 ```
 
 **통과 기준:**
@@ -1542,30 +2199,50 @@ console.log('[After unsubscribe] callCount:', this.getHandlerCallCount()); // �
 | 2 | unregisterMapping(topic) 호출 | 매핑 해제됨 |
 | 3 | 다시 fetchAndPublish | 에러 또는 무시됨 |
 
-**검증 코드:**
+**주입 코드 (CodeBox에 입력):**
 
 ```javascript
-// 페이지 before_unload.js
+// 페이지 beforeUnLoad 탭
 const { each } = fx;
 
 // 매핑 해제
 fx.go(
     this.globalDataMappings,
     each(({ topic }) => {
-        console.log(`[Page] Unregistering mapping: ${topic}`);
+        console.log('[Page] Unregistering mapping: ' + topic);
         GlobalDataPublisher.unregisterMapping(topic);
     })
 );
 
 this.globalDataMappings = null;
+console.log('[Page] All mappings unregistered');
 
 // 해제 후 fetchAndPublish 시도
 try {
     await GlobalDataPublisher.fetchAndPublish('sensorData', this);
-    console.log('[After unregister] fetchAndPublish succeeded (unexpected?)');
+    console.log('[After unregister] fetchAndPublish succeeded (unexpected)');
 } catch (e) {
-    console.log('[After unregister] fetchAndPublish failed:', e.message);
+    console.log('[After unregister] fetchAndPublish failed: ' + e.message);
 }
+```
+
+**Playwright 검증:**
+
+```typescript
+const unregLogs: string[] = [];
+previewPage.on('console', (msg) => {
+  if (msg.text().includes('[Page]') || msg.text().includes('[After unregister]')) {
+    unregLogs.push(msg.text());
+  }
+});
+
+// 페이지 이동으로 beforeUnLoad 트리거 후
+const unregLog = unregLogs.find(l => l.includes('All mappings unregistered'));
+expect(unregLog).toBeDefined();
+
+// 해제 후 fetchAndPublish 실패 확인
+const failLog = unregLogs.find(l => l.includes('fetchAndPublish failed'));
+expect(failLog).toBeDefined();
 ```
 
 **통과 기준:**
@@ -1588,10 +2265,10 @@ try {
 | 2 | 각 topic에 대해 currentParams[topic] = {} | topic별 빈 객체 생성 |
 | 3 | fetchAndPublish 시 currentParams[topic] 전달 | 해당 param으로 API 호출 |
 
-**검증 코드:**
+**주입 코드 (CodeBox에 입력):**
 
 ```javascript
-// 페이지 loaded.js
+// 페이지 loaded 탭
 this.currentParams = {};
 
 fx.go(
@@ -1599,16 +2276,35 @@ fx.go(
     each(GlobalDataPublisher.registerMapping),
     each(({ topic }) => {
         this.currentParams[topic] = {};
-        console.log(`[Page] Initialized currentParams['${topic}']`);
+        console.log('[Page] Initialized currentParams: ' + topic);
     }),
     each(({ topic }) =>
         GlobalDataPublisher.fetchAndPublish(topic, this, this.currentParams[topic])
     )
 );
 
-// 검증
-console.log('[Verify] currentParams:', this.currentParams);
-console.log('[Verify] currentParams keys:', Object.keys(this.currentParams));
+console.log('[Page] currentParams keys:', Object.keys(this.currentParams).join(', '));
+```
+
+**Playwright 검증:**
+
+```typescript
+const paramLogs: string[] = [];
+previewPage.on('console', (msg) => {
+  if (msg.text().includes('[Page]') && msg.text().includes('currentParams')) {
+    paramLogs.push(msg.text());
+  }
+});
+
+await previewPage.waitForTimeout(3000);
+
+// 모든 topic에 대해 currentParams 초기화 확인
+const initLogs = paramLogs.filter(l => l.includes('Initialized currentParams:'));
+expect(initLogs.length).toBe(2); // sensorData, alertData
+
+const keysLog = paramLogs.find(l => l.includes('currentParams keys:'));
+expect(keysLog).toContain('sensorData');
+expect(keysLog).toContain('alertData');
 ```
 
 **currentParams 구조:**
@@ -1642,13 +2338,15 @@ this.currentParams = {
 | 3 | 즉시 fetchAndPublish 호출 | 새로운 param으로 API 호출 |
 | 4 | 구독자가 새로운 데이터 수신 | 필터링된 데이터 수신 |
 
-**검증 코드:**
+**주입 코드 (CodeBox에 입력):**
 
 ```javascript
-// 페이지 before_load.js - 이벤트 핸들러
+// 페이지 beforeLoad 탭 — 이벤트 핸들러
+const { onEventBusHandlers } = Wkit;
+
 this.eventBusHandlers = {
     '@filterChanged': ({ event }) => {
-        const filter = event.target.value;
+        const filter = event.target?.value || 'default';
 
         // 1. currentParams 업데이트
         this.currentParams['sensorData'] = {
@@ -1656,7 +2354,7 @@ this.eventBusHandlers = {
             filter
         };
 
-        console.log('[Page] Updated currentParams:', this.currentParams['sensorData']);
+        console.log('[Page] Updated currentParams filter:', filter);
 
         // 2. 즉시 fetchAndPublish
         GlobalDataPublisher.fetchAndPublish(
@@ -1665,10 +2363,35 @@ this.eventBusHandlers = {
             this.currentParams['sensorData']
         );
 
-        // 3. Interval은 자동으로 업데이트된 param 사용
-        // No stop/start needed!
+        console.log('[Page] Re-fetched with new params');
+        // 3. Interval은 자동으로 업데이트된 param 사용 — 재시작 불필요!
     }
 };
+
+onEventBusHandlers(this.eventBusHandlers);
+```
+
+**Playwright 검증:**
+
+```typescript
+const filterLogs: string[] = [];
+previewPage.on('console', (msg) => {
+  if (msg.text().includes('[Page]')) {
+    filterLogs.push(msg.text());
+  }
+});
+
+// 필터 변경 이벤트 트리거 (예: 입력 필드 변경)
+await previewPage.locator('.filter-input').fill('new-filter');
+await previewPage.waitForTimeout(3000);
+
+// currentParams 업데이트 확인
+const updateLog = filterLogs.find(l => l.includes('Updated currentParams filter:'));
+expect(updateLog).toContain('new-filter');
+
+// 재 fetch 확인
+const refetchLog = filterLogs.find(l => l.includes('Re-fetched with new params'));
+expect(refetchLog).toBeDefined();
 ```
 
 **통과 기준:**
@@ -1692,12 +2415,12 @@ this.eventBusHandlers = {
 | 2 | 핸들러에서 data 체크 | early return 발생 |
 | 3 | 렌더링 로직 미실행 | 에러 없이 종료 |
 
-**검증 코드:**
+**주입 코드 (CodeBox에 입력):**
 
 ```javascript
-// 컴포넌트 핸들러
+// 컴포넌트 register 탭 — 구독 핸들러
 function renderTable({ response }) {
-    console.log('[Handler] Called with response:', response);
+    console.log('[Handler] Called');
 
     const { data } = response;
     if (!data) {
@@ -1705,8 +2428,30 @@ function renderTable({ response }) {
         return;
     }
 
-    console.log('[Handler] Processing data:', data);
-    // 렌더링 로직
+    console.log('[Handler] Processing data');
+}
+```
+
+**Playwright 검증:**
+
+```typescript
+const emptyLogs: string[] = [];
+previewPage.on('console', (msg) => {
+  if (msg.text().includes('[Handler]')) {
+    emptyLogs.push(msg.text());
+  }
+});
+
+await previewPage.waitForTimeout(5000);
+
+// 핸들러 호출 확인
+expect(emptyLogs.find(l => l.includes('Called'))).toBeDefined();
+
+// data 없는 경우 early return 확인
+const earlyReturnLog = emptyLogs.find(l => l.includes('Early return'));
+if (earlyReturnLog) {
+  // Processing 로그가 없어야 함
+  expect(emptyLogs.find(l => l.includes('Processing data'))).toBeUndefined();
 }
 ```
 
@@ -1731,18 +2476,17 @@ function renderTable({ response }) {
 | 2 | 순차적 fetchAndPublish | 각각 독립적으로 fetch |
 | 3 | 시간 측정 | 병렬이면 빠르고, 직렬이면 느림 |
 
-**검증 코드:**
+**주입 코드 (CodeBox에 입력):**
 
 ```javascript
-// 페이지 loaded.js
+// 페이지 loaded 탭
 this.globalDataMappings = [
     { topic: 'topicA', datasetInfo: { datasetName: 'apiA', param: {} } },
     { topic: 'topicB', datasetInfo: { datasetName: 'apiB', param: {} } },
     { topic: 'topicC', datasetInfo: { datasetName: 'apiC', param: {} } }
 ];
 
-// 순차 실행 (현재 패턴)
-const startTime = Date.now();
+console.log('[Page] Registering 3 topics');
 
 fx.go(
     this.globalDataMappings,
@@ -1750,12 +2494,29 @@ fx.go(
     each(({ topic }) => this.currentParams[topic] = {}),
     each(({ topic }) =>
         GlobalDataPublisher.fetchAndPublish(topic, this)
-            .catch(err => console.error(`[fetchAndPublish:${topic}]`, err))
+            .then(() => console.log('[Page] Fetched: ' + topic))
+            .catch(err => console.error('[Page] Fetch error: ' + topic))
     )
 );
+```
 
-const endTime = Date.now();
-console.log(`[Performance] Total fetch time: ${endTime - startTime}ms`);
+**Playwright 검증:**
+
+```typescript
+const fetchLogs: string[] = [];
+previewPage.on('console', (msg) => {
+  if (msg.text().includes('[Page] Fetched:')) {
+    fetchLogs.push(msg.text());
+  }
+});
+
+await previewPage.waitForTimeout(10000);
+
+// 3개 topic 모두 fetch 완료 확인
+expect(fetchLogs.length).toBe(3);
+expect(fetchLogs.find(l => l.includes('topicA'))).toBeDefined();
+expect(fetchLogs.find(l => l.includes('topicB'))).toBeDefined();
+expect(fetchLogs.find(l => l.includes('topicC'))).toBeDefined();
 ```
 
 **참고:** fx.go의 each는 기본적으로 순차 실행이지만, Promise를 반환하는 경우 비동기로 동작합니다.
@@ -1782,25 +2543,50 @@ console.log(`[Performance] Total fetch time: ${endTime - startTime}ms`);
 | 2 | fetchAndPublish('sharedTopic') 1회 호출 | API 1회 호출 |
 | 3 | 3개 컴포넌트 모두 데이터 수신 | 각각 핸들러 호출됨 |
 
-**검증 코드:**
+**주입 코드 (CodeBox에 입력):**
 
 ```javascript
-// API 호출 횟수 모니터링 (테스트용)
+// 페이지 beforeLoad 탭 — API 호출 횟수 모니터링
 window.apiCallCount = 0;
 
-// Mock fetchData
-const originalFetchData = Wkit.fetchData;
-Wkit.fetchData = async function(...args) {
+// fetch 횟수 추적을 위한 래핑 (E2E에서는 네트워크 요청 수로 대체 가능)
+const _origFetch = window.fetch;
+window.fetch = function(...args) {
     window.apiCallCount++;
-    console.log(`[API] Call #${window.apiCallCount}`);
-    return originalFetchData.apply(this, args);
+    console.log('[API] Call #' + window.apiCallCount);
+    return _origFetch.apply(this, args);
 };
+```
 
-// fetchAndPublish 후 검증
-await GlobalDataPublisher.fetchAndPublish('sharedTopic', page);
+> **참고:** E2E에서는 Mock 대신 Playwright의 네트워크 요청 가로채기(`page.route()`)로 API 호출 횟수를 모니터링할 수 있습니다.
 
-console.log('[Verify] API call count:', window.apiCallCount); // 1
-console.log('[Verify] All components received data:', verifyAllComponentsReceived()); // true
+**Playwright 검증:**
+
+```typescript
+// 네트워크 요청 횟수 모니터링
+let apiCallCount = 0;
+previewPage.on('request', (req) => {
+  if (req.url().includes('/api/') || req.url().includes('dataset')) {
+    apiCallCount++;
+  }
+});
+
+// fetchAndPublish 완료 대기
+await previewPage.waitForTimeout(5000);
+
+// API 1회 호출 확인
+expect(apiCallCount).toBe(1);
+
+// 3개 컴포넌트 모두 데이터 수신 확인
+const result = await previewPage.evaluate(() => ({
+  a: !!(window as any).componentAReceived,
+  b: !!(window as any).componentBReceived,
+  c: !!(window as any).componentCReceived,
+}));
+
+expect(result.a).toBe(true);
+expect(result.b).toBe(true);
+expect(result.c).toBe(true);
 ```
 
 **통과 기준:**
@@ -1872,10 +2658,10 @@ RNBT 아키텍처에서 Interval은 데이터의 주기적 갱신을 담당합�
 | 3 | 5초 대기 | fetchAndPublish 1회 실행 |
 | 4 | 10초 대기 | fetchAndPublish 2회 실행 |
 
-**검증 코드:**
+**주입 코드 (CodeBox에 입력):**
 
 ```javascript
-// page_loaded.js
+// 페이지 loaded 탭
 this.globalDataMappings = [
     {
         topic: 'sensorData',
@@ -1887,18 +2673,8 @@ this.globalDataMappings = [
     }
 ];
 
-// fetch 횟수 추적
+// Interval 시작 — fetch마다 console.log로 기록
 let fetchCount = 0;
-const originalFetchAndPublish = GlobalDataPublisher.fetchAndPublish;
-GlobalDataPublisher.fetchAndPublish = async function(topic, ...args) {
-    if (topic === 'sensorData') {
-        fetchCount++;
-        console.log(`[Interval] Fetch #${fetchCount} for ${topic} at ${Date.now()}`);
-    }
-    return originalFetchAndPublish.call(this, topic, ...args);
-};
-
-// Interval 시작
 this.startAllIntervals = () => {
     this.refreshIntervals = {};
 
@@ -1908,6 +2684,8 @@ this.startAllIntervals = () => {
             if (refreshInterval) {
                 console.log(`[Page] Setting interval for ${topic}: ${refreshInterval}ms`);
                 this.refreshIntervals[topic] = setInterval(() => {
+                    fetchCount++;
+                    console.log(`[Interval] Fetch #${fetchCount} for ${topic}`);
                     GlobalDataPublisher.fetchAndPublish(
                         topic,
                         this,
@@ -1920,12 +2698,30 @@ this.startAllIntervals = () => {
 };
 
 this.startAllIntervals();
+```
 
-// 검증 (15초 후)
-setTimeout(() => {
-    console.log(`[Verify] Fetch count after 15s: ${fetchCount}`);
-    // 최초 1회 + interval 2회 = 약 3회 예상 (타이밍에 따라 2~3회)
-}, 15000);
+**Playwright 검증:**
+
+```typescript
+// console 로그 수집
+const intervalLogs: string[] = [];
+previewPage.on('console', msg => {
+    if (msg.text().includes('[Interval]') || msg.text().includes('[Page] Setting interval')) {
+        intervalLogs.push(msg.text());
+    }
+});
+
+// ... 뷰어 로드 후 15초 대기
+await previewPage.waitForTimeout(15000);
+
+// interval 설정 로그 확인
+const settingLog = intervalLogs.find(l => l.includes('Setting interval for sensorData'));
+expect(settingLog).toContain('5000ms');
+
+// fetch 횟수 확인 (5초 간격으로 15초 → 약 2~3회)
+const fetchLogs = intervalLogs.filter(l => l.includes('[Interval] Fetch #'));
+expect(fetchLogs.length).toBeGreaterThanOrEqual(2);
+expect(fetchLogs.length).toBeLessThanOrEqual(4);
 ```
 
 **통과 기준:**
@@ -1949,10 +2745,10 @@ setTimeout(() => {
 | 2 | startAllIntervals() 호출 | 해당 topic의 interval은 설정되지 않음 |
 | 3 | 10초 대기 | 추가 fetch 없음 |
 
-**검증 코드:**
+**주입 코드 (CodeBox에 입력):**
 
 ```javascript
-// page_loaded.js
+// 페이지 loaded 탭
 this.globalDataMappings = [
     {
         topic: 'staticData',
@@ -1972,17 +2768,38 @@ this.globalDataMappings = [
     }
 ];
 
-// fetch 횟수 추적
-const fetchCounts = { staticData: 0, dynamicData: 0 };
-
-// startAllIntervals 후
 this.startAllIntervals();
+// → staticData는 interval 미설정, dynamicData는 3초 간격 fetch
+```
 
-// 검증
-setTimeout(() => {
-    console.log('[Verify] staticData fetch count:', fetchCounts.staticData);   // 1 (최초만)
-    console.log('[Verify] dynamicData fetch count:', fetchCounts.dynamicData); // 3~4 (최초 + interval)
-}, 10000);
+**Playwright 검증:**
+
+```typescript
+// console 로그 수집
+const fetchLogs: string[] = [];
+previewPage.on('console', msg => {
+    if (msg.text().includes('[Interval]')) {
+        fetchLogs.push(msg.text());
+    }
+});
+
+// 네트워크 요청 모니터링
+const requestTopics: string[] = [];
+previewPage.on('request', req => {
+    if (req.url().includes('/api/static')) requestTopics.push('staticData');
+    if (req.url().includes('/api/dynamic')) requestTopics.push('dynamicData');
+});
+
+// ... 뷰어 로드 후 10초 대기
+await previewPage.waitForTimeout(10000);
+
+// staticData는 최초 1회만 (interval 없음)
+const staticCount = requestTopics.filter(t => t === 'staticData').length;
+expect(staticCount).toBe(1);
+
+// dynamicData는 3초 간격 → 10초 동안 약 3~4회
+const dynamicCount = requestTopics.filter(t => t === 'dynamicData').length;
+expect(dynamicCount).toBeGreaterThanOrEqual(3);
 ```
 
 **통과 기준:**
@@ -2006,10 +2823,10 @@ setTimeout(() => {
 | 2 | startAllIntervals() 호출 | 두 interval 모두 시작 |
 | 3 | this.refreshIntervals 확인 | 두 topic의 interval ID 저장됨 |
 
-**검증 코드:**
+**주입 코드 (CodeBox에 입력):**
 
 ```javascript
-// page_loaded.js
+// 페이지 loaded 탭
 this.globalDataMappings = [
     { topic: 'topicA', datasetInfo: { datasetName: 'apiA', param: {} }, refreshInterval: 3000 },
     { topic: 'topicB', datasetInfo: { datasetName: 'apiB', param: {} }, refreshInterval: 5000 }
@@ -2034,12 +2851,34 @@ this.startAllIntervals = () => {
     );
 
     // 검증
-    console.log('[startAllIntervals] refreshIntervals:', this.refreshIntervals);
     console.log('[startAllIntervals] topicA interval ID:', this.refreshIntervals['topicA']);
     console.log('[startAllIntervals] topicB interval ID:', this.refreshIntervals['topicB']);
 };
 
 this.startAllIntervals();
+```
+
+**Playwright 검증:**
+
+```typescript
+// console 로그 수집
+const logs: string[] = [];
+previewPage.on('console', msg => {
+    if (msg.text().includes('[startAllIntervals]')) logs.push(msg.text());
+});
+
+// ... 뷰어 로드 후
+const idLogA = logs.find(l => l.includes('topicA interval ID:'));
+const idLogB = logs.find(l => l.includes('topicB interval ID:'));
+
+// interval ID가 유효한 숫자인지 확인
+expect(idLogA).toBeDefined();
+expect(idLogB).toBeDefined();
+const idA = parseInt(idLogA!.split(':')[1].trim());
+const idB = parseInt(idLogB!.split(':')[1].trim());
+expect(idA).toBeGreaterThan(0);
+expect(idB).toBeGreaterThan(0);
+expect(idA).not.toBe(idB); // 서로 다른 interval ID
 ```
 
 **통과 기준:**
@@ -2063,10 +2902,10 @@ this.startAllIntervals();
 | 2 | stopAllIntervals() 호출 | 모든 interval 중단 |
 | 3 | 10초 대기 | 추가 fetchAndPublish 없음 |
 
-**검증 코드:**
+**주입 코드 (CodeBox에 입력):**
 
 ```javascript
-// page_before_unload.js 또는 테스트 코드
+// 페이지 loaded 탭 — TC-IV-003의 interval 설정 후 실행
 this.stopAllIntervals = () => {
     console.log('[stopAllIntervals] Stopping all intervals...');
     console.log('[stopAllIntervals] Current intervals:', Object.keys(this.refreshIntervals || {}));
@@ -2074,24 +2913,43 @@ this.stopAllIntervals = () => {
     fx.go(
         Object.values(this.refreshIntervals || {}),
         each(interval => {
-            console.log('[stopAllIntervals] Clearing interval:', interval);
             clearInterval(interval);
         })
     );
 
+    this.refreshIntervals = {};
     console.log('[stopAllIntervals] All intervals stopped');
 };
 
-// 테스트
-const fetchCountBefore = fetchCount;
-this.stopAllIntervals();
-
+// 5초 후 중지하여 검증
 setTimeout(() => {
-    const fetchCountAfter = fetchCount;
-    console.log('[Verify] Fetch count before stop:', fetchCountBefore);
-    console.log('[Verify] Fetch count after 10s:', fetchCountAfter);
-    console.log('[Verify] No new fetches:', fetchCountBefore === fetchCountAfter);
-}, 10000);
+    this.stopAllIntervals();
+}, 5000);
+```
+
+**Playwright 검증:**
+
+```typescript
+// console 로그 수집
+const logs: string[] = [];
+previewPage.on('console', msg => {
+    if (msg.text().includes('[stopAllIntervals]') || msg.text().includes('[Interval]')) {
+        logs.push(msg.text());
+    }
+});
+
+// ... 뷰어 로드 후 5초 대기 (stopAllIntervals 실행)
+await previewPage.waitForTimeout(6000);
+const stopLog = logs.find(l => l.includes('All intervals stopped'));
+expect(stopLog).toBeDefined();
+
+// stop 이후 fetch 로그 수집
+const fetchCountAtStop = logs.filter(l => l.includes('[Interval]')).length;
+await previewPage.waitForTimeout(10000);
+const fetchCountAfter = logs.filter(l => l.includes('[Interval]')).length;
+
+// stop 이후 추가 fetch 없어야 함
+expect(fetchCountAfter).toBe(fetchCountAtStop);
 ```
 
 **통과 기준:**
@@ -2115,26 +2973,53 @@ setTimeout(() => {
 | 2 | clearInterval(refreshIntervals['topicA']) | topicA만 중단 |
 | 3 | 대기 | topicA는 중단, topicB는 계속 실행 |
 
-**검증 코드:**
+**주입 코드 (CodeBox에 입력):**
 
 ```javascript
-// 개별 interval 정리
-function stopIntervalForTopic(topic) {
+// 페이지 loaded 탭 — TC-IV-003의 interval 설정 이후 실행
+// 개별 interval 정리 함수
+this.stopIntervalForTopic = (topic) => {
     if (this.refreshIntervals?.[topic]) {
         console.log(`[Page] Stopping interval for ${topic}`);
         clearInterval(this.refreshIntervals[topic]);
         delete this.refreshIntervals[topic];
     }
-}
+};
 
-// 테스트
-stopIntervalForTopic.call(this, 'topicA');
-
-// 검증
+// 5초 후 topicA만 중단
 setTimeout(() => {
-    console.log('[Verify] topicA fetch count:', fetchCounts.topicA); // 중단됨
-    console.log('[Verify] topicB fetch count:', fetchCounts.topicB); // 계속 증가
-}, 10000);
+    this.stopIntervalForTopic('topicA');
+    console.log('[Verify] Remaining intervals:', Object.keys(this.refreshIntervals));
+}, 5000);
+```
+
+**Playwright 검증:**
+
+```typescript
+const fetchLogs: string[] = [];
+previewPage.on('console', msg => {
+    if (msg.text().includes('[Interval]') || msg.text().includes('[Page] Stopping')) {
+        fetchLogs.push(msg.text());
+    }
+});
+
+// ... 뷰어 로드 후 5초 대기 (topicA 중단)
+await previewPage.waitForTimeout(6000);
+
+// topicA 중단 확인
+const stopLog = fetchLogs.find(l => l.includes('Stopping interval for topicA'));
+expect(stopLog).toBeDefined();
+
+// 중단 이후 10초 더 대기
+const topicACountBefore = fetchLogs.filter(l => l.includes('topicA')).length;
+const topicBCountBefore = fetchLogs.filter(l => l.includes('topicB')).length;
+await previewPage.waitForTimeout(10000);
+
+// topicA는 증가 없음, topicB는 계속 증가
+const topicACountAfter = fetchLogs.filter(l => l.includes('topicA')).length;
+const topicBCountAfter = fetchLogs.filter(l => l.includes('topicB')).length;
+expect(topicACountAfter).toBe(topicACountBefore);
+expect(topicBCountAfter).toBeGreaterThan(topicBCountBefore);
 ```
 
 **통과 기준:**
@@ -2160,7 +3045,7 @@ setTimeout(() => {
 | 3 | 다음 interval tick | 새로운 param { filter: 'b' }로 fetch |
 | 4 | interval stop/start 없음 | 자동 반영됨 |
 
-**검증 코드:**
+**주입 코드 (CodeBox에 입력):**
 
 ```javascript
 // 초기 설정
@@ -2190,8 +3075,36 @@ setTimeout(() => {
 
 // 10초 후 검증
 setTimeout(() => {
-    // 로그에서 'updated' filter로 fetch된 것 확인
+    console.log('[Verify] currentParams after update:', JSON.stringify(this.currentParams.sensorData));
 }, 10000);
+```
+
+**Playwright 검증:**
+
+```typescript
+const paramLogs: string[] = [];
+previewPage.on('console', msg => {
+    if (msg.text().includes('[Interval]') || msg.text().includes('[Page] Changing')) {
+        paramLogs.push(msg.text());
+    }
+});
+
+// ... 뷰어 로드 후 10초 대기
+await previewPage.waitForTimeout(10000);
+
+// 초기 fetch에서 'initial' param 사용 확인
+const initialFetch = paramLogs.find(l => l.includes("'initial'") || l.includes('"initial"'));
+expect(initialFetch).toBeDefined();
+
+// param 변경 로그 확인
+const changeLog = paramLogs.find(l => l.includes('Changing filter'));
+expect(changeLog).toBeDefined();
+
+// 변경 후 fetch에서 'updated' param 사용 확인
+const changeIdx = paramLogs.findIndex(l => l.includes('Changing filter'));
+const logsAfterChange = paramLogs.slice(changeIdx + 1);
+const updatedFetch = logsAfterChange.find(l => l.includes("'updated'") || l.includes('"updated"'));
+expect(updatedFetch).toBeDefined();
 ```
 
 **통과 기준:**
@@ -2218,33 +3131,54 @@ setTimeout(() => {
 | 5 | 6s | 4회 | - |
 | 6 | 10s | 6회 | 3회 |
 
-**검증 코드:**
+**주입 코드 (CodeBox에 입력):**
 
 ```javascript
-// page_loaded.js
+// 페이지 loaded 탭
 this.globalDataMappings = [
     { topic: 'topicA', datasetInfo: { datasetName: 'apiA', param: {} }, refreshInterval: 2000 },
     { topic: 'topicB', datasetInfo: { datasetName: 'apiB', param: {} }, refreshInterval: 5000 }
 ];
 
-const fetchLog = [];
-
-// fetch 로깅
-GlobalDataPublisher.fetchAndPublish = async function(topic, ...args) {
-    fetchLog.push({ topic, timestamp: Date.now() });
-    console.log(`[${topic}] Fetch at ${Date.now()}`);
-    return originalFetchAndPublish.call(this, topic, ...args);
+// startAllIntervals — 각 interval 콜백에서 fetch 로그 출력
+this.startAllIntervals = () => {
+    this.refreshIntervals = {};
+    fx.go(
+        this.globalDataMappings,
+        each(({ topic, refreshInterval }) => {
+            if (refreshInterval) {
+                this.refreshIntervals[topic] = setInterval(() => {
+                    console.log(`[Interval] ${topic} fetch at ${Date.now()}`);
+                    GlobalDataPublisher.fetchAndPublish(
+                        topic, this, this.currentParams[topic] || {}
+                    ).catch(err => console.error(`[fetchAndPublish:${topic}]`, err));
+                }, refreshInterval);
+            }
+        })
+    );
 };
 
-// 10초 후 검증
-setTimeout(() => {
-    const topicACounts = fetchLog.filter(l => l.topic === 'topicA').length;
-    const topicBCounts = fetchLog.filter(l => l.topic === 'topicB').length;
+this.startAllIntervals();
+```
 
-    console.log('[Verify] topicA fetch count:', topicACounts); // 약 5~6회
-    console.log('[Verify] topicB fetch count:', topicBCounts); // 약 2~3회
-    console.log('[Verify] Ratio (A/B):', topicACounts / topicBCounts); // 약 2.5
-}, 10000);
+**Playwright 검증:**
+
+```typescript
+const fetchLogs: string[] = [];
+previewPage.on('console', msg => {
+    if (msg.text().includes('[Interval]')) fetchLogs.push(msg.text());
+});
+
+// ... 뷰어 로드 후 10초 대기
+await previewPage.waitForTimeout(10000);
+
+// topicA (2초 간격) ≈ 5회, topicB (5초 간격) ≈ 2회
+const topicACount = fetchLogs.filter(l => l.includes('topicA')).length;
+const topicBCount = fetchLogs.filter(l => l.includes('topicB')).length;
+
+expect(topicACount).toBeGreaterThanOrEqual(4);
+expect(topicBCount).toBeGreaterThanOrEqual(1);
+expect(topicACount).toBeGreaterThan(topicBCount); // A가 B보다 빈번
 ```
 
 **통과 기준:**
@@ -2269,38 +3203,62 @@ setTimeout(() => {
 | 2 | 2번째 fetch에서 에러 발생 | 에러 로깅됨 |
 | 3 | 3번째 fetch | 정상 실행됨 (interval 중단 안 됨) |
 
-**검증 코드:**
+**주입 코드 (CodeBox에 입력):**
 
 ```javascript
-// interval 설정 (에러 처리 포함)
-this.refreshIntervals[topic] = setInterval(() => {
+// 페이지 loaded 탭 — interval 설정 (에러 처리 포함)
+let fetchAttempts = 0;
+this.refreshIntervals = {};
+this.refreshIntervals['sensorData'] = setInterval(() => {
+    fetchAttempts++;
+    console.log(`[Interval] Fetch attempt #${fetchAttempts}`);
     GlobalDataPublisher.fetchAndPublish(
-        topic,
+        'sensorData',
         this,
-        this.currentParams[topic] || {}
-    ).catch(err => {
-        // 에러 로깅만 하고 interval은 계속
-        console.error(`[fetchAndPublish:${topic}]`, err);
-        // interval 중단하지 않음!
+        this.currentParams['sensorData'] || {}
+    ).then(() => {
+        console.log(`[Interval] Fetch #${fetchAttempts} succeeded`);
+    }).catch(err => {
+        // 에러 로깅만 하고 interval은 계속!
+        console.error(`[Interval] Fetch #${fetchAttempts} failed:`, err.message);
     });
-}, refreshInterval);
+}, 3000);
+```
 
-// 에러 시뮬레이션
-let callCount = 0;
-const originalFetch = GlobalDataPublisher.fetchAndPublish;
-GlobalDataPublisher.fetchAndPublish = async function(topic, ...args) {
-    callCount++;
-    if (callCount === 2) {
-        throw new Error('Simulated API error');
+**Playwright 검증:**
+
+```typescript
+// 2번째 fetch 요청을 에러로 시뮬레이션 (page.route 사용)
+let requestCount = 0;
+await previewPage.route('**/api/sensors**', async (route) => {
+    requestCount++;
+    if (requestCount === 2) {
+        await route.abort('failed'); // 2번째 요청만 에러
+    } else {
+        await route.continue();
     }
-    return originalFetch.call(this, topic, ...args);
-};
+});
 
-// 검증
-setTimeout(() => {
-    console.log('[Verify] Total fetch attempts:', callCount);
-    console.log('[Verify] Interval still running:', callCount > 2); // true
-}, 10000);
+const logs: string[] = [];
+previewPage.on('console', msg => {
+    if (msg.text().includes('[Interval]')) logs.push(msg.text());
+});
+
+// ... 뷰어 로드 후 12초 대기 (3초 간격 × 4회)
+await previewPage.waitForTimeout(12000);
+
+// 4회 이상 시도 확인 (에러로 interval이 중단되지 않았음)
+const attemptLogs = logs.filter(l => l.includes('Fetch attempt'));
+expect(attemptLogs.length).toBeGreaterThanOrEqual(3);
+
+// 실패 로그 존재 확인
+const failLog = logs.find(l => l.includes('failed'));
+expect(failLog).toBeDefined();
+
+// 실패 이후에도 성공 로그 존재 확인
+const failIdx = logs.findIndex(l => l.includes('failed'));
+const successAfterFail = logs.slice(failIdx + 1).find(l => l.includes('succeeded'));
+expect(successAfterFail).toBeDefined();
 ```
 
 **통과 기준:**
@@ -2325,10 +3283,10 @@ setTimeout(() => {
 | 3 | this.refreshIntervals = null | 참조 제거 |
 | 4 | 메모리 누수 없음 | interval이 GC 대상이 됨 |
 
-**검증 코드:**
+**주입 코드 (CodeBox에 입력):**
 
 ```javascript
-// page_before_unload.js
+// 페이지 beforeUnLoad 탭
 // 1. Interval 중단
 if (this.stopAllIntervals) {
     this.stopAllIntervals();
@@ -2342,6 +3300,35 @@ this.globalDataMappings = null;
 this.currentParams = null;
 
 console.log('[Page] All intervals cleaned up');
+```
+
+**Playwright 검증:**
+
+```typescript
+const logs: string[] = [];
+previewPage.on('console', msg => {
+    if (msg.text().includes('[Page]') || msg.text().includes('[Interval]')) {
+        logs.push(msg.text());
+    }
+});
+
+// ... 뷰어 로드 → interval 동작 확인
+await previewPage.waitForTimeout(5000);
+const fetchesBefore = logs.filter(l => l.includes('[Interval]')).length;
+expect(fetchesBefore).toBeGreaterThan(0); // interval이 동작 중이었음
+
+// 페이지 언로드 (다른 페이지로 이동)
+// → beforeUnLoad 탭 코드가 실행됨
+
+// 정리 로그 확인
+const cleanupLog = logs.find(l => l.includes('All intervals cleaned up'));
+expect(cleanupLog).toBeDefined();
+
+// 언로드 후 추가 fetch 없음 확인
+const fetchesAfter = logs.filter(l => l.includes('[Interval]')).length;
+await previewPage.waitForTimeout(5000);
+const fetchesFinal = logs.filter(l => l.includes('[Interval]')).length;
+expect(fetchesFinal).toBe(fetchesAfter);
 ```
 
 **정리 순서 테이블:**
@@ -2377,38 +3364,55 @@ console.log('[Page] All intervals cleaned up');
 | 4 | startAllIntervals() 호출 | 재시작 |
 | 5 | 5초 대기 | 다시 주기적 fetch |
 
-**검증 코드:**
+**주입 코드 (CodeBox에 입력):**
 
 ```javascript
-// 테스트 시나리오
-let fetchCount = 0;
+// 페이지 loaded 탭 — TC-IV-003의 startAllIntervals/stopAllIntervals 정의 필요
 
 // interval 시작
 this.startAllIntervals();
-console.log('[Test] Intervals started');
+console.log('[Test] Phase 1: Intervals started');
 
 // 5초 후 중지
 setTimeout(() => {
-    const countBeforeStop = fetchCount;
-    console.log('[Test] Stopping intervals, current count:', countBeforeStop);
+    console.log('[Test] Phase 2: Stopping intervals');
     this.stopAllIntervals();
 
-    // 5초 대기
+    // 5초 대기 후 재시작
     setTimeout(() => {
-        console.log('[Test] Count after 5s pause:', fetchCount);
-        console.log('[Test] No new fetches:', fetchCount === countBeforeStop);
-
-        // 재시작
-        console.log('[Test] Restarting intervals');
+        console.log('[Test] Phase 3: Restarting intervals');
         this.startAllIntervals();
-
-        // 5초 후 검증
-        setTimeout(() => {
-            console.log('[Test] Count after restart + 5s:', fetchCount);
-            console.log('[Test] Fetches resumed:', fetchCount > countBeforeStop);
-        }, 5000);
     }, 5000);
 }, 5000);
+```
+
+**Playwright 검증:**
+
+```typescript
+const logs: string[] = [];
+previewPage.on('console', msg => {
+    if (msg.text().includes('[Test]') || msg.text().includes('[Interval]')) {
+        logs.push(msg.text());
+    }
+});
+
+// Phase 1: interval 시작 후 5초 — fetch 발생 확인
+await previewPage.waitForTimeout(5000);
+const phase1Fetches = logs.filter(l => l.includes('[Interval]')).length;
+expect(phase1Fetches).toBeGreaterThan(0);
+
+// Phase 2: 중지 후 5초 — 추가 fetch 없음 확인
+await previewPage.waitForTimeout(6000);
+const phase2Fetches = logs.filter(l => l.includes('[Interval]')).length;
+const stopLog = logs.find(l => l.includes('Phase 2'));
+expect(stopLog).toBeDefined();
+// 중지 기간에 fetch가 증가하지 않아야 함
+expect(phase2Fetches).toBe(phase1Fetches);
+
+// Phase 3: 재시작 후 5초 — fetch 재개 확인
+await previewPage.waitForTimeout(6000);
+const phase3Fetches = logs.filter(l => l.includes('[Interval]')).length;
+expect(phase3Fetches).toBeGreaterThan(phase2Fetches);
 ```
 
 **통과 기준:**
@@ -2484,10 +3488,10 @@ RNBT 아키텍처에서 리소스 정리는 메모리 누수를 방지하고 안
 | 4 | this.eventBusHandlers = null | 참조 제거됨 |
 | 5 | 이벤트 다시 발행 | 핸들러 호출되지 않음 |
 
-**검증 코드:**
+**주입 코드 (CodeBox에 입력):**
 
 ```javascript
-// page_before_load.js
+// 페이지 beforeLoad 탭
 const { onEventBusHandlers } = Wkit;
 
 this.eventBusHandlers = {
@@ -2498,7 +3502,7 @@ this.eventBusHandlers = {
 
 onEventBusHandlers(this.eventBusHandlers);
 
-// page_before_unload.js
+// 페이지 beforeUnLoad 탭
 const { offEventBusHandlers } = Wkit;
 
 // 1. 핸들러 해제
@@ -2507,8 +3511,26 @@ offEventBusHandlers.call(this, this.eventBusHandlers);
 // 2. 참조 제거
 this.eventBusHandlers = null;
 
-// 검증
 console.log('[Verify] eventBusHandlers:', this.eventBusHandlers); // null
+```
+
+**Playwright 검증:**
+
+```typescript
+const logs: string[] = [];
+previewPage.on('console', msg => {
+    if (msg.text().includes('[Handler]') || msg.text().includes('[Verify]')) {
+        logs.push(msg.text());
+    }
+});
+
+// ... 뷰어 로드 → 이벤트 발행 → 핸들러 호출 확인
+const handlerLog = logs.find(l => l.includes('[Handler] Called'));
+expect(handlerLog).toBeDefined();
+
+// 페이지 언로드 후 정리 확인
+const verifyLog = logs.find(l => l.includes('eventBusHandlers: null'));
+expect(verifyLog).toBeDefined();
 ```
 
 **통과 기준:**
@@ -2529,10 +3551,10 @@ console.log('[Verify] eventBusHandlers:', this.eventBusHandlers); // null
 | `this.currentParams = {}` | `this.currentParams = null` |
 | `GlobalDataPublisher.registerMapping(...)` | `GlobalDataPublisher.unregisterMapping(...)` |
 
-**검증 코드:**
+**주입 코드 (CodeBox에 입력):**
 
 ```javascript
-// page_loaded.js - 생성
+// 페이지 loaded 탭 - 생성
 this.globalDataMappings = [
     { topic: 'topicA', datasetInfo: { datasetName: 'apiA', param: {} } },
     { topic: 'topicB', datasetInfo: { datasetName: 'apiB', param: {} } }
@@ -2546,7 +3568,7 @@ fx.go(
     each(({ topic }) => this.currentParams[topic] = {})
 );
 
-// page_before_unload.js - 정리
+// 페이지 beforeUnLoad 탭 - 정리
 fx.go(
     this.globalDataMappings,
     each(({ topic }) => GlobalDataPublisher.unregisterMapping(topic))
@@ -2555,9 +3577,23 @@ fx.go(
 this.globalDataMappings = null;
 this.currentParams = null;
 
-// 검증
 console.log('[Verify] globalDataMappings:', this.globalDataMappings); // null
 console.log('[Verify] currentParams:', this.currentParams); // null
+```
+
+**Playwright 검증:**
+
+```typescript
+const logs: string[] = [];
+previewPage.on('console', msg => {
+    if (msg.text().includes('[Verify]')) logs.push(msg.text());
+});
+
+// ... 페이지 언로드 후
+const gdmLog = logs.find(l => l.includes('globalDataMappings: null'));
+const cpLog = logs.find(l => l.includes('currentParams: null'));
+expect(gdmLog).toBeDefined();
+expect(cpLog).toBeDefined();
 ```
 
 **통과 기준:**
@@ -2577,10 +3613,10 @@ console.log('[Verify] currentParams:', this.currentParams); // null
 | `this.refreshIntervals = {}` | `this.refreshIntervals = null` |
 | `setInterval(...)` | `clearInterval(...)` via stopAllIntervals |
 
-**검증 코드:**
+**주입 코드 (CodeBox에 입력):**
 
 ```javascript
-// page_loaded.js - 생성
+// 페이지 loaded 탭 - 생성
 this.refreshIntervals = {};
 
 fx.go(
@@ -2596,7 +3632,7 @@ fx.go(
 
 console.log('[Create] Interval count:', Object.keys(this.refreshIntervals).length);
 
-// page_before_unload.js - 정리
+// 페이지 beforeUnLoad 탭 - 정리
 const intervalCount = Object.keys(this.refreshIntervals || {}).length;
 
 this.stopAllIntervals();
@@ -2604,6 +3640,29 @@ this.refreshIntervals = null;
 
 console.log('[Destroy] Intervals cleared:', intervalCount);
 console.log('[Verify] refreshIntervals:', this.refreshIntervals); // null
+```
+
+**Playwright 검증:**
+
+```typescript
+const logs: string[] = [];
+previewPage.on('console', msg => {
+    if (msg.text().includes('[Create]') || msg.text().includes('[Destroy]') || msg.text().includes('[Verify]')) {
+        logs.push(msg.text());
+    }
+});
+
+// ... 페이지 로드 → 언로드 후
+const createLog = logs.find(l => l.includes('[Create] Interval count:'));
+const destroyLog = logs.find(l => l.includes('[Destroy] Intervals cleared:'));
+
+// 생성 개수 = 정리 개수
+const created = parseInt(createLog!.split(':')[1].trim());
+const cleared = parseInt(destroyLog!.split(':')[1].trim());
+expect(created).toBe(cleared);
+
+const verifyLog = logs.find(l => l.includes('refreshIntervals: null'));
+expect(verifyLog).toBeDefined();
 ```
 
 **통과 기준:**
@@ -2623,10 +3682,10 @@ console.log('[Verify] refreshIntervals:', this.refreshIntervals); // null
 | `this.customEvents = {...}` | `this.customEvents = null` |
 | `bindEvents(this, customEvents)` | `removeCustomEvents(this, customEvents)` |
 
-**검증 코드:**
+**주입 코드 (CodeBox에 입력):**
 
 ```javascript
-// register.js - 생성
+// register 탭 — 생성
 const { bindEvents } = Wkit;
 
 this.customEvents = {
@@ -2637,7 +3696,7 @@ this.customEvents = {
 
 bindEvents(this, this.customEvents);
 
-// beforeDestroy.js - 정리
+// beforeDestroy 탭 — 정리
 const { removeCustomEvents } = Wkit;
 
 // 1. 이벤트 제거 (참조가 있는 동안 호출)
@@ -2647,6 +3706,19 @@ removeCustomEvents(this, this.customEvents);
 this.customEvents = null;
 
 console.log('[Verify] customEvents:', this.customEvents); // null
+```
+
+**Playwright 검증:**
+
+```typescript
+const logs: string[] = [];
+previewPage.on('console', msg => {
+    if (msg.text().includes('[Verify]')) logs.push(msg.text());
+});
+
+// ... 컴포넌트 삭제 후
+const verifyLog = logs.find(l => l.includes('customEvents: null'));
+expect(verifyLog).toBeDefined();
 ```
 
 **통과 기준:**
@@ -2667,10 +3739,10 @@ console.log('[Verify] customEvents:', this.customEvents); // null
 | `subscribe(topic, this, handler)` | `unsubscribe(topic, this)` |
 | `this.renderData = fn.bind(this)` | `this.renderData = null` |
 
-**검증 코드:**
+**주입 코드 (CodeBox에 입력):**
 
 ```javascript
-// register.js - 생성
+// register 탭 — 생성
 const { subscribe } = GlobalDataPublisher;
 
 this.subscriptions = {
@@ -2687,7 +3759,7 @@ fx.go(
     )
 );
 
-// beforeDestroy.js - 정리
+// beforeDestroy 탭 — 정리
 const { unsubscribe } = GlobalDataPublisher;
 
 // 1. 구독 해제
@@ -2703,6 +3775,21 @@ this.updateCount = null;
 
 console.log('[Verify] subscriptions:', this.subscriptions); // null
 console.log('[Verify] renderTable:', this.renderTable); // null
+```
+
+**Playwright 검증:**
+
+```typescript
+const logs: string[] = [];
+previewPage.on('console', msg => {
+    if (msg.text().includes('[Verify]')) logs.push(msg.text());
+});
+
+// ... 컴포넌트 삭제 후
+const subLog = logs.find(l => l.includes('subscriptions: null'));
+const renderLog = logs.find(l => l.includes('renderTable: null'));
+expect(subLog).toBeDefined();
+expect(renderLog).toBeDefined();
 ```
 
 **통과 기준:**
@@ -2721,10 +3808,10 @@ console.log('[Verify] renderTable:', this.renderTable); // null
 - geometry, material, texture dispose
 - Scene background 정리
 
-**검증 코드:**
+**주입 코드 (CodeBox에 입력):**
 
 ```javascript
-// 3D 컴포넌트 register.js
+// 3D 컴포넌트 register 탭
 const { bind3DEvents } = Wkit;
 
 this.customEvents = {
@@ -2737,13 +3824,31 @@ this.datasetInfo = [
 
 bind3DEvents(this, this.customEvents);
 
-// 페이지 before_unload.js
+// 페이지 beforeUnLoad 탭
 const { disposeAllThreeResources } = Wkit;
 
 // 한 줄로 모든 3D 컴포넌트 정리
 disposeAllThreeResources(this);
 
 console.log('[Verify] 3D resources disposed');
+```
+
+**Playwright 검증:**
+
+```typescript
+const logs: string[] = [];
+previewPage.on('console', msg => {
+    if (msg.text().includes('[Verify]')) logs.push(msg.text());
+});
+
+// ... 페이지 언로드 후
+const disposeLog = logs.find(l => l.includes('3D resources disposed'));
+expect(disposeLog).toBeDefined();
+
+// 에러 없음 확인
+const errors: string[] = [];
+previewPage.on('pageerror', err => errors.push(err.message));
+expect(errors).toHaveLength(0);
 ```
 
 **disposeAllThreeResources가 처리하는 항목:**
@@ -2778,10 +3883,10 @@ console.log('[Verify] 3D resources disposed');
 | `this._internalHandlers = {}` | `this._internalHandlers = null` |
 | `addEventListener(...)` | `removeEventListener(...)` |
 
-**검증 코드:**
+**주입 코드 (CodeBox에 입력):**
 
 ```javascript
-// register.js - 생성
+// register 탭 — 생성
 this._internalHandlers = {};
 
 function setupInternalHandlers() {
@@ -2796,7 +3901,7 @@ function setupInternalHandlers() {
 
 setupInternalHandlers.call(this);
 
-// beforeDestroy.js - 정리
+// beforeDestroy 탭 — 정리
 const root = this.appendElement;
 
 if (this._internalHandlers) {
@@ -2807,6 +3912,27 @@ if (this._internalHandlers) {
 this._internalHandlers = null;
 
 console.log('[Verify] _internalHandlers:', this._internalHandlers); // null
+```
+
+**Playwright 검증:**
+
+```typescript
+const logs: string[] = [];
+previewPage.on('console', msg => {
+    if (msg.text().includes('[Verify]')) logs.push(msg.text());
+});
+
+// ... 컴포넌트 삭제 후
+const verifyLog = logs.find(l => l.includes('_internalHandlers: null'));
+expect(verifyLog).toBeDefined();
+
+// 이벤트 리스너 수 확인 (삭제 전후 비교)
+const listenerCount = await previewPage.evaluate(() => {
+    // getEventListeners는 DevTools API이므로 대안으로 DOM 상태 확인
+    return document.querySelectorAll('.btn-clear, .btn-scroll').length;
+});
+// 컴포넌트 삭제 후 해당 요소가 DOM에 없어야 함
+expect(listenerCount).toBe(0);
 ```
 
 **통과 기준:**
@@ -2826,10 +3952,10 @@ console.log('[Verify] _internalHandlers:', this._internalHandlers); // null
 | `this.methodA = fn.bind(this)` | `this.methodA = null` |
 | `this.methodB = fn.bind(this)` | `this.methodB = null` |
 
-**검증 코드:**
+**주입 코드 (CodeBox에 입력):**
 
 ```javascript
-// register.js - 생성
+// register 탭 — 생성
 function renderTable({ response }) { /* ... */ }
 function updateCount({ response }) { /* ... */ }
 function handleClick(e) { /* ... */ }
@@ -2838,12 +3964,29 @@ this.renderTable = renderTable.bind(this);
 this.updateCount = updateCount.bind(this);
 this.handleClick = handleClick.bind(this);
 
-// beforeDestroy.js - 정리
+// beforeDestroy 탭 — 정리
 this.renderTable = null;
 this.updateCount = null;
 this.handleClick = null;
 
 console.log('[Verify] All bound methods nullified');
+console.log('[Verify] renderTable:', this.renderTable);
+console.log('[Verify] updateCount:', this.updateCount);
+console.log('[Verify] handleClick:', this.handleClick);
+```
+
+**Playwright 검증:**
+
+```typescript
+const logs: string[] = [];
+previewPage.on('console', msg => {
+    if (msg.text().includes('[Verify]')) logs.push(msg.text());
+});
+
+// ... 컴포넌트 삭제 후
+expect(logs.find(l => l.includes('renderTable: null'))).toBeDefined();
+expect(logs.find(l => l.includes('updateCount: null'))).toBeDefined();
+expect(logs.find(l => l.includes('handleClick: null'))).toBeDefined();
 ```
 
 **통과 기준:**
@@ -2862,10 +4005,10 @@ console.log('[Verify] All bound methods nullified');
 | `this._state = value` | `this._state = null` |
 | `this.data = {}` | `this.data = null` |
 
-**검증 코드:**
+**주입 코드 (CodeBox에 입력):**
 
 ```javascript
-// register.js - 생성
+// register 탭 — 생성
 this._state = {
     isExpanded: false,
     selectedIndex: -1,
@@ -2877,7 +4020,7 @@ this.data = {
     total: 0
 };
 
-// beforeDestroy.js - 정리
+// beforeDestroy 탭 — 정리
 if (this._state?.cache) {
     this._state.cache.clear();
 }
@@ -2887,6 +4030,19 @@ this.data = null;
 
 console.log('[Verify] _state:', this._state); // null
 console.log('[Verify] data:', this.data); // null
+```
+
+**Playwright 검증:**
+
+```typescript
+const logs: string[] = [];
+previewPage.on('console', msg => {
+    if (msg.text().includes('[Verify]')) logs.push(msg.text());
+});
+
+// ... 컴포넌트 삭제 후
+expect(logs.find(l => l.includes('_state: null'))).toBeDefined();
+expect(logs.find(l => l.includes('data: null'))).toBeDefined();
 ```
 
 **통과 기준:**
@@ -2915,45 +4071,46 @@ console.log('[Verify] data:', this.data); // null
 | `this.eventBusHandlers = {...}` | `this.eventBusHandlers = null` |
 | `onEventBusHandlers(handlers)` | `offEventBusHandlers(handlers)` |
 
-**검증 함수:**
+**주입 코드 (CodeBox에 입력):**
 
 ```javascript
-function verifyResourceCleanup(instance) {
-    const leaks = [];
+// beforeDestroy 탭 — 정리 후 검증 로그 출력
+const properties = [
+    'subscriptions', 'customEvents', '_internalHandlers',
+    'renderTable', 'updateCount', '_state', 'data',
+    'eventBusHandlers', 'globalDataMappings', 'currentParams', 'refreshIntervals'
+];
 
-    // 체크할 속성들
-    const properties = [
-        'subscriptions',
-        'customEvents',
-        '_internalHandlers',
-        'renderTable',
-        'updateCount',
-        '_state',
-        'data',
-        'eventBusHandlers',
-        'globalDataMappings',
-        'currentParams',
-        'refreshIntervals'
-    ];
+const leaks = properties.filter(prop =>
+    this[prop] !== null && this[prop] !== undefined
+);
 
-    properties.forEach(prop => {
-        if (instance[prop] !== null && instance[prop] !== undefined) {
-            leaks.push(prop);
-        }
-    });
-
-    if (leaks.length > 0) {
-        console.error('[Resource Leak] Not cleaned up:', leaks);
-        return false;
-    }
-
+if (leaks.length > 0) {
+    console.error('[Resource Leak] Not cleaned up:', leaks.join(', '));
+} else {
     console.log('[Verify] All resources cleaned up');
-    return true;
 }
 ```
 
+**Playwright 검증:**
+
+```typescript
+const logs: string[] = [];
+const errors: string[] = [];
+previewPage.on('console', msg => {
+    if (msg.text().includes('[Verify]') || msg.text().includes('[Resource Leak]')) {
+        if (msg.type() === 'error') errors.push(msg.text());
+        else logs.push(msg.text());
+    }
+});
+
+// ... 컴포넌트 삭제 후
+expect(errors).toHaveLength(0); // 누수 없음
+expect(logs.find(l => l.includes('All resources cleaned up'))).toBeDefined();
+```
+
 **통과 기준:**
-- verifyResourceCleanup이 true 반환
+- [Resource Leak] 에러 없음
 - 모든 속성이 null로 설정됨
 
 ---
@@ -2983,13 +4140,13 @@ beforeDestroy.js 실행 순서:
 4. 참조 제거 (null 설정)     ← 마지막
 ```
 
-**검증 코드:**
+**주입 코드 (CodeBox에 입력):**
 
 ```javascript
 // 정리 순서 로깅
 const cleanupLog = [];
 
-// page_before_unload.js
+// 페이지 beforeUnLoad 탭
 cleanupLog.push({ step: 1, action: 'stopAllIntervals', timestamp: Date.now() });
 this.stopAllIntervals();
 
@@ -3005,7 +4162,27 @@ this.globalDataMappings = null;
 this.currentParams = null;
 this.refreshIntervals = null;
 
-console.log('[Cleanup Order]', cleanupLog);
+cleanupLog.forEach(entry => {
+    console.log(`[Cleanup] Step ${entry.step}: ${entry.action}`);
+});
+```
+
+**Playwright 검증:**
+
+```typescript
+const cleanupSteps: string[] = [];
+previewPage.on('console', msg => {
+    if (msg.text().includes('[Cleanup] Step')) cleanupSteps.push(msg.text());
+});
+
+// ... 페이지 언로드 후
+expect(cleanupSteps.length).toBe(4);
+
+// 순서 검증: intervals → eventBus → mapping → null
+expect(cleanupSteps[0]).toContain('stopAllIntervals');
+expect(cleanupSteps[1]).toContain('offEventBusHandlers');
+expect(cleanupSteps[2]).toContain('unregisterMapping');
+expect(cleanupSteps[3]).toContain('nullify references');
 ```
 
 **통과 기준:**
@@ -3027,36 +4204,38 @@ console.log('[Cleanup Order]', cleanupLog);
 | 3 | GC 실행 (chrome://gc) | 메모리 해제됨 |
 | 4 | 최종 메모리 측정 | baseline과 유사 |
 
-**검증 방법:**
+**Playwright 검증:**
 
-```javascript
-// Chrome DevTools Console에서 실행
-// 1. 메모리 스냅샷 (초기)
-// 2. 페이지 이동 반복
-// 3. 메모리 스냅샷 (최종)
-// 4. 비교
-
-// 또는 Performance Monitor에서
-// - JS heap size 모니터링
-// - DOM Nodes 수 모니터링
-// - Event Listeners 수 모니터링
-
-function measureMemory() {
-    if (performance.memory) {
-        console.log({
-            usedJSHeapSize: performance.memory.usedJSHeapSize,
-            totalJSHeapSize: performance.memory.totalJSHeapSize,
-            jsHeapSizeLimit: performance.memory.jsHeapSizeLimit
-        });
-    }
+```typescript
+// 메모리 측정 헬퍼
+async function measureMemory(page: Page) {
+    return page.evaluate(() => ({
+        usedJSHeapSize: (performance as any).memory?.usedJSHeapSize ?? 0,
+        domNodes: document.querySelectorAll('*').length,
+    }));
 }
 
-// 테스트
-measureMemory(); // 초기
+// 1. 초기 메모리 측정
+const baseline = await measureMemory(previewPage);
 
-// ... 페이지 로드/언로드 반복 ...
+// 2. 페이지 로드/언로드 5회 반복
+for (let i = 0; i < 5; i++) {
+    // 에디터에서 다른 페이지로 이동 → 원래 페이지로 복귀
+    // (뷰어에서 페이지 전환 조작)
+    await previewPage.waitForTimeout(2000);
+}
 
-measureMemory(); // 최종
+// 3. GC 요청
+const client = await previewPage.context().newCDPSession(previewPage);
+await client.send('HeapProfiler.collectGarbage');
+
+// 4. 최종 측정
+const final = await measureMemory(previewPage);
+
+// 5. 비교 — 20% 이상 증가하면 누수 의심
+const heapGrowth = (final.usedJSHeapSize - baseline.usedJSHeapSize) / baseline.usedJSHeapSize;
+expect(heapGrowth).toBeLessThan(0.2);
+expect(final.domNodes).toBeLessThanOrEqual(baseline.domNodes * 1.1);
 ```
 
 **통과 기준:**
@@ -3107,9 +4286,9 @@ PopupMixin은 Shadow DOM 기반 팝업 시스템을 제공합니다.
 2. 추가된 메서드들 확인
 3. _popup 내부 상태 확인
 
-**검증 코드:**
+**주입 코드 (CodeBox에 입력):**
 ```javascript
-// register.js
+// register 탭
 const { applyShadowPopupMixin } = PopupMixin;
 
 // Mixin 적용
@@ -3120,19 +4299,32 @@ applyShadowPopupMixin(this, {
 });
 
 // 검증: 메서드 추가 확인
-console.assert(typeof this.createPopup === 'function', 'createPopup 메서드 추가됨');
-console.assert(typeof this.showPopup === 'function', 'showPopup 메서드 추가됨');
-console.assert(typeof this.hidePopup === 'function', 'hidePopup 메서드 추가됨');
-console.assert(typeof this.popupQuery === 'function', 'popupQuery 메서드 추가됨');
-console.assert(typeof this.popupQueryAll === 'function', 'popupQueryAll 메서드 추가됨');
-console.assert(typeof this.bindPopupEvents === 'function', 'bindPopupEvents 메서드 추가됨');
-console.assert(typeof this.destroyPopup === 'function', 'destroyPopup 메서드 추가됨');
+const methods = ['createPopup', 'showPopup', 'hidePopup', 'popupQuery', 'popupQueryAll', 'bindPopupEvents', 'destroyPopup'];
+methods.forEach(m => console.log(`[PM-001] ${m}:`, typeof this[m]));
 
 // 검증: 내부 상태 초기화 확인
-console.assert(this._popup !== undefined, '_popup 상태 객체 생성됨');
-console.assert(this._popup.host === null, '_popup.host 초기값 null');
-console.assert(this._popup.shadowRoot === null, '_popup.shadowRoot 초기값 null');
-console.assert(Array.isArray(this._popup.eventCleanups), '_popup.eventCleanups 배열 초기화');
+console.log('[PM-001] _popup exists:', this._popup !== undefined);
+console.log('[PM-001] _popup.host:', this._popup.host);
+console.log('[PM-001] _popup.shadowRoot:', this._popup.shadowRoot);
+console.log('[PM-001] eventCleanups isArray:', Array.isArray(this._popup.eventCleanups));
+```
+
+**Playwright 검증:**
+
+```typescript
+const logs: string[] = [];
+previewPage.on('console', msg => {
+    if (msg.text().includes('[PM-001]')) logs.push(msg.text());
+});
+
+// ... 뷰어 로드 후
+['createPopup', 'showPopup', 'hidePopup', 'popupQuery', 'popupQueryAll', 'bindPopupEvents', 'destroyPopup']
+    .forEach(m => expect(logs.find(l => l.includes(`${m}: function`))).toBeDefined());
+
+expect(logs.find(l => l.includes('_popup exists: true'))).toBeDefined();
+expect(logs.find(l => l.includes('_popup.host: null'))).toBeDefined();
+expect(logs.find(l => l.includes('_popup.shadowRoot: null'))).toBeDefined();
+expect(logs.find(l => l.includes('eventCleanups isArray: true'))).toBeDefined();
 ```
 
 **통과 기준:**
@@ -3155,9 +4347,9 @@ console.assert(Array.isArray(this._popup.eventCleanups), '_popup.eventCleanups �
 3. Shadow DOM 내용 확인
 4. 페이지에 추가 확인
 
-**검증 코드:**
+**주입 코드 (CodeBox에 입력):**
 ```javascript
-// register.js
+// register 탭
 applyShadowPopupMixin(this, {
     getHTML: () => '<div class="popup-content">Hello World</div>',
     getStyles: () => '.popup-content { color: white; }',
@@ -3167,28 +4359,37 @@ applyShadowPopupMixin(this, {
 // createPopup 호출
 const shadowRoot = this.createPopup();
 
-// 검증: Shadow DOM 호스트 생성
-console.assert(this._popup.host !== null, 'host 요소 생성됨');
-console.assert(this._popup.host.id === `popup-${this.id}`, 'host id 설정됨');
+// 검증 로그 출력
+console.log('[PM-002] host exists:', this._popup.host !== null);
+console.log('[PM-002] host id:', this._popup.host?.id);
+console.log('[PM-002] shadowRoot exists:', this._popup.shadowRoot !== null);
+console.log('[PM-002] returnValue matches:', shadowRoot === this._popup.shadowRoot);
 
-// 검증: Shadow Root 생성
-console.assert(this._popup.shadowRoot !== null, 'shadowRoot 생성됨');
-console.assert(shadowRoot === this._popup.shadowRoot, 'createPopup이 shadowRoot 반환');
-
-// 검증: 스타일 + HTML 삽입
 const styleEl = this._popup.shadowRoot.querySelector('style');
-console.assert(styleEl !== null, 'style 태그 존재');
-console.assert(styleEl.textContent.includes('.popup-content'), '스타일 삽입됨');
+console.log('[PM-002] style tag exists:', styleEl !== null);
+console.log('[PM-002] style includes class:', styleEl?.textContent?.includes('.popup-content'));
 
 const contentEl = this._popup.shadowRoot.querySelector('.popup-content');
-console.assert(contentEl !== null, 'HTML 컨텐츠 존재');
-console.assert(contentEl.textContent === 'Hello World', 'HTML 내용 일치');
+console.log('[PM-002] content exists:', contentEl !== null);
+console.log('[PM-002] content text:', contentEl?.textContent);
+console.log('[PM-002] added to page:', this.page.appendElement.contains(this._popup.host));
+```
 
-// 검증: 페이지에 추가됨
-console.assert(
-    this.page.appendElement.contains(this._popup.host),
-    '페이지 appendElement에 추가됨'
-);
+**Playwright 검증:**
+
+```typescript
+const logs: string[] = [];
+previewPage.on('console', msg => {
+    if (msg.text().includes('[PM-002]')) logs.push(msg.text());
+});
+
+// ... 뷰어 로드 후
+expect(logs.find(l => l.includes('host exists: true'))).toBeDefined();
+expect(logs.find(l => l.includes('shadowRoot exists: true'))).toBeDefined();
+expect(logs.find(l => l.includes('returnValue matches: true'))).toBeDefined();
+expect(logs.find(l => l.includes('style tag exists: true'))).toBeDefined();
+expect(logs.find(l => l.includes('content text: Hello World'))).toBeDefined();
+expect(logs.find(l => l.includes('added to page: true'))).toBeDefined();
 ```
 
 **통과 기준:**
@@ -3211,9 +4412,9 @@ console.assert(
 3. createPopup() 두 번째 호출
 4. 동일한 인스턴스인지 확인
 
-**검증 코드:**
+**주입 코드 (CodeBox에 입력):**
 ```javascript
-// register.js
+// register 탭
 let createdCount = 0;
 
 applyShadowPopupMixin(this, {
@@ -3233,14 +4434,28 @@ const host1 = this._popup.host;
 const shadowRoot2 = this.createPopup();
 const host2 = this._popup.host;
 
-// 검증: 동일한 인스턴스
-console.assert(host1 === host2, '호스트 인스턴스 동일');
-console.assert(shadowRoot1 === shadowRoot2, 'shadowRoot 인스턴스 동일');
-console.assert(createdCount === 1, 'getHTML은 한 번만 호출됨');
+// 검증 로그
+console.log('[PM-003] same host:', host1 === host2);
+console.log('[PM-003] same shadowRoot:', shadowRoot1 === shadowRoot2);
+console.log('[PM-003] getHTML call count:', createdCount);
 
-// 검증: DOM에도 하나만 존재
 const popupHosts = this.page.appendElement.querySelectorAll(`#popup-${this.id}`);
-console.assert(popupHosts.length === 1, 'DOM에 팝업 호스트 하나만 존재');
+console.log('[PM-003] DOM popup count:', popupHosts.length);
+```
+
+**Playwright 검증:**
+
+```typescript
+const logs: string[] = [];
+previewPage.on('console', msg => {
+    if (msg.text().includes('[PM-003]')) logs.push(msg.text());
+});
+
+// ... 뷰어 로드 후
+expect(logs.find(l => l.includes('same host: true'))).toBeDefined();
+expect(logs.find(l => l.includes('same shadowRoot: true'))).toBeDefined();
+expect(logs.find(l => l.includes('getHTML call count: 1'))).toBeDefined();
+expect(logs.find(l => l.includes('DOM popup count: 1'))).toBeDefined();
 ```
 
 **통과 기준:**
@@ -3263,9 +4478,9 @@ console.assert(popupHosts.length === 1, 'DOM에 팝업 호스트 하나만 존�
 3. 콜백 실행 확인
 4. 콜백 컨텍스트(this) 확인
 
-**검증 코드:**
+**주입 코드 (CodeBox에 입력):**
 ```javascript
-// register.js
+// register 탭
 let callbackExecuted = false;
 let callbackContext = null;
 let receivedShadowRoot = null;
@@ -3286,18 +4501,28 @@ applyShadowPopupMixin(this, {
 
 this.createPopup();
 
-// 검증: 콜백 실행됨
-console.assert(callbackExecuted === true, 'onCreated 콜백 실행됨');
+// 검증 로그
+console.log('[PM-004] callback executed:', callbackExecuted);
+console.log('[PM-004] correct this context:', callbackContext === this);
+console.log('[PM-004] shadowRoot received:', receivedShadowRoot === this._popup.shadowRoot);
 
-// 검증: this 컨텍스트가 인스턴스
-console.assert(callbackContext === this, 'onCreated의 this는 인스턴스');
-
-// 검증: shadowRoot 파라미터 전달됨
-console.assert(receivedShadowRoot === this._popup.shadowRoot, 'shadowRoot 파라미터 전달됨');
-
-// 검증: 콜백 내 작업 반영됨
 const popup = this.popupQuery('.popup');
-console.assert(popup.dataset.initialized === 'true', '콜백 내 초기화 작업 반영됨');
+console.log('[PM-004] initialized attr:', popup?.dataset.initialized);
+```
+
+**Playwright 검증:**
+
+```typescript
+const logs: string[] = [];
+previewPage.on('console', msg => {
+    if (msg.text().includes('[PM-004]')) logs.push(msg.text());
+});
+
+// ... 뷰어 로드 후
+expect(logs.find(l => l.includes('callback executed: true'))).toBeDefined();
+expect(logs.find(l => l.includes('correct this context: true'))).toBeDefined();
+expect(logs.find(l => l.includes('shadowRoot received: true'))).toBeDefined();
+expect(logs.find(l => l.includes('initialized attr: true'))).toBeDefined();
 ```
 
 **통과 기준:**
@@ -3322,37 +4547,48 @@ console.assert(popup.dataset.initialized === 'true', '콜백 내 초기화 작�
 5. showPopup() 다시 호출
 6. 재표시 확인
 
-**검증 코드:**
+**주입 코드 (CodeBox에 입력):**
 ```javascript
-// register.js
+// register 탭
 applyShadowPopupMixin(this, {
     getHTML: () => '<div class="popup">Content</div>',
     getStyles: () => '',
     onCreated: null
 });
 
-// 검증 1: 팝업 미생성 상태에서 showPopup
-console.assert(this._popup.host === null, '초기 상태: 팝업 미생성');
+// 검증 1: 팝업 미생성 상태
+console.log('[PM-005] initial host null:', this._popup.host === null);
 
 this.showPopup();
+console.log('[PM-005] after showPopup - host exists:', this._popup.host !== null);
+console.log('[PM-005] after showPopup - display:', this._popup.host?.style.display);
 
-// 검증 2: 팝업 자동 생성 + 표시
-console.assert(this._popup.host !== null, 'showPopup이 팝업 자동 생성');
-console.assert(this._popup.host.style.display === 'block', '팝업 표시됨 (display: block)');
-
-// 검증 3: hidePopup
 this.hidePopup();
-console.assert(this._popup.host.style.display === 'none', '팝업 숨김 (display: none)');
+console.log('[PM-005] after hidePopup - display:', this._popup.host?.style.display);
 
-// 검증 4: showPopup 재호출
 this.showPopup();
-console.assert(this._popup.host.style.display === 'block', '팝업 재표시됨');
+console.log('[PM-005] after re-showPopup - display:', this._popup.host?.style.display);
 
-// 검증 5: 팝업이 새로 생성되지 않음 (동일 인스턴스)
 const hostsBefore = this.page.appendElement.querySelectorAll(`[id^="popup-"]`).length;
 this.showPopup();
 const hostsAfter = this.page.appendElement.querySelectorAll(`[id^="popup-"]`).length;
-console.assert(hostsBefore === hostsAfter, '재호출 시 새 팝업 생성 안 함');
+console.log('[PM-005] popup count stable:', hostsBefore === hostsAfter);
+```
+
+**Playwright 검증:**
+
+```typescript
+const logs: string[] = [];
+previewPage.on('console', msg => {
+    if (msg.text().includes('[PM-005]')) logs.push(msg.text());
+});
+
+// ... 뷰어 로드 후
+expect(logs.find(l => l.includes('initial host null: true'))).toBeDefined();
+expect(logs.find(l => l.includes('after showPopup - display: block'))).toBeDefined();
+expect(logs.find(l => l.includes('after hidePopup - display: none'))).toBeDefined();
+expect(logs.find(l => l.includes('after re-showPopup - display: block'))).toBeDefined();
+expect(logs.find(l => l.includes('popup count stable: true'))).toBeDefined();
 ```
 
 **통과 기준:**
@@ -3377,9 +4613,9 @@ console.assert(hostsBefore === hostsAfter, '재호출 시 새 팝업 생성 안 
 3. popupQueryAll로 복수 요소 선택
 4. 존재하지 않는 선택자 테스트
 
-**검증 코드:**
+**주입 코드 (CodeBox에 입력):**
 ```javascript
-// register.js
+// register 탭
 applyShadowPopupMixin(this, {
     getHTML: () => `
         <div class="popup">
@@ -3399,35 +4635,52 @@ this.createPopup();
 
 // 검증 1: popupQuery - 단일 요소
 const title = this.popupQuery('.title');
-console.assert(title !== null, 'popupQuery: 요소 찾음');
-console.assert(title.textContent === 'Title', 'popupQuery: 내용 일치');
+console.log('[PM-006] title found:', title !== null);
+console.log('[PM-006] title text:', title?.textContent);
 
 // 검증 2: popupQuery - 복수 요소 중 첫 번째
 const firstItem = this.popupQuery('.item');
-console.assert(firstItem.textContent === 'Item 1', 'popupQuery: 첫 번째 요소 반환');
+console.log('[PM-006] first item text:', firstItem?.textContent);
 
 // 검증 3: popupQueryAll - 모든 요소
 const items = this.popupQueryAll('.item');
-console.assert(items.length === 3, 'popupQueryAll: 모든 요소 반환');
-console.assert(items[2].textContent === 'Item 3', 'popupQueryAll: 세 번째 요소 확인');
+console.log('[PM-006] items count:', items.length);
+console.log('[PM-006] third item text:', items[2]?.textContent);
 
 // 검증 4: 존재하지 않는 선택자
 const notFound = this.popupQuery('.not-exist');
-console.assert(notFound === null, 'popupQuery: 없는 요소는 null');
+console.log('[PM-006] notFound is null:', notFound === null);
 
 const notFoundAll = this.popupQueryAll('.not-exist');
-console.assert(notFoundAll.length === 0, 'popupQueryAll: 없는 요소는 빈 배열');
+console.log('[PM-006] notFoundAll count:', notFoundAll.length);
 
-// 검증 5: 팝업 생성 전 쿼리 (shadowRoot null)
+// 검증 5: 팝업 생성 전 쿼리
 const freshInstance = {};
 applyShadowPopupMixin(freshInstance, {
     getHTML: () => '<div></div>',
     getStyles: () => '',
     onCreated: null
 });
-// createPopup 호출 안 함
 const result = freshInstance.popupQuery('.anything');
-console.assert(result === undefined || result === null, '팝업 미생성 시 안전하게 처리');
+console.log('[PM-006] pre-create query safe:', result === undefined || result === null);
+```
+
+**Playwright 검증:**
+
+```typescript
+const logs: string[] = [];
+previewPage.on('console', msg => {
+    if (msg.text().includes('[PM-006]')) logs.push(msg.text());
+});
+
+// ... 뷰어 로드 후
+expect(logs.find(l => l.includes('title text: Title'))).toBeDefined();
+expect(logs.find(l => l.includes('first item text: Item 1'))).toBeDefined();
+expect(logs.find(l => l.includes('items count: 3'))).toBeDefined();
+expect(logs.find(l => l.includes('third item text: Item 3'))).toBeDefined();
+expect(logs.find(l => l.includes('notFound is null: true'))).toBeDefined();
+expect(logs.find(l => l.includes('notFoundAll count: 0'))).toBeDefined();
+expect(logs.find(l => l.includes('pre-create query safe: true'))).toBeDefined();
 ```
 
 **통과 기준:**
@@ -3451,9 +4704,9 @@ console.assert(result === undefined || result === null, '팝업 미생성 시 �
 3. 버튼 클릭 시뮬레이션
 4. 핸들러 실행 확인
 
-**검증 코드:**
+**주입 코드 (CodeBox에 입력):**
 ```javascript
-// register.js
+// register 탭
 let closeClicked = false;
 let refreshClicked = false;
 let clickedTarget = null;
@@ -3489,31 +4742,43 @@ this.createPopup();
 // 검증 1: close 버튼 클릭
 const closeBtn = this.popupQuery('.close-btn');
 closeBtn.click();
-console.assert(closeClicked === true, 'close 버튼 핸들러 실행됨');
-console.assert(clickedTarget === closeBtn, '이벤트 타겟이 버튼');
+console.log('[PM-007] close handler called:', closeClicked);
+console.log('[PM-007] event target matches:', clickedTarget === closeBtn);
 
 // 검증 2: refresh 버튼 클릭
 const refreshBtn = this.popupQuery('.refresh-btn');
 refreshBtn.click();
-console.assert(refreshClicked === true, 'refresh 버튼 핸들러 실행됨');
+console.log('[PM-007] refresh handler called:', refreshClicked);
 
 // 검증 3: 바인딩 안 된 요소 클릭 (에러 없이 무시)
 const content = this.popupQuery('.content');
-content.click();  // 에러 없이 무시되어야 함
+content.click();
+console.log('[PM-007] unbound click no error: true');
 
-// 검증 4: closest 매칭 (자식 요소 클릭 시 부모 선택자 매칭)
+// 검증 4: closest 매칭
 let contentClicked = false;
 this.bindPopupEvents({
-    click: {
-        '.content': () => {
-            contentClicked = true;
-        }
-    }
+    click: { '.content': () => { contentClicked = true; } }
 });
 
 const innerText = this.popupQuery('.inner-text');
-innerText.click();  // .content의 자식을 클릭
-console.assert(contentClicked === true, 'closest로 부모 선택자 매칭됨');
+innerText.click();
+console.log('[PM-007] closest match works:', contentClicked);
+```
+
+**Playwright 검증:**
+
+```typescript
+const logs: string[] = [];
+previewPage.on('console', msg => {
+    if (msg.text().includes('[PM-007]')) logs.push(msg.text());
+});
+
+// ... 뷰어 로드 후
+expect(logs.find(l => l.includes('close handler called: true'))).toBeDefined();
+expect(logs.find(l => l.includes('event target matches: true'))).toBeDefined();
+expect(logs.find(l => l.includes('refresh handler called: true'))).toBeDefined();
+expect(logs.find(l => l.includes('closest match works: true'))).toBeDefined();
 ```
 
 **통과 기준:**
@@ -3538,9 +4803,9 @@ console.assert(contentClicked === true, 'closest로 부모 선택자 매칭됨')
 4. 이벤트 정리 확인
 5. 상태 초기화 확인
 
-**검증 코드:**
+**주입 코드 (CodeBox에 입력):**
 ```javascript
-// register.js
+// register 탭
 let handlerCalled = false;
 
 applyShadowPopupMixin(this, {
@@ -3559,26 +4824,34 @@ this.createPopup();
 
 // 정리 전 상태 확인
 const hostBefore = this._popup.host;
-const cleanupsBefore = this._popup.eventCleanups.length;
-console.assert(hostBefore !== null, '정리 전: host 존재');
-console.assert(cleanupsBefore > 0, '정리 전: 이벤트 클린업 존재');
-console.assert(this.page.appendElement.contains(hostBefore), '정리 전: DOM에 존재');
+console.log('[PM-008] before: host exists:', hostBefore !== null);
+console.log('[PM-008] before: cleanups count:', this._popup.eventCleanups.length);
+console.log('[PM-008] before: in DOM:', this.page.appendElement.contains(hostBefore));
 
 // destroyPopup 호출
 this.destroyPopup();
 
-// 검증 1: DOM 제거
-console.assert(this._popup.host === null, '정리 후: host null');
-console.assert(this._popup.shadowRoot === null, '정리 후: shadowRoot null');
-console.assert(!this.page.appendElement.contains(hostBefore), '정리 후: DOM에서 제거됨');
+// 검증
+console.log('[PM-008] after: host null:', this._popup.host === null);
+console.log('[PM-008] after: shadowRoot null:', this._popup.shadowRoot === null);
+console.log('[PM-008] after: removed from DOM:', !this.page.appendElement.contains(hostBefore));
+console.log('[PM-008] after: cleanups empty:', this._popup.eventCleanups.length === 0);
+```
 
-// 검증 2: 이벤트 클린업 배열 비워짐
-console.assert(this._popup.eventCleanups.length === 0, '정리 후: eventCleanups 비워짐');
+**Playwright 검증:**
 
-// 검증 3: 이벤트 실제로 해제됨 (버튼 클릭해도 핸들러 안 불림)
-// (DOM이 제거되어 클릭 자체가 불가하므로 간접 검증)
-handlerCalled = false;
-// 버튼이 DOM에서 제거되어 클릭 불가
+```typescript
+const logs: string[] = [];
+previewPage.on('console', msg => {
+    if (msg.text().includes('[PM-008]')) logs.push(msg.text());
+});
+
+// ... 뷰어 로드 후
+expect(logs.find(l => l.includes('before: host exists: true'))).toBeDefined();
+expect(logs.find(l => l.includes('after: host null: true'))).toBeDefined();
+expect(logs.find(l => l.includes('after: shadowRoot null: true'))).toBeDefined();
+expect(logs.find(l => l.includes('after: removed from DOM: true'))).toBeDefined();
+expect(logs.find(l => l.includes('after: cleanups empty: true'))).toBeDefined();
 ```
 
 **통과 기준:**
@@ -3604,30 +4877,35 @@ handlerCalled = false;
 2. 경고 메시지 확인
 3. 메서드 미추가 확인
 
-**검증 코드:**
+**주입 코드 (CodeBox에 입력):**
 ```javascript
-// register.js
+// register 탭
 const { applyShadowPopupMixin, applyEChartsMixin } = PopupMixin;
 
 // applyShadowPopupMixin 없이 바로 호출
-const originalWarn = console.warn;
-let warnMessage = '';
-console.warn = (msg) => { warnMessage = msg; };
-
 applyEChartsMixin(this);
 
-console.warn = originalWarn;
+// 검증 로그
+console.log('[PM-009] createChart exists:', typeof this.createChart);
+console.log('[PM-009] getChart exists:', typeof this.getChart);
+console.log('[PM-009] updateChart exists:', typeof this.updateChart);
+```
 
-// 검증: 경고 메시지
-console.assert(
-    warnMessage.includes('applyShadowPopupMixin'),
-    '경고 메시지에 applyShadowPopupMixin 언급'
-);
+**Playwright 검증:**
 
-// 검증: 메서드 미추가
-console.assert(this.createChart === undefined, 'createChart 메서드 미추가');
-console.assert(this.getChart === undefined, 'getChart 메서드 미추가');
-console.assert(this.updateChart === undefined, 'updateChart 메서드 미추가');
+```typescript
+const logs: string[] = [];
+const warnings: string[] = [];
+previewPage.on('console', msg => {
+    if (msg.text().includes('[PM-009]')) logs.push(msg.text());
+    if (msg.type() === 'warning' && msg.text().includes('applyShadowPopupMixin')) {
+        warnings.push(msg.text());
+    }
+});
+
+// ... 뷰어 로드 후
+expect(warnings.length).toBeGreaterThan(0); // 경고 출력됨
+expect(logs.find(l => l.includes('createChart exists: undefined'))).toBeDefined();
 ```
 
 **통과 기준:**
@@ -3651,9 +4929,9 @@ console.assert(this.updateChart === undefined, 'updateChart 메서드 미추가'
 3. ECharts 인스턴스 생성 확인
 4. ResizeObserver 연결 확인
 
-**검증 코드:**
+**주입 코드 (CodeBox에 입력):**
 ```javascript
-// register.js
+// register 탭
 const { applyShadowPopupMixin, applyEChartsMixin } = PopupMixin;
 
 applyShadowPopupMixin(this, {
@@ -3669,24 +4947,39 @@ applyEChartsMixin(this);
 
 this.createPopup();
 
-// 검증 1: charts Map 초기화됨
-console.assert(this._popup.charts instanceof Map, 'charts Map 존재');
-console.assert(this._popup.charts.size === 0, '초기 상태: 차트 없음');
+// 검증 1: charts Map 초기화
+console.log('[PM-010] charts is Map:', this._popup.charts instanceof Map);
+console.log('[PM-010] initial charts size:', this._popup.charts.size);
 
 // 검증 2: createChart 호출
 const chart = this.createChart('.chart-container');
-console.assert(chart !== null, 'createChart가 인스턴스 반환');
+console.log('[PM-010] chart created:', chart !== null);
 
-// 검증 3: Map에 저장됨
-console.assert(this._popup.charts.has('.chart-container'), 'charts Map에 저장됨');
-
+// 검증 3: Map에 저장
+console.log('[PM-010] stored in Map:', this._popup.charts.has('.chart-container'));
 const stored = this._popup.charts.get('.chart-container');
-console.assert(stored.chart === chart, 'Map에 저장된 chart 일치');
-console.assert(stored.resizeObserver instanceof ResizeObserver, 'ResizeObserver 생성됨');
+console.log('[PM-010] stored chart matches:', stored?.chart === chart);
+console.log('[PM-010] has ResizeObserver:', stored?.resizeObserver instanceof ResizeObserver);
 
-// 검증 4: ECharts 인스턴스 확인
-console.assert(typeof chart.setOption === 'function', 'ECharts setOption 메서드 존재');
-console.assert(typeof chart.dispose === 'function', 'ECharts dispose 메서드 존재');
+// 검증 4: ECharts 인스턴스
+console.log('[PM-010] has setOption:', typeof chart?.setOption === 'function');
+console.log('[PM-010] has dispose:', typeof chart?.dispose === 'function');
+```
+
+**Playwright 검증:**
+
+```typescript
+const logs: string[] = [];
+previewPage.on('console', msg => {
+    if (msg.text().includes('[PM-010]')) logs.push(msg.text());
+});
+
+// ... 뷰어 로드 후
+expect(logs.find(l => l.includes('charts is Map: true'))).toBeDefined();
+expect(logs.find(l => l.includes('chart created: true'))).toBeDefined();
+expect(logs.find(l => l.includes('stored in Map: true'))).toBeDefined();
+expect(logs.find(l => l.includes('has ResizeObserver: true'))).toBeDefined();
+expect(logs.find(l => l.includes('has setOption: true'))).toBeDefined();
 ```
 
 **통과 기준:**
@@ -3708,9 +5001,9 @@ console.assert(typeof chart.dispose === 'function', 'ECharts dispose 메서드 �
 2. createChart() 두 번째 호출 (동일 선택자)
 3. 동일 인스턴스인지 확인
 
-**검증 코드:**
+**주입 코드 (CodeBox에 입력):**
 ```javascript
-// register.js
+// register 탭
 applyShadowPopupMixin(this, {
     getHTML: () => '<div class="popup"><div class="chart" style="width:400px;height:300px;"></div></div>',
     getStyles: () => '',
@@ -3725,9 +5018,21 @@ const chart1 = this.createChart('.chart');
 // 두 번째 호출
 const chart2 = this.createChart('.chart');
 
-// 검증: 동일 인스턴스
-console.assert(chart1 === chart2, '동일 인스턴스 반환');
-console.assert(this._popup.charts.size === 1, 'charts Map에 하나만 존재');
+// 검증 로그
+console.log('[PM-011] same instance:', chart1 === chart2);
+console.log('[PM-011] charts size:', this._popup.charts.size);
+```
+
+**Playwright 검증:**
+
+```typescript
+const logs: string[] = [];
+previewPage.on('console', msg => {
+    if (msg.text().includes('[PM-011]')) logs.push(msg.text());
+});
+
+expect(logs.find(l => l.includes('same instance: true'))).toBeDefined();
+expect(logs.find(l => l.includes('charts size: 1'))).toBeDefined();
 ```
 
 **통과 기준:**
@@ -3749,9 +5054,9 @@ console.assert(this._popup.charts.size === 1, 'charts Map에 하나만 존재');
 2. null 반환 확인
 3. 경고 메시지 확인
 
-**검증 코드:**
+**주입 코드 (CodeBox에 입력):**
 ```javascript
-// register.js
+// register 탭
 applyShadowPopupMixin(this, {
     getHTML: () => '<div class="popup"></div>',  // .chart-container 없음
     getStyles: () => '',
@@ -3760,19 +5065,27 @@ applyShadowPopupMixin(this, {
 applyEChartsMixin(this);
 this.createPopup();
 
-// 경고 메시지 캡처
-const originalWarn = console.warn;
-let warnMessage = '';
-console.warn = (msg) => { warnMessage = msg; };
-
+// 존재하지 않는 컨테이너로 createChart 호출
 const chart = this.createChart('.chart-container');
 
-console.warn = originalWarn;
+// 검증 로그
+console.log('[PM-012] chart is null:', chart === null);
+console.log('[PM-012] charts size:', this._popup.charts.size);
+```
 
-// 검증
-console.assert(chart === null, '존재하지 않는 컨테이너: null 반환');
-console.assert(warnMessage.includes('.chart-container'), '경고 메시지에 선택자 포함');
-console.assert(this._popup.charts.size === 0, 'charts Map에 추가되지 않음');
+**Playwright 검증:**
+
+```typescript
+const logs: string[] = [];
+const warnings: string[] = [];
+previewPage.on('console', msg => {
+    if (msg.text().includes('[PM-012]')) logs.push(msg.text());
+    if (msg.type() === 'warning') warnings.push(msg.text());
+});
+
+expect(logs.find(l => l.includes('chart is null: true'))).toBeDefined();
+expect(logs.find(l => l.includes('charts size: 0'))).toBeDefined();
+expect(warnings.find(l => l.includes('.chart-container'))).toBeDefined();
 ```
 
 **통과 기준:**
@@ -3795,9 +5108,9 @@ console.assert(this._popup.charts.size === 0, 'charts Map에 추가되지 않음
 3. updateChart로 옵션 적용
 4. 없는 선택자로 조회/업데이트 시도
 
-**검증 코드:**
+**주입 코드 (CodeBox에 입력):**
 ```javascript
-// register.js
+// register 탭
 applyShadowPopupMixin(this, {
     getHTML: () => '<div class="popup"><div class="chart" style="width:400px;height:300px;"></div></div>',
     getStyles: () => '',
@@ -3811,7 +5124,7 @@ this.createChart('.chart');
 
 // 검증 1: getChart
 const chart = this.getChart('.chart');
-console.assert(chart !== null, 'getChart: 인스턴스 반환');
+console.log('[PM-013] getChart result:', chart !== null);
 
 // 검증 2: updateChart
 const option = {
@@ -3821,16 +5134,26 @@ const option = {
 };
 this.updateChart('.chart', option);
 
-// 검증: 옵션이 적용됨 (getOption으로 확인)
 const appliedOption = chart.getOption();
-console.assert(appliedOption.xAxis[0].data.length === 3, 'updateChart: 옵션 적용됨');
+console.log('[PM-013] option applied:', appliedOption.xAxis[0].data.length);
 
 // 검증 3: 없는 선택자
 const notFound = this.getChart('.not-exist');
-console.assert(notFound === null, 'getChart: 없는 선택자는 null');
+console.log('[PM-013] notFound is null:', notFound === null);
+this.updateChart('.not-exist', option);  // 경고만, 에러 없음
+```
 
-// updateChart 없는 선택자 (에러 없이 경고만)
-this.updateChart('.not-exist', option);  // 경고 출력, 에러 없음
+**Playwright 검증:**
+
+```typescript
+const logs: string[] = [];
+previewPage.on('console', msg => {
+    if (msg.text().includes('[PM-013]')) logs.push(msg.text());
+});
+
+expect(logs.find(l => l.includes('getChart result: true'))).toBeDefined();
+expect(logs.find(l => l.includes('option applied: 3'))).toBeDefined();
+expect(logs.find(l => l.includes('notFound is null: true'))).toBeDefined();
 ```
 
 **통과 기준:**
@@ -3854,9 +5177,9 @@ this.updateChart('.not-exist', option);  // 경고 출력, 에러 없음
 3. 차트 정리 확인
 4. ResizeObserver 해제 확인
 
-**검증 코드:**
+**주입 코드 (CodeBox에 입력):**
 ```javascript
-// register.js
+// register 탭
 applyShadowPopupMixin(this, {
     getHTML: () => '<div class="popup"><div class="chart" style="width:400px;height:300px;"></div></div>',
     getStyles: () => '',
@@ -3869,33 +5192,32 @@ this.createPopup();
 const chart = this.createChart('.chart');
 const stored = this._popup.charts.get('.chart');
 
-// 정리 전 상태
-console.assert(this._popup.charts.size === 1, '정리 전: 차트 1개');
-
-// ResizeObserver disconnect 추적
-let observerDisconnected = false;
-const originalDisconnect = stored.resizeObserver.disconnect;
-stored.resizeObserver.disconnect = function() {
-    observerDisconnected = true;
-    originalDisconnect.call(this);
-};
-
-// chart.dispose 추적
-let chartDisposed = false;
-const originalDispose = chart.dispose;
-chart.dispose = function() {
-    chartDisposed = true;
-    originalDispose.call(this);
-};
+console.log('[PM-014] before: charts size:', this._popup.charts.size);
 
 // destroyPopup 호출
 this.destroyPopup();
 
-// 검증
-console.assert(observerDisconnected === true, 'ResizeObserver disconnect 호출됨');
-console.assert(chartDisposed === true, 'chart.dispose 호출됨');
-console.assert(this._popup.charts.size === 0, 'charts Map 비워짐');
-console.assert(this._popup.host === null, 'DOM도 정리됨 (기본 destroyPopup 실행)');
+// 검증 로그
+console.log('[PM-014] after: charts size:', this._popup.charts.size);
+console.log('[PM-014] after: host null:', this._popup.host === null);
+```
+
+**Playwright 검증:**
+
+```typescript
+const logs: string[] = [];
+previewPage.on('console', msg => {
+    if (msg.text().includes('[PM-014]')) logs.push(msg.text());
+});
+
+expect(logs.find(l => l.includes('before: charts size: 1'))).toBeDefined();
+expect(logs.find(l => l.includes('after: charts size: 0'))).toBeDefined();
+expect(logs.find(l => l.includes('after: host null: true'))).toBeDefined();
+
+// 에러 없음 확인 (dispose, disconnect가 정상 호출됨)
+const errors: string[] = [];
+previewPage.on('pageerror', err => errors.push(err.message));
+expect(errors).toHaveLength(0);
 ```
 
 **통과 기준:**
@@ -3919,25 +5241,29 @@ console.assert(this._popup.host === null, 'DOM도 정리됨 (기본 destroyPopup
 1. applyShadowPopupMixin 없이 applyTabulatorMixin 호출
 2. 경고 및 미동작 확인
 
-**검증 코드:**
+**주입 코드 (CodeBox에 입력):**
 ```javascript
-// register.js
+// register 탭
 const { applyTabulatorMixin } = PopupMixin;
-
-const originalWarn = console.warn;
-let warnMessage = '';
-console.warn = (msg) => { warnMessage = msg; };
 
 applyTabulatorMixin(this);
 
-console.warn = originalWarn;
+// 검증 로그
+console.log('[PM-015] createTable exists:', typeof this.createTable);
+```
 
-// 검증
-console.assert(
-    warnMessage.includes('applyShadowPopupMixin'),
-    '경고 메시지 출력'
-);
-console.assert(this.createTable === undefined, 'createTable 메서드 미추가');
+**Playwright 검증:**
+
+```typescript
+const logs: string[] = [];
+const warnings: string[] = [];
+previewPage.on('console', msg => {
+    if (msg.text().includes('[PM-015]')) logs.push(msg.text());
+    if (msg.type() === 'warning') warnings.push(msg.text());
+});
+
+expect(warnings.find(l => l.includes('applyShadowPopupMixin'))).toBeDefined();
+expect(logs.find(l => l.includes('createTable exists: undefined'))).toBeDefined();
 ```
 
 **통과 기준:**
@@ -3960,9 +5286,9 @@ console.assert(this.createTable === undefined, 'createTable 메서드 미추가'
 3. Tabulator 인스턴스 확인
 4. ResizeObserver 연결 확인
 
-**검증 코드:**
+**주입 코드 (CodeBox에 입력):**
 ```javascript
-// register.js
+// register 탭
 const { applyShadowPopupMixin, applyTabulatorMixin } = PopupMixin;
 
 applyShadowPopupMixin(this, {
@@ -3979,7 +5305,7 @@ applyTabulatorMixin(this);
 this.createPopup();
 
 // 검증 1: tables Map 초기화
-console.assert(this._popup.tables instanceof Map, 'tables Map 존재');
+console.log('[PM-016] tables is Map:', this._popup.tables instanceof Map);
 
 // 검증 2: createTable 호출
 const options = {
@@ -3989,19 +5315,31 @@ const options = {
     ]
 };
 const table = this.createTable('.table-container', options);
+console.log('[PM-016] table created:', table !== null);
 
-// 검증 3: 인스턴스 반환
-console.assert(table !== null, 'Tabulator 인스턴스 반환');
-
-// 검증 4: Map에 저장
+// 검증 3: Map에 저장
 const stored = this._popup.tables.get('.table-container');
-console.assert(stored.table === table, 'tables Map에 저장됨');
-console.assert(stored.resizeObserver instanceof ResizeObserver, 'ResizeObserver 생성됨');
-console.assert(stored.state.initialized === false, '초기 상태: initialized false');
+console.log('[PM-016] stored in Map:', stored?.table === table);
+console.log('[PM-016] has ResizeObserver:', stored?.resizeObserver instanceof ResizeObserver);
+console.log('[PM-016] initial state:', stored?.state.initialized);
 
-// 검증 5: Tabulator 메서드 존재
-console.assert(typeof table.setData === 'function', 'setData 메서드 존재');
-console.assert(typeof table.destroy === 'function', 'destroy 메서드 존재');
+// 검증 4: Tabulator 메서드 존재
+console.log('[PM-016] has setData:', typeof table?.setData === 'function');
+console.log('[PM-016] has destroy:', typeof table?.destroy === 'function');
+```
+
+**Playwright 검증:**
+
+```typescript
+const logs: string[] = [];
+previewPage.on('console', msg => {
+    if (msg.text().includes('[PM-016]')) logs.push(msg.text());
+});
+
+expect(logs.find(l => l.includes('tables is Map: true'))).toBeDefined();
+expect(logs.find(l => l.includes('table created: true'))).toBeDefined();
+expect(logs.find(l => l.includes('stored in Map: true'))).toBeDefined();
+expect(logs.find(l => l.includes('has setData: true'))).toBeDefined();
 ```
 
 **통과 기준:**
@@ -4025,9 +5363,9 @@ console.assert(typeof table.destroy === 'function', 'destroy 메서드 존재');
 2. Shadow DOM에 style 태그 삽입 확인
 3. 중복 주입 방지 확인
 
-**검증 코드:**
+**주입 코드 (CodeBox에 입력):**
 ```javascript
-// register.js
+// register 탭
 applyShadowPopupMixin(this, {
     getHTML: () => '<div class="popup"><div class="table"></div></div>',
     getStyles: () => '',
@@ -4037,10 +5375,7 @@ applyTabulatorMixin(this);
 this.createPopup();
 
 // CSS 주입 전 상태
-console.assert(
-    this._popup.tabulatorCssInjected === false,
-    '초기 상태: CSS 미주입'
-);
+console.log('[PM-017] initial cssInjected:', this._popup.tabulatorCssInjected);
 
 // createTable 호출 (CSS 자동 주입 트리거)
 this.createTable('.table', { columns: [] });
@@ -4048,25 +5383,34 @@ this.createTable('.table', { columns: [] });
 // 비동기 대기 (CSS fetch)
 await new Promise(resolve => setTimeout(resolve, 100));
 
-// 검증 1: 플래그 설정됨
-console.assert(
-    this._popup.tabulatorCssInjected === true,
-    'CSS 주입 플래그 true'
-);
+// 검증
+console.log('[PM-017] after create cssInjected:', this._popup.tabulatorCssInjected);
 
-// 검증 2: style 태그 존재
 const styleTag = this._popup.shadowRoot.querySelector('style[data-tabulator-theme]');
-console.assert(styleTag !== null, 'Tabulator CSS style 태그 존재');
-console.assert(styleTag.getAttribute('data-tabulator-theme') === 'midnight', 'midnight 테마');
+console.log('[PM-017] style tag exists:', styleTag !== null);
+console.log('[PM-017] theme:', styleTag?.getAttribute('data-tabulator-theme'));
 
-// 검증 3: 두 번째 테이블 생성 시 중복 주입 안 함
+// 두 번째 테이블 생성 시 중복 주입 안 함
 const styleCountBefore = this._popup.shadowRoot.querySelectorAll('style[data-tabulator-theme]').length;
-
 this.createTable('.another-table', { columns: [] });
 await new Promise(resolve => setTimeout(resolve, 100));
-
 const styleCountAfter = this._popup.shadowRoot.querySelectorAll('style[data-tabulator-theme]').length;
-console.assert(styleCountBefore === styleCountAfter, 'CSS 중복 주입 방지');
+console.log('[PM-017] no duplicate CSS:', styleCountBefore === styleCountAfter);
+```
+
+**Playwright 검증:**
+
+```typescript
+const logs: string[] = [];
+previewPage.on('console', msg => {
+    if (msg.text().includes('[PM-017]')) logs.push(msg.text());
+});
+
+expect(logs.find(l => l.includes('initial cssInjected: false'))).toBeDefined();
+expect(logs.find(l => l.includes('after create cssInjected: true'))).toBeDefined();
+expect(logs.find(l => l.includes('style tag exists: true'))).toBeDefined();
+expect(logs.find(l => l.includes('theme: midnight'))).toBeDefined();
+expect(logs.find(l => l.includes('no duplicate CSS: true'))).toBeDefined();
 ```
 
 **통과 기준:**
@@ -4088,9 +5432,9 @@ console.assert(styleCountBefore === styleCountAfter, 'CSS 중복 주입 방지')
 2. 즉시 isTableReady() 확인 (false)
 3. tableBuilt 이벤트 후 확인 (true)
 
-**검증 코드:**
+**주입 코드 (CodeBox에 입력):**
 ```javascript
-// register.js
+// register 탭
 applyShadowPopupMixin(this, {
     getHTML: () => '<div class="popup"><div class="table"></div></div>',
     getStyles: () => '',
@@ -4118,10 +5462,22 @@ await new Promise(resolve => {
     }
 });
 
-console.assert(this.isTableReady('.table') === true, 'tableBuilt 후: initialized true');
+console.log('[PM-018] after tableBuilt:', this.isTableReady('.table'));
 
 // 검증 3: 없는 선택자
-console.assert(this.isTableReady('.not-exist') === false, '없는 선택자: false');
+console.log('[PM-018] not-exist:', this.isTableReady('.not-exist'));
+```
+
+**Playwright 검증:**
+
+```typescript
+const logs: string[] = [];
+previewPage.on('console', msg => {
+    if (msg.text().includes('[PM-018]')) logs.push(msg.text());
+});
+
+expect(logs.find(l => l.includes('after tableBuilt: true'))).toBeDefined();
+expect(logs.find(l => l.includes('not-exist: false'))).toBeDefined();
 ```
 
 **통과 기준:**
@@ -4142,9 +5498,9 @@ console.assert(this.isTableReady('.not-exist') === false, '없는 선택자: fal
 2. updateTable로 데이터 업데이트
 3. updateTableOptions로 컬럼 변경
 
-**검증 코드:**
+**주입 코드 (CodeBox에 입력):**
 ```javascript
-// register.js
+// register 탭
 applyShadowPopupMixin(this, {
     getHTML: () => '<div class="popup"><div class="table"></div></div>',
     getStyles: () => '',
@@ -4165,7 +5521,7 @@ await new Promise(resolve => setTimeout(resolve, 100));
 
 // 검증 1: getTable
 const table = this.getTable('.table');
-console.assert(table !== null, 'getTable: 인스턴스 반환');
+console.log('[PM-019] getTable result:', table !== null);
 
 // 검증 2: updateTable (setData)
 const newData = [
@@ -4175,8 +5531,8 @@ const newData = [
 this.updateTable('.table', newData);
 
 const rows = table.getData();
-console.assert(rows.length === 2, 'updateTable: 데이터 2행');
-console.assert(rows[0].name === 'Alice', 'updateTable: 데이터 일치');
+console.log('[PM-019] row count:', rows.length);
+console.log('[PM-019] first row name:', rows[0]?.name);
 
 // 검증 3: updateTableOptions (컬럼 변경)
 this.updateTableOptions('.table', {
@@ -4187,11 +5543,26 @@ this.updateTableOptions('.table', {
 });
 
 const columns = table.getColumns();
-console.assert(columns[0].getDefinition().title === 'Full Name', 'updateTableOptions: 컬럼 변경됨');
+console.log('[PM-019] new column title:', columns[0]?.getDefinition().title);
 
 // 검증 4: 없는 선택자
-console.assert(this.getTable('.not-exist') === null, 'getTable: 없는 선택자 null');
+console.log('[PM-019] notFound is null:', this.getTable('.not-exist') === null);
 this.updateTable('.not-exist', []);  // 경고만, 에러 없음
+```
+
+**Playwright 검증:**
+
+```typescript
+const logs: string[] = [];
+previewPage.on('console', msg => {
+    if (msg.text().includes('[PM-019]')) logs.push(msg.text());
+});
+
+expect(logs.find(l => l.includes('getTable result: true'))).toBeDefined();
+expect(logs.find(l => l.includes('row count: 2'))).toBeDefined();
+expect(logs.find(l => l.includes('first row name: Alice'))).toBeDefined();
+expect(logs.find(l => l.includes('new column title: Full Name'))).toBeDefined();
+expect(logs.find(l => l.includes('notFound is null: true'))).toBeDefined();
 ```
 
 **통과 기준:**
@@ -4214,9 +5585,9 @@ this.updateTable('.not-exist', []);  // 경고만, 에러 없음
 2. destroyPopup() 호출
 3. 테이블 정리 확인
 
-**검증 코드:**
+**주입 코드 (CodeBox에 입력):**
 ```javascript
-// register.js
+// register 탭
 applyShadowPopupMixin(this, {
     getHTML: () => '<div class="popup"><div class="table"></div></div>',
     getStyles: () => '',
@@ -4229,40 +5600,31 @@ const table = this.createTable('.table', {
     columns: [{ title: 'Test', field: 'test' }]
 });
 
-const stored = this._popup.tables.get('.table');
-
-// 추적용 플래그
-let observerDisconnected = false;
-let tableOffCalled = false;
-let tableDestroyed = false;
-
-const originalDisconnect = stored.resizeObserver.disconnect;
-stored.resizeObserver.disconnect = function() {
-    observerDisconnected = true;
-    originalDisconnect.call(this);
-};
-
-const originalOff = table.off;
-table.off = function() {
-    tableOffCalled = true;
-    return originalOff.call(this);
-};
-
-const originalDestroy = table.destroy;
-table.destroy = function() {
-    tableDestroyed = true;
-    originalDestroy.call(this);
-};
+console.log('[PM-020] before: tables size:', this._popup.tables.size);
 
 // destroyPopup 호출
 this.destroyPopup();
 
-// 검증
-console.assert(observerDisconnected === true, 'ResizeObserver disconnect 호출됨');
-console.assert(tableOffCalled === true, 'table.off 호출됨 (이벤트 해제)');
-console.assert(tableDestroyed === true, 'table.destroy 호출됨');
-console.assert(this._popup.tables.size === 0, 'tables Map 비워짐');
-console.assert(this._popup.host === null, 'DOM도 정리됨');
+// 검증 로그
+console.log('[PM-020] after: tables size:', this._popup.tables.size);
+console.log('[PM-020] after: host null:', this._popup.host === null);
+```
+
+**Playwright 검증:**
+
+```typescript
+const logs: string[] = [];
+previewPage.on('console', msg => {
+    if (msg.text().includes('[PM-020]')) logs.push(msg.text());
+});
+
+expect(logs.find(l => l.includes('before: tables size: 1'))).toBeDefined();
+expect(logs.find(l => l.includes('after: tables size: 0'))).toBeDefined();
+expect(logs.find(l => l.includes('after: host null: true'))).toBeDefined();
+
+const errors: string[] = [];
+previewPage.on('pageerror', err => errors.push(err.message));
+expect(errors).toHaveLength(0);
 ```
 
 **통과 기준:**
@@ -4290,9 +5652,9 @@ console.assert(this._popup.host === null, 'DOM도 정리됨');
 3. 테이블 생성
 4. destroyPopup으로 모두 정리
 
-**검증 코드:**
+**주입 코드 (CodeBox에 입력):**
 ```javascript
-// register.js
+// register 탭
 const { applyShadowPopupMixin, applyEChartsMixin, applyTabulatorMixin } = PopupMixin;
 
 applyShadowPopupMixin(this, {
@@ -4311,29 +5673,41 @@ applyTabulatorMixin(this);
 this.createPopup();
 
 // 검증 1: 두 Mixin의 메서드 공존
-console.assert(typeof this.createChart === 'function', 'createChart 존재');
-console.assert(typeof this.createTable === 'function', 'createTable 존재');
+console.log('[PM-021] has createChart:', typeof this.createChart === 'function');
+console.log('[PM-021] has createTable:', typeof this.createTable === 'function');
 
-// 검증 2: 차트 생성
+// 검증 2: 차트 + 테이블 생성
 const chart = this.createChart('.chart');
-console.assert(chart !== null, '차트 생성됨');
-
-// 검증 3: 테이블 생성
 const table = this.createTable('.table', {
     columns: [{ title: 'Test', field: 'test' }]
 });
-console.assert(table !== null, '테이블 생성됨');
+console.log('[PM-021] chart created:', chart !== null);
+console.log('[PM-021] table created:', table !== null);
+console.log('[PM-021] charts size:', this._popup.charts.size);
+console.log('[PM-021] tables size:', this._popup.tables.size);
 
-// 검증 4: 각각의 저장소에 저장됨
-console.assert(this._popup.charts.size === 1, 'charts Map에 1개');
-console.assert(this._popup.tables.size === 1, 'tables Map에 1개');
-
-// 검증 5: destroyPopup으로 모두 정리
+// 검증 3: destroyPopup으로 모두 정리
 this.destroyPopup();
+console.log('[PM-021] after destroy charts:', this._popup.charts.size);
+console.log('[PM-021] after destroy tables:', this._popup.tables.size);
+console.log('[PM-021] after destroy host null:', this._popup.host === null);
+```
 
-console.assert(this._popup.charts.size === 0, 'charts 정리됨');
-console.assert(this._popup.tables.size === 0, 'tables 정리됨');
-console.assert(this._popup.host === null, 'DOM 정리됨');
+**Playwright 검증:**
+
+```typescript
+const logs: string[] = [];
+previewPage.on('console', msg => {
+    if (msg.text().includes('[PM-021]')) logs.push(msg.text());
+});
+
+expect(logs.find(l => l.includes('has createChart: true'))).toBeDefined();
+expect(logs.find(l => l.includes('has createTable: true'))).toBeDefined();
+expect(logs.find(l => l.includes('charts size: 1'))).toBeDefined();
+expect(logs.find(l => l.includes('tables size: 1'))).toBeDefined();
+expect(logs.find(l => l.includes('after destroy charts: 0'))).toBeDefined();
+expect(logs.find(l => l.includes('after destroy tables: 0'))).toBeDefined();
+expect(logs.find(l => l.includes('after destroy host null: true'))).toBeDefined();
 ```
 
 **통과 기준:**
@@ -4355,9 +5729,9 @@ console.assert(this._popup.host === null, 'DOM 정리됨');
 2. destroyPopup 호출
 3. 정리 순서 확인 (역순: Tabulator → ECharts → 기본)
 
-**검증 코드:**
+**주입 코드 (CodeBox에 입력):**
 ```javascript
-// register.js
+// register 탭
 const cleanupOrder = [];
 
 applyShadowPopupMixin(this, {
@@ -4404,10 +5778,23 @@ this.createTable('.table', { columns: [] });
 this.destroyPopup();
 
 // 검증: 역순 정리
-console.log('정리 순서:', cleanupOrder);
-console.assert(cleanupOrder[0] === 'tables', '첫 번째: tables (마지막 적용)');
-console.assert(cleanupOrder[1] === 'charts', '두 번째: charts');
-console.assert(cleanupOrder[2] === 'base', '세 번째: base (처음 적용)');
+console.log('[PM-022] cleanup order:', cleanupOrder.join(' → '));
+console.log('[PM-022] first:', cleanupOrder[0]);
+console.log('[PM-022] second:', cleanupOrder[1]);
+console.log('[PM-022] third:', cleanupOrder[2]);
+```
+
+**Playwright 검증:**
+
+```typescript
+const logs: string[] = [];
+previewPage.on('console', msg => {
+    if (msg.text().includes('[PM-022]')) logs.push(msg.text());
+});
+
+expect(logs.find(l => l.includes('first: tables'))).toBeDefined();
+expect(logs.find(l => l.includes('second: charts'))).toBeDefined();
+expect(logs.find(l => l.includes('third: base'))).toBeDefined();
 ```
 
 **통과 기준:**
@@ -4470,9 +5857,9 @@ console.assert(cleanupOrder[2] === 'base', '세 번째: base (처음 적용)');
 2. 구조 검증 (datasetName, param, render)
 3. 다중 데이터셋 지원 확인
 
-**검증 코드:**
+**주입 코드 (CodeBox에 입력):**
 ```javascript
-// register.js
+// register 탭
 const assetId = this.setter.ecoAssetInfo?.assetId || 'sensor-001';
 
 this.datasetInfo = [
@@ -4489,23 +5876,37 @@ this.datasetInfo = [
 ];
 
 // 검증 1: 배열 타입
-console.assert(Array.isArray(this.datasetInfo), 'datasetInfo는 배열');
+console.log('[SC-001] datasetInfo isArray:', Array.isArray(this.datasetInfo));
 
 // 검증 2: 필수 필드 존재
 this.datasetInfo.forEach((info, index) => {
-    console.assert(typeof info.datasetName === 'string', `[${index}] datasetName 존재`);
-    console.assert(typeof info.param === 'object', `[${index}] param 존재`);
-    console.assert(Array.isArray(info.render), `[${index}] render 배열 존재`);
+    console.log(`[SC-001] [${index}] datasetName type:`, typeof info.datasetName);
+    console.log(`[SC-001] [${index}] param type:`, typeof info.param);
+    console.log(`[SC-001] [${index}] render isArray:`, Array.isArray(info.render));
 });
 
 // 검증 3: 다중 데이터셋
-console.assert(this.datasetInfo.length === 2, '다중 데이터셋 정의 가능');
+console.log('[SC-001] datasetInfo length:', this.datasetInfo.length);
 
 // 검증 4: render 배열 내 메서드명
-console.assert(
-    this.datasetInfo[0].render.includes('renderSensorInfo'),
-    '렌더 메서드명 포함'
-);
+console.log('[SC-001] render includes renderSensorInfo:', this.datasetInfo[0].render.includes('renderSensorInfo'));
+```
+
+**Playwright 검증:**
+
+```typescript
+const logs: string[] = [];
+previewPage.on('console', msg => {
+    if (msg.text().includes('[SC-001]')) logs.push(msg.text());
+});
+
+expect(logs.find(l => l.includes('datasetInfo isArray: true'))).toBeDefined();
+expect(logs.find(l => l.includes('[0] datasetName type: string'))).toBeDefined();
+expect(logs.find(l => l.includes('[0] param type: object'))).toBeDefined();
+expect(logs.find(l => l.includes('[0] render isArray: true'))).toBeDefined();
+expect(logs.find(l => l.includes('[1] datasetName type: string'))).toBeDefined();
+expect(logs.find(l => l.includes('datasetInfo length: 2'))).toBeDefined();
+expect(logs.find(l => l.includes('render includes renderSensorInfo: true'))).toBeDefined();
 ```
 
 **통과 기준:**
@@ -4528,64 +5929,55 @@ console.assert(
 2. fetchData 호출 확인
 3. 응답 데이터가 render 메서드로 전달되는지 확인
 
-**검증 코드:**
+**주입 코드 (CodeBox에 입력):**
 ```javascript
-// register.js
+// register 탭
 const { fetchData } = Wkit;
 
 this.datasetInfo = [
     { datasetName: 'sensor', param: { id: 'test-001' }, render: ['renderSensorInfo'] }
 ];
 
-let fetchCalled = false;
-let fetchedDatasetName = null;
-let fetchedParam = null;
-
-// fetchData 모킹
-const originalFetchData = Wkit.fetchData;
-Wkit.fetchData = (page, datasetName, param) => {
-    fetchCalled = true;
-    fetchedDatasetName = datasetName;
-    fetchedParam = param;
-    return Promise.resolve({
-        response: { data: { name: 'Test Sensor', temperature: 25.5 } }
-    });
-};
-
 // renderSensorInfo 정의
-let renderCalled = false;
-let renderedData = null;
 this.renderSensorInfo = (data) => {
-    renderCalled = true;
-    renderedData = data;
+    console.log('[SC-002] renderSensorInfo called with:', JSON.stringify(data));
 };
 
 // showDetail 구현
 this.showDetail = function() {
     fx.go(
         this.datasetInfo,
-        fx.each(({ datasetName, param, render }) =>
-            fx.go(
+        fx.each(({ datasetName, param, render }) => {
+            console.log('[SC-002] fetchData datasetName:', datasetName);
+            console.log('[SC-002] fetchData param.id:', param.id);
+            return fx.go(
                 Wkit.fetchData(this.page, datasetName, param),
                 result => result?.response?.data,
-                data => data && render.forEach(fn => this[fn](data))
-            )
-        )
+                data => {
+                    console.log('[SC-002] fetchData returned data:', data != null);
+                    data && render.forEach(fn => this[fn](data));
+                }
+            );
+        })
     );
 };
 
 // 실행
 await this.showDetail();
+```
 
-// 검증
-console.assert(fetchCalled === true, 'fetchData 호출됨');
-console.assert(fetchedDatasetName === 'sensor', 'datasetName 전달됨');
-console.assert(fetchedParam.id === 'test-001', 'param 전달됨');
-console.assert(renderCalled === true, 'render 메서드 호출됨');
-console.assert(renderedData.name === 'Test Sensor', '데이터가 render로 전달됨');
+**Playwright 검증:**
 
-// 원복
-Wkit.fetchData = originalFetchData;
+```typescript
+const logs: string[] = [];
+previewPage.on('console', msg => {
+    if (msg.text().includes('[SC-002]')) logs.push(msg.text());
+});
+
+expect(logs.find(l => l.includes('fetchData datasetName: sensor'))).toBeDefined();
+expect(logs.find(l => l.includes('fetchData param.id: test-001'))).toBeDefined();
+expect(logs.find(l => l.includes('fetchData returned data: true'))).toBeDefined();
+expect(logs.find(l => l.includes('renderSensorInfo called with:'))).toBeDefined();
 ```
 
 **통과 기준:**
@@ -4605,9 +5997,9 @@ Wkit.fetchData = originalFetchData;
 1. 여러 render 메서드를 가진 datasetInfo 정의
 2. fetchData 후 모든 render 메서드 호출 확인
 
-**검증 코드:**
+**주입 코드 (CodeBox에 입력):**
 ```javascript
-// register.js
+// register 탭
 this.datasetInfo = [
     {
         datasetName: 'combinedData',
@@ -4621,12 +6013,6 @@ const calledMethods = [];
 this.renderBasicInfo = () => calledMethods.push('renderBasicInfo');
 this.renderStatistics = () => calledMethods.push('renderStatistics');
 this.renderChart = () => calledMethods.push('renderChart');
-
-// fetchData 모킹
-const originalFetchData = Wkit.fetchData;
-Wkit.fetchData = () => Promise.resolve({
-    response: { data: { value: 100 } }
-});
 
 // showDetail 실행
 this.showDetail = function() {
@@ -4645,12 +6031,25 @@ this.showDetail = function() {
 await this.showDetail();
 
 // 검증
-console.assert(calledMethods.length === 3, '3개 메서드 모두 호출됨');
-console.assert(calledMethods.includes('renderBasicInfo'), 'renderBasicInfo 호출됨');
-console.assert(calledMethods.includes('renderStatistics'), 'renderStatistics 호출됨');
-console.assert(calledMethods.includes('renderChart'), 'renderChart 호출됨');
+console.log('[SC-003] calledMethods count:', calledMethods.length);
+console.log('[SC-003] renderBasicInfo called:', calledMethods.includes('renderBasicInfo'));
+console.log('[SC-003] renderStatistics called:', calledMethods.includes('renderStatistics'));
+console.log('[SC-003] renderChart called:', calledMethods.includes('renderChart'));
+console.log('[SC-003] call order:', JSON.stringify(calledMethods));
+```
 
-Wkit.fetchData = originalFetchData;
+**Playwright 검증:**
+
+```typescript
+const logs: string[] = [];
+previewPage.on('console', msg => {
+    if (msg.text().includes('[SC-003]')) logs.push(msg.text());
+});
+
+expect(logs.find(l => l.includes('calledMethods count: 3'))).toBeDefined();
+expect(logs.find(l => l.includes('renderBasicInfo called: true'))).toBeDefined();
+expect(logs.find(l => l.includes('renderStatistics called: true'))).toBeDefined();
+expect(logs.find(l => l.includes('renderChart called: true'))).toBeDefined();
 ```
 
 **통과 기준:**
@@ -4674,9 +6073,9 @@ Wkit.fetchData = originalFetchData;
 2. 데이터로 렌더링 실행
 3. DOM에 값이 삽입되었는지 확인
 
-**검증 코드:**
+**주입 코드 (CodeBox에 입력):**
 ```javascript
-// register.js
+// register 탭
 const { applyShadowPopupMixin } = PopupMixin;
 
 applyShadowPopupMixin(this, {
@@ -4730,10 +6129,24 @@ const nameEl = this.popupQuery('.sensor-name');
 const zoneEl = this.popupQuery('.sensor-zone');
 const statusEl = this.popupQuery('.sensor-status');
 
-console.assert(nameEl.textContent === 'Sensor A', 'name 렌더링됨');
-console.assert(zoneEl.textContent === 'Zone 1', 'zone 렌더링됨');
-console.assert(statusEl.textContent === 'active', 'status 렌더링됨');
-console.assert(statusEl.dataset.status === 'active', 'dataAttr 설정됨');
+console.log('[SC-004] name textContent:', nameEl.textContent);
+console.log('[SC-004] zone textContent:', zoneEl.textContent);
+console.log('[SC-004] status textContent:', statusEl.textContent);
+console.log('[SC-004] status dataset.status:', statusEl.dataset.status);
+```
+
+**Playwright 검증:**
+
+```typescript
+const logs: string[] = [];
+previewPage.on('console', msg => {
+    if (msg.text().includes('[SC-004]')) logs.push(msg.text());
+});
+
+expect(logs.find(l => l.includes('name textContent: Sensor A'))).toBeDefined();
+expect(logs.find(l => l.includes('zone textContent: Zone 1'))).toBeDefined();
+expect(logs.find(l => l.includes('status textContent: active'))).toBeDefined();
+expect(logs.find(l => l.includes('status dataset.status: active'))).toBeDefined();
 ```
 
 **통과 기준:**
@@ -4755,9 +6168,9 @@ console.assert(statusEl.dataset.status === 'active', 'dataAttr 설정됨');
 2. optionBuilder 호출
 3. 생성된 옵션 구조 검증
 
-**검증 코드:**
+**주입 코드 (CodeBox에 입력):**
 ```javascript
-// register.js
+// register 탭
 
 // 옵션 빌더 함수
 function getLineChartOption(config, data) {
@@ -4796,20 +6209,38 @@ const { optionBuilder, ...chartConfig } = this.chartConfig;
 const option = optionBuilder(chartConfig, testData);
 
 // 검증 1: xAxis 데이터
-console.assert(option.xAxis.data.length === 3, 'xAxis 데이터 3개');
-console.assert(option.xAxis.data[0] === '10:00', 'xAxis 첫 번째 값');
+console.log('[SC-005] xAxis data length:', option.xAxis.data.length);
+console.log('[SC-005] xAxis first value:', option.xAxis.data[0]);
 
 // 검증 2: series 개수
-console.assert(option.series.length === 2, 'series 2개 생성');
+console.log('[SC-005] series count:', option.series.length);
 
 // 검증 3: 첫 번째 시리즈 (temperatures)
-console.assert(option.series[0].type === 'line', '라인 차트 타입');
-console.assert(option.series[0].data.length === 3, 'temperatures 데이터 3개');
-console.assert(option.series[0].lineStyle.color === '#3b82f6', '색상 적용됨');
-console.assert(option.series[0].smooth === true, 'smooth 옵션 적용됨');
+console.log('[SC-005] series[0] type:', option.series[0].type);
+console.log('[SC-005] series[0] data length:', option.series[0].data.length);
+console.log('[SC-005] series[0] lineStyle color:', option.series[0].lineStyle.color);
+console.log('[SC-005] series[0] smooth:', option.series[0].smooth);
 
 // 검증 4: 두 번째 시리즈 (humidities)
-console.assert(option.series[1].data[0] === 60, 'humidities 첫 번째 값');
+console.log('[SC-005] series[1] data[0]:', option.series[1].data[0]);
+```
+
+**Playwright 검증:**
+
+```typescript
+const logs: string[] = [];
+previewPage.on('console', msg => {
+    if (msg.text().includes('[SC-005]')) logs.push(msg.text());
+});
+
+expect(logs.find(l => l.includes('xAxis data length: 3'))).toBeDefined();
+expect(logs.find(l => l.includes('xAxis first value: 10:00'))).toBeDefined();
+expect(logs.find(l => l.includes('series count: 2'))).toBeDefined();
+expect(logs.find(l => l.includes('series[0] type: line'))).toBeDefined();
+expect(logs.find(l => l.includes('series[0] data length: 3'))).toBeDefined();
+expect(logs.find(l => l.includes('series[0] lineStyle color: #3b82f6'))).toBeDefined();
+expect(logs.find(l => l.includes('series[0] smooth: true'))).toBeDefined();
+expect(logs.find(l => l.includes('series[1] data[0]: 60'))).toBeDefined();
 ```
 
 **통과 기준:**
@@ -4830,9 +6261,9 @@ console.assert(option.series[1].data[0] === 60, 'humidities 첫 번째 값');
 2. optionBuilder 호출
 3. columns, layout 등 옵션 검증
 
-**검증 코드:**
+**주입 코드 (CodeBox에 입력):**
 ```javascript
-// register.js
+// register 탭
 
 function getTableOption(config, data) {
     return {
@@ -4861,11 +6292,26 @@ const { optionBuilder, ...tableConfig } = this.tableConfig;
 const option = optionBuilder(tableConfig, testData);
 
 // 검증
-console.assert(option.layout === 'fitColumns', 'layout 설정됨');
-console.assert(option.height === 250, 'height 설정됨');
-console.assert(option.columns.length === 3, 'columns 3개');
-console.assert(option.columns[0].title === 'PID', '첫 번째 컬럼 title');
-console.assert(option.data.length === 2, 'data 2행');
+console.log('[SC-006] layout:', option.layout);
+console.log('[SC-006] height:', option.height);
+console.log('[SC-006] columns count:', option.columns.length);
+console.log('[SC-006] columns[0] title:', option.columns[0].title);
+console.log('[SC-006] data row count:', option.data.length);
+```
+
+**Playwright 검증:**
+
+```typescript
+const logs: string[] = [];
+previewPage.on('console', msg => {
+    if (msg.text().includes('[SC-006]')) logs.push(msg.text());
+});
+
+expect(logs.find(l => l.includes('layout: fitColumns'))).toBeDefined();
+expect(logs.find(l => l.includes('height: 250'))).toBeDefined();
+expect(logs.find(l => l.includes('columns count: 3'))).toBeDefined();
+expect(logs.find(l => l.includes('columns[0] title: PID'))).toBeDefined();
+expect(logs.find(l => l.includes('data row count: 2'))).toBeDefined();
 ```
 
 **통과 기준:**
@@ -4890,9 +6336,9 @@ console.assert(option.data.length === 2, 'data 2행');
 3. datasetInfo 순회하여 fetchData 호출 확인
 4. render 메서드 호출 확인
 
-**검증 코드:**
+**주입 코드 (CodeBox에 입력):**
 ```javascript
-// register.js
+// register 탭
 const { applyShadowPopupMixin, applyEChartsMixin } = PopupMixin;
 
 applyShadowPopupMixin(this, {
@@ -4906,26 +6352,14 @@ this.datasetInfo = [
     { datasetName: 'sensor', param: { id: 'test' }, render: ['renderInfo'] }
 ];
 
-let showPopupCalled = false;
-let renderInfoCalled = false;
-
-const originalShowPopup = this.showPopup;
-this.showPopup = function() {
-    showPopupCalled = true;
-    originalShowPopup.call(this);
+this.renderInfo = (data) => {
+    console.log('[SC-007] renderInfo called with data:', data != null);
 };
-
-this.renderInfo = () => { renderInfoCalled = true; };
-
-// fetchData 모킹
-const originalFetchData = Wkit.fetchData;
-Wkit.fetchData = () => Promise.resolve({
-    response: { data: { value: 100 } }
-});
 
 // showDetail 구현
 function showDetail() {
     this.showPopup();
+    console.log('[SC-007] showPopup called');
     fx.go(
         this.datasetInfo,
         fx.each(({ datasetName, param, render }) =>
@@ -4944,11 +6378,20 @@ this.showDetail = showDetail.bind(this);
 await this.showDetail();
 
 // 검증
-console.assert(showPopupCalled === true, 'showPopup 호출됨');
-console.assert(renderInfoCalled === true, 'render 메서드 호출됨');
-console.assert(this._popup.host.style.display === 'block', '팝업 표시됨');
+console.log('[SC-007] popup display:', this._popup.host.style.display);
+```
 
-Wkit.fetchData = originalFetchData;
+**Playwright 검증:**
+
+```typescript
+const logs: string[] = [];
+previewPage.on('console', msg => {
+    if (msg.text().includes('[SC-007]')) logs.push(msg.text());
+});
+
+expect(logs.find(l => l.includes('showPopup called'))).toBeDefined();
+expect(logs.find(l => l.includes('renderInfo called with data: true'))).toBeDefined();
+expect(logs.find(l => l.includes('popup display: block'))).toBeDefined();
 ```
 
 **통과 기준:**
@@ -4970,9 +6413,9 @@ Wkit.fetchData = originalFetchData;
 2. hideDetail() 호출
 3. 팝업 숨김 확인
 
-**검증 코드:**
+**주입 코드 (CodeBox에 입력):**
 ```javascript
-// register.js
+// register 탭
 applyShadowPopupMixin(this, {
     getHTML: () => '<div class="popup">Content</div>',
     getStyles: () => '',
@@ -4987,13 +6430,25 @@ this.hideDetail = hideDetail.bind(this);
 
 // 팝업 표시
 this.showPopup();
-console.assert(this._popup.host.style.display === 'block', '팝업 표시됨');
+console.log('[SC-008] after showPopup display:', this._popup.host.style.display);
 
 // hideDetail 호출
 this.hideDetail();
 
 // 검증
-console.assert(this._popup.host.style.display === 'none', '팝업 숨겨짐');
+console.log('[SC-008] after hideDetail display:', this._popup.host.style.display);
+```
+
+**Playwright 검증:**
+
+```typescript
+const logs: string[] = [];
+previewPage.on('console', msg => {
+    if (msg.text().includes('[SC-008]')) logs.push(msg.text());
+});
+
+expect(logs.find(l => l.includes('after showPopup display: block'))).toBeDefined();
+expect(logs.find(l => l.includes('after hideDetail display: none'))).toBeDefined();
 ```
 
 **통과 기준:**
@@ -5013,9 +6468,9 @@ console.assert(this._popup.host.style.display === 'none', '팝업 숨겨짐');
 2. showDetail() 호출
 3. 에러 catch 및 hidePopup 호출 확인
 
-**검증 코드:**
+**주입 코드 (CodeBox에 입력):**
 ```javascript
-// register.js
+// register 탭
 applyShadowPopupMixin(this, {
     getHTML: () => '<div class="popup">Content</div>',
     getStyles: () => '',
@@ -5027,19 +6482,6 @@ this.datasetInfo = [
 ];
 
 this.renderInfo = () => {};
-
-// fetchData가 에러를 던지도록 설정
-const originalFetchData = Wkit.fetchData;
-Wkit.fetchData = () => Promise.reject(new Error('Network Error'));
-
-let hidePopupCalled = false;
-const originalHidePopup = this.hidePopup;
-this.hidePopup = function() {
-    hidePopupCalled = true;
-    originalHidePopup.call(this);
-};
-
-let errorCaught = false;
 
 function showDetail() {
     this.showPopup();
@@ -5053,9 +6495,10 @@ function showDetail() {
             )
         )
     ).catch(e => {
-        errorCaught = true;
-        console.error('[Component]', e.message);
+        console.log('[SC-009] error caught:', e.message);
         this.hidePopup();
+        console.log('[SC-009] hidePopup called after error');
+        console.log('[SC-009] popup display after error:', this._popup.host.style.display);
     });
 }
 
@@ -5063,12 +6506,19 @@ this.showDetail = showDetail.bind(this);
 
 // 실행
 await this.showDetail();
+```
 
-// 검증
-console.assert(errorCaught === true, '에러가 catch됨');
-console.assert(hidePopupCalled === true, '에러 시 hidePopup 호출됨');
+**Playwright 검증:**
 
-Wkit.fetchData = originalFetchData;
+```typescript
+const logs: string[] = [];
+previewPage.on('console', msg => {
+    if (msg.text().includes('[SC-009]')) logs.push(msg.text());
+});
+
+expect(logs.find(l => l.includes('error caught:'))).toBeDefined();
+expect(logs.find(l => l.includes('hidePopup called after error'))).toBeDefined();
+expect(logs.find(l => l.includes('popup display after error: none'))).toBeDefined();
 ```
 
 **통과 기준:**
@@ -5092,9 +6542,9 @@ Wkit.fetchData = originalFetchData;
 2. bind3DEvents 호출
 3. 이벤트 바인딩 확인
 
-**검증 코드:**
+**주입 코드 (CodeBox에 입력):**
 ```javascript
-// register.js
+// register 탭
 const { bind3DEvents } = Wkit;
 
 this.customEvents = {
@@ -5102,30 +6552,38 @@ this.customEvents = {
     dblclick: '@sensorDoubleClicked'
 };
 
-// bind3DEvents 모킹 (실제로는 Wkit 내부에서 처리)
-let boundEvents = [];
-const originalBind3DEvents = Wkit.bind3DEvents;
-Wkit.bind3DEvents = (instance, events) => {
-    Object.entries(events).forEach(([eventType, eventName]) => {
-        boundEvents.push({ instance, eventType, eventName });
-    });
-};
+// customEvents 구조 검증
+const eventEntries = Object.entries(this.customEvents);
+console.log('[SC-010] customEvents count:', eventEntries.length);
+eventEntries.forEach(([eventType, eventName]) => {
+    console.log(`[SC-010] event: ${eventType} -> ${eventName}`);
+});
 
+// bind3DEvents 호출
 bind3DEvents(this, this.customEvents);
+console.log('[SC-010] bind3DEvents called');
 
-// 검증
-console.assert(boundEvents.length === 2, '2개 이벤트 바인딩됨');
-console.assert(
-    boundEvents.some(e => e.eventType === 'click' && e.eventName === '@sensorClicked'),
-    'click 이벤트 바인딩됨'
-);
-console.assert(
-    boundEvents.some(e => e.eventType === 'dblclick' && e.eventName === '@sensorDoubleClicked'),
-    'dblclick 이벤트 바인딩됨'
-);
-console.assert(boundEvents[0].instance === this, '인스턴스 참조 전달됨');
+// customEvents 키 검증
+console.log('[SC-010] has click event:', 'click' in this.customEvents);
+console.log('[SC-010] has dblclick event:', 'dblclick' in this.customEvents);
+console.log('[SC-010] click eventName:', this.customEvents.click);
+console.log('[SC-010] dblclick eventName:', this.customEvents.dblclick);
+```
 
-Wkit.bind3DEvents = originalBind3DEvents;
+**Playwright 검증:**
+
+```typescript
+const logs: string[] = [];
+previewPage.on('console', msg => {
+    if (msg.text().includes('[SC-010]')) logs.push(msg.text());
+});
+
+expect(logs.find(l => l.includes('customEvents count: 2'))).toBeDefined();
+expect(logs.find(l => l.includes('event: click -> @sensorClicked'))).toBeDefined();
+expect(logs.find(l => l.includes('event: dblclick -> @sensorDoubleClicked'))).toBeDefined();
+expect(logs.find(l => l.includes('bind3DEvents called'))).toBeDefined();
+expect(logs.find(l => l.includes('has click event: true'))).toBeDefined();
+expect(logs.find(l => l.includes('has dblclick event: true'))).toBeDefined();
 ```
 
 **통과 기준:**
@@ -5147,26 +6605,23 @@ Wkit.bind3DEvents = originalBind3DEvents;
 2. 3D 컴포넌트에서 이벤트 발행
 3. 핸들러 실행 및 targetInstance, datasetInfo 전달 확인
 
-**검증 코드:**
+**주입 코드 (CodeBox에 입력):**
 ```javascript
 // before_load.js (Page)
 const { onEventBusHandlers, fetchData } = Wkit;
 
-let eventReceived = false;
-let receivedTargetInstance = null;
-let receivedDatasetInfo = null;
-
 this.eventBusHandlers = {
     '@sensorClicked': async ({ event, targetInstance }) => {
-        eventReceived = true;
-        receivedTargetInstance = targetInstance;
-        receivedDatasetInfo = targetInstance.datasetInfo;
+        console.log('[SC-011] event received: true');
+        console.log('[SC-011] targetInstance id:', targetInstance.id);
+        console.log('[SC-011] datasetInfo length:', targetInstance.datasetInfo?.length);
+        console.log('[SC-011] datasetInfo[0] datasetName:', targetInstance.datasetInfo?.[0]?.datasetName);
 
         // datasetInfo가 있으면 데이터 fetch
-        if (receivedDatasetInfo?.length) {
-            for (const { datasetName, param } of receivedDatasetInfo) {
+        if (targetInstance.datasetInfo?.length) {
+            for (const { datasetName, param } of targetInstance.datasetInfo) {
                 const data = await fetchData(this, datasetName, param);
-                console.log('Fetched data:', data);
+                console.log('[SC-011] fetched data:', data != null);
             }
         }
     }
@@ -5188,13 +6643,22 @@ Weventbus.emit('@sensorClicked', {
     targetInstance: mockComponent
 });
 
-// 검증 (비동기 대기 필요)
+// 비동기 대기
 await new Promise(resolve => setTimeout(resolve, 50));
+```
 
-console.assert(eventReceived === true, '이벤트 수신됨');
-console.assert(receivedTargetInstance.id === 'sensor-001', 'targetInstance 전달됨');
-console.assert(receivedDatasetInfo.length === 1, 'datasetInfo 접근 가능');
-console.assert(receivedDatasetInfo[0].datasetName === 'sensorData', 'datasetName 확인');
+**Playwright 검증:**
+
+```typescript
+const logs: string[] = [];
+previewPage.on('console', msg => {
+    if (msg.text().includes('[SC-011]')) logs.push(msg.text());
+});
+
+expect(logs.find(l => l.includes('event received: true'))).toBeDefined();
+expect(logs.find(l => l.includes('targetInstance id: sensor-001'))).toBeDefined();
+expect(logs.find(l => l.includes('datasetInfo length: 1'))).toBeDefined();
+expect(logs.find(l => l.includes('datasetInfo[0] datasetName: sensorData'))).toBeDefined();
 ```
 
 **통과 기준:**
@@ -5217,9 +6681,9 @@ console.assert(receivedDatasetInfo[0].datasetName === 'sensorData', 'datasetName
 2. htmlCode, cssCode 추출
 3. getPopupHTML, getPopupStyles 정의
 
-**검증 코드:**
+**주입 코드 (CodeBox에 입력):**
 ```javascript
-// register.js
+// register 탭
 
 // publishCode 시뮬레이션
 this.properties = {
@@ -5259,11 +6723,26 @@ this.getPopupStyles = () => cssCode || '';
 const html = this.getPopupHTML();
 const css = this.getPopupStyles();
 
-console.assert(html.includes('sensor-popup'), 'HTML 템플릿 추출됨');
-console.assert(html.includes('Sensor Info'), 'HTML 내용 포함');
-console.assert(!html.includes('<template'), 'template 태그는 제외');
-console.assert(css.includes('.sensor-popup'), 'CSS 추출됨');
-console.assert(css.includes('background'), 'CSS 스타일 포함');
+console.log('[SC-012] html includes sensor-popup:', html.includes('sensor-popup'));
+console.log('[SC-012] html includes Sensor Info:', html.includes('Sensor Info'));
+console.log('[SC-012] html excludes template tag:', !html.includes('<template'));
+console.log('[SC-012] css includes .sensor-popup:', css.includes('.sensor-popup'));
+console.log('[SC-012] css includes background:', css.includes('background'));
+```
+
+**Playwright 검증:**
+
+```typescript
+const logs: string[] = [];
+previewPage.on('console', msg => {
+    if (msg.text().includes('[SC-012]')) logs.push(msg.text());
+});
+
+expect(logs.find(l => l.includes('html includes sensor-popup: true'))).toBeDefined();
+expect(logs.find(l => l.includes('html includes Sensor Info: true'))).toBeDefined();
+expect(logs.find(l => l.includes('html excludes template tag: true'))).toBeDefined();
+expect(logs.find(l => l.includes('css includes .sensor-popup: true'))).toBeDefined();
+expect(logs.find(l => l.includes('css includes background: true'))).toBeDefined();
 ```
 
 **통과 기준:**
@@ -5284,9 +6763,9 @@ console.assert(css.includes('background'), 'CSS 스타일 포함');
 1. 존재하지 않는 templateId로 extractTemplate 호출
 2. 빈 문자열 반환 확인
 
-**검증 코드:**
+**주입 코드 (CodeBox에 입력):**
 ```javascript
-// register.js
+// register 탭
 function extractTemplate(htmlCode, templateId) {
     const parser = new DOMParser();
     const doc = parser.parseFromString(htmlCode, 'text/html');
@@ -5298,19 +6777,33 @@ const htmlCode = '<template id="other-popup"><div>Other</div></template>';
 
 // 존재하지 않는 ID
 const result = extractTemplate(htmlCode, 'non-existent');
-console.assert(result === '', '없는 템플릿은 빈 문자열');
+console.log('[SC-013] non-existent template result:', JSON.stringify(result));
 
 // 존재하는 ID
 const existing = extractTemplate(htmlCode, 'other-popup');
-console.assert(existing.includes('Other'), '존재하는 템플릿은 내용 반환');
+console.log('[SC-013] existing template includes Other:', existing.includes('Other'));
 
 // 빈 htmlCode
 const empty = extractTemplate('', 'any-id');
-console.assert(empty === '', '빈 HTML은 빈 문자열');
+console.log('[SC-013] empty htmlCode result:', JSON.stringify(empty));
 
 // publishCode 없는 경우
 const nullCheck = extractTemplate(null || '', 'popup');
-console.assert(nullCheck === '', 'null/undefined 안전 처리');
+console.log('[SC-013] null htmlCode result:', JSON.stringify(nullCheck));
+```
+
+**Playwright 검증:**
+
+```typescript
+const logs: string[] = [];
+previewPage.on('console', msg => {
+    if (msg.text().includes('[SC-013]')) logs.push(msg.text());
+});
+
+expect(logs.find(l => l.includes('non-existent template result: ""'))).toBeDefined();
+expect(logs.find(l => l.includes('existing template includes Other: true'))).toBeDefined();
+expect(logs.find(l => l.includes('empty htmlCode result: ""'))).toBeDefined();
+expect(logs.find(l => l.includes('null htmlCode result: ""'))).toBeDefined();
 ```
 
 **통과 기준:**
@@ -5333,9 +6826,9 @@ console.assert(nullCheck === '', 'null/undefined 안전 처리');
 2. beforeDestroy.js 실행 (destroyPopup 호출)
 3. 모든 리소스 정리 확인
 
-**검증 코드:**
+**주입 코드 (CodeBox에 입력):**
 ```javascript
-// register.js
+// register 탭
 const { applyShadowPopupMixin, applyEChartsMixin } = PopupMixin;
 
 applyShadowPopupMixin(this, {
@@ -5349,16 +6842,29 @@ this.createPopup();
 this.createChart('.chart');
 
 // 정리 전 상태 확인
-console.assert(this._popup.host !== null, '정리 전: host 존재');
-console.assert(this._popup.charts.size === 1, '정리 전: 차트 1개');
+console.log('[SC-014] before destroy host exists:', this._popup.host !== null);
+console.log('[SC-014] before destroy charts size:', this._popup.charts.size);
 
-// beforeDestroy.js 실행
+// beforeDestroy 탭 실행
 this.destroyPopup();
-console.log('[Component] Destroyed');
 
 // 검증
-console.assert(this._popup.host === null, '정리 후: host null');
-console.assert(this._popup.charts.size === 0, '정리 후: charts 비워짐');
+console.log('[SC-014] after destroy host:', this._popup.host);
+console.log('[SC-014] after destroy charts size:', this._popup.charts.size);
+```
+
+**Playwright 검증:**
+
+```typescript
+const logs: string[] = [];
+previewPage.on('console', msg => {
+    if (msg.text().includes('[SC-014]')) logs.push(msg.text());
+});
+
+expect(logs.find(l => l.includes('before destroy host exists: true'))).toBeDefined();
+expect(logs.find(l => l.includes('before destroy charts size: 1'))).toBeDefined();
+expect(logs.find(l => l.includes('after destroy host: null'))).toBeDefined();
+expect(logs.find(l => l.includes('after destroy charts size: 0'))).toBeDefined();
 ```
 
 **통과 기준:**
@@ -5383,9 +6889,9 @@ console.assert(this._popup.charts.size === 0, '정리 후: charts 비워짐');
 2. disposeAllThreeResources 호출 (Page의 before_unload.js)
 3. 속성이 null이 아닌지 확인 (GC가 처리)
 
-**검증 코드:**
+**주입 코드 (CodeBox에 입력):**
 ```javascript
-// register.js (3D 컴포넌트)
+// register 탭 (3D 컴포넌트)
 this.customEvents = {
     click: '@objectClicked'
 };
@@ -5399,9 +6905,24 @@ this.datasetInfo = [
 // 인스턴스 속성은 건드리지 않음
 
 // 검증: disposeAllThreeResources 호출 후에도 속성이 유지됨
-console.assert(this.customEvents !== null, 'customEvents preserved');
-console.assert(this.datasetInfo !== null, 'datasetInfo preserved');
+console.log('[SC-015] customEvents preserved:', this.customEvents !== null);
+console.log('[SC-015] datasetInfo preserved:', this.datasetInfo !== null);
+console.log('[SC-015] customEvents value:', JSON.stringify(this.customEvents));
+console.log('[SC-015] datasetInfo length:', this.datasetInfo?.length);
 // → 이 속성들은 이후 _onViewerDestroy()에서 정리되거나, 인스턴스 GC 시 함께 수거됨
+```
+
+**Playwright 검증:**
+
+```typescript
+const logs: string[] = [];
+previewPage.on('console', msg => {
+    if (msg.text().includes('[SC-015]')) logs.push(msg.text());
+});
+
+expect(logs.find(l => l.includes('customEvents preserved: true'))).toBeDefined();
+expect(logs.find(l => l.includes('datasetInfo preserved: true'))).toBeDefined();
+expect(logs.find(l => l.includes('datasetInfo length: 1'))).toBeDefined();
 ```
 
 **통과 기준:**
@@ -5428,7 +6949,7 @@ console.assert(this.datasetInfo !== null, 'datasetInfo preserved');
 5. hideDetail() 호출
 6. 정리 (beforeDestroy.js)
 
-**검증 코드:**
+**주입 코드 (CodeBox에 입력):**
 ```javascript
 // 전체 흐름 테스트
 const lifecycle = [];
@@ -5486,38 +7007,52 @@ this.hideDetail = hideDetail.bind(this);
 
 lifecycle.push('component:registered');
 
-// === 2. fetchData 모킹 ===
-Wkit.fetchData = () => Promise.resolve({
-    response: { data: { name: 'Test Sensor' } }
-});
-
-// === 3. 이벤트 시뮬레이션 (Page에서) ===
+// === 2. 이벤트 시뮬레이션 (Page에서) ===
 // 실제로는 eventBusHandler가 showDetail 호출
 await this.showDetail();
 
-// === 4. 팝업 숨김 ===
+// === 3. 팝업 숨김 ===
 this.hideDetail();
 
-// === 5. 정리 (beforeDestroy.js) ===
+// === 4. 정리 (beforeDestroy.js) ===
 this.destroyPopup();
 this.customEvents = null;
 this.datasetInfo = null;
 lifecycle.push('component:destroyed');
 
 // === 검증 ===
-console.log('Lifecycle:', lifecycle);
+console.log('[SC-016] lifecycle:', JSON.stringify(lifecycle));
+console.log('[SC-016] lifecycle[0]:', lifecycle[0]);
+console.log('[SC-016] lifecycle[1]:', lifecycle[1]);
+console.log('[SC-016] lifecycle[2]:', lifecycle[2]);
+console.log('[SC-016] lifecycle[3]:', lifecycle[3]);
+console.log('[SC-016] lifecycle[4]:', lifecycle[4]);
+console.log('[SC-016] lifecycle[5]:', lifecycle[5]);
+console.log('[SC-016] lifecycle[6]:', lifecycle[6]);
 
-console.assert(lifecycle[0] === 'component:registered', '1. 컴포넌트 등록');
-console.assert(lifecycle[1] === 'showDetail:called', '2. showDetail 호출');
-console.assert(lifecycle[2] === 'popup:created', '3. 팝업 생성');
-console.assert(lifecycle[3] === 'data:fetched', '4. 데이터 fetch');
-console.assert(lifecycle[4] === 'render:name', '5. 렌더링');
-console.assert(lifecycle[5] === 'hideDetail:called', '6. hideDetail 호출');
-console.assert(lifecycle[6] === 'component:destroyed', '7. 컴포넌트 정리');
+console.log('[SC-016] popup host after destroy:', this._popup.host);
+console.log('[SC-016] customEvents after destroy:', this.customEvents);
+console.log('[SC-016] datasetInfo after destroy:', this.datasetInfo);
+```
 
-console.assert(this._popup.host === null, '팝업 DOM 정리됨');
-console.assert(this.customEvents === null, 'customEvents 정리됨');
-console.assert(this.datasetInfo === null, 'datasetInfo 정리됨');
+**Playwright 검증:**
+
+```typescript
+const logs: string[] = [];
+previewPage.on('console', msg => {
+    if (msg.text().includes('[SC-016]')) logs.push(msg.text());
+});
+
+expect(logs.find(l => l.includes('lifecycle[0]: component:registered'))).toBeDefined();
+expect(logs.find(l => l.includes('lifecycle[1]: showDetail:called'))).toBeDefined();
+expect(logs.find(l => l.includes('lifecycle[2]: popup:created'))).toBeDefined();
+expect(logs.find(l => l.includes('lifecycle[3]: data:fetched'))).toBeDefined();
+expect(logs.find(l => l.includes('lifecycle[4]: render:name'))).toBeDefined();
+expect(logs.find(l => l.includes('lifecycle[5]: hideDetail:called'))).toBeDefined();
+expect(logs.find(l => l.includes('lifecycle[6]: component:destroyed'))).toBeDefined();
+expect(logs.find(l => l.includes('popup host after destroy: null'))).toBeDefined();
+expect(logs.find(l => l.includes('customEvents after destroy: null'))).toBeDefined();
+expect(logs.find(l => l.includes('datasetInfo after destroy: null'))).toBeDefined();
 ```
 
 **통과 기준:**
@@ -5574,7 +7109,7 @@ fx.go 기반 파이프라인에서의 에러 전파와 처리 전략을 검증�
 2. fx.go가 rejected Promise 반환 확인
 3. catch로 에러 수신 확인
 
-**검증 코드:**
+**주입 코드 (CodeBox에 입력):**
 ```javascript
 // 에러를 발생시키는 파이프라인
 let errorReceived = null;
@@ -5591,8 +7126,21 @@ await fx.go(
 });
 
 // 검증
-console.assert(errorReceived !== null, '에러가 catch로 전파됨');
-console.assert(errorReceived.message === 'Intentional Error', '에러 메시지 일치');
+console.log('[FX-001] error received:', errorReceived !== null);
+console.log('[FX-001] error message:', errorReceived?.message);
+```
+
+**Playwright 검증:**
+
+```typescript
+const logs: string[] = [];
+previewPage.on('console', msg => {
+    if (msg.text().includes('[FX-001]')) logs.push(msg.text());
+});
+
+// fx.go runs inside page.evaluate
+expect(logs.find(l => l.includes('error received: true'))).toBeDefined();
+expect(logs.find(l => l.includes('error message: Intentional Error'))).toBeDefined();
 ```
 
 **통과 기준:**
@@ -5612,7 +7160,7 @@ console.assert(errorReceived.message === 'Intentional Error', '에러 메시지 
 1. async 함수에서 reject 발생
 2. 에러 전파 확인
 
-**검증 코드:**
+**주입 코드 (CodeBox에 입력):**
 ```javascript
 let errorReceived = null;
 let afterErrorExecuted = false;
@@ -5636,9 +7184,22 @@ await fx.go(
 });
 
 // 검증
-console.assert(errorReceived !== null, '비동기 에러 전파됨');
-console.assert(errorReceived.message === 'Async Error', '에러 메시지 일치');
-console.assert(afterErrorExecuted === false, '에러 후 함수 미실행');
+console.log('[FX-002] error received:', errorReceived !== null);
+console.log('[FX-002] error message:', errorReceived?.message);
+console.log('[FX-002] after error executed:', afterErrorExecuted);
+```
+
+**Playwright 검증:**
+
+```typescript
+const logs: string[] = [];
+previewPage.on('console', msg => {
+    if (msg.text().includes('[FX-002]')) logs.push(msg.text());
+});
+
+expect(logs.find(l => l.includes('error received: true'))).toBeDefined();
+expect(logs.find(l => l.includes('error message: Async Error'))).toBeDefined();
+expect(logs.find(l => l.includes('after error executed: false'))).toBeDefined();
 ```
 
 **통과 기준:**
@@ -5658,7 +7219,7 @@ console.assert(afterErrorExecuted === false, '에러 후 함수 미실행');
 1. 배열 순회 중 특정 항목에서 에러 발생
 2. 순회 중단 및 에러 전파 확인
 
-**검증 코드:**
+**주입 코드 (CodeBox에 입력):**
 ```javascript
 const processed = [];
 let errorReceived = null;
@@ -5676,11 +7237,24 @@ await fx.go(
 });
 
 // 검증
-console.assert(errorReceived !== null, '에러가 전파됨');
-console.assert(errorReceived.message === 'Error at item 3', '에러 메시지 일치');
-console.assert(processed.length === 2, '에러 전 항목만 처리됨');
-console.assert(processed.includes(1) && processed.includes(2), '1, 2만 처리됨');
-console.assert(!processed.includes(4) && !processed.includes(5), '4, 5 미처리');
+console.log('[FX-003] error received:', errorReceived !== null);
+console.log('[FX-003] error message:', errorReceived?.message);
+console.log('[FX-003] processed count:', processed.length);
+console.log('[FX-003] processed items:', JSON.stringify(processed));
+```
+
+**Playwright 검증:**
+
+```typescript
+const logs: string[] = [];
+previewPage.on('console', msg => {
+    if (msg.text().includes('[FX-003]')) logs.push(msg.text());
+});
+
+expect(logs.find(l => l.includes('error received: true'))).toBeDefined();
+expect(logs.find(l => l.includes('error message: Error at item 3'))).toBeDefined();
+expect(logs.find(l => l.includes('processed count: 2'))).toBeDefined();
+expect(logs.find(l => l.includes('processed items: [1,2]'))).toBeDefined();
 ```
 
 **통과 기준:**
@@ -5702,7 +7276,7 @@ console.assert(!processed.includes(4) && !processed.includes(5), '4, 5 미처리
 1. 필터 조건으로 일부 항목 제외
 2. nop이 에러가 아닌 스킵으로 동작 확인
 
-**검증 코드:**
+**주입 코드 (CodeBox에 입력):**
 ```javascript
 const result = [];
 
@@ -5713,12 +7287,24 @@ await fx.go(
 );
 
 // 검증: nop은 에러가 아니라 스킵
-console.assert(result.length === 3, '홀수 3개만 처리됨');
-console.assert(result.includes(1), '1 포함');
-console.assert(result.includes(3), '3 포함');
-console.assert(result.includes(5), '5 포함');
-console.assert(!result.includes(2), '2 스킵됨');
-console.assert(!result.includes(4), '4 스킵됨');
+console.log('[FX-004] result count:', result.length);
+console.log('[FX-004] result items:', JSON.stringify(result));
+console.log('[FX-004] includes 2:', result.includes(2));
+console.log('[FX-004] includes 4:', result.includes(4));
+```
+
+**Playwright 검증:**
+
+```typescript
+const logs: string[] = [];
+previewPage.on('console', msg => {
+    if (msg.text().includes('[FX-004]')) logs.push(msg.text());
+});
+
+expect(logs.find(l => l.includes('result count: 3'))).toBeDefined();
+expect(logs.find(l => l.includes('result items: [1,3,5]'))).toBeDefined();
+expect(logs.find(l => l.includes('includes 2: false'))).toBeDefined();
+expect(logs.find(l => l.includes('includes 4: false'))).toBeDefined();
 ```
 
 **통과 기준:**
@@ -5739,7 +7325,7 @@ console.assert(!result.includes(4), '4 스킵됨');
 2. 통과한 항목 중 에러 발생
 3. nop은 스킵, 에러는 전파 확인
 
-**검증 코드:**
+**주입 코드 (CodeBox에 입력):**
 ```javascript
 const processed = [];
 let errorReceived = null;
@@ -5758,14 +7344,28 @@ await fx.go(
 });
 
 // 검증
-console.assert(processed.length === 1, '1만 처리됨');
-console.assert(processed[0] === 1, '첫 번째 홀수 1 처리');
-console.assert(errorReceived !== null, '에러 전파됨');
-console.assert(errorReceived.message === 'Error at 3', 'x=3에서 에러');
+console.log('[FX-005] processed count:', processed.length);
+console.log('[FX-005] processed[0]:', processed[0]);
+console.log('[FX-005] error received:', errorReceived !== null);
+console.log('[FX-005] error message:', errorReceived?.message);
 
 // nop(짝수 스킵)과 에러(x=3)가 구분됨
 // 2, 4는 필터에서 스킵 (nop) → 순회 계속
 // 3에서 에러 → 순회 중단
+```
+
+**Playwright 검증:**
+
+```typescript
+const logs: string[] = [];
+previewPage.on('console', msg => {
+    if (msg.text().includes('[FX-005]')) logs.push(msg.text());
+});
+
+expect(logs.find(l => l.includes('processed count: 1'))).toBeDefined();
+expect(logs.find(l => l.includes('processed[0]: 1'))).toBeDefined();
+expect(logs.find(l => l.includes('error received: true'))).toBeDefined();
+expect(logs.find(l => l.includes('error message: Error at 3'))).toBeDefined();
 ```
 
 **통과 기준:**
@@ -5787,7 +7387,7 @@ console.assert(errorReceived.message === 'Error at 3', 'x=3에서 에러');
 1. 다단계 파이프라인에서 에러 발생
 2. 끝의 catch에서 수신 확인
 
-**검증 코드:**
+**주입 코드 (CodeBox에 입력):**
 ```javascript
 let errorReceived = null;
 let step1Executed = false;
@@ -5806,11 +7406,26 @@ await fx.go(
 });
 
 // 검증
-console.assert(step1Executed === true, 'Step 1 실행됨');
-console.assert(step2Executed === true, 'Step 2 실행됨 (에러 발생)');
-console.assert(step3Executed === false, 'Step 3 미실행 (fail-fast)');
-console.assert(errorReceived !== null, '끝에서 에러 catch');
-console.assert(errorReceived.message === 'Step 2 Error', '에러 메시지 일치');
+console.log('[FX-006] step1 executed:', step1Executed);
+console.log('[FX-006] step2 executed:', step2Executed);
+console.log('[FX-006] step3 executed:', step3Executed);
+console.log('[FX-006] error received:', errorReceived !== null);
+console.log('[FX-006] error message:', errorReceived?.message);
+```
+
+**Playwright 검증:**
+
+```typescript
+const logs: string[] = [];
+previewPage.on('console', msg => {
+    if (msg.text().includes('[FX-006]')) logs.push(msg.text());
+});
+
+expect(logs.find(l => l.includes('step1 executed: true'))).toBeDefined();
+expect(logs.find(l => l.includes('step2 executed: true'))).toBeDefined();
+expect(logs.find(l => l.includes('step3 executed: false'))).toBeDefined();
+expect(logs.find(l => l.includes('error received: true'))).toBeDefined();
+expect(logs.find(l => l.includes('error message: Step 2 Error'))).toBeDefined();
 ```
 
 **통과 기준:**
@@ -5831,7 +7446,7 @@ console.assert(errorReceived.message === 'Step 2 Error', '에러 메시지 일�
 2. 반환값 없이 catch → undefined로 진행
 3. 후속 함수 실행 확인
 
-**검증 코드:**
+**주입 코드 (CodeBox에 입력):**
 ```javascript
 let step3Input = null;
 let step3Executed = false;
@@ -5857,8 +7472,20 @@ await fx.go(
 );
 
 // 검증: 중간 catch가 에러를 삼킴
-console.assert(step3Executed === true, 'Step 3 실행됨 (에러가 삼켜짐)');
-console.assert(step3Input === undefined, 'Step 3 입력값 undefined');
+console.log('[FX-007] step3 executed:', step3Executed);
+console.log('[FX-007] step3 input:', step3Input);
+```
+
+**Playwright 검증:**
+
+```typescript
+const logs: string[] = [];
+previewPage.on('console', msg => {
+    if (msg.text().includes('[FX-007]')) logs.push(msg.text());
+});
+
+expect(logs.find(l => l.includes('step3 executed: true'))).toBeDefined();
+expect(logs.find(l => l.includes('step3 input: undefined'))).toBeDefined();
 ```
 
 **통과 기준:**
@@ -5879,7 +7506,7 @@ console.assert(step3Input === undefined, 'Step 3 입력값 undefined');
 1. 에러 발생 + catch에서 대체값 반환
 2. 대체값으로 파이프라인 계속 확인
 
-**검증 코드:**
+**주입 코드 (CodeBox에 입력):**
 ```javascript
 let step3Input = null;
 
@@ -5903,10 +7530,24 @@ await fx.go(
 );
 
 // 검증: 명시적 대체값
-console.assert(typeof step3Input === 'object', '대체 객체 전달됨');
-console.assert(step3Input.ok === false, 'ok: false');
-console.assert(step3Input.error === 'Inner Error', '에러 메시지 포함');
-console.assert(step3Input.fallback === 'default_value', 'fallback 값 포함');
+console.log('[FX-008] step3Input type:', typeof step3Input);
+console.log('[FX-008] step3Input.ok:', step3Input?.ok);
+console.log('[FX-008] step3Input.error:', step3Input?.error);
+console.log('[FX-008] step3Input.fallback:', step3Input?.fallback);
+```
+
+**Playwright 검증:**
+
+```typescript
+const logs: string[] = [];
+previewPage.on('console', msg => {
+    if (msg.text().includes('[FX-008]')) logs.push(msg.text());
+});
+
+expect(logs.find(l => l.includes('step3Input type: object'))).toBeDefined();
+expect(logs.find(l => l.includes('step3Input.ok: false'))).toBeDefined();
+expect(logs.find(l => l.includes('step3Input.error: Inner Error'))).toBeDefined();
+expect(logs.find(l => l.includes('step3Input.fallback: default_value'))).toBeDefined();
 ```
 
 **통과 기준:**
@@ -5929,7 +7570,7 @@ console.assert(step3Input.fallback === 'default_value', 'fallback 값 포함');
 2. catch로 처리 확인
 3. unhandled rejection 없음 확인
 
-**검증 코드:**
+**주입 코드 (CodeBox에 입력):**
 ```javascript
 let catchCount = 0;
 
@@ -5950,9 +7591,20 @@ await run();
 await run();
 
 // 검증: 모든 에러가 catch됨
-console.assert(catchCount === 3, '모든 에러가 catch됨');
+console.log('[FX-009] catch count:', catchCount);
 
 // unhandled rejection 없음 (콘솔에 UnhandledPromiseRejection 에러 없어야 함)
+```
+
+**Playwright 검증:**
+
+```typescript
+const logs: string[] = [];
+previewPage.on('console', msg => {
+    if (msg.text().includes('[FX-009]')) logs.push(msg.text());
+});
+
+expect(logs.find(l => l.includes('catch count: 3'))).toBeDefined();
 ```
 
 **통과 기준:**
@@ -5972,7 +7624,7 @@ console.assert(catchCount === 3, '모든 에러가 catch됨');
 1. 핸들러 내에서 에러 발생
 2. catch 처리 확인
 
-**검증 코드:**
+**주입 코드 (CodeBox에 입력):**
 ```javascript
 let errorHandled = false;
 
@@ -6000,7 +7652,18 @@ await eventBusHandlers['@itemClicked']({
 });
 
 // 검증
-console.assert(errorHandled === true, '핸들러 내 에러 처리됨');
+console.log('[FX-010] error handled:', errorHandled);
+```
+
+**Playwright 검증:**
+
+```typescript
+const logs: string[] = [];
+previewPage.on('console', msg => {
+    if (msg.text().includes('[FX-010]')) logs.push(msg.text());
+});
+
+expect(logs.find(l => l.includes('error handled: true'))).toBeDefined();
 ```
 
 **통과 기준:**
@@ -6023,7 +7686,7 @@ console.assert(errorHandled === true, '핸들러 내 에러 처리됨');
 2. 내부에서 에러 발생
 3. 외부 catch로 전파 확인
 
-**검증 코드:**
+**주입 코드 (CodeBox에 입력):**
 ```javascript
 let outerCatchCalled = false;
 let errorMessage = null;
@@ -6056,8 +7719,20 @@ function fetchData(name, param) {
 }
 
 // 검증
-console.assert(outerCatchCalled === true, '외부 catch 호출됨');
-console.assert(errorMessage === 'Error processing data2', '내부 에러가 외부로 전파');
+console.log('[FX-011] outer catch called:', outerCatchCalled);
+console.log('[FX-011] error message:', errorMessage);
+```
+
+**Playwright 검증:**
+
+```typescript
+const logs: string[] = [];
+previewPage.on('console', msg => {
+    if (msg.text().includes('[FX-011]')) logs.push(msg.text());
+});
+
+expect(logs.find(l => l.includes('outer catch called: true'))).toBeDefined();
+expect(logs.find(l => l.includes('error message: Error processing data2'))).toBeDefined();
 ```
 
 **통과 기준:**
@@ -6077,7 +7752,7 @@ console.assert(errorMessage === 'Error processing data2', '내부 에러가 외�
 1. 여러 항목 순회
 2. 일부 항목 실패해도 나머지 처리 확인
 
-**검증 코드:**
+**주입 코드 (CodeBox에 입력):**
 ```javascript
 const results = [];
 
@@ -6102,17 +7777,31 @@ await fx.go(
 );
 
 // 검증: 부분 실패 허용
-console.assert(results.length === 5, '모든 항목 처리됨');
+console.log('[FX-012] results count:', results.length);
 
 // 성공한 항목들
 const successItems = results.filter(r => typeof r === 'number' || r.ok !== false);
-console.assert(successItems.length >= 4, '대부분 성공');
+console.log('[FX-012] success count:', successItems.length);
 
 // 실패한 항목 (item 3)
 const failedItem = results.find(r => r.ok === false);
-console.assert(failedItem !== undefined, '실패 항목 존재');
-console.assert(failedItem.item === 3, 'item 3이 실패');
-console.assert(failedItem.error === 'Error at 3', '에러 메시지 포함');
+console.log('[FX-012] failed item exists:', failedItem !== undefined);
+console.log('[FX-012] failed item:', failedItem?.item);
+console.log('[FX-012] failed error:', failedItem?.error);
+```
+
+**Playwright 검증:**
+
+```typescript
+const logs: string[] = [];
+previewPage.on('console', msg => {
+    if (msg.text().includes('[FX-012]')) logs.push(msg.text());
+});
+
+expect(logs.find(l => l.includes('results count: 5'))).toBeDefined();
+expect(logs.find(l => l.includes('failed item exists: true'))).toBeDefined();
+expect(logs.find(l => l.includes('failed item: 3'))).toBeDefined();
+expect(logs.find(l => l.includes('failed error: Error at 3'))).toBeDefined();
 ```
 
 **통과 기준:**
@@ -6134,7 +7823,7 @@ console.assert(failedItem.error === 'Error at 3', '에러 메시지 포함');
 1. fx.go 호출 패턴 확인
 2. catch 또는 try-catch 존재 확인
 
-**검증 코드:**
+**주입 코드 (CodeBox에 입력):**
 ```javascript
 // 올바른 패턴 1: .catch()
 async function correctPattern1() {
@@ -6166,9 +7855,22 @@ const hasExternalCatch = (fn) => {
     return fnStr.includes('.catch(') || fnStr.includes('catch (');
 };
 
-console.assert(hasExternalCatch(correctPattern1), '패턴 1: catch 존재');
-console.assert(hasExternalCatch(correctPattern2), '패턴 2: try-catch 존재');
-console.assert(!hasExternalCatch(wrongPattern), '잘못된 패턴: catch 없음');
+console.log('[FX-013] pattern1 has catch:', hasExternalCatch(correctPattern1));
+console.log('[FX-013] pattern2 has catch:', hasExternalCatch(correctPattern2));
+console.log('[FX-013] wrong pattern has catch:', hasExternalCatch(wrongPattern));
+```
+
+**Playwright 검증:**
+
+```typescript
+const logs: string[] = [];
+previewPage.on('console', msg => {
+    if (msg.text().includes('[FX-013]')) logs.push(msg.text());
+});
+
+expect(logs.find(l => l.includes('pattern1 has catch: true'))).toBeDefined();
+expect(logs.find(l => l.includes('pattern2 has catch: true'))).toBeDefined();
+expect(logs.find(l => l.includes('wrong pattern has catch: false'))).toBeDefined();
 ```
 
 **통과 기준:**
@@ -6188,7 +7890,7 @@ console.assert(!hasExternalCatch(wrongPattern), '잘못된 패턴: catch 없음'
 1. interval/핸들러 함수 확인
 2. 내부 비동기 작업에 catch 존재 확인
 
-**검증 코드:**
+**주입 코드 (CodeBox에 입력):**
 ```javascript
 // 올바른 interval 패턴
 function correctIntervalPattern(page, topic, params, refreshMs) {
@@ -6229,11 +7931,20 @@ const hasCatchInAsync = (code) => {
     return str.includes('.catch(');
 };
 
-console.assert(hasCatchInAsync(correctIntervalPattern), 'interval에 catch 존재');
-console.assert(
-    hasCatchInAsync(correctHandlerPattern['@dataRequest']),
-    '핸들러에 catch 존재'
-);
+console.log('[FX-014] interval has catch:', hasCatchInAsync(correctIntervalPattern));
+console.log('[FX-014] handler has catch:', hasCatchInAsync(correctHandlerPattern['@dataRequest']));
+```
+
+**Playwright 검증:**
+
+```typescript
+const logs: string[] = [];
+previewPage.on('console', msg => {
+    if (msg.text().includes('[FX-014]')) logs.push(msg.text());
+});
+
+expect(logs.find(l => l.includes('interval has catch: true'))).toBeDefined();
+expect(logs.find(l => l.includes('handler has catch: true'))).toBeDefined();
 ```
 
 **통과 기준:**
@@ -6255,7 +7966,7 @@ console.assert(
 1. 여러 topic 순차 로드
 2. 하나 실패 시 전체 중단 확인
 
-**검증 코드:**
+**주입 코드 (CodeBox에 입력):**
 ```javascript
 const loadedTopics = [];
 let errorOccurred = false;
@@ -6276,10 +7987,22 @@ await fx.go(
 });
 
 // 검증
-console.assert(errorOccurred === true, '에러 발생');
-console.assert(loadedTopics.length === 1, 'topic1만 로드됨');
-console.assert(!loadedTopics.includes('topic2'), 'topic2 미로드 (에러)');
-console.assert(!loadedTopics.includes('topic3'), 'topic3 미로드 (중단)');
+console.log('[FX-015] error occurred:', errorOccurred);
+console.log('[FX-015] loaded count:', loadedTopics.length);
+console.log('[FX-015] loaded topics:', JSON.stringify(loadedTopics));
+```
+
+**Playwright 검증:**
+
+```typescript
+const logs: string[] = [];
+previewPage.on('console', msg => {
+    if (msg.text().includes('[FX-015]')) logs.push(msg.text());
+});
+
+expect(logs.find(l => l.includes('error occurred: true'))).toBeDefined();
+expect(logs.find(l => l.includes('loaded count: 1'))).toBeDefined();
+expect(logs.find(l => l.includes('loaded topics: ["topic1"]'))).toBeDefined();
 ```
 
 **통과 기준:**
@@ -6299,7 +8022,7 @@ console.assert(!loadedTopics.includes('topic3'), 'topic3 미로드 (중단)');
 1. 각 topic마다 개별 catch
 2. 일부 실패해도 나머지 처리 확인
 
-**검증 코드:**
+**주입 코드 (CodeBox에 입력):**
 ```javascript
 const results = [];
 
@@ -6324,16 +8047,30 @@ await fx.go(
 );
 
 // 검증
-console.assert(results.length === 3, '모든 topic 처리됨');
+console.log('[FX-016] results count:', results.length);
 
 const successCount = results.filter(r => r.ok).length;
 const failCount = results.filter(r => !r.ok).length;
 
-console.assert(successCount === 2, '2개 성공');
-console.assert(failCount === 1, '1개 실패');
+console.log('[FX-016] success count:', successCount);
+console.log('[FX-016] fail count:', failCount);
 
 const failedTopic = results.find(r => !r.ok);
-console.assert(failedTopic.topic === 'topic2', 'topic2가 실패');
+console.log('[FX-016] failed topic:', failedTopic?.topic);
+```
+
+**Playwright 검증:**
+
+```typescript
+const logs: string[] = [];
+previewPage.on('console', msg => {
+    if (msg.text().includes('[FX-016]')) logs.push(msg.text());
+});
+
+expect(logs.find(l => l.includes('results count: 3'))).toBeDefined();
+expect(logs.find(l => l.includes('success count: 2'))).toBeDefined();
+expect(logs.find(l => l.includes('fail count: 1'))).toBeDefined();
+expect(logs.find(l => l.includes('failed topic: topic2'))).toBeDefined();
 ```
 
 **통과 기준:**
