@@ -319,11 +319,11 @@ function focusCameraOnAsset(inst) {
   const maxDim = Math.max(size.x, size.y, size.z);
   const viewDist = Math.max(maxDim * 3, 2); // 최소 거리 2
 
-  // 모델 정면 방향 기준으로 카메라 배치
   // getWorldDirection() = 로컬 -Z = 모델 정면 방향
   const dir = new THREE.Vector3();
   inst.appendElement.getWorldDirection(dir);
   const cameraPos = targetPos.clone().add(dir.multiplyScalar(viewDist));
+  cameraPos.y += viewDist * 0.4; // 약간 위에서 내려다보는 각도 (~22°)
 
   // 현재 상태 저장
   const startCamPos = camera.position.clone();

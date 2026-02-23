@@ -870,11 +870,12 @@ function zoomToFitGroup(childKeys) {
   const maxDim = Math.max(size.x, size.y, size.z);
   const viewDist = maxDim * 1.5;
 
-  // 현재 카메라 방향 유지하며 줌아웃
+  // 현재 카메라 방향 유지하며 줌아웃 (그룹 중심 기준)
   const dir = new THREE.Vector3()
     .subVectors(camera.position, controls.target)
     .normalize();
   const cameraPos = center.clone().add(dir.multiplyScalar(viewDist));
+  cameraPos.y += viewDist * 0.4;
 
   // 애니메이션
   const startCamPos = camera.position.clone();
