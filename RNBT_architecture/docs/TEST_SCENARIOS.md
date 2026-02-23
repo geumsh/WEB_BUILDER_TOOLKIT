@@ -9,14 +9,14 @@
 | 문서 | 역할 | 내용 |
 |------|------|------|
 | **이 문서 (TEST_SCENARIOS.md)** | 테스트 명세서 (What) | 무엇을 테스트해야 하는가 - 테스트 케이스 목록과 검증 기준 |
-| [TESTING_GUIDE.md](/RNBT_architecture/tests/TESTING_GUIDE.md) | 테스트 구현 가이드 (How) | 어떻게 테스트를 작성하는가 - Mock 구현, 테스트 작성법 |
+| [tests/README.md](/RNBT_architecture/tests/README.md) | 테스트 실행 가이드 (How) | Playwright 환경 설정, 설치, 실행 방법 |
 
 ```
-TEST_SCENARIOS.md          TESTING_GUIDE.md
-(무엇을 테스트?)     →     (어떻게 테스트?)
+TEST_SCENARIOS.md          tests/README.md
+(무엇을 테스트?)     →     (어떻게 실행?)
                               ↓
-                         tests/examples/*.test.js
-                         (실제 테스트 코드)
+                         tests/*.spec.ts
+                         (Playwright E2E 테스트 코드)
 ```
 
 ---
