@@ -1,0 +1,405 @@
+/* ============================================
+   Throughput Component
+   Figma Node: 236:17045
+   Size: 400 x 217px
+   ============================================ */
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  background-color: #0a1a17;
+}
+
+/* Container */
+#throughput-container {
+  width: 400px;
+  height: 217px;
+  overflow: auto;
+}
+
+/* Block (outermost Figma frame) */
+#throughput-container .throughput-block {
+  width: 100%;
+  height: 100%;
+  border: 1.5px solid #004e42;
+  border-radius: 15px;
+  padding: 18px 16px;
+  background-image: linear-gradient(
+    236.469deg,
+    rgba(3, 28, 24, 0.1) 0.807%,
+    rgba(0, 78, 66, 0.2) 48.298%,
+    rgba(3, 28, 24, 0.1) 97.404%
+  );
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: center;
+  position: relative;
+}
+
+/* Inner shadow overlay */
+#throughput-container .throughput-overlay {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  border-radius: inherit;
+  box-shadow:
+    inset -6px -6px 12px 0px rgba(255, 255, 255, 0.25),
+    inset 6px 6px 12px 0px rgba(0, 0, 0, 0.25);
+}
+
+/* Group wrapper */
+#throughput-container .throughput-group {
+  display: flex;
+  flex-direction: column;
+  gap: 13px;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  flex-shrink: 0;
+  position: relative;
+}
+
+/* ---- Header ---- */
+#throughput-container .throughput-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  flex-shrink: 0;
+}
+
+#throughput-container .throughput-title {
+  display: flex;
+  gap: 9px;
+  align-items: center;
+  flex-shrink: 0;
+}
+
+#throughput-container .throughput-icon {
+  width: 16.681px;
+  height: 18.27px;
+  flex-shrink: 0;
+}
+
+#throughput-container .throughput-icon img {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+#throughput-container .throughput-title-text {
+  font-family: 'Pretendard', sans-serif;
+  font-weight: 600;
+  font-size: 18px;
+  color: #f2f9ef;
+  line-height: normal;
+  flex-shrink: 0;
+}
+
+/* ---- Tabs ---- */
+#throughput-container .throughput-tabs {
+  display: flex;
+  gap: 4px;
+  align-items: center;
+  flex-shrink: 0;
+}
+
+#throughput-container .throughput-tab {
+  background-color: #30403b;
+  border-radius: 6px;
+  padding: 4px 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+#throughput-container .throughput-tab p {
+  font-family: 'Pretendard', sans-serif;
+  font-weight: 400;
+  font-size: 12px;
+  color: #6f8c83;
+  line-height: normal;
+  text-align: right;
+}
+
+#throughput-container .throughput-tab.active {
+  background-color: #162420;
+  border: 0.75px solid #009178;
+}
+
+#throughput-container .throughput-tab.active p {
+  font-weight: 500;
+  color: #5bdcc6;
+}
+
+/* ---- Chart Box ---- */
+#throughput-container .throughput-box {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  align-items: flex-end;
+  width: 100%;
+  flex-shrink: 0;
+}
+
+/* ---- Legend ---- */
+#throughput-container .throughput-legend {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+#throughput-container .throughput-legend-item {
+  display: flex;
+  gap: 4px;
+  align-items: center;
+  flex-shrink: 0;
+}
+
+#throughput-container .throughput-legend-dot {
+  width: 4px;
+  height: 4px;
+  flex-shrink: 0;
+  display: block;
+}
+
+#throughput-container .throughput-legend-label {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  font-family: 'Pretendard', sans-serif;
+  font-weight: 500;
+  font-size: 11px;
+  color: #eee;
+  white-space: nowrap;
+  line-height: 0;
+  flex-shrink: 0;
+}
+
+#throughput-container .throughput-legend-label p {
+  line-height: normal;
+}
+
+/* ============================================
+   Chart Area
+   Uses CSS Grid overlay technique:
+   all children in grid-column:1 / grid-row:1
+   positioned via margin-left / margin-top
+   ============================================ */
+#throughput-container .throughput-chart {
+  display: inline-grid;
+  grid-template-columns: max-content;
+  grid-template-rows: max-content;
+  width: 100%;
+  line-height: 0;
+  place-items: start;
+  position: relative;
+  flex-shrink: 0;
+}
+
+#throughput-container .throughput-chart > * {
+  grid-column: 1;
+  grid-row: 1;
+}
+
+/* -- Grid Lines -- */
+#throughput-container .chart-lines {
+  width: 330.482px;
+  height: 90.758px;
+  margin-left: 28.58px;
+  margin-top: 11.29px;
+  position: relative;
+}
+
+#throughput-container .chart-lines-inner {
+  position: absolute;
+  top: -1.38%;
+  right: 0;
+  bottom: 0;
+  left: 0;
+}
+
+#throughput-container .chart-lines-inner img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  max-width: none;
+}
+
+/* -- Y Axis -- */
+#throughput-container .chart-yaxis {
+  position: relative;
+  width: 22.604px;
+  height: 111.757px;
+  margin-left: 0;
+  margin-top: 0;
+}
+
+#throughput-container .yaxis-label {
+  position: absolute;
+  font-family: 'Pretendard', sans-serif;
+  font-weight: 400;
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.5);
+  line-height: 20.066px;
+  letter-spacing: -0.24px;
+  text-align: right;
+  white-space: pre-wrap;
+}
+
+/* -- Graph -- */
+#throughput-container .chart-graph {
+  width: 330.482px;
+  height: 99.271px;
+  margin-left: 28.61px;
+  margin-top: 0;
+  position: relative;
+}
+
+#throughput-container .chart-graph img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  max-width: none;
+}
+
+/* -- X Axis -- */
+#throughput-container .chart-xaxis {
+  position: relative;
+  margin-left: 27.89px;
+  margin-top: 110.51px;
+  height: 14px;
+}
+
+#throughput-container .xaxis-label {
+  position: absolute;
+  top: 0;
+  font-family: 'Pretendard', sans-serif;
+  font-weight: 400;
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.5);
+  line-height: normal;
+  white-space: pre-wrap;
+}
+
+/* ============================================
+   Tooltip
+   Also uses CSS Grid overlay for children
+   ============================================ */
+#throughput-container .chart-tooltip {
+  display: inline-grid;
+  grid-template-columns: max-content;
+  grid-template-rows: max-content;
+  margin-left: 232.71px;
+  margin-top: 11.19px;
+  place-items: start;
+  position: relative;
+}
+
+#throughput-container .chart-tooltip > * {
+  grid-column: 1;
+  grid-row: 1;
+}
+
+/* Tooltip vertical line */
+#throughput-container .tooltip-line {
+  background-color: rgba(0, 145, 120, 0.5);
+  width: 1.61px;
+  height: 88.351px;
+  margin-left: 1.61px;
+  margin-top: 0;
+}
+
+/* Tooltip dot (with glow) */
+#throughput-container .tooltip-dot {
+  width: 4.829px;
+  height: 6.33px;
+  margin-left: 0;
+  margin-top: 41.91px;
+  position: relative;
+}
+
+#throughput-container .tooltip-dot-glow {
+  position: absolute;
+  top: -99.06%;
+  right: -129.84%;
+  bottom: -99.06%;
+  left: -129.84%;
+}
+
+#throughput-container .tooltip-dot-glow img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  max-width: none;
+}
+
+/* Tooltip info bubble */
+#throughput-container .tooltip-info {
+  backdrop-filter: blur(2.508px);
+  -webkit-backdrop-filter: blur(2.508px);
+  background-color: rgba(0, 145, 120, 0.2);
+  display: flex;
+  gap: 5.017px;
+  height: 31.043px;
+  align-items: center;
+  margin-left: 8.1px;
+  margin-top: 29.68px;
+  overflow: clip;
+  padding: 4.289px 8px;
+  border-radius: 11.438px;
+  box-shadow: 0px 5.017px 5.017px 0px rgba(0, 0, 0, 0.25);
+  position: relative;
+}
+
+/* Tooltip arrow */
+#throughput-container .tooltip-arrow-wrapper {
+  display: flex;
+  width: 6.271px;
+  height: 10.033px;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+#throughput-container .tooltip-arrow-rotator {
+  transform: rotate(-90deg) scaleY(-1);
+  flex: none;
+}
+
+#throughput-container .tooltip-arrow {
+  width: 10.033px;
+  height: 6.271px;
+  position: relative;
+}
+
+#throughput-container .tooltip-arrow img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  max-width: none;
+}
+
+/* Tooltip value */
+#throughput-container .tooltip-value-wrapper {
+  overflow: clip;
+  flex-shrink: 0;
+}
+
+#throughput-container .tooltip-value {
+  font-family: 'Pretendard', sans-serif;
+  font-weight: 600;
+  font-size: 15px;
+  color: white;
+  line-height: normal;
+  letter-spacing: 0.1072px;
+  white-space: nowrap;
+}

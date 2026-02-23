@@ -36,7 +36,15 @@
       "Bash(git commit -m \"$\\(cat <<''EOF''\nfix\\(SimpleDashboard\\): unbindEvents → removeCustomEvents 수정\n\n존재하지 않는 함수명 사용 수정\n\nCo-Authored-By: Claude Opus 4.5 <noreply@anthropic.com>\nEOF\n\\)\")",
       "Bash(xcopy:*)",
       "Bash(git init:*)",
-      "Skill(create-component)"
+      "Skill(create-component)",
+      "Bash(ls \"C:\\\\Users\\\\WEMB\\\\Desktop\\\\WEB_BUILDER_TOOLKIT\\\\Figma_Conversion\\\\Static_Components\\\\HANA_BANK_HIT_Dev\"\" 2>nul || echo \"Directory not found \")",
+      "Bash(timeout:*)",
+      "Bash(python:*)",
+      "Bash(del:*)",
+      "Bash(git commit:*)",
+      "Bash(cd:*)",
+      "Bash(head:*)",
+      "Bash(ls:*)"
     ],
     "deny": [],
     "ask": []

@@ -1,0 +1,3 @@
+/*
+ * Logo Component - beforeDestroy
+ */

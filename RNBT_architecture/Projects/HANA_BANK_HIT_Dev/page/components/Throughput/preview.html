@@ -1,0 +1,455 @@
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Throughput - Preview</title>
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css"
+    />
+    <script src="https://cdn.jsdelivr.net/npm/echarts@5/dist/echarts.min.js"></script>
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
+      body {
+        background: #0a1a17;
+        padding: 20px;
+        font-family: "Pretendard", sans-serif;
+      }
+
+      /* Container: Figma 선택 요소 크기 (400 × 217) */
+      #component-container {
+        width: 400px;
+        height: 217px;
+        overflow: auto;
+      }
+
+      /* Component Styles (from component.css) */
+      #component-container {
+        & .throughput-block {
+          width: 100%;
+          height: 100%;
+          border: 1.5px solid #004e42;
+          border-radius: 15px;
+          padding: 18px 16px;
+          background-image: linear-gradient(
+            236.469deg,
+            rgba(3, 28, 24, 0.1) 0.807%,
+            rgba(0, 78, 66, 0.2) 48.298%,
+            rgba(3, 28, 24, 0.1) 97.404%
+          );
+          display: flex;
+          flex-direction: column;
+          align-items: flex-start;
+          justify-content: center;
+          position: relative;
+          box-sizing: border-box;
+          font-family: "Pretendard", sans-serif;
+        }
+
+        & .throughput-overlay {
+          position: absolute;
+          inset: 0;
+          pointer-events: none;
+          border-radius: inherit;
+          box-shadow:
+            inset -6px -6px 12px 0px rgba(255, 255, 255, 0.25),
+            inset 6px 6px 12px 0px rgba(0, 0, 0, 0.25);
+        }
+
+        & .throughput-group {
+          display: flex;
+          flex-direction: column;
+          gap: 13px;
+          align-items: center;
+          justify-content: center;
+          width: 100%;
+          flex: 1;
+          min-height: 0;
+          position: relative;
+        }
+
+        & .throughput-header {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          width: 100%;
+          flex-shrink: 0;
+        }
+
+        & .throughput-title {
+          display: flex;
+          gap: 9px;
+          align-items: center;
+          flex-shrink: 0;
+        }
+
+        & .throughput-icon {
+          width: 16.681px;
+          height: 18.27px;
+          flex-shrink: 0;
+          display: block;
+        }
+
+        & .throughput-title-text {
+          font-weight: 600;
+          font-size: 18px;
+          color: #f2f9ef;
+          line-height: normal;
+          flex-shrink: 0;
+        }
+
+        & .throughput-tabs {
+          display: flex;
+          gap: 4px;
+          align-items: center;
+          flex-shrink: 0;
+        }
+
+        & .btn {
+          border-radius: 6px;
+          padding: 4px 10px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          flex-shrink: 0;
+          font-family: "Pretendard", sans-serif;
+          font-size: 12px;
+          line-height: normal;
+          cursor: pointer;
+          transition: all 0.2s;
+        }
+
+        & .btn-inactive {
+          background-color: #30403b;
+          color: #6f8c83;
+          font-weight: 400;
+        }
+
+        & .btn-inactive:hover {
+          background-color: #3a4d47;
+        }
+
+        & .btn-active {
+          background-color: #162420;
+          border: 0.75px solid #009178;
+          color: #5bdcc6;
+          font-weight: 500;
+        }
+
+        & .throughput-box {
+          display: flex;
+          flex-direction: column;
+          gap: 8px;
+          align-items: flex-end;
+          width: 100%;
+          flex: 1;
+          min-height: 0;
+        }
+
+        & .throughput-legend {
+          display: flex;
+          gap: 10px;
+          align-items: center;
+          justify-content: center;
+          flex-shrink: 0;
+        }
+
+        & .throughput-legend-item {
+          display: flex;
+          gap: 4px;
+          align-items: center;
+          flex-shrink: 0;
+        }
+
+        & .throughput-legend-dot {
+          width: 4px;
+          height: 4px;
+          border-radius: 50%;
+          flex-shrink: 0;
+          display: block;
+        }
+
+        & .throughput-legend-label {
+          font-weight: 500;
+          font-size: 11px;
+          color: #eee;
+          white-space: nowrap;
+          line-height: normal;
+          flex-shrink: 0;
+        }
+
+        & .chart-area {
+          flex: 1;
+          width: 100%;
+          min-height: 100px;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div id="component-container">
+      <div class="throughput-block">
+        <div class="throughput-group">
+          <!-- Header -->
+          <div class="throughput-header">
+            <div class="throughput-title">
+              <svg
+                class="throughput-icon"
+                viewBox="0 0 17 19"
+                fill="none"
+                xmlns="http://www.w3.org/2000/svg"
+              >
+                <path
+                  d="M15.2225 3.5078L9.77633 0.380364C8.89074 -0.126788 7.79058 -0.126788 6.905 0.380364L1.45803 3.5078C0.558799 4.02409 0 4.99042 0 6.03061V12.2398C0 13.28 0.558799 14.2471 1.45803 14.7634L6.905 17.89C7.34779 18.1436 7.84366 18.27 8.34028 18.27C8.83691 18.27 9.33353 18.1436 9.77633 17.89L15.2233 14.7626C16.1233 14.2463 16.6813 13.28 16.6813 12.2398V6.03137C16.6813 4.99118 16.1233 4.02409 15.2233 3.50856L15.2225 3.5078ZM1.8341 4.16877L7.28107 1.0421C7.93464 0.666684 8.74592 0.668207 9.3995 1.0421L14.8465 4.16801C15.0625 4.29213 15.24 4.46042 15.3969 4.64622L12.3808 6.37785C12.2322 6.20423 12.0646 6.04584 11.8614 5.92857L9.35931 4.48555C8.73 4.12232 7.94905 4.12232 7.32049 4.48555L4.81841 5.92857C4.61521 6.04584 4.4484 6.20423 4.29904 6.37785L1.28289 4.64622C1.43984 4.46118 1.61801 4.29289 1.8341 4.16877ZM12.1313 7.71198V10.5676C12.1313 11.0305 11.8826 11.4623 11.4823 11.6923L8.98021 13.1284C8.89756 13.1764 8.80885 13.2076 8.71939 13.2358V9.35756L12.0927 7.42109C12.1146 7.51628 12.1313 7.61222 12.1313 7.71198ZM4.54924 7.71198C4.54924 7.61222 4.56593 7.51551 4.58791 7.42033L7.96118 9.35679V13.2351C7.87171 13.2076 7.783 13.1757 7.70035 13.1277L5.19903 11.6923C4.79794 11.4615 4.54924 11.0305 4.54924 10.5668V7.71122V7.71198ZM8.34028 8.69658L4.97081 6.7624C5.04056 6.69844 5.11259 6.63676 5.19675 6.58878L7.69884 5.14576C7.89673 5.03154 8.11889 4.97443 8.34028 4.97443C8.56168 4.97443 8.78383 5.03078 8.98248 5.14576L11.4846 6.58878C11.568 6.63676 11.6408 6.69844 11.7105 6.7624L8.34104 8.69658H8.34028ZM1.8341 14.1032C1.17067 13.7216 0.758207 13.0081 0.758207 12.2406V6.03137C0.758207 5.7778 0.817348 5.5364 0.901509 5.30491L3.91917 7.0373C3.84335 7.25356 3.79028 7.47744 3.79028 7.71274V10.5683C3.79028 11.3039 4.18531 11.9877 4.82144 12.3548L7.32353 13.7909C7.52293 13.9052 7.73978 13.9699 7.96042 14.011V17.4621C7.72462 17.4194 7.49336 17.3524 7.28031 17.2298L1.83335 14.1039L1.8341 14.1032ZM15.9224 12.2406C15.9224 13.0081 15.5099 13.7216 14.8465 14.1032L9.3995 17.2291C9.18644 17.3517 8.95519 17.4187 8.71939 17.4613V14.0103C8.94002 13.9684 9.15687 13.9044 9.35628 13.7902L11.8584 12.3533C12.4945 11.9877 12.8895 11.3032 12.8895 10.5676V7.71198C12.8895 7.47668 12.8365 7.2528 12.7606 7.03654L15.7791 5.30415C15.8632 5.53564 15.9224 5.77703 15.9224 6.03061V12.2406Z"
+                  fill="#D9EFEB"
+                />
+              </svg>
+              <p class="throughput-title-text">Throughput</p>
+            </div>
+            <div class="throughput-tabs">
+              <div class="btn btn-active" data-filter="tab01">tab01</div>
+              <div class="btn btn-inactive" data-filter="tab02">tab02</div>
+              <div class="btn btn-inactive" data-filter="tab03">tab03</div>
+              <div class="btn btn-inactive" data-filter="tab04">tab04</div>
+            </div>
+          </div>
+          <!-- Chart Box -->
+          <div class="throughput-box">
+            <div class="throughput-legend">
+              <div class="throughput-legend-item">
+                <span
+                  class="throughput-legend-dot"
+                  style="background-color: #038c8c"
+                ></span>
+                <span class="throughput-legend-label">PEAK 데이</span>
+              </div>
+              <div class="throughput-legend-item">
+                <span
+                  class="throughput-legend-dot"
+                  style="background-color: #77dea4"
+                ></span>
+                <span class="throughput-legend-label">금월 PEAK</span>
+              </div>
+              <div class="throughput-legend-item">
+                <span
+                  class="throughput-legend-dot"
+                  style="background-color: #5bdcc6"
+                ></span>
+                <span class="throughput-legend-label">금일</span>
+              </div>
+            </div>
+            <!-- ECharts Container -->
+            <div class="chart-area" id="echarts"></div>
+          </div>
+        </div>
+        <div class="throughput-overlay"></div>
+      </div>
+    </div>
+
+    <script>
+      // ======================
+      // Mock Data Sets (탭별)
+      // ======================
+      const mockDataSets = {
+        tab01: [
+          { tm: "08:00", peak_day: 100, month_peak: 150, today: 50 },
+          { tm: "09:00", peak_day: 120, month_peak: 180, today: 80 },
+          { tm: "10:00", peak_day: 200, month_peak: 250, today: 130 },
+          { tm: "11:00", peak_day: 280, month_peak: 320, today: 200 },
+          { tm: "12:00", peak_day: 350, month_peak: 380, today: 275 },
+          { tm: "13:00", peak_day: 300, month_peak: 340, today: 240 },
+          { tm: "14:00", peak_day: 250, month_peak: 290, today: 190 },
+          { tm: "15:00", peak_day: 180, month_peak: 220, today: 140 },
+          { tm: "16:00", peak_day: 150, month_peak: 170, today: 100 },
+        ],
+        tab02: [
+          { tm: "08:00", peak_day: 80, month_peak: 120, today: 40 },
+          { tm: "09:00", peak_day: 150, month_peak: 200, today: 90 },
+          { tm: "10:00", peak_day: 220, month_peak: 280, today: 160 },
+          { tm: "11:00", peak_day: 300, month_peak: 350, today: 220 },
+          { tm: "12:00", peak_day: 380, month_peak: 400, today: 300 },
+          { tm: "13:00", peak_day: 320, month_peak: 360, today: 260 },
+          { tm: "14:00", peak_day: 260, month_peak: 300, today: 200 },
+          { tm: "15:00", peak_day: 200, month_peak: 240, today: 150 },
+          { tm: "16:00", peak_day: 160, month_peak: 190, today: 110 },
+        ],
+        tab03: [
+          { tm: "08:00", peak_day: 60, month_peak: 90, today: 30 },
+          { tm: "09:00", peak_day: 100, month_peak: 140, today: 60 },
+          { tm: "10:00", peak_day: 160, month_peak: 200, today: 100 },
+          { tm: "11:00", peak_day: 240, month_peak: 280, today: 180 },
+          { tm: "12:00", peak_day: 310, month_peak: 350, today: 250 },
+          { tm: "13:00", peak_day: 270, month_peak: 310, today: 210 },
+          { tm: "14:00", peak_day: 210, month_peak: 260, today: 160 },
+          { tm: "15:00", peak_day: 150, month_peak: 190, today: 120 },
+          { tm: "16:00", peak_day: 110, month_peak: 140, today: 80 },
+        ],
+        tab04: [
+          { tm: "08:00", peak_day: 130, month_peak: 180, today: 70 },
+          { tm: "09:00", peak_day: 180, month_peak: 230, today: 120 },
+          { tm: "10:00", peak_day: 250, month_peak: 300, today: 180 },
+          { tm: "11:00", peak_day: 320, month_peak: 380, today: 260 },
+          { tm: "12:00", peak_day: 390, month_peak: 400, today: 340 },
+          { tm: "13:00", peak_day: 350, month_peak: 380, today: 290 },
+          { tm: "14:00", peak_day: 280, month_peak: 330, today: 230 },
+          { tm: "15:00", peak_day: 220, month_peak: 260, today: 170 },
+          { tm: "16:00", peak_day: 170, month_peak: 200, today: 130 },
+        ],
+      };
+
+      // ======================
+      // CONFIG (register.js와 동일)
+      // ======================
+      const config = {
+        xKey: "tm",
+        seriesMap: [
+          { key: "peak_day", name: "PEAK 데이", color: "#038C8C" },
+          { key: "month_peak", name: "금월 PEAK", color: "#77DEA4" },
+          { key: "today", name: "금일", color: "#5BDCC6" },
+        ],
+        smooth: true,
+        symbol: "none",
+        areaStyle: false,
+        yAxis: { min: 0, max: 400, interval: 200 },
+      };
+
+      // ======================
+      // INITIALIZE ECHARTS
+      // ======================
+      const chartContainer = document.getElementById("echarts");
+      const chartInstance = echarts.init(chartContainer);
+
+      // ======================
+      // RENDER FUNCTION (register.js와 동일 로직)
+      // ======================
+      function renderLineData(config, data) {
+        if (!data || !data[Symbol.iterator]) return;
+
+        const { xKey, seriesMap, smooth, symbol, areaStyle, yAxis } = config;
+
+        const option = {
+          backgroundColor: "transparent",
+          tooltip: {
+            trigger: "axis",
+            axisPointer: {
+              type: "line",
+              lineStyle: { color: "rgba(0, 145, 120, 0.5)", width: 1.5 },
+            },
+            backgroundColor: "rgba(0, 145, 120, 0.2)",
+            borderColor: "transparent",
+            padding: [4, 8],
+            textStyle: {
+              color: "#fff",
+              fontSize: 13,
+              fontWeight: 600,
+              fontFamily: "Pretendard, sans-serif",
+            },
+            extraCssText:
+              "backdrop-filter: blur(2.5px); border-radius: 11px; box-shadow: 0px 5px 5px rgba(0,0,0,0.25);",
+          },
+          legend: { show: false },
+          grid: { left: 30, right: 5, top: 5, bottom: 25, containLabel: false },
+          xAxis: {
+            type: "category",
+            boundaryGap: false,
+            data: data.map((d) => d[xKey]),
+            axisLine: { show: false },
+            axisTick: { show: false },
+            axisLabel: {
+              color: "rgba(255, 255, 255, 0.5)",
+              fontSize: 12,
+              fontFamily: "Pretendard, sans-serif",
+            },
+            splitLine: { show: false },
+          },
+          yAxis: {
+            type: "value",
+            min: yAxis.min,
+            max: yAxis.max,
+            interval: yAxis.interval,
+            axisLine: { show: false },
+            axisTick: { show: false },
+            axisLabel: {
+              color: "rgba(255, 255, 255, 0.5)",
+              fontSize: 12,
+              fontFamily: "Pretendard, sans-serif",
+            },
+            splitLine: {
+              show: true,
+              lineStyle: {
+                color: "rgba(255, 255, 255, 0.15)",
+                type: "dashed",
+              },
+            },
+          },
+          series: seriesMap.map((s) => ({
+            name: s.name,
+            type: "line",
+            smooth,
+            symbol,
+            data: data.map((d) => d[s.key]),
+            itemStyle: { color: s.color },
+            lineStyle: { color: s.color, width: 2 },
+            areaStyle: areaStyle
+              ? {
+                  color: {
+                    type: "linear",
+                    x: 0,
+                    y: 0,
+                    x2: 0,
+                    y2: 1,
+                    colorStops: [
+                      { offset: 0, color: s.color + "80" },
+                      { offset: 1, color: s.color + "10" },
+                    ],
+                  },
+                }
+              : undefined,
+          })),
+        };
+
+        chartInstance.setOption(option, { replaceMerge: ["series"] });
+      }
+
+      // ======================
+      // TAB CLICK HANDLER
+      // ======================
+      let activeTab = "tab01";
+
+      document.querySelectorAll(".btn").forEach((btn) => {
+        btn.addEventListener("click", () => {
+          const filter = btn.dataset.filter;
+          if (filter === activeTab) return;
+
+          // Toggle active class
+          document.querySelectorAll(".btn").forEach((b) => {
+            b.classList.remove("btn-active");
+            b.classList.add("btn-inactive");
+          });
+          btn.classList.remove("btn-inactive");
+          btn.classList.add("btn-active");
+
+          activeTab = filter;
+
+          // Render with new data
+          const data = mockDataSets[filter];
+          if (data) renderLineData(config, data);
+        });
+      });
+
+      // ======================
+      // RESIZE & INITIAL RENDER
+      // ======================
+      window.addEventListener("resize", () => chartInstance.resize());
+
+      // Initial render
+      renderLineData(config, mockDataSets.tab01);
+    </script>
+  </body>
+</html>

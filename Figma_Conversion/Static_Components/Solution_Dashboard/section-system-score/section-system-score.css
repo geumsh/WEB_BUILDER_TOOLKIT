@@ -1,0 +1,112 @@
+/* ============================================
+   Section - 시스템 상태 점수
+   Figma node: 2:881
+   Size: 140 x 170
+   ============================================ */
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+#component-container {
+  width: 140px;
+  height: 170px;
+  overflow: auto;
+}
+
+/* ── Card ── */
+.box {
+  width: 100%;
+  height: 100%;
+  backdrop-filter: blur(15px);
+  -webkit-backdrop-filter: blur(15px);
+  background: rgba(26, 34, 50, 0.6);
+  border: 1px solid rgba(81, 102, 145, 0.6);
+  border-radius: 12px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: space-between;
+  padding: 26px 17px;
+  position: relative;
+}
+
+.box-inset-shadow {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  border-radius: inherit;
+  box-shadow: inset 0px 0px 8px 0px rgba(0, 0, 0, 0.25);
+}
+
+/* ── Title ── */
+.box-title {
+  font-family: 'Pretendard', sans-serif;
+  font-weight: 500;
+  font-size: 16px;
+  color: #e4ebf6;
+  text-align: center;
+  letter-spacing: -0.32px;
+  line-height: normal;
+  width: 106px;
+  flex: 1 0 0;
+  min-height: 1px;
+  min-width: 1px;
+  white-space: pre-wrap;
+}
+
+/* ── Chart ── */
+.chart {
+  width: 106px;
+  height: 81px;
+  position: relative;
+  flex-shrink: 0;
+}
+
+/* ── Gauge ── */
+.gauge {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 106px;
+  height: 106px;
+}
+
+.gauge img {
+  position: absolute;
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+/* ── Value ── */
+.chart-value {
+  position: absolute;
+  top: 39px;
+  left: calc(50% - 0.5px);
+  transform: translateX(-50%);
+  display: flex;
+  gap: 3px;
+  align-items: flex-end;
+  justify-content: center;
+  line-height: normal;
+  text-align: center;
+}
+
+.chart-value-number {
+  font-family: 'Roboto Mono', monospace;
+  font-weight: 500;
+  font-size: 28px;
+  color: #f8fafc;
+  letter-spacing: -1.12px;
+}
+
+.chart-value-unit {
+  font-family: 'Roboto Mono', monospace;
+  font-weight: 400;
+  font-size: 14px;
+  color: #bbc2cf;
+  letter-spacing: -0.28px;
+}

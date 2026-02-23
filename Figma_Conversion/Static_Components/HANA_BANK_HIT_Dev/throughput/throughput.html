@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Throughput</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css" />
+  <link rel="stylesheet" href="./throughput.css" />
+</head>
+<body>
+  <div id="throughput-container">
+    <div class="throughput-block">
+      <div class="throughput-group">
+        <!-- Header -->
+        <div class="throughput-header">
+          <div class="throughput-title">
+            <div class="throughput-icon">
+              <img src="./assets/vector-icon.svg" alt="" />
+            </div>
+            <p class="throughput-title-text">Throughput</p>
+          </div>
+          <div class="throughput-tabs">
+            <div class="throughput-tab active">
+              <p>tab01</p>
+            </div>
+            <div class="throughput-tab">
+              <p>tab02</p>
+            </div>
+            <div class="throughput-tab">
+              <p>tab03</p>
+            </div>
+            <div class="throughput-tab">
+              <p>tab04</p>
+            </div>
+          </div>
+        </div>
+        <!-- Chart Box -->
+        <div class="throughput-box">
+          <div class="throughput-legend">
+            <div class="throughput-legend-item">
+              <img class="throughput-legend-dot" src="./assets/dot-peak-day.svg" alt="" />
+              <div class="throughput-legend-label"><p>PEAK 데이</p></div>
+            </div>
+            <div class="throughput-legend-item">
+              <img class="throughput-legend-dot" src="./assets/dot-month-peak.svg" alt="" />
+              <div class="throughput-legend-label"><p>금월 PEAK</p></div>
+            </div>
+            <div class="throughput-legend-item">
+              <img class="throughput-legend-dot" src="./assets/dot-today.svg" alt="" />
+              <div class="throughput-legend-label"><p>금일</p></div>
+            </div>
+          </div>
+          <!-- Chart Area -->
+          <div class="throughput-chart">
+            <!-- Grid Lines -->
+            <div class="chart-lines">
+              <div class="chart-lines-inner">
+                <img src="./assets/chart-lines.svg" alt="" />
+              </div>
+            </div>
+            <!-- Y Axis -->
+            <div class="chart-yaxis">
+              <p class="yaxis-label" style="left: 0; top: 0;">400</p>
+              <p class="yaxis-label" style="left: 1.6px; top: 44.62px;">200</p>
+              <p class="yaxis-label" style="left: 14.23px; top: 90.76px;">0</p>
+            </div>
+            <!-- Graph Lines -->
+            <div class="chart-graph">
+              <img src="./assets/chart-graph.svg" alt="" />
+            </div>
+            <!-- X Axis -->
+            <div class="chart-xaxis">
+              <p class="xaxis-label" style="left: 0;">08:00</p>
+              <p class="xaxis-label" style="left: 39.86px;">09:00</p>
+              <p class="xaxis-label" style="left: 79.65px;">10:00</p>
+              <p class="xaxis-label" style="left: 118.15px;">11:00</p>
+              <p class="xaxis-label" style="left: 155.37px;">12:00</p>
+              <p class="xaxis-label" style="left: 193.88px;">13:00</p>
+              <p class="xaxis-label" style="left: 232.38px;">14:00</p>
+              <p class="xaxis-label" style="left: 271.52px;">15:00</p>
+              <p class="xaxis-label" style="left: 310.03px;">16:00</p>
+            </div>
+            <!-- Tooltip -->
+            <div class="chart-tooltip">
+              <div class="tooltip-line"></div>
+              <div class="tooltip-dot">
+                <div class="tooltip-dot-glow">
+                  <img src="./assets/tooltip-dot.svg" alt="" />
+                </div>
+              </div>
+              <div class="tooltip-info">
+                <div class="tooltip-arrow-wrapper">
+                  <div class="tooltip-arrow-rotator">
+                    <div class="tooltip-arrow">
+                      <img src="./assets/tooltip-arrow.svg" alt="" />
+                    </div>
+                  </div>
+                </div>
+                <div class="tooltip-value-wrapper">
+                  <p class="tooltip-value">275</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="throughput-overlay"></div>
+    </div>
+  </div>
+</body>
+</html>

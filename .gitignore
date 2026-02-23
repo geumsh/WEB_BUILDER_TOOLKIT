@@ -19,3 +19,5 @@ npm-debug.log*
 # Environment variables
 .env
 .env.local
+
+settings.local.json

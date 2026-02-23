@@ -1,0 +1,68 @@
+/* ============================================
+   BtnTypeB - Circular Icon Button
+   Figma node: 2:598 (Active), 2:602 (Idle)
+   Size: 30 x 30
+   States: Active / Idle
+   ============================================ */
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+#component-container {
+  width: 110px;
+  height: 30px;
+  overflow: auto;
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+
+/* ── Base ── */
+.btn-type-b {
+  width: 30px;
+  height: 30px;
+  border-radius: 78.947px;
+  border: 1px solid #90a1b9;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: clip;
+  padding: 1px;
+  flex-shrink: 0;
+}
+
+.btn-type-b .icon {
+  width: 16.364px;
+  height: 16.364px;
+  flex-shrink: 0;
+  position: relative;
+}
+
+.btn-type-b .icon-img {
+  width: 13.72px;
+  height: 13px;
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(calc(-50% + 0.18px), calc(-50% - 0.18px));
+}
+
+/* ── Active ── */
+.btn-type-b--active {
+  cursor: pointer;
+  background-image:
+    linear-gradient(90deg, rgba(255, 255, 255, 0.1) 0%, rgba(255, 255, 255, 0.1) 100%),
+    linear-gradient(90deg, rgba(144, 161, 185, 0.2) 0%, rgba(144, 161, 185, 0.2) 100%),
+    linear-gradient(90deg, rgba(33, 38, 50, 0.7) 0%, rgba(33, 38, 50, 0.7) 100%);
+}
+
+/* ── Idle ── */
+.btn-type-b--idle {
+  cursor: default;
+  background-image:
+    linear-gradient(90deg, rgba(144, 161, 185, 0.1) 0%, rgba(144, 161, 185, 0.1) 100%),
+    linear-gradient(90deg, rgba(33, 38, 50, 0.7) 0%, rgba(33, 38, 50, 0.7) 100%);
+}

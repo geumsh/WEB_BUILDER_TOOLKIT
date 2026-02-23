@@ -5,13 +5,12 @@
   "main": "index.js",
   "scripts": {
     "serve": "npx serve . -l 3000",
-    "playwright":"playwright"
+    "playwright": "playwright"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
-  "dependencies": {},
   "devDependencies": {
-    "playwright": "^1.57.0"
+    "playwright": "^1.58.2"
   }
 }

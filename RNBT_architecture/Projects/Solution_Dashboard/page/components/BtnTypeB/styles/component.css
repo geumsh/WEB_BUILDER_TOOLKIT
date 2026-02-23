@@ -1,0 +1,77 @@
+/* BtnTypeB Component Styles */
+
+#btn-type-b-container {
+    width: 150px;
+    height: 70px;
+    overflow: auto;
+
+    & .btn-type-b {
+        width: 100%;
+        height: 100%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 10px;
+        padding: 20px;
+        box-sizing: border-box;
+    }
+
+    & .btn {
+        width: 30px;
+        height: 30px;
+        flex-shrink: 0;
+        border: 1px solid #90a1b9;
+        border-radius: 78.947px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        overflow: clip;
+        padding: 1px;
+        position: relative;
+        box-sizing: border-box;
+        background-color: transparent;
+        font: inherit;
+        cursor: pointer;
+        color: #F8FAFC;
+        background-image:
+            linear-gradient(90deg, rgba(255, 255, 255, 0.1) 0%, rgba(255, 255, 255, 0.1) 100%),
+            linear-gradient(90deg, rgba(144, 161, 185, 0.2) 0%, rgba(144, 161, 185, 0.2) 100%),
+            linear-gradient(90deg, rgba(33, 38, 50, 0.7) 0%, rgba(33, 38, 50, 0.7) 100%);
+        transition: color 0.15s, background-image 0.15s;
+    }
+
+    & .btn:hover {
+        color: #E4EBF6;
+        background-image:
+            linear-gradient(90deg, rgba(144, 161, 185, 0.1) 0%, rgba(144, 161, 185, 0.1) 100%),
+            linear-gradient(90deg, rgba(33, 38, 50, 0.7) 0%, rgba(33, 38, 50, 0.7) 100%);
+    }
+
+    & .icon {
+        position: relative;
+        flex-shrink: 0;
+        width: 16.364px;
+        height: 16.364px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    /* Setting icon */
+    & .icon-svg.icon-setting {
+        width: 13.72px;
+        height: 13px;
+    }
+
+    /* User icon */
+    & .icon-svg.icon-user {
+        width: 9.86px;
+        height: 12.38px;
+    }
+
+    /* Logout icon */
+    & .icon-svg.icon-logout {
+        width: 12.1px;
+        height: 11.93px;
+    }
+}

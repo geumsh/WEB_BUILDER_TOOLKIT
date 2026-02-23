@@ -1,194 +1,273 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="ko">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>EventBrowser - Preview</title>
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css">
-    <link href="https://unpkg.com/tabulator-tables@6.3.0/dist/css/tabulator.min.css" rel="stylesheet">
-    <script type="text/javascript" src="https://unpkg.com/tabulator-tables@6.3.0/dist/js/tabulator.min.js"></script>
-    <link rel="stylesheet" href="styles/component.css">
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css"
+    />
+    <link
+      href="https://unpkg.com/tabulator-tables@6.3.0/dist/css/tabulator.min.css"
+      rel="stylesheet"
+    />
+    <script
+      type="text/javascript"
+      src="https://unpkg.com/tabulator-tables@6.3.0/dist/js/tabulator.min.js"
+    ></script>
+    <link rel="stylesheet" href="styles/component.css" />
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
 
-        body {
-            background-color: #1a1a1a;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            min-height: 100vh;
-            padding: 20px;
-            font-family: 'Pretendard', sans-serif;
-        }
+      body {
+        background-color: #1a1a1a;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        min-height: 100vh;
+        padding: 20px;
+        font-family: "Pretendard", sans-serif;
+      }
 
-        /* Container: Figma 선택 요소 크기 */
-        #component-container {
-            width: 1860px;
-            height: 220px;
-            overflow: hidden;
-        }
+      /* Container: Figma 선택 요소 크기 */
+      #component-container {
+        width: 1860px;
+        height: 220px;
+        overflow: hidden;
+      }
     </style>
-</head>
-<body>
+  </head>
+  <body>
     <div id="component-container">
-        <div class="event-browser">
-            <!-- Background -->
-            <div class="event-browser__bg"></div>
+      <div class="event-browser">
+        <!-- Background -->
+        <div class="event-browser__bg"></div>
 
-            <!-- Header -->
-            <div class="event-browser__header">
-                <div class="header__title">
-                    <p class="title__text">이벤트 현황</p>
-                    <div class="title__action">
-                        <div class="action__arrow">
-                            <div class="arrow__btn" data-action="scroll-up">
-                                <div class="arrow__btn-inner">
-                                    <img src="assets/6cc517ada307999e2d0560ca1f10cea477c2fde0.svg" alt="Arrow Up">
-                                </div>
-                            </div>
-                            <div class="arrow__btn" data-action="scroll-down">
-                                <div class="arrow__btn-inner">
-                                    <img src="assets/bb538a3e75a6454282f384375a3fbae872392721.svg" alt="Arrow Down">
-                                </div>
-                            </div>
-                        </div>
-                        <div class="action__event">
-                            <div class="btn btn--reset" data-action="reset">
-                                <p>초기화</p>
-                            </div>
-                            <div class="btn btn--delete" data-action="delete">
-                                <p>삭제</p>
-                            </div>
-                        </div>
-                    </div>
+        <!-- Header -->
+        <div class="event-browser__header">
+          <div class="header__title">
+            <p class="title__text">이벤트 현황</p>
+            <div class="title__action">
+              <div class="action__arrow">
+                <div class="arrow__btn" data-action="scroll-up">
+                  <div class="arrow__btn-inner">
+                    <img
+                      src="assets/6cc517ada307999e2d0560ca1f10cea477c2fde0.svg"
+                      alt="Arrow Up"
+                    />
+                  </div>
                 </div>
-                <div class="header__status-group">
-                    <!-- 심각 -->
-                    <div class="status-level status-level--critical">
-                        <div class="status-level__block">
-                            <div class="status-level__box">
-                                <div class="status-level__group">
-                                    <div class="status-level__item">
-                                        <img src="assets/9491f7f5c0e7ec9638ec295f58081828dca1dad7.svg" alt="">
-                                        <div class="status-level__item-stroke status-level__item-stroke--red"></div>
-                                    </div>
-                                    <p class="status-level__label">심각</p>
-                                </div>
-                                <div class="status-level__divider status-level__divider--red"></div>
-                            </div>
-                            <p class="status-level__count" data-bind="criticalCount">23</p>
-                        </div>
-                    </div>
-                    <!-- 경계 -->
-                    <div class="status-level status-level--warning">
-                        <div class="status-level__block">
-                            <div class="status-level__box">
-                                <div class="status-level__group">
-                                    <div class="status-level__item">
-                                        <img src="assets/d094ff97df0fafdaaa3f19423c856ac8f7dfd07c.svg" alt="">
-                                        <div class="status-level__item-stroke status-level__item-stroke--orange"></div>
-                                    </div>
-                                    <p class="status-level__label">경계</p>
-                                </div>
-                                <div class="status-level__divider status-level__divider--orange"></div>
-                            </div>
-                            <p class="status-level__count" data-bind="warningCount">10</p>
-                        </div>
-                    </div>
-                    <!-- 주의 -->
-                    <div class="status-level status-level--caution">
-                        <div class="status-level__block">
-                            <div class="status-level__box">
-                                <div class="status-level__group">
-                                    <div class="status-level__item">
-                                        <img src="assets/c1f8d66da4c26d0f8b2fa61046dc17902ebadb5a.svg" alt="">
-                                        <div class="status-level__item-stroke status-level__item-stroke--yellow"></div>
-                                    </div>
-                                    <p class="status-level__label">주의</p>
-                                </div>
-                                <div class="status-level__divider status-level__divider--yellow"></div>
-                            </div>
-                            <p class="status-level__count" data-bind="cautionCount">8</p>
-                        </div>
-                    </div>
-                    <!-- 정상 -->
-                    <div class="status-level status-level--normal">
-                        <div class="status-level__block">
-                            <div class="status-level__box">
-                                <div class="status-level__group">
-                                    <div class="status-level__item">
-                                        <img src="assets/1f332532db55375471ebaad15f30381180f2aba1.svg" alt="">
-                                        <div class="status-level__item-stroke status-level__item-stroke--green"></div>
-                                    </div>
-                                    <p class="status-level__label">정상</p>
-                                </div>
-                                <div class="status-level__divider status-level__divider--green"></div>
-                            </div>
-                            <p class="status-level__count" data-bind="normalCount">216</p>
-                        </div>
-                    </div>
+                <div class="arrow__btn" data-action="scroll-down">
+                  <div class="arrow__btn-inner">
+                    <img
+                      src="assets/bb538a3e75a6454282f384375a3fbae872392721.svg"
+                      alt="Arrow Down"
+                    />
+                  </div>
                 </div>
+              </div>
+              <div class="action__event">
+                <div class="btn btn--reset" data-action="reset">
+                  <p>초기화</p>
+                </div>
+                <div class="btn btn--delete" data-action="delete">
+                  <p>삭제</p>
+                </div>
+              </div>
             </div>
-
-            <!-- Table Container (Tabulator) -->
-            <div class="table-container" id="tabulator-table"></div>
+          </div>
+          <div class="header__status-group">
+            <!-- 심각 -->
+            <div class="status-level status-level--critical">
+              <div class="status-level__block">
+                <div class="status-level__box">
+                  <div class="status-level__group">
+                    <div class="status-level__item">
+                      <img
+                        src="assets/9491f7f5c0e7ec9638ec295f58081828dca1dad7.svg"
+                        alt=""
+                      />
+                      <div
+                        class="status-level__item-stroke status-level__item-stroke--red"
+                      ></div>
+                    </div>
+                    <p class="status-level__label">심각</p>
+                  </div>
+                  <div
+                    class="status-level__divider status-level__divider--red"
+                  ></div>
+                </div>
+                <p class="status-level__count" data-bind="criticalCount">23</p>
+              </div>
+            </div>
+            <!-- 경계 -->
+            <div class="status-level status-level--warning">
+              <div class="status-level__block">
+                <div class="status-level__box">
+                  <div class="status-level__group">
+                    <div class="status-level__item">
+                      <img
+                        src="assets/d094ff97df0fafdaaa3f19423c856ac8f7dfd07c.svg"
+                        alt=""
+                      />
+                      <div
+                        class="status-level__item-stroke status-level__item-stroke--orange"
+                      ></div>
+                    </div>
+                    <p class="status-level__label">경계</p>
+                  </div>
+                  <div
+                    class="status-level__divider status-level__divider--orange"
+                  ></div>
+                </div>
+                <p class="status-level__count" data-bind="warningCount">10</p>
+              </div>
+            </div>
+            <!-- 주의 -->
+            <div class="status-level status-level--caution">
+              <div class="status-level__block">
+                <div class="status-level__box">
+                  <div class="status-level__group">
+                    <div class="status-level__item">
+                      <img
+                        src="assets/c1f8d66da4c26d0f8b2fa61046dc17902ebadb5a.svg"
+                        alt=""
+                      />
+                      <div
+                        class="status-level__item-stroke status-level__item-stroke--yellow"
+                      ></div>
+                    </div>
+                    <p class="status-level__label">주의</p>
+                  </div>
+                  <div
+                    class="status-level__divider status-level__divider--yellow"
+                  ></div>
+                </div>
+                <p class="status-level__count" data-bind="cautionCount">8</p>
+              </div>
+            </div>
+            <!-- 정상 -->
+            <div class="status-level status-level--normal">
+              <div class="status-level__block">
+                <div class="status-level__box">
+                  <div class="status-level__group">
+                    <div class="status-level__item">
+                      <img
+                        src="assets/1f332532db55375471ebaad15f30381180f2aba1.svg"
+                        alt=""
+                      />
+                      <div
+                        class="status-level__item-stroke status-level__item-stroke--green"
+                      ></div>
+                    </div>
+                    <p class="status-level__label">정상</p>
+                  </div>
+                  <div
+                    class="status-level__divider status-level__divider--green"
+                  ></div>
+                </div>
+                <p class="status-level__count" data-bind="normalCount">216</p>
+              </div>
+            </div>
+          </div>
         </div>
+
+        <!-- Table Container (Tabulator) -->
+        <div class="table-container" id="tabulator-table"></div>
+      </div>
     </div>
 
     <script src="../../../../../Utils/fx.js"></script>
     <script>
+      // ======================
+      // Mock 데이터
+      // ======================
+      const mockData = {
+        summary: {
+          critical: 23,
+          warning: 10,
+          caution: 8,
+          normal: 216,
+        },
+        items: [
+          {
+            grade: "critical",
+            group: "item",
+            name: "item",
+            hostname: "item",
+            time: "2025-00-00 00:00:00",
+            solution: "item",
+            area: "item",
+            content: "contents txt",
+          },
+          {
+            grade: "caution",
+            group: "item",
+            name: "item",
+            hostname: "item",
+            time: "2025-00-00 00:00:00",
+            solution: "item",
+            area: "item",
+            content: "contents txt",
+          },
+          {
+            grade: "normal",
+            group: "item",
+            name: "item",
+            hostname: "item",
+            time: "2025-00-00 00:00:00",
+            solution: "item",
+            area: "item",
+            content: "contents txt",
+          },
+          {
+            grade: "normal",
+            group: "item",
+            name: "item",
+            hostname: "item",
+            time: "2025-00-00 00:00:00",
+            solution: "item",
+            area: "item",
+            content: "contents txt",
+          },
+        ],
+      };
 
-        // ======================
-        // Mock 데이터
-        // ======================
-        const mockData = {
-            summary: {
-                critical: 23,
-                warning: 10,
-                caution: 8,
-                normal: 216
-            },
-            items: [
-                { grade: 'critical', group: 'item', name: 'item', hostname: 'item', time: '2025-00-00 00:00:00', solution: 'item', area: 'item', content: 'contents txt' },
-                { grade: 'caution', group: 'item', name: 'item', hostname: 'item', time: '2025-00-00 00:00:00', solution: 'item', area: 'item', content: 'contents txt' },
-                { grade: 'normal', group: 'item', name: 'item', hostname: 'item', time: '2025-00-00 00:00:00', solution: 'item', area: 'item', content: 'contents txt' },
-                { grade: 'normal', group: 'item', name: 'item', hostname: 'item', time: '2025-00-00 00:00:00', solution: 'item', area: 'item', content: 'contents txt' }
-            ]
-        };
+      // ======================
+      // Config
+      // ======================
+      const config = {
+        gradeIcons: {
+          critical: "assets/515557f12424948eecae944a5fe423532f290941.svg",
+          warning: "assets/d094ff97df0fafdaaa3f19423c856ac8f7dfd07c.svg",
+          caution: "assets/c1f8d66da4c26d0f8b2fa61046dc17902ebadb5a.svg",
+          normal: "assets/a24ee710d5a2b3f82ab15ab24e3839f1c03bf037.svg",
+        },
+        gradeLabels: {
+          critical: "심각",
+          warning: "경계",
+          caution: "주의",
+          normal: "정상",
+        },
+      };
 
-        // ======================
-        // Config
-        // ======================
-        const config = {
-            gradeIcons: {
-                critical: 'assets/515557f12424948eecae944a5fe423532f290941.svg',
-                warning: 'assets/d094ff97df0fafdaaa3f19423c856ac8f7dfd07c.svg',
-                caution: 'assets/c1f8d66da4c26d0f8b2fa61046dc17902ebadb5a.svg',
-                normal: 'assets/a24ee710d5a2b3f82ab15ab24e3839f1c03bf037.svg'
-            },
-            gradeLabels: {
-                critical: '심각',
-                warning: '경계',
-                caution: '주의',
-                normal: '정상'
-            }
-        };
+      // ======================
+      // 보조 함수 (순수 함수)
+      // ======================
 
-        // ======================
-        // 보조 함수 (순수 함수)
-        // ======================
+      // 등급별 아이콘 HTML 생성
+      const createGradeIndicator = (gradeIcons, gradeLabels) => (grade) => {
+        const icon = gradeIcons[grade] || gradeIcons.normal;
+        const label = gradeLabels[grade] || "정상";
+        const labelClass =
+          grade === "normal" ? "status-indicator__label--normal" : "";
 
-        // 등급별 아이콘 HTML 생성
-        const createGradeIndicator = (gradeIcons, gradeLabels) => (grade) => {
-            const icon = gradeIcons[grade] || gradeIcons.normal;
-            const label = gradeLabels[grade] || '정상';
-            const labelClass = grade === 'normal' ? 'status-indicator__label--normal' : '';
-
-            return `
+        return `
                 <div class="status-indicator">
                     <div class="status-indicator__icon status-indicator__icon--${grade}">
                         <img src="${icon}" alt="">
@@ -197,98 +276,103 @@
                     <span class="status-indicator__label ${labelClass}">${label}</span>
                 </div>
             `;
-        };
+      };
 
-        const gradeFormatter = createGradeIndicator(config.gradeIcons, config.gradeLabels);
+      const gradeFormatter = createGradeIndicator(
+        config.gradeIcons,
+        config.gradeLabels,
+      );
 
-        // ======================
-        // Tabulator 초기화
-        // ======================
-        document.addEventListener('DOMContentLoaded', () => {
-            const table = new Tabulator('#tabulator-table', {
-                data: mockData.items,
-                layout: 'fitColumns',
-                height: '100%',
-                rowHeight: 36,
-                placeholder: '데이터가 없습니다',
-                headerSort: true,
-                selectable: true,
-                columns: [
-                    {
-                        title: '등급',
-                        field: 'grade',
-                        width: 122,
-                        hozAlign: 'center',
-                        headerHozAlign: 'center',
-                        formatter: function(cell) {
-                            const value = cell.getValue();
-                            cell.getElement().classList.add('grade-cell');
-                            return gradeFormatter(value);
-                        }
-                    },
-                    {
-                        title: '업무그룹',
-                        field: 'group',
-                        width: 135,
-                        hozAlign: 'center',
-                        headerHozAlign: 'center'
-                    },
-                    {
-                        title: '업무명',
-                        field: 'name',
-                        width: 135,
-                        hozAlign: 'center',
-                        headerHozAlign: 'center'
-                    },
-                    {
-                        title: '호스트명',
-                        field: 'hostname',
-                        width: 135,
-                        hozAlign: 'center',
-                        headerHozAlign: 'center'
-                    },
-                    {
-                        title: '발생시간',
-                        field: 'time',
-                        width: 165,
-                        hozAlign: 'center',
-                        headerHozAlign: 'center'
-                    },
-                    {
-                        title: '솔루션',
-                        field: 'solution',
-                        width: 135,
-                        hozAlign: 'center',
-                        headerHozAlign: 'center'
-                    },
-                    {
-                        title: '영역',
-                        field: 'area',
-                        width: 135,
-                        hozAlign: 'center',
-                        headerHozAlign: 'center'
-                    },
-                    {
-                        title: '내용',
-                        field: 'content',
-                        hozAlign: 'left',
-                        headerHozAlign: 'center'
-                    }
-                ],
-                rowClick: function(e, row) {
-                    console.log('[EventBrowser] Row clicked:', row.getData());
-                }
-            });
-
-            // 버튼 이벤트 바인딩
-            go(
-                document.querySelectorAll('[data-action]'),
-                each(btn => btn.addEventListener('click', () => {
-                    const action = btn.dataset.action;
-                    console.log(`[EventBrowser] Action: ${action}`);
-                }))
-            );
+      // ======================
+      // Tabulator 초기화
+      // ======================
+      document.addEventListener("DOMContentLoaded", () => {
+        const table = new Tabulator("#tabulator-table", {
+          data: mockData.items,
+          layout: "fitColumns",
+          height: "100%",
+          rowHeight: 36,
+          placeholder: "데이터가 없습니다",
+          headerSort: true,
+          selectable: true,
+          columns: [
+            {
+              title: "등급",
+              field: "grade",
+              width: 122,
+              hozAlign: "center",
+              headerHozAlign: "center",
+              formatter: function (cell) {
+                const value = cell.getValue();
+                cell.getElement().classList.add("grade-cell");
+                return gradeFormatter(value);
+              },
+            },
+            {
+              title: "업무그룹",
+              field: "group",
+              width: 135,
+              hozAlign: "center",
+              headerHozAlign: "center",
+            },
+            {
+              title: "업무명",
+              field: "name",
+              width: 135,
+              hozAlign: "center",
+              headerHozAlign: "center",
+            },
+            {
+              title: "호스트명",
+              field: "hostname",
+              width: 135,
+              hozAlign: "center",
+              headerHozAlign: "center",
+            },
+            {
+              title: "발생시간",
+              field: "time",
+              width: 165,
+              hozAlign: "center",
+              headerHozAlign: "center",
+            },
+            {
+              title: "솔루션",
+              field: "solution",
+              width: 135,
+              hozAlign: "center",
+              headerHozAlign: "center",
+            },
+            {
+              title: "영역",
+              field: "area",
+              width: 135,
+              hozAlign: "center",
+              headerHozAlign: "center",
+            },
+            {
+              title: "내용",
+              field: "content",
+              hozAlign: "left",
+              headerHozAlign: "center",
+            },
+          ],
+          rowClick: function (e, row) {
+            console.log("[EventBrowser] Row clicked:", row.getData());
+          },
         });
+
+        // 버튼 이벤트 바인딩
+        go(
+          document.querySelectorAll("[data-action]"),
+          each((btn) =>
+            btn.addEventListener("click", () => {
+              const action = btn.dataset.action;
+              console.log(`[EventBrowser] Action: ${action}`);
+            }),
+          ),
+        );
+      });
     </script>
-</body>
+  </body>
 </html>
