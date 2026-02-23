@@ -1,0 +1,648 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PopupChart Preview</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        #popup-chart-container {
+            width: 496px;
+            height: 293px;
+            overflow: auto;
+        }
+
+        #popup-chart-container {
+            & .block {
+                display: flex;
+                flex-direction: column;
+                gap: 10px;
+                align-items: flex-start;
+                flex-shrink: 0;
+            }
+
+            & .block-title {
+                font-family: 'Pretendard', sans-serif;
+                font-weight: 500;
+                font-size: 16px;
+                color: #e4ebf6;
+                letter-spacing: -0.32px;
+                line-height: normal;
+                white-space: pre-wrap;
+                width: 496px;
+            }
+
+            & .tab-menu {
+                display: flex;
+                align-items: center;
+                height: 30px;
+                background: rgba(255, 255, 255, 0.1);
+                border-radius: 8px;
+                flex-shrink: 0;
+            }
+
+            & .tab {
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                height: 30px;
+                padding: 8px 30px;
+                border-radius: 8px;
+                border: none;
+                cursor: pointer;
+                flex-shrink: 0;
+                font-family: 'Pretendard', sans-serif;
+                font-size: 13px;
+                line-height: normal;
+            }
+
+            & .tab-active {
+                font-weight: 600;
+                color: #1e202c;
+                box-shadow: 0px 4px 6px 0px rgba(0, 0, 0, 0.35);
+                background-image:
+                    linear-gradient(-8.6deg, rgba(96, 235, 255, 0) 9.76%, rgba(96, 255, 234, 0.8) 93.85%),
+                    linear-gradient(-13.49deg, rgba(112, 132, 245, 0) 15.24%, rgb(129, 225, 197) 112.01%),
+                    linear-gradient(90deg, rgb(175, 238, 247) 0%, rgb(175, 238, 247) 100%);
+            }
+
+            & .tab-idle {
+                font-weight: 400;
+                color: #a7acbc;
+                background: transparent;
+            }
+
+            & .chart-contents {
+                width: 496px;
+                height: 224px;
+                background: #282a37;
+                border: 1px solid #323234;
+                border-radius: 8px;
+                display: flex;
+                align-items: center;
+                padding: 20px 16px;
+                flex-shrink: 0;
+            }
+
+            & .chart-box {
+                width: 464px;
+                height: 184px;
+                position: relative;
+            }
+
+            & .chart-grid {
+                position: absolute;
+                top: 0;
+                left: 0;
+                width: 464px;
+                height: 159px;
+            }
+
+            & .y-axis {
+                position: absolute;
+                top: 7px;
+                left: 28px;
+                right: 15px;
+                bottom: 18px;
+                display: flex;
+                flex-direction: column;
+            }
+
+            & .y-line {
+                flex: 1;
+                position: relative;
+                width: 100%;
+            }
+
+            & .y-label {
+                position: absolute;
+                left: -8px;
+                top: -9px;
+                transform: translateX(-100%);
+                font-family: 'Pretendard', sans-serif;
+                font-weight: 400;
+                font-size: 12px;
+                color: rgba(167, 172, 188, 0.6);
+                line-height: normal;
+                text-align: right;
+            }
+
+            & .y-tick {
+                position: absolute;
+                left: -3px;
+                top: 0;
+                width: 3px;
+                height: 1px;
+                background: rgba(255, 255, 255, 0.2);
+            }
+
+            & .y-dash {
+                position: absolute;
+                top: 0;
+                left: 0;
+                right: 0;
+                height: 0;
+                border-top: 1px dashed rgba(255, 255, 255, 0.2);
+            }
+
+            & .y-line-base {
+                height: 1px;
+                position: relative;
+                width: 100%;
+                flex-shrink: 0;
+            }
+
+            & .y-line-base .y-label {
+                top: -9px;
+            }
+
+            & .y-line-base .y-tick {
+                background: rgba(255, 255, 255, 0.4);
+            }
+
+            & .y-base-line {
+                position: absolute;
+                top: 0;
+                left: 0;
+                right: 0;
+                height: 1px;
+                background: rgba(255, 255, 255, 0.4);
+            }
+
+            & .x-axis {
+                position: absolute;
+                top: 7px;
+                left: 28px;
+                right: 15px;
+                bottom: 18px;
+                display: flex;
+            }
+
+            & .x-tick-first {
+                width: 1px;
+                height: 100%;
+                position: relative;
+                flex-shrink: 0;
+            }
+
+            & .x-label {
+                position: absolute;
+                bottom: -6px;
+                right: 0;
+                transform: translateX(50%) translateY(100%);
+                font-family: 'Pretendard', sans-serif;
+                font-weight: 400;
+                font-size: 12px;
+                color: rgba(167, 172, 188, 0.6);
+                line-height: normal;
+                text-align: center;
+                white-space: nowrap;
+            }
+
+            & .x-tick-first .x-solid-line {
+                position: absolute;
+                top: 0;
+                bottom: 0;
+                right: 0;
+                width: 1px;
+                background: rgba(255, 255, 255, 0.4);
+            }
+
+            & .x-tick-first .x-mark {
+                position: absolute;
+                bottom: -3px;
+                right: 0;
+                width: 1px;
+                height: 3px;
+                background: rgba(255, 255, 255, 0.4);
+            }
+
+            & .x-tick {
+                flex: 1;
+                height: 100%;
+                position: relative;
+            }
+
+            & .x-tick .x-dash {
+                position: absolute;
+                top: 0;
+                bottom: 0;
+                right: 0;
+                width: 0;
+                border-right: 1px dashed rgba(255, 255, 255, 0.2);
+            }
+
+            & .x-tick .x-mark {
+                position: absolute;
+                bottom: -3px;
+                right: 0;
+                width: 1px;
+                height: 3px;
+                background: rgba(255, 255, 255, 0.2);
+            }
+
+            & .chart-graphic {
+                position: absolute;
+                top: 19.5px;
+                left: 28px;
+                width: 421px;
+                height: 107px;
+            }
+
+            & .line-series-2 {
+                position: absolute;
+                top: 1.16%;
+                left: 0.21%;
+                right: 0.21%;
+                bottom: 10.63%;
+                display: block;
+            }
+
+            & .line-series-2 .line-svg {
+                width: 100%;
+                height: 100%;
+                display: block;
+            }
+
+            & .line-series-1 {
+                position: absolute;
+                top: 19.06%;
+                left: 0.21%;
+                right: 0.21%;
+                bottom: 0.94%;
+                display: block;
+            }
+
+            & .line-series-1 .line-svg {
+                width: 100%;
+                height: 100%;
+                display: block;
+            }
+
+            & .dot {
+                position: absolute;
+                width: 12px;
+                height: 12px;
+            }
+
+            & .dot-1 {
+                left: calc(43.11% - 6px);
+                top: calc(80% - 6px);
+            }
+
+            & .dot-2 {
+                left: calc(43.11% - 6px);
+                top: calc(9.06% - 6px);
+            }
+
+            & .dot .dot-outer {
+                position: absolute;
+                inset: 0;
+                width: 100%;
+                height: 100%;
+                border-radius: 50%;
+                background: rgba(30, 214, 255, 0.3);
+            }
+
+            & .dot .dot-inner {
+                position: absolute;
+                top: 50%;
+                left: 50%;
+                transform: translate(-50%, -50%);
+                width: 6px;
+                height: 6px;
+                border-radius: 50%;
+                background: linear-gradient(90deg, #1ED6FF 0%, #268AFF 100%);
+            }
+
+            & .dot-1 .dot-outer {
+                background: rgba(61, 255, 220, 0.3);
+            }
+
+            & .dot-1 .dot-inner {
+                background: linear-gradient(90deg, #3DFFDC 0%, #1ED6FF 100%);
+            }
+
+            & .chart-hover {
+                position: absolute;
+                top: 7.5px;
+                left: 215px;
+            }
+
+            & .chart-hover-line {
+                width: 0;
+                height: 138px;
+                border-left: 1px dashed rgba(248, 250, 252, 0.8);
+            }
+
+            & .hover-tooltip {
+                position: absolute;
+                top: 27.63px;
+                left: 6.79px;
+                width: 82px;
+                display: flex;
+                flex-direction: column;
+                gap: 5px;
+                padding: 8px;
+                background: rgba(75, 79, 82, 0.4);
+                backdrop-filter: blur(7px);
+                -webkit-backdrop-filter: blur(7px);
+                border-radius: 4px;
+                box-shadow: 0px 0px 12px 0px rgba(0, 0, 0, 0.2);
+            }
+
+            & .hover-time {
+                font-family: 'Pretendard', sans-serif;
+                font-weight: 600;
+                font-size: 14px;
+                color: #f8fafc;
+                line-height: normal;
+                white-space: pre-wrap;
+            }
+
+            & .hover-row {
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+                width: 100%;
+            }
+
+            & .hover-legend-info {
+                display: flex;
+                align-items: center;
+                gap: 8px;
+                flex-shrink: 0;
+            }
+
+            & .hover-legend-svg {
+                width: 12px;
+                height: 12px;
+                flex-shrink: 0;
+                display: block;
+            }
+
+            & .hover-legend-info span {
+                font-family: 'Pretendard', sans-serif;
+                font-weight: 400;
+                font-size: 11px;
+                color: #e4ebf6;
+                line-height: normal;
+                flex-shrink: 0;
+            }
+
+            & .hover-value {
+                font-family: 'Pretendard', sans-serif;
+                font-weight: 400;
+                font-size: 11px;
+                color: #f8fafc;
+                line-height: normal;
+                flex-shrink: 0;
+            }
+
+            & .chart-legend {
+                position: absolute;
+                bottom: 0;
+                right: 0;
+                display: flex;
+                gap: 24px;
+                align-items: center;
+            }
+
+            & .legend-item {
+                display: flex;
+                align-items: center;
+                gap: 8px;
+            }
+
+            & .legend-icon-svg {
+                width: 12px;
+                height: 12px;
+                flex-shrink: 0;
+                display: block;
+            }
+
+            & .legend-item span {
+                font-family: 'Pretendard', sans-serif;
+                font-weight: 400;
+                font-size: 12px;
+                color: #bbc2cf;
+                line-height: normal;
+            }
+        }
+
+        body {
+            margin: 0;
+            background: #0a0a1a;
+        }
+    </style>
+</head>
+<body>
+    <div id="popup-chart-container">
+        <div class="block">
+            <p class="block-title">컨텐츠 그룹</p>
+            <!-- Tab Menu -->
+            <div class="tab-menu">
+                <button class="tab tab-active">입/출력 전류</button>
+                <div class="tab tab-idle">입/출력 전압</div>
+                <div class="tab tab-idle">입/출력 주파수</div>
+            </div>
+            <!-- Chart Contents -->
+            <div class="chart-contents">
+                <div class="chart-box">
+                    <!-- Grid -->
+                    <div class="chart-grid">
+                        <!-- Y Axis -->
+                        <div class="y-axis">
+                            <div class="y-line">
+                                <span class="y-label">40°</span>
+                                <div class="y-tick"></div>
+                                <div class="y-dash"></div>
+                            </div>
+                            <div class="y-line">
+                                <span class="y-label">30°</span>
+                                <div class="y-tick"></div>
+                                <div class="y-dash"></div>
+                            </div>
+                            <div class="y-line">
+                                <span class="y-label">20°</span>
+                                <div class="y-tick"></div>
+                                <div class="y-dash"></div>
+                            </div>
+                            <div class="y-line">
+                                <span class="y-label">10°</span>
+                                <div class="y-tick"></div>
+                                <div class="y-dash"></div>
+                            </div>
+                            <div class="y-line-base">
+                                <span class="y-label">0</span>
+                                <div class="y-tick"></div>
+                                <div class="y-base-line"></div>
+                            </div>
+                        </div>
+                        <!-- X Axis -->
+                        <div class="x-axis">
+                            <div class="x-tick-first">
+                                <span class="x-label">09:00</span>
+                                <div class="x-solid-line"></div>
+                                <div class="x-mark"></div>
+                            </div>
+                            <div class="x-tick">
+                                <span class="x-label">09:10</span>
+                                <div class="x-dash"></div>
+                                <div class="x-mark"></div>
+                            </div>
+                            <div class="x-tick">
+                                <span class="x-label">09:20</span>
+                                <div class="x-dash"></div>
+                                <div class="x-mark"></div>
+                            </div>
+                            <div class="x-tick">
+                                <span class="x-label">09:30</span>
+                                <div class="x-dash"></div>
+                                <div class="x-mark"></div>
+                            </div>
+                            <div class="x-tick">
+                                <span class="x-label">09:40</span>
+                                <div class="x-dash"></div>
+                                <div class="x-mark"></div>
+                            </div>
+                            <div class="x-tick">
+                                <span class="x-label">09:50</span>
+                                <div class="x-dash"></div>
+                                <div class="x-mark"></div>
+                            </div>
+                            <div class="x-tick">
+                                <span class="x-label">10:00</span>
+                                <div class="x-dash"></div>
+                                <div class="x-mark"></div>
+                            </div>
+                            <div class="x-tick">
+                                <span class="x-label">10:10</span>
+                                <div class="x-dash"></div>
+                                <div class="x-mark"></div>
+                            </div>
+                            <div class="x-tick">
+                                <span class="x-label">10:20</span>
+                                <div class="x-dash"></div>
+                                <div class="x-mark"></div>
+                            </div>
+                            <div class="x-tick">
+                                <span class="x-label">10:30</span>
+                                <div class="x-dash"></div>
+                                <div class="x-mark"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Graphic (Lines & Dots) -->
+                    <div class="chart-graphic">
+                        <!-- Series 2 (blue line - behind) -->
+                        <div class="line-series-2">
+                            <svg class="line-svg" preserveAspectRatio="none" viewBox="0 0 420 94" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                <path d="M1 1L47 25L94 18L140 35L187 45L234 55L280 62L327 70L374 78L420 94" stroke="url(#paint_line2)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                                <defs>
+                                    <linearGradient id="paint_line2" x1="420" y1="47" x2="0" y2="47" gradientUnits="userSpaceOnUse">
+                                        <stop stop-color="#1ED6FF"/>
+                                        <stop offset="1" stop-color="#268AFF"/>
+                                    </linearGradient>
+                                </defs>
+                            </svg>
+                        </div>
+                        <!-- Series 1 (cyan line - front) -->
+                        <div class="line-series-1">
+                            <svg class="line-svg" preserveAspectRatio="none" viewBox="0 0 420 85" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                <path d="M1 20L47 35L94 28L140 45L187 55L234 40L280 50L327 60L374 70L420 85" stroke="url(#paint_line1)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                                <defs>
+                                    <linearGradient id="paint_line1" x1="420" y1="42" x2="0" y2="42" gradientUnits="userSpaceOnUse">
+                                        <stop stop-color="#3DFFDC"/>
+                                        <stop offset="1" stop-color="#1ED6FF"/>
+                                    </linearGradient>
+                                </defs>
+                            </svg>
+                        </div>
+                        <div class="dot dot-1">
+                            <div class="dot-outer"></div>
+                            <div class="dot-inner"></div>
+                        </div>
+                        <div class="dot dot-2">
+                            <div class="dot-outer"></div>
+                            <div class="dot-inner"></div>
+                        </div>
+                    </div>
+
+                    <!-- Hover -->
+                    <div class="chart-hover">
+                        <div class="chart-hover-line"></div>
+                        <div class="hover-tooltip">
+                            <p class="hover-time">09:40</p>
+                            <div class="hover-row">
+                                <div class="hover-legend-info">
+                                    <svg class="hover-legend-svg" viewBox="0 0 12.0001 12" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                        <path d="M5.29309 2.70753C5.68362 2.31701 6.31663 2.31701 6.70715 2.70753L9.00012 5.0005H11.0001C11.5524 5.0005 12.0001 5.44822 12.0001 6.0005C12 6.5527 11.5523 7.0005 11.0001 7.0005H9.00012L6.70715 9.29347C6.31667 9.68379 5.68358 9.68379 5.29309 9.29347L3.00012 7.0005H1.00012C0.447897 7.0005 0.000218954 6.5527 0.00012207 6.0005C0.00012207 5.44822 0.447837 5.0005 1.00012 5.0005H3.00012L5.29309 2.70753Z" fill="url(#paint_hover1)"/>
+                                        <defs>
+                                            <linearGradient id="paint_hover1" x1="11.9999" y1="5.9617" x2="-0.000121716" y2="5.9617" gradientUnits="userSpaceOnUse">
+                                                <stop stop-color="#1ED6FF"/>
+                                                <stop offset="1" stop-color="#268AFF"/>
+                                            </linearGradient>
+                                        </defs>
+                                    </svg>
+                                    <span>범례1</span>
+                                </div>
+                                <span class="hover-value">30</span>
+                            </div>
+                            <div class="hover-row">
+                                <div class="hover-legend-info">
+                                    <svg class="hover-legend-svg" viewBox="0 0 12.0001 12" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                        <path d="M5.29309 2.70753C5.68362 2.31701 6.31663 2.31701 6.70715 2.70753L9.00012 5.0005H11.0001C11.5524 5.0005 12.0001 5.44822 12.0001 6.0005C12 6.5527 11.5523 7.0005 11.0001 7.0005H9.00012L6.70715 9.29347C6.31667 9.68379 5.68358 9.68379 5.29309 9.29347L3.00012 7.0005H1.00012C0.447897 7.0005 0.000218954 6.5527 0.00012207 6.0005C0.00012207 5.44822 0.447837 5.0005 1.00012 5.0005H3.00012L5.29309 2.70753Z" fill="url(#paint_hover2)"/>
+                                        <defs>
+                                            <linearGradient id="paint_hover2" x1="11.9999" y1="5.9617" x2="-0.000121892" y2="5.9617" gradientUnits="userSpaceOnUse">
+                                                <stop stop-color="#3DFFDC"/>
+                                                <stop offset="1" stop-color="#1ED6FF"/>
+                                            </linearGradient>
+                                        </defs>
+                                    </svg>
+                                    <span>범례2</span>
+                                </div>
+                                <span class="hover-value">13</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Legend -->
+                    <div class="chart-legend">
+                        <div class="legend-item">
+                            <svg class="legend-icon-svg" viewBox="0 0 12.0001 12" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                <path d="M5.29297 2.7078C5.68349 2.31727 6.31651 2.31727 6.70703 2.7078L9 5.00077H11C11.5523 5.00077 12 5.44848 12 6.00077C11.9999 6.55297 11.5522 7.00077 11 7.00077H9L6.70703 9.29374C6.31655 9.68406 5.68346 9.68406 5.29297 9.29374L3 7.00077H1C0.447775 7.00077 9.68834e-05 6.55297 0 6.00077C0 5.44848 0.447715 5.00077 1 5.00077H3L5.29297 2.7078Z" fill="url(#paint_legend1)"/>
+                                <defs>
+                                    <linearGradient id="paint_legend1" x1="12" y1="5.96197" x2="1.15661e-07" y2="5.96197" gradientUnits="userSpaceOnUse">
+                                        <stop stop-color="#1ED6FF"/>
+                                        <stop offset="1" stop-color="#268AFF"/>
+                                    </linearGradient>
+                                </defs>
+                            </svg>
+                            <span>범례1</span>
+                        </div>
+                        <div class="legend-item">
+                            <svg class="legend-icon-svg" viewBox="0 0 12.0001 12" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                <path d="M5.29297 2.7078C5.68349 2.31727 6.31651 2.31727 6.70703 2.7078L9 5.00077H11C11.5523 5.00077 12 5.44848 12 6.00077C11.9999 6.55297 11.5522 7.00077 11 7.00077H9L6.70703 9.29374C6.31655 9.68406 5.68346 9.68406 5.29297 9.29374L3 7.00077H1C0.447775 7.00077 9.68834e-05 6.55297 0 6.00077C0 5.44848 0.447715 5.00077 1 5.00077H3L5.29297 2.7078Z" fill="url(#paint_legend2)"/>
+                                <defs>
+                                    <linearGradient id="paint_legend2" x1="12" y1="5.96197" x2="-6.02072e-08" y2="5.96197" gradientUnits="userSpaceOnUse">
+                                        <stop stop-color="#3DFFDC"/>
+                                        <stop offset="1" stop-color="#1ED6FF"/>
+                                    </linearGradient>
+                                </defs>
+                            </svg>
+                            <span>범례2</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
