@@ -49,6 +49,7 @@ function initComponent() {
   this._trendDataComparison = null; // { today: [], yesterday: [] }
   this._activeTab = 'voltage';
   this._connectionState = null; // { assetKey, object3D, animationId, svg, line, dot, activeItem }
+  this._cameraAnim = null; // 진행 중인 카메라 줌아웃 애니메이션
 
   // ======================
   // 2. 변환 함수 바인딩
@@ -805,6 +806,9 @@ function fetchChildAssets() {
       const relations = relResp?.response?.data || [];
       const childKeys = relations.map((r) => r.fromAssetKey);
 
+      // PDU + 자식 장비 전체가 보이도록 카메라 줌아웃
+      zoomToFitGroup.call(this, childKeys);
+
       if (childKeys.length === 0) {
         this.renderSwitchPanel([]);
         return;
@@ -828,6 +832,69 @@ function fetchChildAssets() {
       console.warn('[PDU] fetchChildAssets failed:', e);
       this.renderSwitchPanel([]);
     });
+}
+
+// ======================
+// CAMERA: PDU + 자식 장비 전체 줌아웃
+// ======================
+
+/**
+ * PDU 자신 + 자식 장비들의 통합 바운딩박스를 계산하여
+ * 전체가 보이는 위치로 카메라 줌아웃
+ */
+function zoomToFitGroup(childKeys) {
+  const camera = wemb.threeElements.camera;
+  const controls = wemb.threeElements.mainControls;
+
+  // PDU 자신 + 자식 장비의 통합 바운딩박스
+  const combinedBox = new THREE.Box3();
+
+  // PDU 자신
+  if (this.appendElement) {
+    combinedBox.expandByObject(this.appendElement);
+  }
+
+  // 자식 장비 3D 인스턴스
+  for (const key of childKeys) {
+    const obj3D = findObject3DByAssetKey(this, key);
+    if (obj3D) combinedBox.expandByObject(obj3D);
+  }
+
+  if (combinedBox.isEmpty()) return;
+
+  const center = new THREE.Vector3();
+  const size = new THREE.Vector3();
+  combinedBox.getCenter(center);
+  combinedBox.getSize(size);
+
+  const maxDim = Math.max(size.x, size.y, size.z);
+  const viewDist = maxDim * 1.5;
+
+  // 현재 카메라 방향 유지하며 줌아웃
+  const dir = new THREE.Vector3()
+    .subVectors(camera.position, controls.target)
+    .normalize();
+  const cameraPos = center.clone().add(dir.multiplyScalar(viewDist));
+
+  // 애니메이션
+  const startCamPos = camera.position.clone();
+  const startTarget = controls.target.clone();
+  const tweenObj = { t: 0 };
+
+  if (this._cameraAnim) {
+    this._cameraAnim.pause();
+    this._cameraAnim = null;
+  }
+
+  this._cameraAnim = anime.animate(tweenObj, {
+    t: 1,
+    duration: 800,
+    ease: 'inOutQuad',
+    onUpdate: function () {
+      camera.position.lerpVectors(startCamPos, cameraPos, tweenObj.t);
+      controls.target.lerpVectors(startTarget, center, tweenObj.t);
+    },
+  });
 }
 
 // ======================

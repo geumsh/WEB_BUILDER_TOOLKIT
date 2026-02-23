@@ -3,6 +3,10 @@
  * 컴포넌트 정리 (Shadow DOM 팝업 + 차트)
  */
 
+if (this._cameraAnim) {
+  this._cameraAnim.pause();
+  this._cameraAnim = null;
+}
 if (this._stopConnection) this._stopConnection();
 this.stopRefresh();
 this.destroyPopup();
