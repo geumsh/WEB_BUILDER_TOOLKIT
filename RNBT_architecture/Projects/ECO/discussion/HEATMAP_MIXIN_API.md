@@ -1,558 +1,170 @@
-# HeatmapMixin API Reference
+# HeatmapMixin 옵션 가이드
 
-3D 씬에 온도 히트맵 서피스를 생성/관리하는 Mixin.
-simpleheat(인라인 포함)로 2D 히트맵을 생성하고, THREE.ShaderMaterial로 3D PlaneGeometry에 적용.
+히트맵을 커스텀하려면 `applyHeatmapMixin` 호출 시 옵션을 변경합니다.
 
----
-
-## 개요
-
-팝업 내 버튼 클릭 시 클릭한 인스턴스 위치를 중심으로 주변 온도 분포를 히트맵 서피스로 토글 표시.
-히트맵 갱신은 `renderStatusCards` 콜백에 연동되어 카드와 동일 시점/동일 데이터로 동기화.
-
-```
-팝업 히트맵 버튼 클릭 → toggleHeatmap() → mesh 생성 → 최초 데이터 수집 → 렌더링
-이후 갱신: renderStatusCards → 캐시 + 히트맵 갱신 트리거 (카드와 동기화)
-```
-
----
-
-## 전제 조건
-
-- `applyShadowPopupMixin` 이후에 호출 (`destroyPopup` 체인 확장)
-- `applyEChartsMixin` 이후에 호출 (체인 순서 보장)
-- THREE (Three.js) 전역 접근 가능
-- `wemb.threeElements.scene` 접근 가능
-- simpleheat는 Mixin 내부에 인라인 포함 (외부 의존성 없음)
-
----
-
-## 빠른 시작
-
-### 1단계: Mixin 임포트 및 적용
+### 현재 소스 (ActionPanel)
 
 ```javascript
-const { applyHeatmapMixin } = HeatmapMixin;
-
-// applyShadowPopupMixin, applyEChartsMixin 이후에 호출
-applyHeatmapMixin(this, {
-    surfaceSize: { width: 20, depth: 20 },
+// HEATMAP_PRESET — register.js:22-26
+const HEATMAP_PRESET = {
     temperatureMetrics: ['SENSOR.TEMP', 'CRAC.RETURN_TEMP'],
-});
+    gradient: null,
+    temperatureRange: { min: 17, max: 31 },
+};
+
+// applyHeatmapMixin 호출 — register.js:204-214
+applyHeatmapMixin(
+    this._centerInstance,
+    Object.assign(
+        {
+            refreshInterval: 0,
+            onLoadingChange: function (isLoading) {
+                syncLoadingUI.call(ctx, 'temperature', isLoading);
+            },
+        },
+        HEATMAP_PRESET
+    )
+);
 ```
 
-### 2단계: 팝업 이벤트에 버튼 핸들러 추가
+> 명시하지 않은 옵션(`surfaceSize`, `segments`, `radius` 등)은 아래 기본값이 적용됩니다.
+
+---
+
+## 옵션
+
+| 옵션 | 타입 | 기본값 | 현재 소스 | 설명 |
+|------|------|--------|-----------|------|
+| `surfaceSize` | `'auto'` \| `{ width, depth }` | `'auto'` | 기본값 | appendElement BoundingBox에서 서피스 크기 자동 산출 |
+| `temperatureRange` | `{ min, max }` | `{ min: 17, max: 31 }` | `{ min: 17, max: 31 }` | 온도 정규화 범위. `(value - min) / (max - min)` → 0.0~1.0 |
+| `gradient` | object \| `null` | `null` | `null` | 색상 매핑. `null`이면 DEFAULT_GRADIENT 사용 |
+| `heatmapResolution` | number | `256` | 기본값 | radius UV 변환 기준값. `UV = (radius + blur) / resolution` |
+| `segments` | number | `64` | 기본값 | PlaneGeometry 분할 수. 높을수록 displacement가 부드러움 |
+| `displacementScale` | number | `3` | 기본값 | 수직 변위 크기. 온도가 높은 곳이 얼마나 솟아오르는지 |
+| `baseHeight` | number | `2` | 기본값 | 서피스 기준 높이 (Z 오프셋) |
+| `radius` | `'auto'` \| number | `'auto'` | 기본값 | 센서 영향 반경. `'auto'`는 센서 수 기반 동적 계산 |
+| `blur` | number | `30` | 기본값 | 확산 경계 부드러움. radius와 함께 영향 반경 계산에 사용 |
+| `opacity` | number | `0.75` | 기본값 | 서피스 투명도 (0~1). heat가 없는 영역은 항상 완전 투명 |
+| `temperatureMetrics` | string[] | `['SENSOR.TEMP', 'CRAC.RETURN_TEMP']` | `['SENSOR.TEMP', 'CRAC.RETURN_TEMP']` | 수집 대상 metricCode |
+| `refreshInterval` | number | `0` | `0` | `0`: renderStatusCards 체인 연동. `> 0`: 독립 setInterval (ms) |
+| `onLoadingChange` | function \| `null` | `null` | `syncLoadingUI` 연동 | `callback(isLoading)`. 데이터 로딩 시작/완료 시 호출 |
+
+---
+
+## 커스텀 예시
+
+현재 HEATMAP_PRESET을 기준으로, 옵션을 변경하면 코드가 어떻게 바뀌는지 보여줍니다.
+
+### 온도 범위 변경
+
+서버실이 아닌 일반 사무공간(20~28°C)으로 범위를 조정:
 
 ```javascript
-const popupCreatedConfig = {
-    events: {
-        click: {
-            '.close-btn': () => this.hideDetail(),
-            '.heatmap-btn': () => this.toggleHeatmap(),  // 히트맵 토글
-        },
-    },
+const HEATMAP_PRESET = {
+    temperatureMetrics: ['SENSOR.TEMP', 'CRAC.RETURN_TEMP'],
+    gradient: null,
+    temperatureRange: { min: 20, max: 28 },  // 변경
 };
 ```
 
-### 3단계: HTML에 버튼 추가
+### 커스텀 색상 (gradient)
 
-```html
-<button class="heatmap-btn" type="button" aria-label="Heatmap" data-active="false">
-    <!-- SVG 아이콘 -->
-</button>
-```
-
-버튼의 `data-active` 속성은 Mixin이 자동으로 `"true"` / `"false"` 토글.
-
----
-
-## applyHeatmapMixin 옵션
+파란→빨간 2색 그라디언트로 단순화:
 
 ```javascript
-applyHeatmapMixin(instance, options)
-```
-
-### 전체 옵션 (기본값 포함)
-
-```javascript
-applyHeatmapMixin(this, {
-    surfaceSize:        { width: 20, depth: 20 },
-    temperatureRange:   { min: 17, max: 31 },
-    gradient:           null,            // null = DEFAULT_GRADIENT (온도 프리셋)
-    heatmapResolution:  256,
-    segments:           64,
-    displacementScale:  3,
-    baseHeight:         0.5,
-    radius:             60,
-    blur:               25,
-    opacity:            0.75,
+const HEATMAP_PRESET = {
     temperatureMetrics: ['SENSOR.TEMP', 'CRAC.RETURN_TEMP'],
-});
+    gradient: {                               // 변경
+        0.0: '#0000FF',
+        1.0: '#FF0000',
+    },
+    temperatureRange: { min: 17, max: 31 },
+};
 ```
+
+### 서피스 크기 고정
+
+자동 산출 대신 특정 크기로 고정:
+
+```javascript
+const HEATMAP_PRESET = {
+    temperatureMetrics: ['SENSOR.TEMP', 'CRAC.RETURN_TEMP'],
+    gradient: null,
+    temperatureRange: { min: 17, max: 31 },
+    surfaceSize: { width: 30, depth: 20 },    // 추가
+};
+```
+
+### 시각 효과 조정
+
+서피스를 더 낮고, 더 투명하게, 굴곡 없이:
+
+```javascript
+const HEATMAP_PRESET = {
+    temperatureMetrics: ['SENSOR.TEMP', 'CRAC.RETURN_TEMP'],
+    gradient: null,
+    temperatureRange: { min: 17, max: 31 },
+    baseHeight: 1,                            // 추가 (기본 2)
+    displacementScale: 0,                     // 추가 (기본 3, 0이면 평면)
+    opacity: 0.5,                             // 추가 (기본 0.75)
+};
+```
+
+### 센서 영향 반경 수동 지정
+
+auto 대신 고정 반경 사용:
+
+```javascript
+const HEATMAP_PRESET = {
+    temperatureMetrics: ['SENSOR.TEMP', 'CRAC.RETURN_TEMP'],
+    gradient: null,
+    temperatureRange: { min: 17, max: 31 },
+    radius: 80,                               // 추가 (기본 'auto')
+    blur: 40,                                 // 추가 (기본 30)
+};
+```
+
+### 데이터 갱신 주기 변경
+
+ActionPanel은 통합 타이머(`_refreshInterval: 30000`)로 30초마다 데이터를 갱신합니다.
+이 주기를 변경하려면 register.js의 `_refreshInterval`을 수정합니다:
+
+```javascript
+// register.js:68
+this._refreshInterval = 10000; // 변경 (기본 30000ms → 10초)
+```
+
+> `applyHeatmapMixin`의 `refreshInterval: 0`은 그대로 유지합니다.
+> ActionPanel 통합 타이머가 `updateHeatmapWithData()`로 데이터를 주입하는 구조이므로,
+> Mixin 자체 타이머는 사용하지 않습니다.
 
 ---
 
-### 옵션 상세
+## gradient 상세
 
-#### `surfaceSize` — 서피스 크기 (월드 단위)
+`null`이면 아래 DEFAULT_GRADIENT가 적용됩니다. 현재 소스는 `null` (기본 그라디언트 사용).
 
-| 속성 | 타입 | 기본값 | 설명 |
-|------|------|--------|------|
-| `width` | number | `20` | X축 크기 |
-| `depth` | number | `20` | Z축 크기 |
+| stop | 색상 | 의미 |
+|------|------|------|
+| 0.00 | `#1068D9` | ≤17°C 과냉 |
+| 0.29 | `#4AA3DF` | 18-21°C 정상(저온) |
+| 0.57 | `#2ECC71` | 22-25°C 최적 |
+| 0.71 | `#A3D977` | 26-27°C 정상 상한 |
+| 0.93 | `#F7A318` | 28-30°C 경고 |
+| 1.00 | `#E74C3C` | ≥31°C 위험 |
 
-PlaneGeometry의 월드 단위 크기. 서피스 위치는 클릭한 인스턴스의 `getWorldPosition()` 중심 (Y=0, 바닥 위).
-
-```javascript
-surfaceSize: { width: 20, depth: 20 }   // 기본
-surfaceSize: { width: 40, depth: 40 }   // 넓은 영역
-surfaceSize: { width: 10, depth: 10 }   // 좁은 영역
-```
+stop 위치 = `(경계값 - min) / (max - min)`. `temperatureRange`를 변경하면 gradient stop 위치도 함께 조정해야 의도한 색상 매핑이 됩니다.
 
 ---
 
-#### `temperatureRange` — 값 매핑 범위
+## radius 'auto' 계산
 
-| 속성 | 타입 | 기본값 | 설명 |
-|------|------|--------|------|
-| `min` | number | `17` | 최저값 (gradient 0.0) |
-| `max` | number | `31` | 최고값 (gradient 1.0) |
-
-데이터 값을 `(value - min) / (max - min)`으로 정규화하여 gradient의 0.0~1.0에 매핑.
-범위 밖 값은 0.0 또는 1.0으로 클램핑됨.
-
-```javascript
-// 온도 (기본 — DEFAULT_GRADIENT와 매칭)
-temperatureRange: { min: 17, max: 31 }
-
-// 습도 (humidity gradient와 함께 사용)
-temperatureRange: { min: 20, max: 71 }
-```
-
----
-
-#### `gradient` — 색상 그라디언트
-
-| 타입 | 기본값 | 설명 |
-|------|--------|------|
-| object 또는 `null` | `null` | `null`이면 DEFAULT_GRADIENT (온도 프리셋) 사용 |
-
-simpleheat의 색상 매핑. 키는 0.0~1.0 위치, 값은 CSS 색상.
-
-**온도 프리셋 (DEFAULT_GRADIENT, 기본)**:
-
-```javascript
-// gradient: null 또는 생략 시 이 프리셋 사용
-gradient: {
-    0.00: '#1068D9',   // ≤17°C 과냉
-    0.29: '#4AA3DF',   // 18-21°C 정상(저온)
-    0.57: '#2ECC71',   // 22-25°C 최적
-    0.71: '#A3D977',   // 26-27°C 정상 상한
-    0.93: '#F7A318',   // 28-30°C 경고
-    1.00: '#E74C3C',   // ≥31°C 위험
-}
-```
-
-**습도 프리셋**:
-
-```javascript
-gradient: {
-    0.00: '#154360',   // ≤20%  과건조 (정전기 위험)
-    0.37: '#5DADE2',   // 21-39% 건조 주의
-    0.69: '#27AE60',   // 40-55% 최적
-    0.78: '#A9DFBF',   // 56-60% 정상 상한
-    0.98: '#F39C12',   // 61-70% 고습 경고
-    1.00: '#C0392B',   // ≥71%  위험 (결로 가능)
-}
-// temperatureRange: { min: 20, max: 71 } 과 함께 사용
-```
-
-> gradient stop 위치 = `(경계값 - min) / (max - min)`
-
----
-
-#### `heatmapResolution` — 히트맵 캔버스 해상도
-
-| 타입 | 기본값 | 범위 |
-|------|--------|------|
-| number | `256` | 64 ~ 1024 권장 |
-
-simpleheat가 그리는 내부 캔버스의 px 크기 (정사각형).
-텍스처 해상도에 직접 영향.
-
-```javascript
-heatmapResolution: 128   // 저해상도 (빠름, 거친 표현)
-heatmapResolution: 256   // 기본 (균형)
-heatmapResolution: 512   // 고해상도 (정밀, GPU 부하 증가)
-```
-
-> `segments`와 함께 조정. resolution만 올려도 segments가 낮으면 displacement가 거칠 수 있음.
-
----
-
-#### `segments` — PlaneGeometry 세그먼트 수
-
-| 타입 | 기본값 | 범위 |
-|------|--------|------|
-| number | `64` | 16 ~ 128 권장 |
-
-PlaneGeometry의 분할 수 (widthSegments, heightSegments 동일 적용).
-displacement 맵의 정점 밀도를 결정.
-
-```javascript
-segments: 32    // 거친 표면 (빠름, 성능 우선)
-segments: 64    // 기본 (균형)
-segments: 128   // 부드러운 표면 (정밀, 정점 수: 128*128 = 16,384)
-```
-
-> 높을수록 displacement가 부드럽지만, 정점 수가 제곱으로 증가.
-
----
-
-#### `displacementScale` — 수직 변위 스케일
-
-| 타입 | 기본값 | 범위 |
-|------|--------|------|
-| number | `3` | 0 ~ 10 권장 |
-
-Vertex Shader에서 Y축 방향으로 표면을 올리는 정도.
-온도가 높은 곳이 위로 더 솟아오르는 시각적 효과.
-
-```javascript
-displacementScale: 0     // 완전 평면 (displacement 없음)
-displacementScale: 1     // 미세한 기복
-displacementScale: 3     // 기본 (적당한 기복)
-displacementScale: 8     // 극적인 기복 (고온 영역이 크게 솟음)
-```
-
-> Vertex Shader: `newPosition.z = baseHeight + displacement * displacementScale`
-
----
-
-#### `baseHeight` — 서피스 기준 높이
-
-| 타입 | 기본값 | 범위 |
-|------|--------|------|
-| number | `0.5` | 0 ~ 5 권장 |
-
-Vertex Shader에서 모든 정점의 기본 Z 오프셋 (월드 Y축).
-서피스가 바닥에서 얼마나 떠 있는지 결정.
-
-```javascript
-baseHeight: 0      // 바닥에 밀착
-baseHeight: 0.5    // 기본 (바닥에서 약간 띄움)
-baseHeight: 2      // 바닥에서 많이 띄움
-```
-
-> mesh.position.y는 0으로 고정, baseHeight는 셰이더에서 적용.
-
----
-
-#### `radius` — simpleheat 확산 반경
-
-| 타입 | 기본값 | 범위 |
-|------|--------|------|
-| number | `60` | 10 ~ 150 권장 |
-
-각 데이터 포인트의 열 확산 범위 (캔버스 px 단위).
-하나의 센서 온도값이 주변으로 퍼지는 정도.
-
-```javascript
-radius: 20    // 좁은 확산 (점 형태, 센서 위치만 표시)
-radius: 60    // 기본 (적당한 확산)
-radius: 120   // 넓은 확산 (서피스 전체가 색상으로 채워짐)
-```
-
-시각적 효과:
-```
-radius 작음              radius 큼
-  ·  ·  ·               ████████████
-  ·  ·  ·      →        ████████████
-  ·  ·  ·               ████████████
- (점 형태)              (면 형태)
-```
-
-> `heatmapResolution`에 대한 상대값. resolution=256일 때 radius=60이면 캔버스의 ~23% 확산.
-
----
-
-#### `blur` — simpleheat 블러
-
-| 타입 | 기본값 | 범위 |
-|------|--------|------|
-| number | `25` | 5 ~ 60 권장 |
-
-simpleheat의 각 포인트 원형 그라디언트 가장자리 블러 (canvas shadowBlur).
-확산 경계의 부드러움을 결정.
-
-```javascript
-blur: 5      // 날카로운 경계 (확산 가장자리가 뚜렷)
-blur: 25     // 기본 (부드러운 경계)
-blur: 50     // 매우 부드러운 경계 (전체가 뭉개짐)
-```
-
-> `radius`와 조합: 실제 그리기 반경 = `radius + blur`. 너무 크면 캔버스 밖으로 넘칠 수 있음.
-
----
-
-#### `opacity` — 서피스 투명도
-
-| 타입 | 기본값 | 범위 |
-|------|--------|------|
-| number | `0.75` | 0.0 ~ 1.0 |
-
-Fragment Shader에서 적용되는 서피스 전체 투명도.
-
-```javascript
-opacity: 0.3    // 반투명 (아래 바닥이 잘 보임)
-opacity: 0.75   // 기본
-opacity: 1.0    // 불투명
-```
-
-> 히트맵 데이터가 없는 영역(alpha < 0.1)은 투명도와 무관하게 완전 투명 처리됨.
-
----
-
-#### `temperatureMetrics` — 수집 대상 metricCode
-
-| 타입 | 기본값 |
-|------|--------|
-| string[] | `['SENSOR.TEMP', 'CRAC.RETURN_TEMP']` |
-
-`Wkit.makeIterator`로 모든 3D 인스턴스를 순회할 때, 각 인스턴스의 `config.statusCards.metrics`에서 이 배열에 포함된 `metricCode`를 가진 인스턴스만 데이터 수집 대상으로 선택.
-
-```javascript
-// 센서 온도만
-temperatureMetrics: ['SENSOR.TEMP']
-
-// 센서 + CRAC 환기 온도
-temperatureMetrics: ['SENSOR.TEMP', 'CRAC.RETURN_TEMP']
-
-// 습도 기반 히트맵으로 변환하고 싶다면
-temperatureMetrics: ['SENSOR.HUMIDITY']
-```
-
----
-
-#### 데이터 동기화 (renderStatusCards 연동)
-
-히트맵은 독립적 `setInterval`을 사용하지 않습니다.
-대신 `renderStatusCards` 콜백에 연동되어 **카드와 동일 시점에 동일 데이터로** 갱신됩니다.
-
-**동기화 흐름:**
-```
-datasetInfo의 metricLatest 갱신 (5초 주기, 프레임워크 제어)
-  → renderStatusCards({ response }) 호출
-    → 카드 값 업데이트
-    → response 캐싱 (instance._cachedMetricLatest)
-    → 히트맵 활성 시 refreshHeatmapData() 트리거
-      → collectSensorData()
-        → 팝업 소유 인스턴스: 캐시 데이터 사용 (API 중복 호출 없음)
-        → 기타 인스턴스: metricLatest API 호출
-      → renderHeatmap(dataPoints)
-```
-
-**이점:**
-- 카드와 히트맵이 항상 같은 값을 표시 (동일 API 응답 사용)
-- 갱신 타이밍이 프레임워크의 `datasetInfo.refreshInterval`에 의해 통일
-- 팝업 소유 인스턴스는 API 중복 호출 없음 (캐시 재사용)
-
-> 갱신 주기를 변경하려면 `datasetInfo`의 `refreshInterval`을 조정하세요.
-
----
-
-## 제공 메서드
-
-| 메서드 | 설명 |
-|--------|------|
-| `toggleHeatmap()` | 히트맵 ON/OFF 토글. 데이터 수집 + 렌더링 자동 실행 |
-| `updateHeatmapConfig(options)` | 런타임에 옵션 변경. 히트맵 활성 시 즉시 반영 |
-| `destroyHeatmap()` | 히트맵 리소스 정리 + 씬에서 제거 |
-
-### toggleHeatmap()
-
-```javascript
-this.toggleHeatmap();
-```
-
-**ON 시**:
-1. 기존 활성 히트맵 제거 (싱글톤 — 동시에 하나만 존재)
-2. PlaneGeometry + ShaderMaterial mesh 생성 (클릭한 인스턴스 위치 중심)
-3. 모든 3D 인스턴스에서 `temperatureMetrics` 데이터 수집 (최초 1회 즉시 fetch)
-4. simpleheat → colorTexture + displacementTexture 생성
-5. 버튼 `data-active="true"` 설정
-6. 이후 갱신은 `renderStatusCards` 콜백에 의해 자동 트리거
-
-**OFF 시**:
-1. mesh, geometry, material, texture 모두 dispose
-2. 씬에서 제거
-3. 캐시 데이터 정리
-4. 버튼 `data-active="false"` 설정
-
-### destroyHeatmap()
-
-```javascript
-this.destroyHeatmap();
-```
-
-리소스 정리 전용. 캐시 데이터 정리 포함.
-`destroyPopup()` 체인에 자동 포함되어 팝업 닫기 시 자동 호출됨.
-
-### updateHeatmapConfig(options)
-
-```javascript
-this.updateHeatmapConfig({ radius: 80, blur: 40 });
-```
-
-런타임에 옵션을 변경. 변경 대상에 따라 반영 방식이 다름:
-
-| 반영 방식 | 옵션 | 설명 |
-|-----------|------|------|
-| **즉시 반영** (셰이더 uniform) | `displacementScale`, `baseHeight`, `opacity` | GPU 값만 변경. 메시 재생성 없음 |
-| **재생성** (메시 + 데이터 재수집) | 그 외 모든 옵션 | destroy → 재생성 → 데이터 수집 → 렌더링 |
-
-히트맵이 꺼진 상태에서 호출하면 config만 업데이트하고 다음 `toggleHeatmap()` 시 반영.
-
-```javascript
-// 즉시 반영 (셰이더 uniform만 변경 → 깜빡임 없음)
-this.updateHeatmapConfig({ opacity: 0.5 });
-this.updateHeatmapConfig({ displacementScale: 5, baseHeight: 1 });
-
-// 재생성 (메시 재구성 필요)
-this.updateHeatmapConfig({ radius: 100, blur: 50 });
-this.updateHeatmapConfig({ surfaceSize: { width: 30, depth: 30 } });
-
-// 혼합 시 재생성으로 처리 (uniform + non-uniform)
-this.updateHeatmapConfig({ opacity: 0.5, radius: 80 });
-```
-
----
-
-## 싱글톤 관리
-
-동시에 하나의 히트맵만 활성화됨.
+현재 소스는 `'auto'` (기본값).
 
 ```
-센서A 히트맵 ON → 센서B 히트맵 ON → 센서A 히트맵 자동 OFF + 센서B 히트맵 ON
+r = round(resolution / sqrt(sensorCount) * 0.5)
+r = clamp(r, 15, round(resolution * 0.4))
+UV_radius = (r + blur) / resolution
 ```
 
-`HeatmapMixin._activeInstance`로 추적. 새 히트맵 토글 시 이전 인스턴스의 히트맵을 자동 제거하고 버튼 상태도 업데이트.
-
----
-
-## 내부 동작 흐름
-
-### 데이터 수집 (`collectSensorData`)
-
-```
-Wkit.makeIterator(page, 'threeLayer')
-  → 모든 3D 인스턴스 순회
-  → inst.config.statusCards.metrics에서 temperatureMetrics 매칭
-  → 매칭된 인스턴스별 데이터 수집:
-    → 팝업 소유 인스턴스: _cachedMetricLatest 캐시 사용 (카드와 동일 데이터)
-    → 기타 인스턴스: Wkit.fetchData(page, 'metricLatest', { baseUrl, assetKey })
-  → Promise.all 수집
-  → [{ worldX, worldZ, temperature }] 반환
-```
-
-### 렌더링 (`renderHeatmap`)
-
-```
-dataPoints → worldToCanvas() 좌표 변환
-  → simpleheat.data(canvasData).draw(0.05)
-  → generateDisplacementMap() (R*0.5 + G*0.3 - B*0.2 기반)
-  → colorTexture.needsUpdate = true
-  → displacementTexture.needsUpdate = true
-```
-
-### 셰이더
-
-**Vertex Shader**: displacement 텍스처에서 Z 오프셋 계산
-```glsl
-newPosition.z = baseHeight + texture2D(displacementMap, uv).r * displacementScale;
-```
-
-**Fragment Shader**: color 텍스처 + 높이 기반 하이라이트
-```glsl
-color.rgb += smoothstep(0.3, 0.8, vDisplacement / 4.0) * 0.15;
-alpha = color.a > 0.1 ? opacity : 0.0;
-```
-
----
-
-## 레이캐스팅
-
-히트맵 mesh는 레이캐스팅을 무시:
-```javascript
-mesh.raycast = function () {};
-```
-
-히트맵 아래의 3D 오브젝트를 정상적으로 클릭할 수 있음.
-
----
-
-## 리소스 정리
-
-`destroyPopup()` 호출 시 자동 정리 (체인 확장):
-
-- PlaneGeometry dispose
-- ShaderMaterial dispose
-- colorTexture, displacementTexture dispose
-- 씬에서 mesh 제거
-- 내부 캔버스, simpleheat 인스턴스 해제
-- 캐시 데이터 정리 (`_cachedMetricLatest = null`)
-
-```javascript
-// beforeDestroy에서 (자동으로 연결됨)
-this.destroyPopup();
-// → destroyHeatmap() → destroyPopup(원본)
-```
-
----
-
-## 옵션 조합 가이드
-
-### 넓은 영역 + 부드러운 히트맵
-
-```javascript
-applyHeatmapMixin(this, {
-    surfaceSize: { width: 40, depth: 40 },
-    radius: 100,
-    blur: 40,
-    segments: 128,
-    heatmapResolution: 512,
-    displacementScale: 5,
-});
-```
-
-### 좁은 영역 + 날카로운 포인트
-
-```javascript
-applyHeatmapMixin(this, {
-    surfaceSize: { width: 10, depth: 10 },
-    radius: 25,
-    blur: 10,
-    segments: 32,
-    heatmapResolution: 128,
-    displacementScale: 2,
-});
-```
-
-### 평면 히트맵 (displacement 없음)
-
-```javascript
-applyHeatmapMixin(this, {
-    displacementScale: 0,
-    baseHeight: 0.1,
-    segments: 16,        // displacement 없으므로 낮아도 됨
-});
-```
-
----
-
-## 관련 문서
-
-- [POPUP_MIXIN_API.md](/RNBT_architecture/docs/POPUP_MIXIN_API.md) - Shadow DOM 팝업, ECharts, Tabulator
-- [WKIT_API.md](/RNBT_architecture/docs/WKIT_API.md) - makeIterator, fetchData
-- [Projects/ECO/page/components/TempHumiditySensor](/RNBT_architecture/Projects/ECO/page/components/TempHumiditySensor) - Sensor 구현 예제
-- [Projects/ECO/page/components/CRAC](/RNBT_architecture/Projects/ECO/page/components/CRAC) - CRAC 구현 예제
+센서가 적으면 넓게, 많으면 좁게 자동 조절됩니다. 숫자를 직접 지정하면 px 단위이며 UV로 자동 변환됩니다.
