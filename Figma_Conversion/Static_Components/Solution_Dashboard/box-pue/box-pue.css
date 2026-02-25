@@ -1,0 +1,269 @@
+/* Box PUE Component Styles */
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+#box-pue-container {
+    width: 740px;
+    height: 116px;
+    overflow: auto;
+}
+
+#box-pue-container {
+
+    & .box {
+        width: 100%;
+        height: 100%;
+        backdrop-filter: blur(15px);
+        -webkit-backdrop-filter: blur(15px);
+        background: rgba(15, 31, 36, 0.4);
+        border: 2px solid #81e1c5;
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 16px;
+        padding: 12px 12px 12px 23px;
+        position: relative;
+        overflow: clip;
+    }
+
+    & .inset-shadow {
+        position: absolute;
+        inset: -2px;
+        pointer-events: none;
+        border-radius: inherit;
+        box-shadow: inset 0px 4px 8px 0px rgba(0, 0, 0, 0.25);
+    }
+
+    /* ── PUE Section (Left) ── */
+
+    & .pue-section {
+        width: 140px;
+        flex-shrink: 0;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        padding-bottom: 2px;
+    }
+
+    & .pue-title {
+        width: 100%;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+    }
+
+    & .pue-icon {
+        width: 11px;
+        height: 11px;
+        flex-shrink: 0;
+    }
+
+    & .pue-icon img {
+        width: 100%;
+        height: 100%;
+        display: block;
+    }
+
+    & .pue-title-text {
+        font-family: 'Pretendard', sans-serif;
+        font-weight: 500;
+        font-size: 15px;
+        color: #e4ebf6;
+        letter-spacing: -0.3px;
+        line-height: normal;
+    }
+
+    /* ── Gauge ── */
+
+    & .gauge {
+        width: 118px;
+        height: 59px;
+        position: relative;
+        flex-shrink: 0;
+    }
+
+    & .gauge-ellipse {
+        position: absolute;
+        left: 0;
+        top: 0;
+        width: 118px;
+        height: 118px;
+    }
+
+    & .gauge-bg img,
+    & .gauge-fill img {
+        display: block;
+        width: 100%;
+        height: 100%;
+    }
+
+    & .gauge-ellipse.gauge-bg {
+        clip-path: inset(0 0 50% 0);
+    }
+
+    & .gauge-ellipse.gauge-fill {
+        clip-path: inset(0 4.03% 50% 0);
+    }
+
+    & .gauge-num {
+        position: absolute;
+        bottom: 0;
+        left: 50%;
+        transform: translateX(calc(-50% - 0.56px));
+    }
+
+    & .gauge-value {
+        font-family: 'Pretendard', sans-serif;
+        font-weight: 600;
+        font-size: 30px;
+        color: #f9fdff;
+        text-align: center;
+        line-height: normal;
+    }
+
+    & .gauge-min {
+        position: absolute;
+        bottom: 0;
+        left: calc(50% - 54.55px);
+        transform: translateX(-50%);
+    }
+
+    & .gauge-max {
+        position: absolute;
+        bottom: 0;
+        left: calc(50% + 54.55px);
+        transform: translateX(-50%);
+    }
+
+    & .gauge-label {
+        font-family: 'Pretendard', sans-serif;
+        font-weight: 400;
+        font-size: 11px;
+        color: #94a3b8;
+        line-height: normal;
+    }
+
+    /* ── Cards Grid (Right) ── */
+
+    & .cards-grid {
+        flex: 1;
+        min-width: 0;
+        min-height: 1px;
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        grid-template-rows: repeat(2, auto);
+        gap: 6px;
+    }
+
+    & .card {
+        backdrop-filter: blur(15px);
+        -webkit-backdrop-filter: blur(15px);
+        background: #090909;
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 6px 17px 6px 7px;
+    }
+
+    & .card-group {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        flex-shrink: 0;
+    }
+
+    & .card-symbol {
+        width: 31px;
+        height: 31px;
+        background: rgba(228, 235, 246, 0.2);
+        border-radius: 8px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+    }
+
+    & .card-symbol img {
+        width: 15px;
+        height: 15px;
+        display: block;
+    }
+
+    & .card-txt {
+        display: flex;
+        align-items: center;
+    }
+
+    & .card-name {
+        font-family: 'Pretendard', sans-serif;
+        font-weight: 500;
+        font-size: 15px;
+        color: #e4ebf6;
+        letter-spacing: -0.3px;
+        line-height: normal;
+        white-space: nowrap;
+    }
+
+    /* ── Card Item (Value) ── */
+
+    & .card-item {
+        display: flex;
+        align-items: flex-end;
+        gap: 6px;
+        flex-shrink: 0;
+    }
+
+    & .card-item-icon {
+        width: 16px;
+        height: 16px;
+        flex-shrink: 0;
+        margin-bottom: 2px;
+    }
+
+    & .card-item-icon img {
+        width: 100%;
+        height: 100%;
+        display: block;
+    }
+
+    & .card-value {
+        font-family: 'Roboto Mono', monospace;
+        font-weight: 500;
+        font-size: 26px;
+        line-height: normal;
+        letter-spacing: -1.04px;
+        text-align: right;
+
+        /* Gradient text */
+        background-image:
+            linear-gradient(0deg, rgba(129, 225, 197, 0) 12.5%, rgb(129, 225, 197) 137.5%),
+            linear-gradient(90deg, rgb(175, 238, 247) 0%, rgb(175, 238, 247) 100%);
+        -webkit-background-clip: text;
+        background-clip: text;
+        -webkit-text-fill-color: transparent;
+        color: transparent;
+    }
+
+    & .card-unit {
+        font-family: 'Roboto Mono', monospace;
+        font-weight: 400;
+        font-size: 14px;
+        color: #bbc2cf;
+        letter-spacing: -0.28px;
+        text-align: center;
+        line-height: normal;
+    }
+
+    & .card-unit--kr {
+        font-family: 'Pretendard', sans-serif;
+        font-weight: 400;
+    }
+}

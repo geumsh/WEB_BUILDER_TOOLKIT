@@ -1,0 +1,84 @@
+<div class="bottom-log">
+
+    <!-- ── Header Bar ── -->
+    <div class="log-header">
+
+        <!-- Left: Title + Controls -->
+        <div class="header-left">
+            <div class="header-title">
+                <span class="header-title-text">이벤트 현황</span>
+            </div>
+            <div class="header-divider"></div>
+            <div class="header-controls">
+                <button class="sound-button">
+                    <img class="sound-icon" src="assets/volume-icon.svg" alt="">
+                    <span class="sound-label">소리 알림</span>
+                </button>
+                <div class="auto-toggle-wrap">
+                    <span class="auto-label">AUTO</span>
+                    <div class="toggle-switch">
+                        <div class="toggle-bg" aria-hidden="true">
+                            <div class="toggle-bg-gradient"></div>
+                            <div class="toggle-bg-overlay"></div>
+                        </div>
+                        <div class="toggle-knob"></div>
+                        <div class="toggle-inset-shadow"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Center: Expand Button -->
+        <button class="btn-expand">
+            <div class="btn-expand-icon">
+                <img src="assets/arrow-icon.svg" alt="">
+            </div>
+        </button>
+
+        <!-- Right: Action Buttons + Status -->
+        <div class="header-right">
+            <div class="action-buttons">
+                <button class="btn-text btn-ack"><span>Ack</span></button>
+                <button class="btn-text btn-all"><span>All</span></button>
+            </div>
+            <div class="action-divider"></div>
+            <div class="status-items">
+                <div class="status-item">
+                    <div class="status-dot status-dot--critical"></div>
+                    <span class="status-count" data-severity="critical">0</span>
+                </div>
+                <div class="status-item">
+                    <div class="status-dot status-dot--major"></div>
+                    <span class="status-count" data-severity="major">0</span>
+                </div>
+                <div class="status-item">
+                    <div class="status-dot status-dot--minor"></div>
+                    <span class="status-count" data-severity="minor">0</span>
+                </div>
+                <div class="status-item">
+                    <div class="status-dot status-dot--warning"></div>
+                    <span class="status-count" data-severity="warning">0</span>
+                </div>
+                <div class="status-item">
+                    <div class="status-dot status-dot--normal"></div>
+                    <span class="status-count" data-severity="normal">0</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ── Table Header ── -->
+    <div class="table-header">
+        <div class="th-cell th-cell--grade"><span class="th-text">등급</span></div>
+        <div class="th-cell th-cell--asset-id"><span class="th-text">자산ID</span></div>
+        <div class="th-cell th-cell--location"><span class="th-text">위치</span></div>
+        <div class="th-cell th-cell--first-time"><span class="th-text">최초발생시간</span></div>
+        <div class="th-cell th-cell--last-time"><span class="th-text">마지막발생시간</span></div>
+        <div class="th-cell th-cell--group"><span class="th-text">구분(업무그룹)</span></div>
+        <div class="th-cell th-cell--message"><span class="th-text th-text--message">메시지</span></div>
+    </div>
+
+    <!-- ── Table Body (동적 렌더링) ── -->
+    <div class="table-body"></div>
+
+</div>

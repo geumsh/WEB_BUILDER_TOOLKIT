@@ -1,0 +1,484 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EventLog Preview</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: #0f121e;
+        }
+
+        /* EventLog Component Styles */
+        #event-log-container {
+            width: 1880px;
+            height: 252px;
+            overflow: auto;
+
+            & .bottom-log {
+                width: 100%;
+                height: 100%;
+                display: flex;
+                flex-direction: column;
+                align-items: flex-start;
+                padding: 2px 2px 0 2px;
+                border: 2px solid rgba(255, 255, 255, 0.2);
+                border-bottom: none;
+                border-radius: 20px 20px 0 0;
+                background: rgba(19, 21, 33, 0.8);
+                backdrop-filter: blur(25px);
+                -webkit-backdrop-filter: blur(25px);
+                overflow: clip;
+            }
+
+            & .log-header {
+                width: 100%;
+                height: 48px;
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+                padding-left: 20px;
+                padding-right: 10px;
+                flex-shrink: 0;
+            }
+
+            & .header-left {
+                display: flex;
+                align-items: center;
+                gap: 19.743px;
+                width: 552px;
+                height: 28px;
+            }
+
+            & .header-title {
+                display: flex;
+                align-items: center;
+                height: 25.913px;
+            }
+
+            & .header-title-text {
+                font-family: 'Pretendard', sans-serif;
+                font-weight: 700;
+                font-size: 16px;
+                color: #f8fafc;
+                white-space: nowrap;
+            }
+
+            & .header-divider {
+                width: 1.234px;
+                height: 19.743px;
+                background: rgba(255, 255, 255, 0.1);
+                flex-shrink: 0;
+            }
+
+            & .header-controls {
+                display: flex;
+                align-items: center;
+                gap: 12px;
+            }
+
+            & .sound-button {
+                display: flex;
+                align-items: center;
+                gap: 4.936px;
+                background: none;
+                border: none;
+                cursor: pointer;
+            }
+
+            & .sound-icon {
+                width: 14.807px;
+                height: 14.807px;
+                flex-shrink: 0;
+            }
+
+            & .sound-label {
+                font-family: 'Pretendard', sans-serif;
+                font-weight: 400;
+                font-size: 14px;
+                color: #94a3b8;
+                text-align: center;
+                white-space: nowrap;
+            }
+
+            & .auto-toggle-wrap {
+                display: flex;
+                align-items: center;
+                gap: 7px;
+                padding: 4px 4px 4px 14px;
+                background: rgba(15, 18, 30, 0.6);
+                border: 1.234px solid rgba(255, 255, 255, 0.1);
+                border-radius: 100px;
+            }
+
+            & .auto-label {
+                font-family: 'Pretendard', sans-serif;
+                font-weight: 400;
+                font-size: 12px;
+                color: #94a3b8;
+            }
+
+            & .toggle-switch {
+                width: 40px;
+                height: 20px;
+                border-radius: 62.5px;
+                position: relative;
+                display: flex;
+                align-items: center;
+                justify-content: flex-end;
+                padding: 2.5px;
+                overflow: clip;
+                flex-shrink: 0;
+            }
+
+            & .toggle-bg {
+                position: absolute;
+                inset: 0;
+                border-radius: 62.5px;
+                pointer-events: none;
+            }
+
+            & .toggle-bg-gradient {
+                position: absolute;
+                inset: 0;
+                border-radius: 62.5px;
+                background-image:
+                    linear-gradient(-12.365deg, rgba(96, 235, 255, 0) 9.759%, rgb(96, 255, 234) 93.845%),
+                    linear-gradient(-19.179deg, rgba(112, 132, 245, 0) 15.237%, rgb(129, 225, 197) 112.01%),
+                    linear-gradient(90deg, rgb(175, 238, 247) 0%, rgb(175, 238, 247) 100%);
+            }
+
+            & .toggle-bg-overlay {
+                position: absolute;
+                inset: 0;
+                border-radius: 62.5px;
+                background: rgba(208, 208, 208, 0.5);
+                mix-blend-mode: color-burn;
+            }
+
+            & .toggle-knob {
+                width: 15px;
+                height: 15px;
+                border-radius: 100px;
+                background: #ffffff;
+                box-shadow: 0px 0.536px 0.536px 0px rgba(0, 0, 0, 0.22);
+                flex-shrink: 0;
+                position: relative;
+                z-index: 1;
+            }
+
+            & .toggle-inset-shadow {
+                position: absolute;
+                inset: 0;
+                border-radius: inherit;
+                pointer-events: none;
+                box-shadow:
+                    inset 0px -0.313px 0.625px 0px rgba(94, 94, 94, 0.3),
+                    inset 0px -0.313px 0.625px 0px rgba(255, 255, 255, 0.2),
+                    inset 0px 1.875px 1.875px 0px rgba(128, 128, 128, 0.18),
+                    inset 0px 1.875px 1.875px 0px rgba(0, 0, 0, 0.15);
+            }
+
+            & .btn-expand {
+                width: 30px;
+                height: 30px;
+                border-radius: 78.947px;
+                border: 1px solid #60ebff;
+                background:
+                    linear-gradient(90deg, rgba(144, 161, 185, 0.1) 0%, rgba(144, 161, 185, 0.1) 100%),
+                    linear-gradient(90deg, rgba(33, 38, 50, 0.7) 0%, rgba(33, 38, 50, 0.7) 100%);
+                cursor: pointer;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                overflow: clip;
+                padding: 1px;
+                flex-shrink: 0;
+            }
+
+            & .btn-expand-icon {
+                width: 16.364px;
+                height: 16.364px;
+                position: relative;
+            }
+
+            & .btn-expand-icon img {
+                position: absolute;
+                top: 36.67%;
+                left: 12.22%;
+                width: 73.34%;
+                height: 40.03%;
+            }
+
+            & .header-right {
+                display: flex;
+                align-items: center;
+                gap: 9.871px;
+            }
+
+            & .action-buttons {
+                display: flex;
+                align-items: center;
+                gap: 10px;
+            }
+
+            & .btn-text {
+                width: 54px;
+                height: 30px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                padding: 0 12px;
+                background: #1e222d;
+                border: 1px solid rgba(255, 255, 255, 0.1);
+                border-radius: 6px;
+                cursor: pointer;
+            }
+
+            & .btn-text span {
+                font-family: 'Pretendard', sans-serif;
+                font-weight: 400;
+                font-size: 15px;
+                color: #94a3b8;
+                text-align: center;
+            }
+
+            & .action-divider {
+                width: 1.234px;
+                height: 19.743px;
+                background: rgba(255, 255, 255, 0.1);
+                flex-shrink: 0;
+            }
+
+            & .status-items {
+                display: flex;
+                align-items: center;
+                gap: 6px;
+            }
+
+            & .status-item {
+                width: 78px;
+                height: 31px;
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+                padding: 10px 15px;
+                background: rgba(0, 0, 0, 0.4);
+                border: 1px solid rgba(255, 255, 255, 0.2);
+                border-radius: 8px;
+            }
+
+            & .status-dot { width: 10px; height: 10px; border-radius: 100px; flex-shrink: 0; }
+            & .status-dot--critical { background: #f43130; box-shadow: 0px 0px 6px 0px #f43130; }
+            & .status-dot--major { background: #fd8004; box-shadow: 0px 0px 6px 0px #fd8004; }
+            & .status-dot--minor { background: #fccf1e; box-shadow: 0px 0px 6px 0px #fccf1e; }
+            & .status-dot--warning { background: #28e3ff; box-shadow: 0px 0px 6px 0px #28e3ff; }
+            & .status-dot--normal { background: #34d28d; box-shadow: 0px 0px 6px 0px #34d28d; }
+
+            & .status-count {
+                font-family: 'Roboto Mono', monospace;
+                font-weight: 400;
+                font-size: 16px;
+                color: #e4ebf6;
+                text-align: right;
+            }
+
+            & .table-header {
+                width: 100%;
+                display: flex;
+                align-items: center;
+                gap: 4px;
+                padding: 6px 20px;
+                background: rgba(15, 18, 30, 0.8);
+                border-bottom: 1.234px solid rgba(255, 255, 255, 0.05);
+                flex-shrink: 0;
+            }
+
+            & .th-cell { display: flex; align-items: center; justify-content: center; align-self: stretch; flex-shrink: 0; }
+            & .th-cell--grade { width: 36px; }
+            & .th-cell--asset-id { width: 140px; }
+            & .th-cell--location { width: 120px; }
+            & .th-cell--first-time { width: 200px; }
+            & .th-cell--last-time { width: 200px; }
+            & .th-cell--group { width: 120px; }
+            & .th-cell--message { flex: 1 0 0; min-width: 0; padding-left: 20px; }
+
+            & .th-text { font-family: 'Pretendard', sans-serif; font-weight: 500; font-size: 15px; color: #d8dbdf; white-space: nowrap; }
+            & .th-text--message { font-weight: 600; line-height: 20.36px; }
+
+            & .table-body { width: 100%; display: flex; flex-direction: column; align-items: flex-start; flex-shrink: 0; }
+
+            & .table-row {
+                width: 100%;
+                height: 34px;
+                display: flex;
+                align-items: center;
+                gap: 4px;
+                padding: 6px 20px;
+                border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+                flex-shrink: 0;
+                cursor: pointer;
+            }
+
+            & .table-row:hover { background: rgba(96, 235, 255, 0.05); }
+            & .table-row--selected { background: rgba(96, 235, 255, 0.15); }
+            & .table-row--selected:hover { background: rgba(96, 235, 255, 0.15); }
+
+            & .td-status { width: 36px; height: 100%; display: flex; align-items: center; justify-content: center; padding: 7px 0; flex-shrink: 0; }
+            & .td-asset-id { width: 140px; height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; flex-shrink: 0; }
+            & .td-location { width: 120px; height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; flex-shrink: 0; }
+            & .td-time { width: 200px; display: flex; flex-direction: column; align-items: flex-start; flex-shrink: 0; }
+            & .td-time-inner { width: 100%; display: flex; align-items: center; justify-content: center; }
+            & .td-group { width: 120px; height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; flex-shrink: 0; }
+            & .td-message { flex: 1 0 0; min-width: 0; height: 100%; display: flex; flex-direction: column; align-items: flex-start; justify-content: center; padding-left: 20px; }
+
+            & .status-dot-mini { width: 8px; height: 8px; border-radius: 100px; flex-shrink: 0; }
+            & .status-dot-mini--critical { background: #f43130; box-shadow: 0px 0px 4px 0px #f43130; }
+            & .status-dot-mini--major { background: #fd8004; box-shadow: 0px 0px 4px 0px #fd8004; }
+            & .status-dot-mini--minor { background: #fccf1e; box-shadow: 0px 0px 4px 0px #fccf1e; }
+            & .status-dot-mini--warning { background: #28e3ff; box-shadow: 0px 0px 4px 0px #28e3ff; }
+            & .status-dot-mini--normal { background: #34d28d; box-shadow: 0px 0px 4px 0px #34d28d; }
+
+            & .row-text { font-family: 'Pretendard', sans-serif; font-weight: 400; font-size: 14px; color: #94a3b8; white-space: nowrap; }
+            & .row-text--time { font-family: 'Roboto Mono', monospace; font-weight: 400; font-size: 13px; color: #94a3b8; letter-spacing: -0.8px; }
+
+            & .table-row--selected .row-text { font-weight: 500; color: #f8fafc; }
+            & .table-row--selected .row-text--time { font-weight: 500; color: #f8fafc; }
+            & .table-row:hover .row-text { color: #f8fafc; }
+            & .table-row:hover .row-text--time { color: #f8fafc; }
+
+            & .row-actions { display: flex; align-items: center; justify-content: flex-end; gap: 9.871px; height: 28.785px; flex-shrink: 0; }
+            & .btn-new { display: flex; align-items: center; justify-content: center; padding: 6px 10px; background: rgba(96, 235, 255, 0.2); border: 1px solid rgba(96, 235, 255, 0.3); border-radius: 5px; cursor: pointer; }
+            & .btn-new span { font-family: 'Pretendard', sans-serif; font-weight: 400; font-size: 12px; color: #60ebff; text-align: center; white-space: nowrap; }
+            & .btn-row-action { height: 26px; display: flex; align-items: center; justify-content: center; gap: 5px; padding: 0 10px; background: #1e222d; border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 5px; cursor: pointer; }
+            & .btn-row-action span { font-family: 'Pretendard', sans-serif; font-weight: 400; font-size: 12px; color: #94a3b8; text-align: center; white-space: nowrap; }
+        }
+    </style>
+</head>
+<body>
+    <div id="event-log-container">
+        <div class="bottom-log">
+            <!-- Header Bar -->
+            <div class="log-header">
+                <div class="header-left">
+                    <div class="header-title">
+                        <span class="header-title-text">이벤트 현황</span>
+                    </div>
+                    <div class="header-divider"></div>
+                    <div class="header-controls">
+                        <button class="sound-button">
+                            <img class="sound-icon" src="../../../../../../Figma_Conversion/Static_Components/Solution_Dashboard/event-log/assets/volume-icon.svg" alt="">
+                            <span class="sound-label">소리 알림</span>
+                        </button>
+                        <div class="auto-toggle-wrap">
+                            <span class="auto-label">AUTO</span>
+                            <div class="toggle-switch">
+                                <div class="toggle-bg" aria-hidden="true">
+                                    <div class="toggle-bg-gradient"></div>
+                                    <div class="toggle-bg-overlay"></div>
+                                </div>
+                                <div class="toggle-knob"></div>
+                                <div class="toggle-inset-shadow"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <button class="btn-expand">
+                    <div class="btn-expand-icon">
+                        <img src="../../../../../../Figma_Conversion/Static_Components/Solution_Dashboard/event-log/assets/arrow-icon.svg" alt="">
+                    </div>
+                </button>
+                <div class="header-right">
+                    <div class="action-buttons">
+                        <button class="btn-text"><span>Ack</span></button>
+                        <button class="btn-text"><span>All</span></button>
+                    </div>
+                    <div class="action-divider"></div>
+                    <div class="status-items">
+                        <div class="status-item"><div class="status-dot status-dot--critical"></div><span class="status-count">3</span></div>
+                        <div class="status-item"><div class="status-dot status-dot--major"></div><span class="status-count">11</span></div>
+                        <div class="status-item"><div class="status-dot status-dot--minor"></div><span class="status-count">24</span></div>
+                        <div class="status-item"><div class="status-dot status-dot--warning"></div><span class="status-count">927</span></div>
+                        <div class="status-item"><div class="status-dot status-dot--normal"></div><span class="status-count">327</span></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Table Header -->
+            <div class="table-header">
+                <div class="th-cell th-cell--grade"><span class="th-text">등급</span></div>
+                <div class="th-cell th-cell--asset-id"><span class="th-text">자산ID</span></div>
+                <div class="th-cell th-cell--location"><span class="th-text">위치</span></div>
+                <div class="th-cell th-cell--first-time"><span class="th-text">최초발생시간</span></div>
+                <div class="th-cell th-cell--last-time"><span class="th-text">마지막발생시간</span></div>
+                <div class="th-cell th-cell--group"><span class="th-text">구분(업무그룹)</span></div>
+                <div class="th-cell th-cell--message"><span class="th-text th-text--message">메시지</span></div>
+            </div>
+
+            <!-- Table Body (샘플 데이터) -->
+            <div class="table-body">
+                <div class="table-row">
+                    <div class="td-status"><div class="status-dot-mini status-dot-mini--major"></div></div>
+                    <div class="td-asset-id"><span class="row-text">변압기 #302</span></div>
+                    <div class="td-location"><span class="row-text">전기실</span></div>
+                    <div class="td-time"><div class="td-time-inner"><span class="row-text row-text--time">2026-02-27 09:33:00</span></div></div>
+                    <div class="td-time"><div class="td-time-inner"><span class="row-text row-text--time">2026-02-27 09:33:00</span></div></div>
+                    <div class="td-group"><span class="row-text">구분A</span></div>
+                    <div class="td-message"><span class="row-text">배터리 잔량 저하 (현재35%)이벤트 내용</span></div>
+                </div>
+                <div class="table-row">
+                    <div class="td-status"><div class="status-dot-mini status-dot-mini--minor"></div></div>
+                    <div class="td-asset-id"><span class="row-text">변압기 #302</span></div>
+                    <div class="td-location"><span class="row-text">전기실</span></div>
+                    <div class="td-time"><div class="td-time-inner"><span class="row-text row-text--time">2026-02-27 09:33:00</span></div></div>
+                    <div class="td-time"><div class="td-time-inner"><span class="row-text row-text--time">2026-02-27 09:33:00</span></div></div>
+                    <div class="td-group"><span class="row-text">구분B</span></div>
+                    <div class="td-message"><span class="row-text">정격 전류 초과 근접 (현재 부하 92%)전력 사용량 증가</span></div>
+                </div>
+                <div class="table-row table-row--selected">
+                    <div class="td-status"><div class="status-dot-mini status-dot-mini--critical"></div></div>
+                    <div class="td-asset-id"><span class="row-text">변압기 #302</span></div>
+                    <div class="td-location"><span class="row-text">전기실</span></div>
+                    <div class="td-time"><div class="td-time-inner"><span class="row-text row-text--time">2026-02-27 09:33:00</span></div></div>
+                    <div class="td-time"><div class="td-time-inner"><span class="row-text row-text--time">2026-02-27 09:33:00</span></div></div>
+                    <div class="td-group"><span class="row-text">구분A</span></div>
+                    <div class="td-message"><span class="row-text">냉방 용량 부족 감지 (전산실 B존)</span></div>
+                    <div class="row-actions">
+                        <button class="btn-new"><span>신규</span></button>
+                        <button class="btn-row-action"><span>영상</span></button>
+                        <button class="btn-row-action"><span>영상</span></button>
+                    </div>
+                </div>
+                <div class="table-row">
+                    <div class="td-status"><div class="status-dot-mini status-dot-mini--normal"></div></div>
+                    <div class="td-asset-id"><span class="row-text">변압기 #302</span></div>
+                    <div class="td-location"><span class="row-text">전기실</span></div>
+                    <div class="td-time"><div class="td-time-inner"><span class="row-text row-text--time">2026-02-27 09:33:00</span></div></div>
+                    <div class="td-time"><div class="td-time-inner"><span class="row-text row-text--time">2026-02-27 09:33:00</span></div></div>
+                    <div class="td-group"><span class="row-text">구분B</span></div>
+                    <div class="td-message"><span class="row-text">온도 임계치 초과 (32.5 ℃)</span></div>
+                </div>
+                <div class="table-row">
+                    <div class="td-status"><div class="status-dot-mini status-dot-mini--major"></div></div>
+                    <div class="td-asset-id"><span class="row-text">변압기 #302</span></div>
+                    <div class="td-location"><span class="row-text">전기실</span></div>
+                    <div class="td-time"><div class="td-time-inner"><span class="row-text row-text--time">2026-02-27 09:33:00</span></div></div>
+                    <div class="td-time"><div class="td-time-inner"><span class="row-text row-text--time">2026-02-27 09:33:00</span></div></div>
+                    <div class="td-group"><span class="row-text">구분A</span></div>
+                    <div class="td-message"><span class="row-text">온도 임계치 초과 (34.1 ℃)</span></div>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

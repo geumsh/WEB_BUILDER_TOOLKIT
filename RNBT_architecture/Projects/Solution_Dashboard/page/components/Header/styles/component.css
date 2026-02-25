@@ -1,0 +1,327 @@
+/* Header Component Styles */
+
+#header-container {
+    width: 1920px;
+    height: 52px;
+    overflow: auto;
+}
+
+#header-container {
+
+    /* ── Header ── */
+    & .header {
+        width: 100%;
+        height: 100%;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 10px 20px;
+        background: rgba(0, 0, 0, 0.6);
+    }
+
+    /* ── Logo Section ── */
+    & .logo-section {
+        width: 442px;
+        height: 32px;
+        display: flex;
+        align-items: center;
+    }
+
+    & .logo {
+        display: flex;
+        gap: 7px;
+        height: 28px;
+        align-items: center;
+    }
+
+    & .logo-symbol {
+        width: 28px;
+        height: 28px;
+        border-radius: 8.75px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        box-shadow: 0px 0px 13.125px 0px rgba(29, 78, 216, 0.5);
+        background-image:
+            linear-gradient(-23.6756deg, rgba(96, 235, 255, 0) 9.7594%, rgb(96, 255, 234) 93.845%),
+            linear-gradient(-34.8245deg, rgba(112, 132, 245, 0) 15.237%, rgb(129, 225, 197) 112.01%),
+            linear-gradient(90deg, rgb(175, 238, 247) 0%, rgb(175, 238, 247) 100%);
+        flex-shrink: 0;
+    }
+
+    & .logo-symbol-text {
+        font-family: 'Roboto Mono', monospace;
+        font-weight: 700;
+        font-size: 18px;
+        text-align: center;
+        color: #f8fafc;
+        line-height: normal;
+    }
+
+    & .logo-text {
+        font-family: 'Roboto Mono', monospace;
+        font-weight: 700;
+        font-size: 22px;
+        color: #f8fafc;
+        line-height: normal;
+        flex-shrink: 0;
+    }
+
+    /* ── GNB (Navigation) ── */
+    & .gnb {
+        height: 40px;
+        border-radius: 16px;
+        border: 1px solid rgba(255, 255, 255, 0.7);
+        background-image:
+            linear-gradient(90deg, rgba(144, 161, 185, 0.1) 0%, rgba(144, 161, 185, 0.1) 100%),
+            linear-gradient(90deg, rgba(3, 51, 72, 0.4) 0%, rgba(3, 51, 72, 0.4) 100%);
+        backdrop-filter: blur(50px);
+        -webkit-backdrop-filter: blur(50px);
+        position: relative;
+        flex-shrink: 0;
+    }
+
+    & .gnb-inner {
+        display: flex;
+        gap: 40px;
+        align-items: center;
+        height: 100%;
+        padding: 1px 41px;
+        overflow: clip;
+        border-radius: inherit;
+    }
+
+    & .gnb-shadow {
+        position: absolute;
+        inset: 0;
+        border-radius: inherit;
+        box-shadow:
+            inset 0px -4px 14px 0px rgba(17, 17, 17, 0.25),
+            inset 0px 4px 4px 0px rgba(96, 235, 255, 0.25);
+        pointer-events: none;
+    }
+
+    /* Nav Link */
+    & .nav-link {
+        height: 38px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        background: none;
+        border: none;
+        padding: 0;
+        flex-shrink: 0;
+        position: relative;
+    }
+
+    & .nav-link-text {
+        font-family: 'Pretendard', sans-serif;
+        font-weight: 500;
+        font-size: 17px;
+        color: #e4ebf6;
+        text-align: center;
+        line-height: normal;
+        white-space: nowrap;
+    }
+
+    /* Active nav link */
+    & .nav-link--active {
+        width: 66px;
+    }
+
+    & .nav-link--active .nav-link-text {
+        font-weight: 600;
+        background-image:
+            linear-gradient(0deg, rgba(129, 225, 197, 0) 12.5%, rgb(129, 225, 197) 137.5%),
+            linear-gradient(90deg, rgb(175, 238, 247) 0%, rgb(175, 238, 247) 100%);
+        -webkit-background-clip: text;
+        background-clip: text;
+        -webkit-text-fill-color: transparent;
+        color: #afeef7;
+        flex: 1 0 0;
+        min-height: 1px;
+        min-width: 1px;
+        white-space: pre-wrap;
+    }
+
+    & .nav-link--active .nav-underline {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 66px;
+        height: 39px;
+    }
+
+    & .nav-link--active .nav-underline img {
+        width: 100%;
+        height: 100%;
+        display: block;
+    }
+
+    /* ── Info Section (Right) ── */
+    & .info-section {
+        display: flex;
+        align-items: center;
+        flex-shrink: 0;
+    }
+
+    & .info-container {
+        display: flex;
+        gap: 19.743px;
+        align-items: center;
+    }
+
+    /* ── Toggle (대시보드 / 리포트) ── */
+    & .toggle-group {
+        display: flex;
+        gap: 9px;
+        align-items: center;
+        padding: 4px;
+        border-radius: 100px;
+        flex-shrink: 0;
+    }
+
+    & .toggle-btn {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 5px 20px;
+        border-radius: 6px;
+        box-shadow: 0px 4px 4px 0px rgba(44, 44, 44, 0.15);
+        flex-shrink: 0;
+        border: none;
+        cursor: pointer;
+    }
+
+    & .toggle-btn--active {
+        backdrop-filter: blur(2px);
+        -webkit-backdrop-filter: blur(2px);
+        border: 1px solid white;
+        background-image:
+            linear-gradient(-9.73556deg, rgba(96, 235, 255, 0) 9.7594%, rgb(96, 255, 234) 93.845%),
+            linear-gradient(-15.2276deg, rgba(112, 132, 245, 0) 15.237%, rgb(129, 225, 197) 112.01%),
+            linear-gradient(90deg, rgb(175, 238, 247) 0%, rgb(175, 238, 247) 100%);
+    }
+
+    & .toggle-btn--active .toggle-btn-text {
+        font-family: 'Pretendard', sans-serif;
+        font-weight: 600;
+        font-size: 14px;
+        color: #1e202c;
+        text-align: center;
+        line-height: normal;
+    }
+
+    & .toggle-btn--idle {
+        backdrop-filter: blur(7px);
+        -webkit-backdrop-filter: blur(7px);
+        border: 1px solid #90a1b9;
+        background-image:
+            linear-gradient(90deg, rgba(144, 161, 185, 0.1) 0%, rgba(144, 161, 185, 0.1) 100%),
+            linear-gradient(90deg, rgba(33, 38, 50, 0.7) 0%, rgba(33, 38, 50, 0.7) 100%);
+    }
+
+    & .toggle-btn--idle .toggle-btn-text {
+        font-family: 'Pretendard', sans-serif;
+        font-weight: 500;
+        font-size: 14px;
+        color: #94a3b8;
+        text-align: center;
+        line-height: normal;
+    }
+
+    /* ── Icon Buttons (BtnTypeB) ── */
+    & .btn-group {
+        display: flex;
+        gap: 10px;
+        align-items: center;
+        flex-shrink: 0;
+    }
+
+    & .btn-icon {
+        width: 30px;
+        height: 30px;
+        border-radius: 78.947px;
+        border: 1px solid #90a1b9;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        overflow: clip;
+        padding: 1px;
+        flex-shrink: 0;
+        cursor: default;
+    }
+
+    & .btn-icon--active {
+        background-image:
+            linear-gradient(90deg, rgba(255, 255, 255, 0.1) 0%, rgba(255, 255, 255, 0.1) 100%),
+            linear-gradient(90deg, rgba(144, 161, 185, 0.2) 0%, rgba(144, 161, 185, 0.2) 100%),
+            linear-gradient(90deg, rgba(33, 38, 50, 0.7) 0%, rgba(33, 38, 50, 0.7) 100%);
+        cursor: pointer;
+    }
+
+    & .btn-icon--idle {
+        background-image:
+            linear-gradient(90deg, rgba(144, 161, 185, 0.1) 0%, rgba(144, 161, 185, 0.1) 100%),
+            linear-gradient(90deg, rgba(33, 38, 50, 0.7) 0%, rgba(33, 38, 50, 0.7) 100%);
+    }
+
+    & .btn-icon .icon {
+        width: 16.364px;
+        height: 16.364px;
+        flex-shrink: 0;
+        position: relative;
+    }
+
+    & .btn-icon .icon-img {
+        width: 13.72px;
+        height: 13px;
+        position: absolute;
+        left: 50%;
+        top: 50%;
+        transform: translate(calc(-50% + 0.18px), calc(-50% - 0.18px));
+    }
+
+    /* ── Divider ── */
+    & .divider-wrap {
+        display: flex;
+        align-items: center;
+        align-self: stretch;
+    }
+
+    & .divider {
+        width: 1.234px;
+        height: 100%;
+        background: rgba(255, 255, 255, 0.2);
+        flex-shrink: 0;
+    }
+
+    /* ── Date/Time ── */
+    & .datetime {
+        height: 38px;
+        display: flex;
+        flex-direction: column;
+        align-items: flex-end;
+        justify-content: center;
+        gap: 1px;
+        flex-shrink: 0;
+    }
+
+    & .datetime-time {
+        font-family: 'Roboto Mono', 'Noto Sans KR', sans-serif;
+        font-weight: 500;
+        font-size: 15px;
+        color: #f8fafc;
+        line-height: normal;
+    }
+
+    & .datetime-date {
+        font-family: 'Roboto Mono', monospace;
+        font-weight: 500;
+        font-size: 14px;
+        color: #94a3b8;
+        text-align: right;
+        line-height: normal;
+    }
+}

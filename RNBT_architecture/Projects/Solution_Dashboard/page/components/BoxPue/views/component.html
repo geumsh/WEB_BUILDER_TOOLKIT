@@ -1,0 +1,111 @@
+<div class="box">
+
+    <!-- Left: PUE Gauge -->
+    <div class="pue-section">
+        <div class="pue-title">
+            <div class="pue-icon">
+                <img src="assets/pue-icon.svg" alt="">
+            </div>
+            <span class="pue-title-text">PUE</span>
+        </div>
+        <div class="gauge">
+            <!-- Gauge Background (semi-circle) -->
+            <div class="gauge-ellipse gauge-bg">
+                <img src="assets/gauge-bg.svg" alt="">
+            </div>
+            <!-- Gauge Fill (semi-circle) -->
+            <div class="gauge-ellipse gauge-fill">
+                <img src="assets/gauge-fill.svg" alt="">
+            </div>
+            <!-- Value -->
+            <div class="gauge-num">
+                <span class="gauge-value">--</span>
+            </div>
+            <!-- Min label -->
+            <div class="gauge-min">
+                <span class="gauge-label">1</span>
+            </div>
+            <!-- Max label -->
+            <div class="gauge-max">
+                <span class="gauge-label">3</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Right: 2x2 Metric Cards -->
+    <div class="cards-grid">
+        <!-- Card 1: 전력 사용량 -->
+        <div class="card" data-metric="power">
+            <div class="card-group">
+                <div class="card-symbol">
+                    <img src="assets/icon-electricity.svg" alt="">
+                </div>
+                <div class="card-txt">
+                    <span class="card-name">전력 사용량</span>
+                </div>
+            </div>
+            <div class="card-item">
+                <div class="card-item-icon">
+                    <img src="assets/icon-arrow-up.svg" alt="">
+                </div>
+                <span class="card-value">--</span>
+                <span class="card-unit">KW</span>
+            </div>
+        </div>
+
+        <!-- Card 2: 주요알람 -->
+        <div class="card" data-metric="alarm">
+            <div class="card-group">
+                <div class="card-symbol">
+                    <img src="assets/icon-alarm.svg" alt="">
+                </div>
+                <span class="card-name">주요알람</span>
+            </div>
+            <div class="card-item">
+                <span class="card-value">--</span>
+                <span class="card-unit card-unit--kr">건</span>
+            </div>
+        </div>
+
+        <!-- Card 3: 온도 -->
+        <div class="card" data-metric="temp">
+            <div class="card-group">
+                <div class="card-symbol">
+                    <img src="assets/icon-temperature.svg" alt="">
+                </div>
+                <div class="card-txt">
+                    <span class="card-name">온도</span>
+                </div>
+            </div>
+            <div class="card-item">
+                <div class="card-item-icon">
+                    <img src="assets/icon-arrow-up.svg" alt="">
+                </div>
+                <span class="card-value">--</span>
+                <span class="card-unit">℃</span>
+            </div>
+        </div>
+
+        <!-- Card 4: 습도 -->
+        <div class="card" data-metric="humidity">
+            <div class="card-group">
+                <div class="card-symbol">
+                    <img src="assets/icon-humidity.svg" alt="">
+                </div>
+                <div class="card-txt">
+                    <span class="card-name">습도</span>
+                </div>
+            </div>
+            <div class="card-item">
+                <div class="card-item-icon">
+                    <img src="assets/icon-arrow-down.svg" alt="">
+                </div>
+                <span class="card-value">--</span>
+                <span class="card-unit">%</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Inset Shadow -->
+    <div class="inset-shadow"></div>
+</div>
