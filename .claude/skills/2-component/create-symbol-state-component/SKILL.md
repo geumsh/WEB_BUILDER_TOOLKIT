@@ -413,11 +413,11 @@ components/[ComponentName]/
 
 ## 금지 사항
 
+> 공통 금지 사항: [SHARED_INSTRUCTIONS.md](/.claude/skills/SHARED_INSTRUCTIONS.md#금지-사항-전체-공통) 참조
+
 - ❌ innerHTML 교체로 색상 변경 (data-status 속성만 사용)
 - ❌ gradient defs를 상태별로 누락
 - ❌ layer 클래스 없이 직접 fill 값 변경
-- ❌ 생성/정리 불일치
-- ❌ datasetName 기반 데이터 응답을 받는 함수에서 `function(response)` 사용 → `function({ response })` 필수
 
 ---
 

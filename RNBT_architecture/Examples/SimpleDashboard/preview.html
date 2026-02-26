@@ -10,16 +10,507 @@
     <script src="https://unpkg.com/tabulator-tables@6.3.1/dist/js/tabulator.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/echarts@5.5.0/dist/echarts.min.js"></script>
 
-    <!-- Page Styles -->
-    <link rel="stylesheet" href="master/page/page_styles/container.css">
-    <link rel="stylesheet" href="page/page_styles/container.css">
+    <style>
+        /* === master/page/page_styles/container.css === */
+        /* Master Container Styles */
+        /* 페이지 크기: 1920 x 1080 */
+        /* Flexbox 레이아웃 사용 (Grid 지양) */
+        #master-container {
+            position: absolute;
+            inset: 0;
+            width: 1920px;
+            height: 1080px;
+            display: flex;
+            flex-direction: column;
+        }
 
-    <!-- Component Styles -->
-    <link rel="stylesheet" href="master/page/components/Header/styles/component.css">
-    <link rel="stylesheet" href="master/page/components/Sidebar/styles/component.css">
-    <link rel="stylesheet" href="page/components/StatsCards/styles/component.css">
-    <link rel="stylesheet" href="page/components/DataTable/styles/component.css">
-    <link rel="stylesheet" href="page/components/TrendChart/styles/component.css">
+        /* === page/page_styles/container.css === */
+        /* Page Container Styles */
+        /* 페이지 크기: 1920 x 1080 (Master 아래에 겹쳐짐) */
+        /* Flexbox 레이아웃 사용 (Grid 지양) */
+        #page-container {
+            position: absolute;
+            inset: 0;
+            width: 1920px;
+            height: 1080px;
+            padding-top: 60px;
+            padding-left: 240px;
+            padding-right: 24px;
+            padding-bottom: 24px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 24px;
+        }
+        /* 실제 콘텐츠 영역: 1656 x 996 (Header 60px, Sidebar 240px, padding 24px 제외) */
+
+        /* === master/page/components/Header/styles/component.css === */
+        /* Header Component Styles - Sample Dashboard */
+        /* 크기: 1920 x 60 */
+        /* px 단위 사용 (rem/em 지양) */
+        #header-container {
+            flex-shrink: 0;
+            width: 1920px;
+            height: 60px;
+
+            .header {
+                width: 100%;
+                height: 100%;
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+                padding: 0 24px;
+                background: #1e293b;
+                color: #f8fafc;
+                box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            }
+
+            /* Logo */
+            .header-logo {
+                display: flex;
+                align-items: center;
+                gap: 12px;
+            }
+
+            .logo-icon {
+                width: 36px;
+                height: 36px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                background: #3b82f6;
+                border-radius: 8px;
+                font-weight: 700;
+                font-size: 20px;
+            }
+
+            .logo-text {
+                font-size: 20px;
+                font-weight: 600;
+            }
+
+            /* User */
+            .header-user {
+                display: flex;
+                align-items: center;
+                gap: 12px;
+            }
+
+            .user-avatar {
+                width: 40px;
+                height: 40px;
+                border-radius: 50%;
+                object-fit: cover;
+                border: 2px solid #3b82f6;
+            }
+
+            .user-info {
+                display: flex;
+                flex-direction: column;
+            }
+
+            .user-name {
+                font-size: 14px;
+                font-weight: 600;
+            }
+
+            .user-role {
+                font-size: 12px;
+                color: #94a3b8;
+            }
+
+            .user-menu-btn {
+                background: none;
+                border: none;
+                color: #94a3b8;
+                cursor: pointer;
+                padding: 8px;
+                font-size: 12px;
+                transition: color 0.2s;
+
+                &:hover {
+                    color: #f8fafc;
+                }
+            }
+        }
+
+        /* === master/page/components/Sidebar/styles/component.css === */
+        /* Sidebar Component Styles - Sample Dashboard */
+        /* 크기: 240 x 1020 */
+        /* px 단위 사용 (rem/em 지양) */
+        #sidebar-container {
+            position: absolute;
+            top: 60px;
+            left: 0;
+            width: 240px;
+            height: 1020px;
+
+            .sidebar {
+                width: 100%;
+                height: 100%;
+                display: flex;
+                flex-direction: column;
+                background: #f8fafc;
+                border-right: 1px solid #e2e8f0;
+            }
+
+            /* Header */
+            .sidebar-header {
+                padding: 16px 20px;
+                border-bottom: 1px solid #e2e8f0;
+                background: linear-gradient(135deg, #1e293b 0%, #334155 100%);
+            }
+
+            .sidebar-title {
+                margin: 0;
+                font-size: 14px;
+                font-weight: 600;
+                color: #f8fafc;
+                text-transform: uppercase;
+                letter-spacing: 0.05em;
+            }
+
+            /* Navigation */
+            .sidebar-nav {
+                flex: 1;
+                padding: 8px;
+                overflow-y: auto;
+            }
+
+            .nav-list {
+                list-style: none;
+                margin: 0;
+                padding: 0;
+            }
+
+            .nav-item {
+                display: flex;
+                align-items: center;
+                gap: 12px;
+                padding: 12px 16px;
+                margin-bottom: 4px;
+                border-radius: 8px;
+                color: #475569;
+                cursor: pointer;
+                transition: all 0.2s;
+
+                &:hover {
+                    background: #e2e8f0;
+                    color: #1e293b;
+                }
+
+                &.active {
+                    background: #3b82f6;
+                    color: white;
+
+                    .nav-icon {
+                        opacity: 1;
+                    }
+                }
+            }
+
+            .nav-icon {
+                font-size: 20px;
+                opacity: 0.8;
+            }
+
+            .nav-label {
+                font-size: 14px;
+                font-weight: 500;
+            }
+        }
+
+        /* === page/components/StatsCards/styles/component.css === */
+        /* StatsCards Component Styles - Sample Dashboard */
+        /* 크기: full width x 180 */
+        /* px 단위 사용 (rem/em 지양), Flexbox 사용 (Grid 지양) */
+        #stats-cards-container {
+            flex-shrink: 0;
+            width: 100%;
+            height: 180px;
+
+            .stats-panel {
+                width: 100%;
+                height: 100%;
+                display: flex;
+                flex-direction: column;
+                padding: 16px;
+                background: white;
+                border-radius: 12px;
+                box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+            }
+
+            /* Header */
+            .panel-header {
+                flex-shrink: 0;
+                margin-bottom: 12px;
+            }
+
+            .panel-title {
+                margin: 0;
+                font-size: 16px;
+                font-weight: 600;
+                color: #1e293b;
+            }
+
+            /* Stats Row - Flexbox instead of Grid */
+            .stats-grid {
+                display: flex;
+                gap: 16px;
+                flex: 1;
+                min-height: 0;
+            }
+
+            /* Stat Card */
+            .stat-card {
+                flex: 1;
+                display: flex;
+                flex-direction: column;
+                padding: 12px;
+                background: #f8fafc;
+                border-radius: 10px;
+                cursor: pointer;
+                transition: all 0.2s;
+
+                &:hover {
+                    background: #f1f5f9;
+                    transform: translateY(-2px);
+                }
+            }
+
+            .stat-header {
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                margin-bottom: 8px;
+            }
+
+            .stat-icon {
+                font-size: 20px;
+            }
+
+            .stat-change {
+                font-size: 11px;
+                font-weight: 600;
+                padding: 2px 6px;
+                border-radius: 4px;
+
+                &.positive {
+                    background: #dcfce7;
+                    color: #16a34a;
+                }
+
+                &.negative {
+                    background: #fee2e2;
+                    color: #dc2626;
+                }
+            }
+
+            .stat-body {
+                display: flex;
+                flex-direction: column;
+                gap: 2px;
+            }
+
+            .stat-value {
+                font-size: 20px;
+                font-weight: 700;
+                color: #1e293b;
+            }
+
+            .stat-label {
+                font-size: 11px;
+                color: #64748b;
+                text-transform: uppercase;
+                letter-spacing: 0.05em;
+            }
+        }
+
+        /* === page/components/DataTable/styles/component.css === */
+        /* DataTable Component Styles - Sample Dashboard */
+        /* px 단위 사용 (rem/em 지양) */
+        #data-table-container {
+            flex: 1;
+            min-height: 0;
+
+            .data-table {
+                width: 100%;
+                height: 100%;
+                display: flex;
+                flex-direction: column;
+                padding: 24px;
+                background: white;
+                border-radius: 12px;
+                box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+            }
+
+            /* Header */
+            .panel-header {
+                display: flex;
+                justify-content: space-between;
+                align-items: flex-start;
+                margin-bottom: 16px;
+            }
+
+            .panel-title-group {
+                flex: 1;
+            }
+
+            .panel-title {
+                font-size: 18px;
+                font-weight: 600;
+                color: #1e293b;
+                margin: 0 0 4px 0;
+            }
+
+            .panel-subtitle {
+                font-size: 12px;
+                color: #64748b;
+                margin: 0;
+            }
+
+            .panel-actions {
+                display: flex;
+                gap: 8px;
+            }
+
+            .filter-select {
+                padding: 8px 12px;
+                border: 1px solid #e2e8f0;
+                border-radius: 6px;
+                font-size: 12px;
+                color: #475569;
+                background: white;
+                cursor: pointer;
+
+                &:focus {
+                    outline: none;
+                    border-color: #3b82f6;
+                }
+            }
+
+            /* Table Meta */
+            .table-meta {
+                font-size: 12px;
+                color: #64748b;
+                margin-bottom: 12px;
+            }
+
+            /* Tabulator Container */
+            .table-container {
+                flex: 1;
+                min-height: 0;
+            }
+
+            /* Tabulator Overrides */
+            .tabulator {
+                border: none;
+                background: transparent;
+            }
+
+            .tabulator-header {
+                background: #f8fafc;
+                border-bottom: 2px solid #e2e8f0;
+            }
+
+            .tabulator-col {
+                background: transparent;
+                border-right: none;
+            }
+
+            .tabulator-col-title {
+                font-size: 12px;
+                font-weight: 600;
+                color: #64748b;
+                text-transform: uppercase;
+            }
+
+            .tabulator-row {
+                border-bottom: 1px solid #f1f5f9;
+
+                &:hover {
+                    background: #f8fafc;
+                }
+            }
+
+            .tabulator-cell {
+                border-right: none;
+                font-size: 14px;
+                color: #1e293b;
+            }
+        }
+
+        /* === page/components/TrendChart/styles/component.css === */
+        /* TrendChart Component Styles - Sample Dashboard */
+        /* 크기: flex-1 x 768 (DataTable과 나란히 배치) */
+        /* px 단위 사용 (rem/em 지양) */
+        #trend-chart-container {
+            flex: 1;
+            min-height: 0;
+
+            .trend-chart {
+                width: 100%;
+                height: 100%;
+                display: flex;
+                flex-direction: column;
+                padding: 24px;
+                background: white;
+                border-radius: 12px;
+                box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+            }
+
+            /* Header */
+            .panel-header {
+                display: flex;
+                justify-content: space-between;
+                align-items: flex-start;
+                margin-bottom: 16px;
+            }
+
+            .panel-title-group {
+                flex: 1;
+            }
+
+            .panel-title {
+                font-size: 18px;
+                font-weight: 600;
+                color: #1e293b;
+                margin: 0 0 4px 0;
+            }
+
+            .panel-subtitle {
+                font-size: 12px;
+                color: #64748b;
+                margin: 0;
+            }
+
+            .panel-actions {
+                display: flex;
+                gap: 8px;
+            }
+
+            .period-select {
+                padding: 8px 12px;
+                border: 1px solid #e2e8f0;
+                border-radius: 6px;
+                font-size: 12px;
+                color: #475569;
+                background: white;
+                cursor: pointer;
+
+                &:focus {
+                    outline: none;
+                    border-color: #3b82f6;
+                }
+            }
+
+            /* Chart Container */
+            .chart-container {
+                flex: 1;
+                min-height: 0;
+            }
+        }
+    </style>
 
     <style>
         /* Reset & Base */

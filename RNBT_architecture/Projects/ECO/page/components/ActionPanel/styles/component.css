@@ -1,0 +1,67 @@
+.action-panel {
+  display: flex;
+  gap: 9px;
+  align-items: center;
+}
+
+/* ── Idle ── */
+.action-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 5px 20px;
+  border: 1px solid #90a1b9;
+  border-radius: 6px;
+  background:
+    linear-gradient(90deg, rgba(144, 161, 185, 0.1) 0%, rgba(144, 161, 185, 0.1) 100%),
+    linear-gradient(90deg, rgba(33, 38, 50, 0.7) 0%, rgba(33, 38, 50, 0.7) 100%);
+  backdrop-filter: blur(7px);
+  box-shadow: 0px 4px 4px rgba(44, 44, 44, 0.15);
+  color: #94a3b8;
+  font-family: 'Pretendard', sans-serif;
+  font-weight: 500;
+  font-size: 14px;
+  line-height: normal;
+  text-align: center;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s, border-color 0.15s;
+}
+
+/* ── Hover ── */
+.action-btn:hover {
+  border-color: rgba(255, 255, 255, 0.3);
+  background:
+    linear-gradient(90deg, rgba(255, 255, 255, 0.06) 0%, rgba(255, 255, 255, 0.06) 100%),
+    linear-gradient(90deg, rgba(33, 38, 50, 0.7) 0%, rgba(33, 38, 50, 0.7) 100%);
+  color: #afeef7;
+}
+
+/* ── Active ── */
+.action-btn.active {
+  border-color: #ffffff;
+  background:
+    linear-gradient(-9.74deg, rgba(96, 235, 255, 0) 9.76%, rgb(96, 255, 234) 93.85%),
+    linear-gradient(-15.23deg, rgba(112, 132, 245, 0) 15.24%, rgb(129, 225, 197) 112.01%),
+    linear-gradient(90deg, rgb(175, 238, 247) 0%, rgb(175, 238, 247) 100%);
+  backdrop-filter: blur(2px);
+  box-shadow: 0px 4px 4px rgba(44, 44, 44, 0.15);
+  color: #1e202c;
+  font-weight: 600;
+}
+
+/* ── Loading ── */
+.action-btn.loading::after {
+  content: '';
+  display: inline-block;
+  width: 14px;
+  height: 14px;
+  margin-left: 6px;
+  border: 2px solid rgba(30, 32, 44, 0.25);
+  border-top-color: #1e202c;
+  border-radius: 50%;
+  animation: action-btn-spin 0.6s linear infinite;
+}
+
+@keyframes action-btn-spin {
+  to { transform: rotate(360deg); }
+}

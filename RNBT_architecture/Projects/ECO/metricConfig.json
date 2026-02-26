@@ -371,6 +371,38 @@
     "scale": 1.0,
     "interface": "DERIVED"
   },
+  "UPS.INPUT_V_SUM": {
+    "label": "입력전압(3상 합)",
+    "description": "SUM(UPS.INPUT_V_1, UPS.INPUT_V_2, UPS.INPUT_V_3)",
+    "valueType": "NUMBER",
+    "unit": "V",
+    "scale": 1.0,
+    "interface": "DERIVED"
+  },
+  "UPS.INPUT_F_AVG": {
+    "label": "입력주파수(3상 평균)",
+    "description": "AVG(UPS.INPUT_F_1, UPS.INPUT_F_2, UPS.INPUT_F_3)",
+    "valueType": "NUMBER",
+    "unit": "Hz",
+    "scale": 1.0,
+    "interface": "DERIVED"
+  },
+  "UPS.INPUT_F_SUM": {
+    "label": "입력주파수(3상 합)",
+    "description": "SUM(UPS.INPUT_F_1, UPS.INPUT_F_2, UPS.INPUT_F_3)",
+    "valueType": "NUMBER",
+    "unit": "Hz",
+    "scale": 1.0,
+    "interface": "DERIVED"
+  },
+  "UPS.INPUT_A_AVG": {
+    "label": "입력전류(3상 평균)",
+    "description": "AVG(UPS.INPUT_A_1, UPS.INPUT_A_2, UPS.INPUT_A_3)",
+    "valueType": "NUMBER",
+    "unit": "A",
+    "scale": 1.0,
+    "interface": "DERIVED"
+  },
   "UPS.INPUT_A_SUM": {
     "label": "입력전류(3상 합)",
     "description": "SUM(UPS.INPUT_A_1, UPS.INPUT_A_2, UPS.INPUT_A_3)",
@@ -387,11 +419,35 @@
     "scale": 1.0,
     "interface": "DERIVED"
   },
+  "UPS.OUTPUT_V_SUM": {
+    "label": "출력전압(3상 합)",
+    "description": "SUM(UPS.OUTPUT_V_1, UPS.OUTPUT_V_2, UPS.OUTPUT_V_3)",
+    "valueType": "NUMBER",
+    "unit": "V",
+    "scale": 1.0,
+    "interface": "DERIVED"
+  },
   "UPS.OUTPUT_F_AVG": {
     "label": "출력주파수(3상 평균)",
     "description": "AVG(UPS.OUTPUT_F_1, UPS.OUTPUT_F_2, UPS.OUTPUT_F_3)",
     "valueType": "NUMBER",
     "unit": "Hz",
+    "scale": 1.0,
+    "interface": "DERIVED"
+  },
+  "UPS.OUTPUT_F_SUM": {
+    "label": "출력주파수(3상 합)",
+    "description": "SUM(UPS.OUTPUT_F_1, UPS.OUTPUT_F_2, UPS.OUTPUT_F_3)",
+    "valueType": "NUMBER",
+    "unit": "Hz",
+    "scale": 1.0,
+    "interface": "DERIVED"
+  },
+  "UPS.OUTPUT_A_AVG": {
+    "label": "출력전류(3상 평균)",
+    "description": "AVG(UPS.OUTPUT_A_1, UPS.OUTPUT_A_2, UPS.OUTPUT_A_3)",
+    "valueType": "NUMBER",
+    "unit": "A",
     "scale": 1.0,
     "interface": "DERIVED"
   },

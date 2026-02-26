@@ -20,8 +20,8 @@ Figma 디자인을 **인라인 SVG가 포함된 정적 HTML/CSS**로 변환하�
 
 1. [/.claude/skills/SHARED_INSTRUCTIONS.md](/.claude/skills/SHARED_INSTRUCTIONS.md) - 공통 규칙
 2. [/Figma_Conversion/README.md](/Figma_Conversion/README.md) - 프로젝트 구조 및 시작 방법
-3. [/Figma_Conversion/CLAUDE.md](/Figma_Conversion/CLAUDE.md) - 워크플로우와 규칙
-4. [/.claude/guides/CODING_STYLE.md](/.claude/guides/CODING_STYLE.md) - 코딩 스타일
+3. [/Figma_Conversion/CLAUDE.md](/Figma_Conversion/CLAUDE.md) - 워크플로우와 규칙 (MCP 도구, 추측 금지, 에셋, 컨테이너 구조, box-sizing, Playwright, 완료 체크리스트)
+4. [/.claude/guides/CODING_STYLE.md](/.claude/guides/CODING_STYLE.md) - 코딩 스타일 (CSS 원칙: px 단위, Flexbox 우선)
 
 ---
 
@@ -69,38 +69,8 @@ claude mcp add --transport http figma-desktop http://127.0.0.1:3845/mcp
 5. CSS 작성
    └─ 컨테이너 스타일, SVG 크기 조정
 
-6. Playwright 스크린샷 캡처
-   - viewport를 Figma 프레임 크기와 동일하게 설정
-
-7. 시각적 비교
-   ├─ get_screenshot 결과 (원본)
-   └─ Playwright 스크린샷 (구현물)
-
-8. 완료 판단
-   └─ 원본과 구현물이 시각적으로 일치할 때만 완료
-```
-
----
-
-## MCP 도구 사용
-
-### 디자인 정보 + 에셋 다운로드
-
-```javascript
-mcp__figma-desktop__get_design_context({
-  nodeId: "1:140",
-  clientLanguages: "html,css",
-  clientFrameworks: "vanilla",
-  dirForAssetWrites: "./Figma_Conversion/Static_Components/[프로젝트명]/[컴포넌트명]/assets"
-})
-```
-
-**필수**: `dirForAssetWrites` 파라미터로 에셋 자동 저장
-
-### 원본 스크린샷 (비교 기준)
-
-```javascript
-mcp__figma-desktop__get_screenshot({ nodeId: "1:140" })
+6. Playwright 스크린샷 캡처 → 시각적 비교 → 완료
+   (상세: Figma_Conversion/CLAUDE.md 참조)
 ```
 
 ---
@@ -154,15 +124,7 @@ Figma_Conversion/Static_Components/
 5. HTML에 인라인으로 삽입
 ```
 
-### 3. CSS 원칙
-
-**[CODING_STYLE.md](/.claude/guides/CODING_STYLE.md)의 CSS 원칙 섹션 참조**
-
-핵심 요약:
-- **px 단위 사용** (rem/em 금지) - RNBT 런타임 호환성 보장
-- **Flexbox 우선** (Grid는 2D 카드 레이아웃 등 명확한 경우만 허용, absolute 지양)
-
-### 4. 인라인 SVG CSS 스타일
+### 3. 인라인 SVG CSS 스타일
 
 ```css
 #component-container {
@@ -178,7 +140,7 @@ Figma_Conversion/Static_Components/
 }
 ```
 
-### 5. 색상 유지 원칙
+### 4. 색상 유지 원칙
 
 **이 단계에서는 색상을 원본 그대로 유지합니다.**
 
@@ -194,42 +156,6 @@ Figma_Conversion/Static_Components/
 **이유**: 정적/동적 작업 분리 원칙
 - figma-to-inline-svg: 정적 퍼블리싱 (색상 원본 유지)
 - create-symbol-state-component: 동적 변환 (CSS 변수화)
-
-### 6. 추측 금지 원칙
-
-```
-❌ 잘못된 접근:
-- "이 정도면 비슷해 보이니까 완료"
-- "대충 이 값이면 맞겠지"
-- CSS 값을 "추측"해서 조정
-
-✅ 올바른 접근:
-- get_screenshot → 유일한 원본
-- get_design_context → 정확한 구조와 수치
-- SVG 파일 내용 그대로 사용
-- 시각적 차이가 있으면 MCP 데이터 다시 확인
-```
-
----
-
-## Playwright 스크린샷
-
-```javascript
-node -e "
-const { chromium } = require('playwright');
-(async () => {
-  const browser = await chromium.launch();
-  const page = await browser.newPage({
-    viewport: { width: 73, height: 54 }  // Figma 프레임 크기와 동일
-  });
-  await page.goto('file:///path/to/component.html');
-  await page.screenshot({ path: './screenshots/impl.png' });
-  await browser.close();
-})();
-"
-```
-
-**주의**: viewport 크기를 Figma metadata의 프레임 크기와 정확히 일치시킬 것
 
 ---
 
@@ -275,29 +201,11 @@ const { chromium } = require('playwright');
 
 ## 금지 사항
 
-```
-❌ 추측하지 않는다
-- "비슷해 보인다" ≠ "일치한다"
-- 확인하지 않고 완료라고 말하지 않음
+> 공통 금지 사항: [Figma_Conversion/CLAUDE.md](/Figma_Conversion/CLAUDE.md#구현-시-주의사항-실전-교훈) 참조
 
-❌ CSS 변수로 변환하지 않는다
-- 이 단계에서는 원본 색상 유지
-- CSS 변수 변환은 create-symbol-state-component에서
-
-❌ 스크립트 작성하지 않는다
-- 이 단계는 순수 퍼블리싱
-- JavaScript는 다음 단계에서
-
-❌ 로컬호스트 URL 직접 사용
-- http://127.0.0.1:3845/... URL을 HTML에 직접 사용
-
-❌ SVG 내용 임의 수정
-- Figma에서 제공된 path, fill, stroke 그대로 사용
-- viewBox 등 필수 속성만 조정
-
-❌ 스크린샷 비교 생략
-- 매번 get_screenshot과 Playwright 결과 비교 필수
-```
+- ❌ CSS 변수로 변환하지 않는다 — 이 단계에서는 원본 색상 유지
+- ❌ 스크립트 작성하지 않는다 — 이 단계는 순수 퍼블리싱
+- ❌ SVG 내용 임의 수정 — Figma에서 제공된 path, fill, stroke 그대로 사용 (viewBox 등 필수 속성만 조정)
 
 ---
 
@@ -337,13 +245,6 @@ create-symbol-state-component (동적)
 ```
 
 ---
-
-## 참고 문서
-
-| 문서 | 참고 시점 | 내용 |
-|------|----------|------|
-| [CODING_STYLE.md](/.claude/guides/CODING_STYLE.md) | 코드 작성 시 | CSS 원칙 |
-| [figma-to-html/SKILL.md](/.claude/skills/1-figma/figma-to-html/SKILL.md) | MCP 사용법 참고 시 | 기본 워크플로우 |
 
 ## 참고 예제
 

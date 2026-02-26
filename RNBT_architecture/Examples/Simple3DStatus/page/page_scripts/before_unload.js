@@ -69,7 +69,6 @@ withSelector(this.appendElement, 'canvas', canvas => {
 /**
  * 한 줄로 모든 3D 컴포넌트 정리:
  * - subscriptions 해제
- * - customEvents, datasetInfo 참조 제거
  * - geometry, material, texture dispose
  * - Scene background 정리
  */

@@ -99,14 +99,16 @@
                                             <span class="image-label">센서</span>
                                         </div>
                                         <table class="info-table">
-                                            <tr><th>자산명</th><td class="info-name">-</td></tr>
-                                            <tr><th>자산타입</th><td class="info-type">-</td></tr>
-                                            <tr><th>용도</th><td class="info-usage">-</td></tr>
-                                            <tr><th>제조사명</th><td class="info-vendor">-</td></tr>
-                                            <tr><th>모델</th><td class="info-model">-</td></tr>
-                                            <tr><th>위치</th><td class="info-location">-</td></tr>
-                                            <tr><th>상태</th><td class="info-status">-</td></tr>
-                                            <tr><th>설치일</th><td class="info-install-date">-</td></tr>
+                                            <tbody>
+                                                <tr><th>자산명</th><td class="info-name">-</td></tr>
+                                                <tr><th>자산타입</th><td class="info-type">-</td></tr>
+                                                <tr><th>용도</th><td class="info-usage">-</td></tr>
+                                                <tr><th>제조사명</th><td class="info-vendor">-</td></tr>
+                                                <tr><th>모델</th><td class="info-model">-</td></tr>
+                                                <tr><th>위치</th><td class="info-location">-</td></tr>
+                                                <tr><th>상태</th><td class="info-status">-</td></tr>
+                                                <tr><th>설치일</th><td class="info-install-date">-</td></tr>
+                                            </tbody>
                                         </table>
                                     </div>
                                 </div>
@@ -173,111 +175,110 @@
 
         const cssCode = `
             .popup-overlay {
-                position: absolute; top: 0; right: 0; height: 100%;
-                pointer-events: none; z-index: 1000;
+                position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
+                background: rgba(0, 0, 0, 0.6);
+                display: flex; align-items: center; justify-content: center; z-index: 1000;
             }
-
             .popup-content {
-                background: #1a1f2e;
-                border-radius: 12px 0 0 12px;
-                width: 560px; height: 100%;
-                overflow: hidden;
-                box-shadow: -4px 0 24px rgba(0, 0, 0, 0.4);
-                border: 1px solid #2a3142; border-right: none;
-                display: flex; flex-direction: column; pointer-events: auto;
+                background: #131521; border-radius: 16px;
+                width: 560px; max-width: 90vw; height: 80vh;
+                overflow: hidden; box-shadow: 0px 0px 24px 0px rgba(0, 0, 0, 0.45);
+                border: 1px solid #6b6b70;
+                display: flex; flex-direction: column;
             }
-
             .popup-header {
                 display: flex; justify-content: space-between; align-items: center;
-                padding: 20px 24px; border-bottom: 1px solid #2a3142; flex-shrink: 0;
+                padding: 20px 20px 15px 20px; border-bottom: 1px solid #6b6b70;
+                background:
+                    linear-gradient(rgba(96, 144, 255, 0) 0%, rgba(96, 144, 255, 0.04) 100%),
+                    linear-gradient(90deg, rgba(96, 144, 255, 0.05) 0%, rgba(96, 144, 255, 0.05) 100%),
+                    linear-gradient(90deg, rgba(19, 21, 33, 0.8) 0%, rgba(19, 21, 33, 0.8) 100%);
+                backdrop-filter: blur(15px); flex-shrink: 0;
             }
-
             .header-info { display: flex; flex-direction: column; gap: 4px; }
-            .sensor-name { margin: 0; font-size: 18px; font-weight: 600; color: #e0e6ed; }
-            .sensor-zone { font-size: 13px; color: #8892a0; }
-
+            .sensor-name { margin: 0; font-size: 18px; font-weight: 600; color: #f8fafc; }
+            .sensor-zone { font-size: 13px; color: #a7acbc; }
             .header-actions { display: flex; align-items: center; gap: 12px; }
             .sensor-status { padding: 4px 12px; border-radius: 12px; font-size: 12px; font-weight: 500; }
             .sensor-status[data-status="normal"] { background: rgba(34, 197, 94, 0.15); color: #22c55e; }
             .sensor-status[data-status="warning"] { background: rgba(234, 179, 8, 0.15); color: #eab308; }
             .sensor-status[data-status="critical"] { background: rgba(239, 68, 68, 0.15); color: #ef4444; }
-
             .heatmap-btn {
                 display: flex; align-items: center; justify-content: center;
                 width: 32px; height: 32px; padding: 0;
-                background: transparent; border: 1px solid #2a3142; border-radius: 6px;
-                color: #8892a0; cursor: pointer;
+                background: transparent; border: 1px solid #323234; border-radius: 6px;
+                color: #a7acbc; cursor: pointer;
                 transition: background 0.15s, color 0.15s, border-color 0.15s;
             }
-            .heatmap-btn:hover { background: #2a3142; color: #e0e6ed; }
+            .heatmap-btn:hover { background: rgba(255, 255, 255, 0.1); color: #f8fafc; }
             .heatmap-btn[data-active="true"] {
                 background: rgba(59, 130, 246, 0.2);
                 border-color: rgba(59, 130, 246, 0.5);
                 color: #3b82f6;
             }
-
             .close-btn {
                 display: flex; align-items: center; justify-content: center;
                 width: 32px; height: 32px; padding: 0;
                 background: transparent; border: none; border-radius: 6px;
-                color: #8892a0; cursor: pointer;
-                transition: background 0.15s, color 0.15s;
+                color: #a7acbc; cursor: pointer; transition: background 0.15s, color 0.15s;
             }
-            .close-btn:hover { background: #2a3142; color: #e0e6ed; }
-
+            .close-btn:hover { background: rgba(255, 255, 255, 0.1); color: #f8fafc; }
             .popup-body {
-                padding: 20px 24px;
-                display: flex; flex-direction: column; gap: 16px;
+                padding: 16px; display: flex; flex-direction: column; gap: 20px;
                 flex: 1; min-height: 0; overflow-y: auto;
+                background: rgba(2, 6, 23, 0.6); backdrop-filter: blur(15px); position: relative;
+            }
+            .popup-body::after {
+                content: ''; position: absolute; inset: 0; border-radius: inherit;
+                box-shadow: inset 0px 0px 8px 0px rgba(0, 0, 0, 0.25); pointer-events: none;
             }
 
             /* Section Common */
-            .section { background: #252b3b; border-radius: 8px; overflow: hidden; flex-shrink: 0; }
+            .section { background: #282a37; border: 1px solid #323234; border-radius: 8px; overflow: hidden; flex-shrink: 0; }
             .section-header {
                 display: flex; justify-content: space-between; align-items: center;
-                padding: 12px 16px; border-bottom: 1px solid #2a3142;
+                padding: 12px 16px; border-bottom: 1px solid #323234;
             }
-            .section-title { font-size: 13px; font-weight: 500; color: #8892a0; letter-spacing: 0.5px; }
-            .section-timestamp { font-size: 11px; color: #6b7280; }
+            .section-title { font-size: 16px; font-weight: 500; color: #e4ebf6; letter-spacing: -0.32px; }
+            .section-timestamp { font-size: 11px; color: #a7acbc; }
 
             /* Section 1: 기본정보 */
-            .info-section .info-content { padding: 16px; }
-            .info-layout { display: flex; gap: 16px; }
+            .info-section .info-content { padding: 16px; max-height: 280px; overflow-y: auto; }
+            .info-layout { display: flex; gap: 10px; }
             .info-image-placeholder {
-                width: 100px; min-height: 100px;
-                background: #1a1f2e; border-radius: 8px; border: 1px solid #2a3142;
+                width: 100px; min-height: 100px; background: #282a37;
+                border-radius: 8px; border: 1px solid #323234;
                 display: flex; flex-direction: column; align-items: center; justify-content: center;
                 gap: 8px; flex-shrink: 0;
             }
             .info-image-placeholder svg { opacity: 0.5; }
-            .image-label { font-size: 11px; color: #6b7280; font-weight: 500; }
-            .info-table { flex: 1; border-collapse: collapse; font-size: 13px; }
-            .info-table th, .info-table td { padding: 5px 8px; text-align: left; border-bottom: 1px solid rgba(42, 49, 66, 0.5); }
-            .info-table th { color: #8892a0; font-weight: 400; white-space: nowrap; width: 70px; }
-            .info-table td { color: #e0e6ed; font-weight: 500; }
-            .info-table tr:last-child th, .info-table tr:last-child td { border-bottom: none; }
+            .image-label { font-size: 11px; color: #a7acbc; font-weight: 500; }
+            .info-table { flex: 1; border-collapse: separate; border-spacing: 0 2px; font-size: 12px; }
+            .info-table th, .info-table td { padding: 4px 8px; text-align: left; border-bottom: none; }
+            .info-table th { color: #e4ebf6; font-weight: 500; white-space: nowrap; width: 80px; }
+            .info-table td { color: #f8fafc; font-weight: 400; background: rgba(255, 255, 255, 0.1); border-radius: 4px; }
 
             /* Section 2: 실시간 측정값 */
-            .status-cards { display: grid; grid-template-columns: 1fr 1fr; gap: 1px; background: #2a3142; }
-            .status-card { background: #252b3b; padding: 16px; }
+            .status-cards { display: grid; grid-template-columns: 1fr 1fr; gap: 1px; background: #323234; }
+            .status-card { background: #282a37; padding: 16px; }
             .status-card-header { margin-bottom: 12px; }
-            .status-card-label { font-size: 12px; font-weight: 500; color: #8892a0; text-transform: uppercase; letter-spacing: 0.5px; }
+            .status-card-label { font-size: 12px; font-weight: 500; color: #e4ebf6; text-transform: uppercase; letter-spacing: 0.5px; }
             .status-card-body { display: flex; justify-content: space-between; align-items: flex-end; }
             .status-current, .status-target { display: flex; flex-direction: column; gap: 4px; }
-            .status-current-label, .status-target-label { font-size: 11px; color: #6b7280; }
-            .status-current-value { font-size: 28px; font-weight: 600; color: #e0e6ed; line-height: 1; }
-            .status-current-unit { font-size: 14px; font-weight: 400; color: #8892a0; margin-left: 2px; }
-            .status-target-value { font-size: 18px; font-weight: 500; color: #8892a0; line-height: 1; }
-            .status-target-unit { font-size: 12px; font-weight: 400; color: #6b7280; margin-left: 2px; }
+            .status-current-label, .status-target-label { font-size: 11px; color: #a7acbc; }
+            .status-current-value { font-size: 28px; font-weight: 600; color: #f8fafc; line-height: 1; }
+            .status-current-unit { font-size: 14px; font-weight: 400; color: #a7acbc; margin-left: 2px; }
+            .status-target-value { font-size: 18px; font-weight: 500; color: #a7acbc; line-height: 1; }
+            .status-target-unit { font-size: 12px; font-weight: 400; color: #a7acbc; margin-left: 2px; }
             .status-card[data-metric="temperature"] .status-current-value { color: #3b82f6; }
             .status-card[data-metric="humidity"] .status-current-value { color: #22c55e; }
 
             /* Section 3: 트렌드 차트 */
             .chart-section { flex: 1; min-height: 280px; display: flex; flex-direction: column; }
-            .chart-container { flex: 1; min-height: 200px; width: 100%; }
+            .chart-container { flex: 1; min-height: 200px; width: 100%; background: #282a37; border: 1px solid #323234; border-radius: 8px; margin: 0 0 4px 0; }
 
             /* States */
-            .empty-state { padding: 24px 16px; text-align: center; color: #6b7280; font-size: 13px; }
+            .empty-state { padding: 24px 16px; text-align: center; color: #a7acbc; font-size: 13px; }
             .error-state { padding: 24px 16px; text-align: center; color: #ef4444; font-size: 13px; }
         `;
 
@@ -334,7 +335,12 @@
                     installDate: '2025-03-23',
                     assetModelKey: 'model-001',
                     assetModelName: 'HMP110',
-                }
+                },
+                properties: [
+                    { fieldKey: 'measurement_range', label: '측정범위', value: '-10 ~ 60 ℃ / 0 ~ 95 %RH', helpText: '센서 측정 가능 범위', displayOrder: 1 },
+                    { fieldKey: 'accuracy', label: '정확도', value: '±0.3 ℃ / ±2 %RH', helpText: '센서 측정 정확도', displayOrder: 2 },
+                    { fieldKey: 'install_position_type', label: '설치 위치 유형', value: '랙 전면 흡입부', helpText: '센서가 설치된 위치 유형', displayOrder: 3 },
+                ]
             },
             warning: {
                 asset: {
@@ -346,7 +352,12 @@
                     installDate: '2024-06-15',
                     assetModelKey: 'model-002',
                     assetModelName: 'TH-3000',
-                }
+                },
+                properties: [
+                    { fieldKey: 'measurement_range', label: '측정범위', value: '-20 ~ 70 ℃ / 0 ~ 100 %RH', helpText: '센서 측정 가능 범위', displayOrder: 1 },
+                    { fieldKey: 'accuracy', label: '정확도', value: '±0.5 ℃ / ±3 %RH', helpText: '센서 측정 정확도', displayOrder: 2 },
+                    { fieldKey: 'install_position_type', label: '설치 위치 유형', value: '냉각 장치 배기구', helpText: '센서가 설치된 위치 유형', displayOrder: 3 },
+                ]
             },
             critical: {
                 asset: {
@@ -358,7 +369,12 @@
                     installDate: '2023-11-01',
                     assetModelKey: 'model-003',
                     assetModelName: 'SHT40',
-                }
+                },
+                properties: [
+                    { fieldKey: 'measurement_range', label: '측정범위', value: '-40 ~ 80 ℃ / 0 ~ 100 %RH', helpText: '센서 측정 가능 범위', displayOrder: 1 },
+                    { fieldKey: 'accuracy', label: '정확도', value: '±0.2 ℃ / ±1.8 %RH', helpText: '센서 측정 정확도', displayOrder: 2 },
+                    { fieldKey: 'install_position_type', label: '설치 위치 유형', value: '배터리 랙 상단', helpText: '센서가 설치된 위치 유형', displayOrder: 3 },
+                ]
             }
         };
 
@@ -508,6 +524,9 @@
                     if (container) {
                         const chart = echarts.init(container);
                         ctx._setChartRef(chart);
+                        const ro = new ResizeObserver(() => chart.resize());
+                        ro.observe(container);
+                        ctx._chartResizeObserver = ro;
                         console.log('[EChartsMixin] Chart created');
                     }
                 };
@@ -519,6 +538,9 @@
                         if (container) {
                             chart = echarts.init(container);
                             ctx._setChartRef(chart);
+                            const ro = new ResizeObserver(() => chart.resize());
+                            ro.observe(container);
+                            ctx._chartResizeObserver = ro;
                         }
                     }
                     if (chart) {
@@ -779,6 +801,17 @@
             this.hideDetail = hideDetail.bind(this);
             this.stopRefresh = stopRefresh.bind(this);
 
+            // Runtime Parameter Update API
+            this.updateTrendParams = updateTrendParams.bind(this);
+            this.updateSensorSeriesMetric = updateSensorSeriesMetric.bind(this);
+            this.updateGlobalParams = updateGlobalParams.bind(this);
+            this.updateRefreshInterval = updateRefreshInterval.bind(this);
+
+            // Category E: 현황카드 API
+            this.updateSensorStatusMetric = updateSensorStatusMetric.bind(this);
+            this.addSensorStatusMetric = addSensorStatusMetric.bind(this);
+            this.removeSensorStatusMetric = removeSensorStatusMetric.bind(this);
+
             // ======================
             // 7. 3D 이벤트 바인딩
             // ======================
@@ -839,6 +872,27 @@
         /**
          * fetchModelVendorChain - 모델/제조사 체인 API 호출
          */
+        function renderPropertiesRows(ctx, properties) {
+            if (!properties || properties.length === 0) return;
+
+            const tbody = ctx.popupQuery('.info-table tbody');
+            if (!tbody) return;
+
+            // 기존 동적 행 제거 (재렌더링 대비)
+            tbody.querySelectorAll('tr[data-property]').forEach(tr => tr.remove());
+
+            // displayOrder 정렬 후 행 추가
+            [...properties]
+                .sort((a, b) => (a.displayOrder || 0) - (b.displayOrder || 0))
+                .forEach(({ fieldKey, label, value, helpText }) => {
+                    const tr = document.createElement('tr');
+                    tr.dataset.property = fieldKey;
+                    if (helpText) tr.title = helpText;
+                    tr.innerHTML = `<th>${label}</th><td>${value ?? '-'}</td>`;
+                    tbody.appendChild(tr);
+                });
+        }
+
         function fetchModelVendorChain(ctx, asset, chainConfig) {
             if (!asset.assetModelKey) return;
             const { datasetNames } = ctx.config;
@@ -930,7 +984,7 @@
         function renderBasicInfo({ response }) {
             const { data } = response;
             if (!data || !data.asset) {
-                console.warn('[TempHumiditySensor] renderBasicInfo: no asset data');
+                console.warn('[TempHumiditySensor] renderBasicInfo: 자산 데이터가 없습니다.');
                 return;
             }
 
@@ -945,6 +999,9 @@
 
             // 제조사명/모델 체이닝
             fetchModelVendorChain(this, asset, infoTable.chain);
+
+            // properties 동적 렌더링 (기본정보 테이블에 행 추가)
+            renderPropertiesRows(this, data.properties);
         }
 
         function renderStatusCards({ response }) {
@@ -1031,21 +1088,15 @@
 
             const times = Object.keys(timeMap);
 
-            const tempValues = fx.map(
-                (t) => {
-                    const raw = timeMap[t][tempConfig.metricCode];
-                    return raw != null ? +(raw * tempConfig.scale).toFixed(1) : null;
-                },
-                times
-            );
+            const tempValues = fx.map((t) => {
+                const raw = timeMap[t]?.[tempConfig.metricCode];
+                return raw != null ? +(raw * tempConfig.scale).toFixed(1) : null;
+            }, times);
 
-            const humidValues = fx.map(
-                (t) => {
-                    const raw = timeMap[t][humidConfig.metricCode];
-                    return raw != null ? +(raw * humidConfig.scale).toFixed(1) : null;
-                },
-                times
-            );
+            const humidValues = fx.map((t) => {
+                const raw = timeMap[t]?.[humidConfig.metricCode];
+                return raw != null ? +(raw * humidConfig.scale).toFixed(1) : null;
+            }, times);
 
             const option = {
                 tooltip: {
@@ -1181,10 +1232,136 @@
                 .catch(e => console.warn(`[TempHumiditySensor] ${datasetName} fetch failed:`, e));
         }
 
+        // ======================================
+        // RUNTIME PARAMETER UPDATE API
+        // ======================================
+
+        function updateTrendParams(options) {
+            const { datasetNames } = this.config;
+            const trendInfo = this.datasetInfo.find(
+                d => d.datasetName === datasetNames.metricHistory
+            );
+            if (!trendInfo) return;
+
+            const { timeRange, interval, apiEndpoint, timeField } = options;
+            if (timeRange !== undefined)   trendInfo.param.timeRange = timeRange;
+            if (interval !== undefined)    trendInfo.param.interval = interval;
+            if (apiEndpoint !== undefined) trendInfo.param.apiEndpoint = apiEndpoint;
+            if (timeField !== undefined)   trendInfo.param.timeField = timeField;
+        }
+
+        function updateSensorSeriesMetric(seriesName, options) {
+            const { datasetNames, chart } = this.config;
+            const trendInfo = this.datasetInfo.find(
+                d => d.datasetName === datasetNames.metricHistory
+            );
+            if (!trendInfo) return;
+
+            const seriesConfig = chart.series[seriesName];
+            if (!seriesConfig) return;
+
+            const { metricCode, statsKey, scale, label } = options;
+
+            // metricCode 변경 시 statsKey 필수 검증
+            if (metricCode !== undefined && statsKey === undefined) {
+                console.warn(`[updateSensorSeriesMetric] metricCode 변경 시 statsKey 필수 (series: ${seriesName})`);
+                return;
+            }
+
+            // chart.series 업데이트 + statsKeyMap 업데이트
+            if (metricCode !== undefined) {
+                seriesConfig.metricCode = metricCode;
+                this.config.api.statsKeyMap[metricCode] = statsKey;
+            }
+
+            // UI 필드 업데이트
+            if (scale !== undefined) seriesConfig.scale = scale;
+            if (label !== undefined) seriesConfig.label = label;
+
+            // param.metricCodes 재구축
+            rebuildMetricCodes.call(this, trendInfo);
+        }
+
+        function rebuildMetricCodes(trendInfo) {
+            const codes = trendInfo.param.metricCodes;
+            codes.length = 0;
+
+            const { series } = this.config.chart;
+            Object.values(series).forEach(s => {
+                if (s.metricCode && !codes.includes(s.metricCode)) codes.push(s.metricCode);
+            });
+        }
+
+        function updateGlobalParams(options) {
+            const { assetKey, baseUrl, locale } = options;
+
+            if (assetKey !== undefined) this._defaultAssetKey = assetKey;
+            if (baseUrl !== undefined)  this._baseUrl = baseUrl;
+            if (locale !== undefined)   this._locale = locale;
+
+            this.datasetInfo.forEach(d => {
+                if (assetKey !== undefined) d.param.assetKey = assetKey;
+                if (baseUrl !== undefined)  d.param.baseUrl = baseUrl;
+                if (locale !== undefined)   d.param.locale = locale;
+            });
+        }
+
+        function updateRefreshInterval(datasetName, interval) {
+            const target = this.datasetInfo.find(d => d.datasetName === datasetName);
+            if (!target) return;
+            target.refreshInterval = interval;
+        }
+
+        // ======================================
+        // CATEGORY E: 현황카드 API
+        // ======================================
+
+        function updateSensorStatusMetric(key, options) {
+            const metric = this.config.statusCards.metrics[key];
+            if (!metric) {
+                console.warn(`[updateSensorStatusMetric] 존재하지 않는 키: ${key}`);
+                return;
+            }
+
+            const { metricCode, label, unit, color, scale, targetValue } = options;
+            if (metricCode !== undefined)   metric.metricCode = metricCode;
+            if (label !== undefined)        metric.label = label;
+            if (unit !== undefined)         metric.unit = unit;
+            if (color !== undefined)        metric.color = color;
+            if (scale !== undefined)        metric.scale = scale;
+            if (targetValue !== undefined)  metric.targetValue = targetValue;
+        }
+
+        function addSensorStatusMetric(key, options) {
+            const { metrics } = this.config.statusCards;
+            if (metrics[key]) {
+                console.warn(`[addSensorStatusMetric] 이미 존재하는 키: ${key}`);
+                return;
+            }
+
+            const { label, unit, metricCode = null, color = '#64748b', scale = 1.0, targetValue = null } = options;
+            if (!label || !unit) {
+                console.warn(`[addSensorStatusMetric] label과 unit은 필수`);
+                return;
+            }
+
+            metrics[key] = { metricCode, label, unit, color, scale, targetValue };
+        }
+
+        function removeSensorStatusMetric(key) {
+            const { metrics } = this.config.statusCards;
+            if (!metrics[key]) {
+                console.warn(`[removeSensorStatusMetric] 존재하지 않는 키: ${key}`);
+                return;
+            }
+
+            delete metrics[key];
+        }
+
         function onInstanceUnLoad() {
             this.stopRefresh();
             this.destroyPopup();
-            console.log('[TempHumiditySensor] Destroyed:', this.id);
+            console.log('[TempHumiditySensor] Destroyed:', this.setter?.assetInfo?.assetKey);
         }
 
         // ======================

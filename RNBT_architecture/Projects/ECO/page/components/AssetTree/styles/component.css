@@ -1,0 +1,291 @@
+/* ======================
+ * AssetTree Component Styles
+ * Container: #asset-tree-container
+ * Design: ECO Sidebar (Figma)
+ * ====================== */
+
+#asset-tree-container {
+    height: 100%;
+
+    /* ===== Panel (Glass Morphism) ===== */
+    .asset-tree-panel {
+        display: flex;
+        flex-direction: column;
+        height: 100%;
+        overflow: clip;
+        padding: 2px;
+        border-radius: 16px;
+        border: 2px solid rgba(144, 161, 185, 0.8);
+        background: rgba(19, 21, 33, 0.8);
+        backdrop-filter: blur(15px);
+        color: #e4ebf6;
+        font-family: 'Pretendard Variable', 'Pretendard', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    }
+
+    /* ===== Title Bar ===== */
+    .tree-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 10px 14px 11px;
+        background: rgba(19, 21, 33, 0.7);
+        border-bottom: 1px solid #1e293b;
+        flex-shrink: 0;
+    }
+
+    .tree-title {
+        font-weight: 700;
+        font-size: 16px;
+        color: #f8fafc;
+        line-height: normal;
+    }
+
+    .refresh-btn {
+        width: 24px;
+        height: 24px;
+        border: none;
+        border-radius: 4px;
+        background: transparent;
+        color: #64748b;
+        font-size: 14px;
+        cursor: pointer;
+        transition: color 0.2s;
+    }
+
+    .refresh-btn:hover {
+        color: #e4ebf6;
+    }
+
+    /* ===== Search ===== */
+    .tree-search {
+        padding: 8px 10px;
+        background: rgba(19, 21, 33, 0.7);
+        border-bottom: 1px solid #1e293b;
+        flex-shrink: 0;
+    }
+
+    .tree-search-input {
+        width: 100%;
+        padding: 5px 10px;
+        font-family: inherit;
+        font-size: 13px;
+        border: 1px solid rgba(100, 116, 139, 0.4);
+        border-radius: 6px;
+        background: rgba(40, 42, 55, 0.6);
+        color: #e4ebf6;
+        box-sizing: border-box;
+    }
+
+    .tree-search-input:focus {
+        outline: none;
+        border-color: rgba(96, 235, 255, 0.5);
+    }
+
+    .tree-search-input::placeholder {
+        color: #64748b;
+    }
+
+    /* ===== Tree Area ===== */
+    .tree-container {
+        flex: 1;
+        overflow-y: auto;
+        padding-top: 8px;
+        background: rgba(40, 42, 55, 0.5);
+    }
+
+    .tree-root {
+        margin: 0;
+        padding: 0;
+        list-style: none;
+    }
+
+    /* ===== Empty State ===== */
+    .tree-empty {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex: 1;
+        padding: 32px 16px;
+        background: rgba(40, 42, 55, 0.5);
+        color: #64748b;
+        font-size: 13px;
+        text-align: center;
+    }
+
+    .tree-empty[hidden] {
+        display: none;
+    }
+
+    /* ===== Tree Node ===== */
+    .tree-node {
+        margin: 0;
+        padding: 0;
+        list-style: none;
+        content-visibility: auto;
+        contain-intrinsic-size: auto 30px;
+    }
+
+    /* ===== Node Content (Row) ===== */
+    .node-content {
+        display: flex;
+        gap: 6px;
+        align-items: center;
+        height: 30px;
+        padding: 0 8px;
+        cursor: pointer;
+        transition: background 0.15s;
+        position: relative;
+    }
+
+    .node-content:hover {
+        background: rgba(30, 41, 59, 0.5);
+    }
+
+    /* ===== Chevron (Toggle) ===== */
+    .node-toggle {
+        width: 16px;
+        height: 16px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+        color: #64748b;
+        font-size: 0;
+        transition: transform 0.2s;
+    }
+
+    /* CSS chevron arrow */
+    .node-toggle::after {
+        content: '';
+        display: block;
+        width: 6px;
+        height: 6px;
+        border-right: 1.2px solid #64748b;
+        border-bottom: 1.2px solid #64748b;
+        transform: rotate(-45deg);
+        margin-left: -2px;
+    }
+
+    .node-toggle.expanded {
+        transform: rotate(90deg);
+    }
+
+    /* Leaf: bullet dot instead of chevron */
+    .node-toggle.leaf {
+        visibility: visible;
+    }
+
+    .node-toggle.leaf::after {
+        width: 4px;
+        height: 4px;
+        border: none;
+        border-radius: 500px;
+        background: #e4ebf6;
+        transform: none;
+        margin-left: 0;
+    }
+
+    /* ===== Node Icon (hidden - Figma sidebar uses no emoji icons) ===== */
+    .node-icon {
+        display: none;
+    }
+
+    /* ===== Node Label ===== */
+    .node-label {
+        flex: 1;
+        font-weight: 400;
+        font-size: 14px;
+        color: #e4ebf6;
+        line-height: normal;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    /* ===== Child Count ===== */
+    .node-child-count {
+        font-size: 11px;
+        color: #64748b;
+        margin-left: 4px;
+        flex-shrink: 0;
+    }
+
+    /* ===== Status Dot ===== */
+    .node-status {
+        width: 6px;
+        height: 6px;
+        border-radius: 50%;
+        margin-left: 4px;
+        flex-shrink: 0;
+    }
+
+    .node-status.normal { background: #3fb950; }
+    .node-status.warning { background: #d29922; }
+    .node-status.critical { background: #f85149; }
+
+    /* ===== Equipment Node (Interactive Leaf) ===== */
+    .node-content.placed .node-label {
+        color: #60ebff;
+    }
+
+    .node-content.placed .node-toggle.leaf::after {
+        background: #60ebff;
+        box-shadow: 0px 0px 8px 0px rgba(96, 165, 250, 0.6);
+    }
+
+    /* Equipment hover → Figma selected state */
+    .node-content.placed:hover {
+        background:
+            linear-gradient(0deg, rgba(129, 225, 197, 0) 12.5%, rgba(129, 225, 197, 0.2) 137.5%),
+            linear-gradient(90deg, rgba(96, 235, 255, 0.2) 0%, rgba(96, 235, 255, 0.2) 100%),
+            linear-gradient(90deg, rgba(30, 41, 59, 0.6) 0%, rgba(30, 41, 59, 0.6) 100%);
+    }
+
+    /* Equipment hover → left tag */
+    .node-content.placed:hover::before {
+        content: '';
+        position: absolute;
+        left: 0;
+        top: 0;
+        bottom: 0;
+        width: 3px;
+        border-radius: 0 500px 500px 0;
+        background:
+            linear-gradient(0deg, rgba(129, 225, 197, 0) 12.5%, rgb(129, 225, 197) 137.5%),
+            linear-gradient(90deg, rgb(175, 238, 247) 0%, rgb(175, 238, 247) 100%);
+        box-shadow: 0px 0px 8px 0px rgba(96, 165, 250, 0.6);
+    }
+
+    /* ===== Children Container ===== */
+    .node-children {
+        margin: 0;
+        padding: 0;
+        padding-left: 10px;
+        list-style: none;
+        display: none;
+    }
+
+    .node-children.expanded {
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+    }
+
+    /* ===== Scrollbar ===== */
+    .tree-container::-webkit-scrollbar {
+        width: 4px;
+    }
+
+    .tree-container::-webkit-scrollbar-track {
+        background: transparent;
+    }
+
+    .tree-container::-webkit-scrollbar-thumb {
+        background: rgba(100, 116, 139, 0.4);
+        border-radius: 2px;
+    }
+
+    .tree-container::-webkit-scrollbar-thumb:hover {
+        background: rgba(100, 116, 139, 0.6);
+    }
+}

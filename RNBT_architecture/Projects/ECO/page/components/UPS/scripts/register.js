@@ -43,7 +43,7 @@ function initComponent() {
   // 1. 내부 상태
   // ======================
   this._defaultAssetKey = this.setter?.assetInfo?.assetKey || this.id;
-  this._baseUrl = '10.23.128.140:8811';
+  this._baseUrl = wemb.configManager.assetApiUrl.replace(/^https?:\/\//, '');
   this._locale = 'ko';
   this._popupTemplateId = 'popup-ups';
   this._trendData = null;
@@ -52,10 +52,10 @@ function initComponent() {
   // ======================
   // 2. 변환 함수 바인딩 (config.fields.transform에서 사용)
   // ======================
-  this.statusTypeToLabel = statusTypeToLabel.bind(this);       // 'ACTIVE' → '정상'
+  this.statusTypeToLabel = statusTypeToLabel.bind(this); // 'ACTIVE' → '정상'
   this.statusTypeToDataAttr = statusTypeToDataAttr.bind(this); // 'ACTIVE' → 'normal' (CSS 선택자용)
-  this.formatDate = formatDate.bind(this);                     // ISO → 'YYYY-MM-DD'
-  this.formatTimestamp = formatTimestamp.bind(this);           // ISO → 'HH:mm:ss'
+  this.formatDate = formatDate.bind(this); // ISO → 'YYYY-MM-DD'
+  this.formatTimestamp = formatTimestamp.bind(this); // ISO → 'HH:mm:ss'
 
   // ======================
   // 3. Config 통합 (this.config로 모든 설정 접근)
@@ -77,9 +77,12 @@ function initComponent() {
         interval: '1h',
         timeRange: 24 * 60 * 60 * 1000,
         metricCodes: [
-          'UPS.INPUT_A_SUM', 'UPS.OUTPUT_A_SUM',
-          'UPS.INPUT_V_AVG', 'UPS.OUTPUT_V_AVG',
-          'UPS.INPUT_F_AVG', 'UPS.OUTPUT_F_AVG',
+          'UPS.INPUT_A_SUM',
+          'UPS.OUTPUT_A_SUM',
+          'UPS.INPUT_V_AVG',
+          'UPS.OUTPUT_V_AVG',
+          'UPS.INPUT_F_AVG',
+          'UPS.OUTPUT_F_AVG',
         ],
         statsKeys: [],
         timeField: 'time',
@@ -114,7 +117,12 @@ function initComponent() {
         { key: 'name', selector: '.ups-name' },
         { key: 'locationLabel', selector: '.ups-zone' },
         { key: 'statusType', selector: '.ups-status', transform: this.statusTypeToLabel },
-        { key: 'statusType', selector: '.ups-status', dataAttr: 'status', transform: this.statusTypeToDataAttr },
+        {
+          key: 'statusType',
+          selector: '.ups-status',
+          dataAttr: 'status',
+          transform: this.statusTypeToDataAttr,
+        },
       ],
     },
 
@@ -137,10 +145,34 @@ function initComponent() {
     // 전력현황 영역 (4카드)
     powerStatus: {
       metrics: {
-        batterySoc:   { label: '배터리 사용률',   unit: '%', metricCode: 'UPS.BATT_PCT', scale: 1.0 },
-        batteryTime:  { label: '배터리 잔여시간', unit: 'h', metricCode: null,          scale: 1.0 },  // API 미지원
-        loadRate:     { label: '부하율',         unit: '%', metricCode: 'UPS.LOAD_PCT', scale: 1.0 },
-        batteryVolt:  { label: '배터리 출력전압', unit: 'V', metricCode: 'UPS.BATT_V',   scale: 1.0 },
+        batterySoc: {
+          label: '배터리 사용률',
+          unit: '%',
+          metricCode: 'UPS.BATT_PCT',
+          scale: 1.0,
+          demoRange: [75, 100],
+        },
+        batteryTime: {
+          label: '배터리 잔여시간',
+          unit: 'h',
+          metricCode: null,
+          scale: 1.0,
+          demoRange: [2.0, 8.0],
+        }, // API 미지원
+        loadRate: {
+          label: '부하율',
+          unit: '%',
+          metricCode: 'UPS.LOAD_PCT',
+          scale: 1.0,
+          demoRange: [20, 65],
+        },
+        batteryVolt: {
+          label: '배터리 출력전압',
+          unit: 'V',
+          metricCode: 'UPS.BATT_V',
+          scale: 1.0,
+          demoRange: [380, 420],
+        },
       },
       selectors: {
         card: '.power-card',
@@ -154,19 +186,32 @@ function initComponent() {
     // 트렌드 차트 영역 (3탭)
     chart: {
       tabs: {
-        current:   { label: '입/출력 전류',   unit: 'A',  inputCode: 'UPS.INPUT_A_SUM',  outputCode: 'UPS.OUTPUT_A_SUM' },
-        voltage:   { label: '입/출력 전압',   unit: 'V',  inputCode: 'UPS.INPUT_V_AVG',  outputCode: 'UPS.OUTPUT_V_AVG' },
-        frequency: { label: '입/출력 주파수', unit: 'Hz', inputCode: 'UPS.INPUT_F_AVG',  outputCode: 'UPS.OUTPUT_F_AVG' },
+        current: {
+          label: '입/출력 전류',
+          unit: 'A',
+          inputCode: 'UPS.INPUT_A_SUM',
+          outputCode: 'UPS.OUTPUT_A_SUM',
+        },
+        voltage: {
+          label: '입/출력 전압',
+          unit: 'V',
+          inputCode: 'UPS.INPUT_V_AVG',
+          outputCode: 'UPS.OUTPUT_V_AVG',
+        },
+        frequency: {
+          label: '입/출력 주파수',
+          unit: 'Hz',
+          inputCode: 'UPS.INPUT_F_AVG',
+          outputCode: 'UPS.OUTPUT_F_AVG',
+        },
       },
       series: {
-        input:  { label: '입력', color: '#f59e0b' },
+        input: { label: '입력', color: '#f59e0b' },
         output: { label: '출력', color: '#22c55e' },
       },
       selectors: {
         container: '.chart-container',
         tabBtn: '.tab-btn',
-        legendInput: '.legend-input .legend-label',
-        legendOutput: '.legend-output .legend-label',
       },
     },
   };
@@ -175,12 +220,31 @@ function initComponent() {
   // 4. 데이터셋 정의
   // ======================
   const { datasetNames, api } = this.config;
-  const baseParam = { baseUrl: this._baseUrl, assetKey: this._defaultAssetKey, locale: this._locale };
+  const baseParam = {
+    baseUrl: this._baseUrl,
+    assetKey: this._defaultAssetKey,
+    locale: this._locale,
+  };
 
   this.datasetInfo = [
-    { datasetName: datasetNames.assetDetail, param: { ...baseParam }, render: ['renderBasicInfo'], refreshInterval: 0 },
-    { datasetName: datasetNames.metricLatest, param: { ...baseParam }, render: ['renderPowerStatus'], refreshInterval: 5000 },
-    { datasetName: datasetNames.metricHistory, param: { ...baseParam, ...api.trendParams, apiEndpoint: api.trendHistory }, render: ['renderTrendChart'], refreshInterval: 5000 },
+    {
+      datasetName: datasetNames.assetDetail,
+      param: { ...baseParam },
+      render: ['renderBasicInfo'],
+      refreshInterval: 0,
+    },
+    {
+      datasetName: datasetNames.metricLatest,
+      param: { ...baseParam },
+      render: ['renderPowerStatus'],
+      refreshInterval: 5000,
+    },
+    {
+      datasetName: datasetNames.metricHistory,
+      param: { ...baseParam, ...api.trendParams, apiEndpoint: api.trendHistory },
+      render: ['renderTrendChart'],
+      refreshInterval: 5000,
+    },
   ];
 
   // ======================
@@ -245,6 +309,14 @@ function initComponent() {
 
   applyEChartsMixin(this);
 
+  // destroyPopup 체인 확장 - interval 정리
+  const _origDestroyPopup = this.destroyPopup;
+  const _ctx = this;
+  this.destroyPopup = function() {
+    _ctx.stopRefresh();
+    _origDestroyPopup.call(_ctx);
+  };
+
   console.log('[UPS] Registered:', this._defaultAssetKey);
 }
 
@@ -259,21 +331,21 @@ function showDetail() {
   this._activeTab = 'voltage';
   const tabBtns = this.popupQueryAll(this.config.chart.selectors.tabBtn);
   if (tabBtns) {
-    tabBtns.forEach(btn => btn.classList.toggle('active', btn.dataset.tab === 'voltage'));
+    tabBtns.forEach((btn) => btn.classList.toggle('active', btn.dataset.tab === 'voltage'));
   }
 
   // 모든 datasetInfo를 fetchData로 호출
   fx.go(
     this.datasetInfo,
-    fx.each(d => fetchDatasetAndRender.call(this, d))
+    fx.each((d) => fetchDatasetAndRender.call(this, d))
   );
 
   // refreshInterval > 0인 데이터셋에 대해 주기적 갱신 시작
   this.stopRefresh();
   fx.go(
     this.datasetInfo,
-    fx.filter(d => d.refreshInterval > 0),
-    fx.each(d => {
+    fx.filter((d) => d.refreshInterval > 0),
+    fx.each((d) => {
       d._intervalId = setInterval(() => fetchDatasetAndRender.call(this, d), d.refreshInterval);
     })
   );
@@ -285,10 +357,11 @@ function hideDetail() {
 }
 
 function stopRefresh() {
+  const datasetInfo = this.datasetInfo ?? [];
   fx.go(
-    this.datasetInfo,
-    fx.filter(d => d._intervalId),
-    fx.each(d => {
+    datasetInfo,
+    fx.filter((d) => d._intervalId),
+    fx.each((d) => {
       clearInterval(d._intervalId);
       d._intervalId = null;
     })
@@ -338,15 +411,15 @@ function fetchDatasetAndRender(d) {
   }
 
   fetchData(this.page, datasetName, param)
-    .then(response => {
+    .then((response) => {
       const data = extractData(response);
       if (!data) return;
       if (datasetName === datasetNames.metricHistory) {
         this._trendData = data;
       }
-      fx.each(fn => this[fn](response), render);
+      fx.each((fn) => this[fn](response), render);
     })
-    .catch(e => console.warn(`[UPS] ${datasetName} fetch failed:`, e));
+    .catch((e) => console.warn(`[UPS] ${datasetName} fetch failed:`, e));
 }
 
 // ======================
@@ -366,17 +439,39 @@ function renderBasicInfo({ response }) {
   // Header 영역
   fx.go(
     header.fields,
-    fx.each(field => renderField(this, asset, field))
+    fx.each((field) => renderField(this, asset, field))
   );
 
   // 기본정보 테이블
   fx.go(
     infoTable.fields,
-    fx.each(field => renderField(this, asset, field))
+    fx.each((field) => renderField(this, asset, field))
   );
 
   // 제조사명/모델 체이닝
   fetchModelVendorChain(this, asset, infoTable.chain);
+
+  // properties 동적 렌더링 (기본정보 테이블에 행 추가)
+  renderPropertiesRows(this, data.properties);
+}
+
+function renderPropertiesRows(ctx, properties) {
+  if (!properties || properties.length === 0) return;
+
+  const tbody = ctx.popupQuery('.info-table tbody');
+  if (!tbody) return;
+
+  tbody.querySelectorAll('tr[data-property]').forEach((tr) => tr.remove());
+
+  [...properties]
+    .sort((a, b) => (a.displayOrder || 0) - (b.displayOrder || 0))
+    .forEach(({ fieldKey, label, value, helpText }) => {
+      const tr = document.createElement('tr');
+      tr.dataset.property = fieldKey;
+      if (helpText) tr.title = helpText;
+      tr.innerHTML = `<th>${label}</th><td>${value ?? '-'}</td>`;
+      tbody.appendChild(tr);
+    });
 }
 
 function renderField(ctx, data, field) {
@@ -401,7 +496,10 @@ function fetchModelVendorChain(ctx, asset, chainConfig) {
   if (!asset.assetModelKey) return;
 
   fx.go(
-    fetchData(ctx.page, datasetNames.modelDetail, { baseUrl: ctx._baseUrl, assetModelKey: asset.assetModelKey }),
+    fetchData(ctx.page, datasetNames.modelDetail, {
+      baseUrl: ctx._baseUrl,
+      assetModelKey: asset.assetModelKey,
+    }),
     (modelResp) => {
       const model = extractData(modelResp, 'data');
       if (!model) return;
@@ -409,7 +507,10 @@ function fetchModelVendorChain(ctx, asset, chainConfig) {
 
       if (model.assetVendorKey) {
         fx.go(
-          fetchData(ctx.page, datasetNames.vendorDetail, { baseUrl: ctx._baseUrl, assetVendorKey: model.assetVendorKey }),
+          fetchData(ctx.page, datasetNames.vendorDetail, {
+            baseUrl: ctx._baseUrl,
+            assetVendorKey: model.assetVendorKey,
+          }),
           (vendorResp) => {
             const vendor = extractData(vendorResp, 'data');
             if (vendor) setCell(chainConfig.vendor, vendor.name);
@@ -442,7 +543,9 @@ function renderPowerStatus({ response }) {
 
   // 메트릭 코드 → 값 매핑
   const metricMap = fx.reduce(
-    (acc, m) => (acc[m.metricCode] = m.valueType === 'NUMBER' ? m.valueNumber : m.valueString, acc),
+    (acc, m) => (
+      (acc[m.metricCode] = m.valueType === 'NUMBER' ? m.valueNumber : m.valueString), acc
+    ),
     {},
     data
   );
@@ -459,13 +562,15 @@ function updatePowerCard(ctx, selectors, metricMap, key, cfg) {
   const valueEl = card?.querySelector(selectors.value);
   if (!valueEl) return;
 
-  if (!cfg.metricCode) {
+  const rawValue = cfg.metricCode ? metricMap[cfg.metricCode] : undefined;
+  if (rawValue != null) {
+    valueEl.textContent = (rawValue * cfg.scale).toFixed(1);
+  } else if (cfg.demoRange) {
+    const [min, max] = cfg.demoRange;
+    valueEl.textContent = (min + Math.random() * (max - min)).toFixed(1);
+  } else {
     valueEl.textContent = '-';
-    return;
   }
-
-  const rawValue = metricMap[cfg.metricCode];
-  valueEl.textContent = rawValue != null ? (rawValue * cfg.scale).toFixed(1) : '-';
 }
 
 // ======================
@@ -488,7 +593,7 @@ function renderTrendChart({ response }) {
 
   // 현재 탭의 metricCode로 필터링
   const tabMetricCodes = [tabConfig.inputCode, tabConfig.outputCode];
-  const tabData = safeData.filter(row => tabMetricCodes.includes(row.metricCode));
+  const tabData = safeData.filter((row) => tabMetricCodes.includes(row.metricCode));
 
   // 필터링된 데이터로 시간별 그룹핑
   const timeMap = fx.reduce(
@@ -496,7 +601,7 @@ function renderTrendChart({ response }) {
       const time = row[timeKey];
       if (!acc[time]) acc[time] = {};
       const statsKey = this.config.api.statsKeyMap[row.metricCode];
-      acc[time][row.metricCode] = statsKey ? (row.statsBody?.[statsKey] ?? null) : null;
+      acc[time][row.metricCode] = statsKey ? row.statsBody?.[statsKey] ?? null : null;
       return acc;
     },
     {},
@@ -505,10 +610,11 @@ function renderTrendChart({ response }) {
 
   const times = Object.keys(timeMap);
 
-  const extractValues = (code) => fx.map(t => {
-    const raw = timeMap[t]?.[code];
-    return raw != null ? +(raw).toFixed(2) : null;
-  }, times);
+  const extractValues = (code) =>
+    fx.map((t) => {
+      const raw = timeMap[t]?.[code];
+      return raw != null ? +raw.toFixed(2) : null;
+    }, times);
 
   const inputValues = extractValues(tabConfig.inputCode);
   const outputValues = extractValues(tabConfig.outputCode);
@@ -552,7 +658,10 @@ function renderTrendChart({ response }) {
         areaStyle: {
           color: {
             type: 'linear',
-            x: 0, y: 0, x2: 0, y2: 1,
+            x: 0,
+            y: 0,
+            x2: 0,
+            y2: 1,
             colorStops: [
               { offset: 0, color: hexToRgba(inputSeries.color, 0.2) },
               { offset: 1, color: hexToRgba(inputSeries.color, 0) },
@@ -570,7 +679,10 @@ function renderTrendChart({ response }) {
         areaStyle: {
           color: {
             type: 'linear',
-            x: 0, y: 0, x2: 0, y2: 1,
+            x: 0,
+            y: 0,
+            x2: 0,
+            y2: 1,
             colorStops: [
               { offset: 0, color: hexToRgba(outputSeries.color, 0.2) },
               { offset: 1, color: hexToRgba(outputSeries.color, 0) },
@@ -604,7 +716,11 @@ function formatDate(dateStr) {
   if (!dateStr) return '-';
   try {
     const date = new Date(dateStr);
-    return date.toLocaleDateString('ko-KR', { year: 'numeric', month: '2-digit', day: '2-digit' });
+    return date.toLocaleDateString('ko-KR', {
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+    });
   } catch {
     return dateStr;
   }
@@ -614,7 +730,11 @@ function formatTimestamp(isoString) {
   if (!isoString) return '';
   try {
     const date = new Date(isoString);
-    return date.toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+    return date.toLocaleTimeString('ko-KR', {
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit',
+    });
   } catch {
     return '';
   }
@@ -654,7 +774,7 @@ function renderInitialLabels() {
 
   // DOM에 있지만 config에 없는 카드 제거
   if (container) {
-    container.querySelectorAll(selectors.card).forEach(card => {
+    container.querySelectorAll(selectors.card).forEach((card) => {
       if (!metrics[card.dataset.metric]) card.remove();
     });
   }
@@ -668,11 +788,6 @@ function renderInitialLabels() {
     })
   );
 
-  // 범례 라벨
-  const inputLegend = this.popupQuery(chart.selectors.legendInput);
-  const outputLegend = this.popupQuery(chart.selectors.legendOutput);
-  if (inputLegend) inputLegend.textContent = chart.series.input.label;
-  if (outputLegend) outputLegend.textContent = chart.series.output.label;
 }
 
 // ======================================
@@ -681,23 +796,19 @@ function renderInitialLabels() {
 
 function updateTrendParams(options) {
   const { datasetNames } = this.config;
-  const trendInfo = this.datasetInfo.find(
-    d => d.datasetName === datasetNames.metricHistory
-  );
+  const trendInfo = this.datasetInfo.find((d) => d.datasetName === datasetNames.metricHistory);
   if (!trendInfo) return;
 
   const { timeRange, interval, apiEndpoint, timeField } = options;
-  if (timeRange !== undefined)   trendInfo.param.timeRange = timeRange;
-  if (interval !== undefined)    trendInfo.param.interval = interval;
+  if (timeRange !== undefined) trendInfo.param.timeRange = timeRange;
+  if (interval !== undefined) trendInfo.param.interval = interval;
   if (apiEndpoint !== undefined) trendInfo.param.apiEndpoint = apiEndpoint;
-  if (timeField !== undefined)   trendInfo.param.timeField = timeField;
+  if (timeField !== undefined) trendInfo.param.timeField = timeField;
 }
 
 function updateUpsTabMetric(tabName, options) {
   const { datasetNames, chart } = this.config;
-  const trendInfo = this.datasetInfo.find(
-    d => d.datasetName === datasetNames.metricHistory
-  );
+  const trendInfo = this.datasetInfo.find((d) => d.datasetName === datasetNames.metricHistory);
   if (!trendInfo) return;
 
   const tab = chart.tabs[tabName];
@@ -723,7 +834,7 @@ function updateUpsTabMetric(tabName, options) {
 
   // UI 필드 업데이트
   if (label !== undefined) tab.label = label;
-  if (unit !== undefined)  tab.unit = unit;
+  if (unit !== undefined) tab.unit = unit;
 
   // param.metricCodes 재구축
   rebuildMetricCodes.call(this, trendInfo);
@@ -734,8 +845,8 @@ function rebuildMetricCodes(trendInfo) {
   codes.length = 0;
 
   const { tabs } = this.config.chart;
-  Object.values(tabs).forEach(tab => {
-    if (tab.inputCode && !codes.includes(tab.inputCode))   codes.push(tab.inputCode);
+  Object.values(tabs).forEach((tab) => {
+    if (tab.inputCode && !codes.includes(tab.inputCode)) codes.push(tab.inputCode);
     if (tab.outputCode && !codes.includes(tab.outputCode)) codes.push(tab.outputCode);
   });
 }
@@ -744,18 +855,18 @@ function updateGlobalParams(options) {
   const { assetKey, baseUrl, locale } = options;
 
   if (assetKey !== undefined) this._defaultAssetKey = assetKey;
-  if (baseUrl !== undefined)  this._baseUrl = baseUrl;
-  if (locale !== undefined)   this._locale = locale;
+  if (baseUrl !== undefined) this._baseUrl = baseUrl;
+  if (locale !== undefined) this._locale = locale;
 
-  this.datasetInfo.forEach(d => {
+  this.datasetInfo.forEach((d) => {
     if (assetKey !== undefined) d.param.assetKey = assetKey;
-    if (baseUrl !== undefined)  d.param.baseUrl = baseUrl;
-    if (locale !== undefined)   d.param.locale = locale;
+    if (baseUrl !== undefined) d.param.baseUrl = baseUrl;
+    if (locale !== undefined) d.param.locale = locale;
   });
 }
 
 function updateRefreshInterval(datasetName, interval) {
-  const target = this.datasetInfo.find(d => d.datasetName === datasetName);
+  const target = this.datasetInfo.find((d) => d.datasetName === datasetName);
   if (!target) return;
   target.refreshInterval = interval;
 }
@@ -773,9 +884,9 @@ function updateUpsStatusMetric(key, options) {
 
   const { metricCode, label, unit, scale } = options;
   if (metricCode !== undefined) metric.metricCode = metricCode;
-  if (label !== undefined)      metric.label = label;
-  if (unit !== undefined)       metric.unit = unit;
-  if (scale !== undefined)      metric.scale = scale;
+  if (label !== undefined) metric.label = label;
+  if (unit !== undefined) metric.unit = unit;
+  if (scale !== undefined) metric.scale = scale;
 }
 
 function addUpsStatusMetric(key, options) {

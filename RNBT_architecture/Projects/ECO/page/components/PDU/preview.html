@@ -75,8 +75,13 @@
                             </div>
                         </div>
                         <div class="popup-body">
+                            <!-- Section 1: 기본정보 (이미지 + 테이블) -->
                             <div class="section info-section">
-                                <div class="info-layout">
+                                <div class="section-header">
+                                    <span class="section-title">기본정보</span>
+                                </div>
+                                <div class="info-content">
+                                    <div class="info-layout">
                                     <div class="switch-panel">
                                         <div class="switch-panel-header">
                                             <span class="switch-panel-title">회로 차단기</span>
@@ -98,8 +103,10 @@
                                             <tr><th>설치일</th><td class="info-install-date">-</td></tr>
                                         </tbody>
                                     </table>
+                                    </div>
                                 </div>
                             </div>
+                            <!-- Section 2: 실시간 전력추이현황 (4탭 트렌드 차트) -->
                             <div class="section chart-section">
                                 <div class="section-header">
                                     <span class="section-title">실시간 전력추이현황</span>
@@ -125,23 +132,29 @@
         // ======================
         const cssCode = `
             .popup-overlay {
-                position: absolute; top: 0; right: 0; height: 100%;
-                pointer-events: none; z-index: 1000;
+                position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
+                background: rgba(0, 0, 0, 0.6);
+                display: flex; align-items: center; justify-content: center; z-index: 1000;
             }
             .popup-content {
-                background: #1a1f2e; border-radius: 12px 0 0 12px;
-                width: 560px; height: 100%;
-                overflow: hidden; box-shadow: -4px 0 24px rgba(0, 0, 0, 0.4);
-                border: 1px solid #2a3142; border-right: none;
-                display: flex; flex-direction: column; pointer-events: auto;
+                background: #131521; border-radius: 16px;
+                width: 560px; max-width: 90vw; height: 80vh;
+                overflow: hidden; box-shadow: 0px 0px 24px 0px rgba(0, 0, 0, 0.45);
+                border: 1px solid #6b6b70;
+                display: flex; flex-direction: column;
             }
             .popup-header {
                 display: flex; justify-content: space-between; align-items: center;
-                padding: 20px 24px; border-bottom: 1px solid #2a3142; flex-shrink: 0;
+                padding: 20px 20px 15px 20px; border-bottom: 1px solid #6b6b70;
+                background:
+                    linear-gradient(rgba(96, 144, 255, 0) 0%, rgba(96, 144, 255, 0.04) 100%),
+                    linear-gradient(90deg, rgba(96, 144, 255, 0.05) 0%, rgba(96, 144, 255, 0.05) 100%),
+                    linear-gradient(90deg, rgba(19, 21, 33, 0.8) 0%, rgba(19, 21, 33, 0.8) 100%);
+                backdrop-filter: blur(15px); flex-shrink: 0;
             }
             .header-info { display: flex; flex-direction: column; gap: 4px; }
-            .pdu-name { margin: 0; font-size: 18px; font-weight: 600; color: #e0e6ed; }
-            .pdu-zone { font-size: 13px; color: #8892a0; }
+            .pdu-name { margin: 0; font-size: 18px; font-weight: 600; color: #f8fafc; }
+            .pdu-zone { font-size: 13px; color: #a7acbc; }
             .header-actions { display: flex; align-items: center; gap: 12px; }
             .pdu-status { padding: 4px 12px; border-radius: 12px; font-size: 12px; font-weight: 500; }
             .pdu-status[data-status="normal"] { background: rgba(34, 197, 94, 0.15); color: #22c55e; }
@@ -151,46 +164,51 @@
                 display: flex; align-items: center; justify-content: center;
                 width: 32px; height: 32px; padding: 0;
                 background: transparent; border: none; border-radius: 6px;
-                color: #8892a0; cursor: pointer; transition: background 0.15s, color 0.15s;
+                color: #a7acbc; cursor: pointer; transition: background 0.15s, color 0.15s;
             }
-            .close-btn:hover { background: #2a3142; color: #e0e6ed; }
+            .close-btn:hover { background: rgba(255, 255, 255, 0.1); color: #f8fafc; }
             .popup-body {
-                padding: 20px 24px; display: flex; flex-direction: column; gap: 16px;
+                padding: 16px; display: flex; flex-direction: column; gap: 20px;
                 flex: 1; min-height: 0; overflow-y: auto;
+                background: rgba(2, 6, 23, 0.6); backdrop-filter: blur(15px); position: relative;
             }
-            .section { background: #252b3b; border-radius: 8px; overflow: hidden; flex-shrink: 0; }
+            .popup-body::after {
+                content: ''; position: absolute; inset: 0; border-radius: inherit;
+                box-shadow: inset 0px 0px 8px 0px rgba(0, 0, 0, 0.25); pointer-events: none;
+            }
+            .section { background: #282a37; border: 1px solid #323234; border-radius: 8px; overflow: hidden; flex-shrink: 0; }
             .section-header {
                 display: flex; justify-content: space-between; align-items: center;
-                padding: 12px 16px; border-bottom: 1px solid #2a3142;
+                padding: 12px 16px; border-bottom: 1px solid #323234;
             }
-            .section-title { font-size: 13px; font-weight: 500; color: #8892a0; letter-spacing: 0.5px; }
+            .section-title { font-size: 16px; font-weight: 500; color: #e4ebf6; letter-spacing: -0.32px; }
 
             /* 기본정보 */
-            .info-section { padding: 16px; }
-            .info-layout { display: flex; gap: 16px; }
+            .info-section .info-content { padding: 16px; max-height: 280px; overflow-y: auto; }
+            .info-layout { display: flex; gap: 10px; }
             /* Switch Panel (회로 차단기) */
             .switch-panel {
-                width: 140px; background: #1a1f2e; border-radius: 8px;
-                border: 1px solid #2a3142; flex-shrink: 0;
+                width: 140px; background: #282a37; border-radius: 8px;
+                border: 1px solid #323234; flex-shrink: 0;
                 display: flex; flex-direction: column; overflow: hidden;
             }
             .switch-panel-header {
                 display: flex; justify-content: space-between; align-items: center;
-                padding: 6px 10px; border-bottom: 1px solid #2a3142;
+                padding: 6px 10px; border-bottom: 1px solid #323234;
             }
-            .switch-panel-title { font-size: 11px; color: #8892a0; font-weight: 500; }
-            .switch-panel-count { font-size: 10px; color: #6b7280; }
+            .switch-panel-title { font-size: 11px; color: #e4ebf6; font-weight: 500; }
+            .switch-panel-count { font-size: 10px; color: #a7acbc; }
             .switch-panel-body {
                 padding: 6px; display: flex; flex-direction: column; gap: 4px;
                 max-height: 180px; overflow-y: auto;
             }
-            .switch-panel-empty { padding: 12px 4px; text-align: center; color: #6b7280; font-size: 11px; }
+            .switch-panel-empty { padding: 12px 4px; text-align: center; color: #a7acbc; font-size: 11px; }
             .switch-item {
                 display: flex; align-items: center; gap: 8px;
                 padding: 4px 6px; border-radius: 4px; cursor: pointer;
                 transition: background 0.15s;
             }
-            .switch-item:hover { background: #252b3b; }
+            .switch-item:hover { background: rgba(255, 255, 255, 0.1); }
             .switch-toggle {
                 width: 28px; height: 14px; border-radius: 7px;
                 background: #374151; position: relative; flex-shrink: 0;
@@ -203,25 +221,33 @@
             }
             .switch-toggle[data-on="true"] { background: rgba(34, 197, 94, 0.3); }
             .switch-toggle[data-on="true"]::after { transform: translateX(14px); background: #22c55e; }
-            .switch-label { font-size: 11px; color: #e0e6ed; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex: 1; }
-            .info-table { flex: 1; border-collapse: collapse; font-size: 13px; }
-            .info-table th, .info-table td { padding: 5px 8px; text-align: left; border-bottom: 1px solid rgba(42, 49, 66, 0.5); }
-            .info-table th { color: #8892a0; font-weight: 400; white-space: nowrap; width: 70px; }
-            .info-table td { color: #e0e6ed; font-weight: 500; }
-            .info-table tr:last-child th, .info-table tr:last-child td { border-bottom: none; }
+            .switch-label { font-size: 11px; color: #f8fafc; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex: 1; }
+            .info-table { flex: 1; border-collapse: separate; border-spacing: 0 2px; font-size: 12px; }
+            .info-table th, .info-table td { padding: 4px 8px; text-align: left; border-bottom: none; }
+            .info-table th { color: #e4ebf6; font-weight: 500; white-space: nowrap; width: 80px; }
+            .info-table td { color: #f8fafc; font-weight: 400; background: rgba(255, 255, 255, 0.1); border-radius: 4px; }
 
             /* 차트 */
             .chart-section { flex: 1; min-height: 280px; display: flex; flex-direction: column; }
-            .tab-header { display: flex; gap: 4px; padding: 8px 16px; border-bottom: 1px solid #2a3142; flex-shrink: 0; }
-            .tab-btn {
-                padding: 6px 12px; background: transparent; border: none; border-radius: 6px;
-                color: #8892a0; font-size: 12px; font-weight: 500; cursor: pointer;
-                transition: background 0.15s, color 0.15s;
+            .tab-header {
+                display: flex; align-items: center; margin: 12px 16px;
+                background: rgba(255, 255, 255, 0.1); border-radius: 8px; flex-shrink: 0;
             }
-            .tab-btn:hover { background: #252b3b; color: #e0e6ed; }
-            .tab-btn.active { background: #3b82f6; color: #fff; }
-            .chart-container { flex: 1; min-height: 200px; width: 100%; }
-            .empty-state { padding: 24px 16px; text-align: center; color: #6b7280; font-size: 13px; }
+            .tab-btn {
+                padding: 8px 16px; background: transparent; border: none; border-radius: 8px;
+                color: #a7acbc; font-size: 13px; font-weight: 400; cursor: pointer;
+                transition: background 0.2s, color 0.2s, box-shadow 0.2s;
+            }
+            .tab-btn:hover { color: #e4ebf6; }
+            .tab-btn.active {
+                background:
+                    linear-gradient(-8.6deg, rgba(96, 235, 255, 0) 9.76%, rgba(96, 255, 234, 0.8) 93.85%),
+                    linear-gradient(-13.49deg, rgba(112, 132, 245, 0) 15.24%, rgb(129, 225, 197) 112.01%),
+                    linear-gradient(90deg, rgb(175, 238, 247) 0%, rgb(175, 238, 247) 100%);
+                box-shadow: 0px 4px 6px 0px rgba(0, 0, 0, 0.35); color: #1e202c; font-weight: 600;
+            }
+            .chart-container { flex: 1; min-height: 200px; width: 100%; background: #282a37; border: 1px solid #323234; border-radius: 8px; margin: 0 0 4px 0; }
+            .empty-state { padding: 24px 16px; text-align: center; color: #a7acbc; font-size: 13px; }
             .error-state { padding: 24px 16px; text-align: center; color: #ef4444; font-size: 13px; }
         `;
 
@@ -280,7 +306,13 @@
                     usageCode: '랙 전원 분배', installDate: '2025-10-23T00:00:00.000Z',
                     assetModelKey: 'model-pdu-001', assetModelName: 'SUS-PDB-800'
                 },
-                properties: []
+                properties: [
+                    { fieldKey: 'rated_voltage', label: '정격전압', value: '380V', helpText: '정격 전압', displayOrder: 1 },
+                    { fieldKey: 'rated_current', label: '정격전류', value: '800A', helpText: '정격 전류', displayOrder: 2 },
+                    { fieldKey: 'phase', label: '상', value: '3Ø (3상)', helpText: '상 구성', displayOrder: 3 },
+                    { fieldKey: 'main_breaker_capacity', label: '주 차단기 용량', value: '1000A', helpText: '주 차단기 정격 용량', displayOrder: 4 },
+                    { fieldKey: 'upstream_equipment', label: '상위전원장비', value: 'UPS-01', helpText: '전원 공급 상위 장비', displayOrder: 5 },
+                ]
             },
             warning: {
                 asset: {
@@ -289,7 +321,13 @@
                     usageCode: '냉각장치 전원', installDate: '2024-08-15T00:00:00.000Z',
                     assetModelKey: 'model-pdu-001', assetModelName: 'SUS-PDB-800'
                 },
-                properties: []
+                properties: [
+                    { fieldKey: 'rated_voltage', label: '정격전압', value: '380V', helpText: '정격 전압', displayOrder: 1 },
+                    { fieldKey: 'rated_current', label: '정격전류', value: '800A', helpText: '정격 전류', displayOrder: 2 },
+                    { fieldKey: 'phase', label: '상', value: '3Ø (3상)', helpText: '상 구성', displayOrder: 3 },
+                    { fieldKey: 'main_breaker_capacity', label: '주 차단기 용량', value: '1000A', helpText: '주 차단기 정격 용량', displayOrder: 4 },
+                    { fieldKey: 'upstream_equipment', label: '상위전원장비', value: 'UPS-01', helpText: '전원 공급 상위 장비', displayOrder: 5 },
+                ]
             },
             critical: {
                 asset: {
@@ -298,7 +336,13 @@
                     usageCode: '서버 전원', installDate: '2024-03-10T00:00:00.000Z',
                     assetModelKey: 'model-pdu-002', assetModelName: 'PDU-4200'
                 },
-                properties: []
+                properties: [
+                    { fieldKey: 'rated_voltage', label: '정격전압', value: '380V', helpText: '정격 전압', displayOrder: 1 },
+                    { fieldKey: 'rated_current', label: '정격전류', value: '800A', helpText: '정격 전류', displayOrder: 2 },
+                    { fieldKey: 'phase', label: '상', value: '3Ø (3상)', helpText: '상 구성', displayOrder: 3 },
+                    { fieldKey: 'main_breaker_capacity', label: '주 차단기 용량', value: '1000A', helpText: '주 차단기 정격 용량', displayOrder: 4 },
+                    { fieldKey: 'upstream_equipment', label: '상위전원장비', value: 'UPS-01', helpText: '전원 공급 상위 장비', displayOrder: 5 },
+                ]
             }
         };
 
@@ -413,6 +457,9 @@
                     if (container) {
                         const chart = echarts.init(container);
                         ctx._setChartRef(chart);
+                        const ro = new ResizeObserver(() => chart.resize());
+                        ro.observe(container);
+                        ctx._chartResizeObserver = ro;
                         console.log('[EChartsMixin] Chart created');
                     }
                 };
@@ -420,7 +467,13 @@
                     let chart = ctx._getChartRef();
                     if (!chart) {
                         const container = ctx.popupQuery(selector);
-                        if (container) { chart = echarts.init(container); ctx._setChartRef(chart); }
+                        if (container) {
+                            chart = echarts.init(container);
+                            ctx._setChartRef(chart);
+                            const ro = new ResizeObserver(() => chart.resize());
+                            ro.observe(container);
+                            ctx._chartResizeObserver = ro;
+                        }
                     }
                     if (chart) { chart.setOption(option, true); console.log('[EChartsMixin] Chart updated'); }
                 };
@@ -496,7 +549,7 @@
             // 1. 내부 상태
             // ======================
             this._defaultAssetKey = this.setter?.assetInfo?.assetKey || this.id;
-            this._baseUrl = '10.23.128.125:4004';
+            this._baseUrl = '10.23.128.140:8811';
             this._locale = 'ko';
             this._popupTemplateId = 'popup-pdu';
             this._trendData = null;
@@ -650,6 +703,12 @@
             this.hideDetail = hideDetail.bind(this);
             this.stopRefresh = stopRefresh.bind(this);
             this._switchTab = switchTab.bind(this);
+
+            // Runtime Parameter Update API
+            this.updateTrendParams = updateTrendParams.bind(this);
+            this.updatePduTabMetric = updatePduTabMetric.bind(this);
+            this.updateGlobalParams = updateGlobalParams.bind(this);
+            this.updateRefreshInterval = updateRefreshInterval.bind(this);
 
             // ======================
             // 7. 3D 이벤트 바인딩
@@ -909,6 +968,28 @@
 
             // 제조사명/모델 체이닝
             fetchModelVendorChain(this, asset, infoTable.chain);
+
+            // properties 동적 렌더링 (기본정보 테이블에 행 추가)
+            renderPropertiesRows(this, data.properties);
+        }
+
+        function renderPropertiesRows(ctx, properties) {
+            if (!properties || properties.length === 0) return;
+
+            const tbody = ctx.popupQuery('.info-table tbody');
+            if (!tbody) return;
+
+            tbody.querySelectorAll('tr[data-property]').forEach(tr => tr.remove());
+
+            [...properties]
+                .sort((a, b) => (a.displayOrder || 0) - (b.displayOrder || 0))
+                .forEach(({ fieldKey, label, value, helpText }) => {
+                    const tr = document.createElement('tr');
+                    tr.dataset.property = fieldKey;
+                    if (helpText) tr.title = helpText;
+                    tr.innerHTML = `<th>${label}</th><td>${value ?? '-'}</td>`;
+                    tbody.appendChild(tr);
+                });
         }
 
         // ======================
@@ -1221,10 +1302,97 @@
             this.renderInitialLabels();
         }
 
+        // ======================================
+        // RUNTIME PARAMETER UPDATE API
+        // ======================================
+
+        function updateTrendParams(options) {
+            const { datasetNames } = this.config;
+            const trendInfo = this.datasetInfo.find(
+                d => d.datasetName === datasetNames.metricHistory
+            );
+            if (!trendInfo) return;
+
+            const { timeRange, interval, apiEndpoint, timeField } = options;
+            if (timeRange !== undefined)   trendInfo.param.timeRange = timeRange;
+            if (interval !== undefined)    trendInfo.param.interval = interval;
+            if (apiEndpoint !== undefined) trendInfo.param.apiEndpoint = apiEndpoint;
+            if (timeField !== undefined)   trendInfo.param.timeField = timeField;
+        }
+
+        function updatePduTabMetric(tabName, options) {
+            const { datasetNames, chart } = this.config;
+            const trendInfo = this.datasetInfo.find(
+                d => d.datasetName === datasetNames.metricHistory
+            );
+            if (!trendInfo) return;
+
+            const tab = chart.tabs[tabName];
+            if (!tab) return;
+
+            const { metricCode, statsKey, label, unit, color, scale } = options;
+
+            if (metricCode !== undefined && statsKey === undefined) {
+                console.warn(`[updatePduTabMetric] metricCode 변경 시 statsKey 필수 (tab: ${tabName})`);
+                return;
+            }
+
+            if (metricCode !== undefined) {
+                tab.metricCode = metricCode;
+                this.config.api.statsKeyMap[metricCode] = statsKey;
+            }
+
+            if (label !== undefined) tab.label = label;
+            if (unit !== undefined)  tab.unit = unit;
+            if (color !== undefined) tab.color = color;
+            if (scale !== undefined) tab.scale = scale;
+
+            rebuildMetricCodes.call(this, trendInfo);
+        }
+
+        function rebuildMetricCodes(trendInfo) {
+            const codes = trendInfo.param.metricCodes;
+            codes.length = 0;
+
+            const { tabs } = this.config.chart;
+            Object.values(tabs).forEach(tab => {
+                if (tab.metricCode && !codes.includes(tab.metricCode)) codes.push(tab.metricCode);
+            });
+        }
+
+        function updateGlobalParams(options) {
+            const { assetKey, baseUrl, locale } = options;
+
+            if (assetKey !== undefined) this._defaultAssetKey = assetKey;
+            if (baseUrl !== undefined)  this._baseUrl = baseUrl;
+            if (locale !== undefined)   this._locale = locale;
+
+            this.datasetInfo.forEach(d => {
+                if (assetKey !== undefined) d.param.assetKey = assetKey;
+                if (baseUrl !== undefined)  d.param.baseUrl = baseUrl;
+                if (locale !== undefined)   d.param.locale = locale;
+            });
+        }
+
+        function updateRefreshInterval(datasetName, interval) {
+            const target = this.datasetInfo.find(d => d.datasetName === datasetName);
+            if (!target) return;
+            target.refreshInterval = interval;
+        }
+
+        // ======================
+        // INSTANCE LIFECYCLE
+        // ======================
+
         function onInstanceUnLoad() {
             this.stopRefresh();
             this.destroyPopup();
-            console.log('[PDU] Destroyed:', this.id);
+
+            // 캐시 데이터 해제
+            this._trendData = null;
+            this._trendDataComparison = null;
+
+            console.log('[PDU] Destroyed:', this._defaultAssetKey);
         }
 
         // ======================

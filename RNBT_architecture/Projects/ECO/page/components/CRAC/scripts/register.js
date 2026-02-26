@@ -45,7 +45,7 @@ function initComponent() {
   // 1. 내부 상태
   // ======================
   this._defaultAssetKey = this.setter?.assetInfo?.assetKey || this.id;
-  this._baseUrl = '10.23.128.140:8811';
+  this._baseUrl = wemb.configManager.assetApiUrl.replace(/^https?:\/\//, '');
   this._locale = 'ko';
   this._popupTemplateId = 'popup-crac';
 
@@ -250,6 +250,14 @@ function initComponent() {
     temperatureMetrics: ['SENSOR.TEMP', 'CRAC.RETURN_TEMP'],
   });
 
+  // destroyPopup 체인 확장 - interval 정리
+  const _origDestroyPopup = this.destroyPopup;
+  const _ctx = this;
+  this.destroyPopup = function() {
+    _ctx.stopRefresh();
+    _origDestroyPopup.call(_ctx);
+  };
+
   console.log('[CRAC] Registered:', this._defaultAssetKey);
 }
 
@@ -283,8 +291,9 @@ function hideDetail() {
 }
 
 function stopRefresh() {
+  const datasetInfo = this.datasetInfo ?? [];
   fx.go(
-    this.datasetInfo,
+    datasetInfo,
     fx.filter(d => d._intervalId),
     fx.each(d => {
       clearInterval(d._intervalId);
@@ -356,6 +365,28 @@ function renderBasicInfo({ response }) {
 
   // 제조사명/모델 체이닝
   fetchModelVendorChain(this, asset, infoTable.chain);
+
+  // properties 동적 렌더링 (기본정보 테이블에 행 추가)
+  renderPropertiesRows(this, data.properties);
+}
+
+function renderPropertiesRows(ctx, properties) {
+  if (!properties || properties.length === 0) return;
+
+  const tbody = ctx.popupQuery('.info-table tbody');
+  if (!tbody) return;
+
+  tbody.querySelectorAll('tr[data-property]').forEach(tr => tr.remove());
+
+  [...properties]
+    .sort((a, b) => (a.displayOrder || 0) - (b.displayOrder || 0))
+    .forEach(({ fieldKey, label, value, helpText }) => {
+      const tr = document.createElement('tr');
+      tr.dataset.property = fieldKey;
+      if (helpText) tr.title = helpText;
+      tr.innerHTML = `<th>${label}</th><td>${value ?? '-'}</td>`;
+      tbody.appendChild(tr);
+    });
 }
 
 function renderField(ctx, data, field) {
@@ -806,7 +837,7 @@ function addCracStatusMetric(key, options) {
     return;
   }
 
-  const { label, unit, metricCode = null, scale = 1.0 } = options;
+  const { label, unit, metricCode = null, scale = 0.1 } = options;
   if (!label || !unit) {
     console.warn(`[addCracStatusMetric] label과 unit은 필수`);
     return;

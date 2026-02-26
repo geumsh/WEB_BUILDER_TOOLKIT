@@ -4,7 +4,323 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>PerformanceStatus - Preview</title>
-    <link rel="stylesheet" href="styles/component.css">
+    <style>
+        /* === component.css (inline) === */
+        /* Performance Status Component */
+        /* Font: Pretendard */
+        @import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css');
+
+        #performance-status-container {
+            /* Main container - 런타임에서 컨테이너가 제공하는 크기를 따름 */
+            .performance-status {
+                width: 100%;
+                height: 100%;
+                position: relative;
+                display: flex;
+                flex-direction: column;
+                align-items: flex-start;
+                justify-content: space-between;
+                padding: 14px 24px 20px 24px;
+                border-radius: 15px;
+                border: 1px solid #4d634e;
+                background: linear-gradient(to bottom, rgba(32, 44, 40, 0.8), rgba(8, 33, 25, 0.8));
+                backdrop-filter: blur(2px);
+                font-family: 'Pretendard', sans-serif;
+            }
+
+            /* Header section */
+            .header {
+                width: 100%;
+                display: flex;
+                flex-direction: column;
+                align-items: flex-end;
+                gap: 7px;
+                padding-top: 6px;
+                flex-shrink: 0;
+            }
+
+            .header-top {
+                width: 100%;
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+                flex-shrink: 0;
+            }
+
+            /* Title */
+            .title {
+                display: flex;
+                align-items: center;
+                gap: 9px;
+                flex-shrink: 0;
+            }
+
+            .icon {
+                width: 16.681px;
+                height: 18.27px;
+                flex-shrink: 0;
+            }
+
+            .icon img {
+                display: block;
+                width: 100%;
+                height: 100%;
+                max-width: none;
+            }
+
+            .title-text {
+                font-weight: 600;
+                font-size: 18px;
+                color: #e9ebeb;
+                white-space: nowrap;
+                line-height: normal;
+            }
+
+            /* Data badges */
+            .data {
+                display: flex;
+                align-items: center;
+                gap: 5px;
+                flex-shrink: 0;
+            }
+
+            .data-item {
+                height: 26px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                gap: 7px;
+                padding: 0 14px;
+                flex-shrink: 0;
+            }
+
+            .data-item p {
+                font-weight: 500;
+                font-size: 16px;
+                line-height: normal;
+                white-space: nowrap;
+            }
+
+            .data-count {
+                background-color: #3b4c46;
+                border-radius: 2px;
+            }
+
+            .data-count p {
+                color: #e9ebeb;
+            }
+
+            .data-tps {
+                background-color: #222222;
+                border: 1px solid #5e5e5e;
+                border-radius: 4px;
+            }
+
+            .data-tps p {
+                color: #0defcb;
+            }
+
+            .data-response {
+                background-color: #222222;
+                border: 1px solid #5e5e5e;
+                border-radius: 4px;
+            }
+
+            .data-response p {
+                color: #0de7ef;
+            }
+
+            /* Legend */
+            .legend {
+                display: flex;
+                align-items: center;
+                gap: 10px;
+                flex-shrink: 0;
+            }
+
+            .legend-item {
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                gap: 7px;
+                height: 22px;
+                border-radius: 20px;
+                flex-shrink: 0;
+            }
+
+            .legend-dot {
+                width: 8px;
+                height: 8px;
+                border-radius: 2px;
+                flex-shrink: 0;
+            }
+
+            .legend-dot.tps {
+                background-color: #0defcb;
+            }
+
+            .legend-dot.response {
+                background-color: #0de7ef;
+            }
+
+            .legend-item p {
+                font-weight: 500;
+                font-size: 13px;
+                color: #e9ebeb;
+                line-height: normal;
+                white-space: nowrap;
+            }
+
+            /* Container */
+            .container {
+                width: 100%;
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                justify-content: center;
+                gap: 15px;
+                padding: 6px 0;
+                flex-shrink: 0;
+            }
+
+            /* Items container for dynamic rendering */
+            .items-container {
+                width: 100%;
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                gap: 15px;
+            }
+
+            /* Row */
+            .row {
+                display: flex;
+                align-items: flex-start;
+                gap: 24px;
+                flex-shrink: 0;
+            }
+
+            /* Item - 130x65 fixed size */
+            .item {
+                width: 130px;
+                height: 65px;
+                position: relative;
+                flex-shrink: 0;
+            }
+
+            /* Cylinder wrapper - inset: 21.54% 50.24% 4.6% 0.53% (top right bottom left) */
+            .cylinder-wrapper {
+                position: absolute;
+                top: 21.54%;
+                right: 50.24%;
+                bottom: 4.6%;
+                left: 0.53%;
+            }
+
+            /* Cylinder image - slightly overflows wrapper */
+            .cylinder-img {
+                position: absolute;
+                top: 0;
+                left: -4.69%;
+                right: -4.69%;
+                bottom: -9.46%;
+            }
+
+            .cylinder-img img {
+                display: block;
+                width: 100%;
+                height: 100%;
+                max-width: none;
+            }
+
+            /* Number - top: 0, bottom: 67.69%, left varies, right varies */
+            .item-number {
+                position: absolute;
+                top: 0;
+                bottom: 67.69%;
+                left: 12%;
+                right: 62%;
+                font-weight: 600;
+                font-size: 18px;
+                color: white;
+                text-align: center;
+                white-space: nowrap;
+                line-height: normal;
+            }
+
+            /* Label box - inset: 7.38% right bottom 55.18%+ varies */
+            .item-label {
+                position: absolute;
+                top: 7.38%;
+                right: 1.3%;
+                bottom: 66.47%;
+                left: 55.18%;
+                background-color: #3b4c46;
+                border-radius: 2px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+            }
+
+            .item-label p {
+                font-weight: 500;
+                font-size: 13px;
+                color: #e9ebeb;
+                text-align: center;
+                white-space: nowrap;
+                letter-spacing: -0.26px;
+                line-height: normal;
+            }
+
+            /* TPS value box - inset: 41.9% 1.3% 31.95% 55.18% */
+            .item-tps {
+                position: absolute;
+                top: 41.9%;
+                right: 1.3%;
+                bottom: 31.95%;
+                left: 55.18%;
+                background-color: #1c1c1c;
+                border: 1px solid #5e5e5e;
+                border-radius: 4px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+            }
+
+            .item-tps p {
+                font-weight: 500;
+                font-size: 13px;
+                color: #0defcb;
+                text-align: center;
+                white-space: nowrap;
+                line-height: normal;
+            }
+
+            /* Response value box - inset: 71.13% 1.3% 2.72% 55.18% */
+            .item-response {
+                position: absolute;
+                top: 71.13%;
+                right: 1.3%;
+                bottom: 2.72%;
+                left: 55.18%;
+                background-color: #1c1c1c;
+                border: 1px solid #5e5e5e;
+                border-radius: 4px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+            }
+
+            .item-response p {
+                font-weight: 500;
+                font-size: 13px;
+                color: #0de7ef;
+                text-align: center;
+                white-space: nowrap;
+                line-height: normal;
+            }
+        }
+    </style>
     <style>
         * {
             margin: 0;

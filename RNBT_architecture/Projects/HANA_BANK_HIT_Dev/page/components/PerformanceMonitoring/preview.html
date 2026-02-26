@@ -4,7 +4,289 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>PerformanceMonitoring - Preview</title>
-    <link rel="stylesheet" href="styles/component.css">
+    <style>
+        /* === component.css (inline) === */
+        @import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css');
+
+        /* ==========================================================================
+           Performance Monitoring Component
+           Figma Node ID: 613:44480
+           ========================================================================== */
+
+        /* ==========================================================================
+           Container
+           ========================================================================== */
+        .performance-monitoring {
+            position: relative;
+            width: 571px;
+            height: 546px;
+            overflow: hidden;
+            font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, sans-serif;
+        }
+
+        /* ==========================================================================
+           Header
+           ========================================================================== */
+        .performance-monitoring .header {
+            position: absolute;
+            top: 0;
+            left: 26px;
+            width: 519px;
+            height: 60px;
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .performance-monitoring .header__title {
+            width: 390px;
+            height: 50px;
+            background-color: rgba(0, 145, 120, 0.08);
+            border: 1px solid rgba(0, 78, 66, 0);
+            border-radius: 16px;
+            display: flex;
+            flex-direction: column;
+            align-items: flex-start;
+            justify-content: center;
+            padding: 14px 22px;
+            flex-shrink: 0;
+        }
+
+        .performance-monitoring .title__txt {
+            display: flex;
+            align-items: center;
+            gap: 9px;
+        }
+
+        .performance-monitoring .title__icon {
+            width: 16.681px;
+            height: 18.27px;
+            flex-shrink: 0;
+        }
+
+        .performance-monitoring .title__text {
+            font-family: 'Pretendard', sans-serif;
+            font-weight: 700;
+            font-size: 18px;
+            color: #f2f9ef;
+            white-space: nowrap;
+            margin: 0;
+        }
+
+        .performance-monitoring .header__action {
+            display: flex;
+            align-items: center;
+            padding-right: 7px;
+            flex-shrink: 0;
+        }
+
+        .performance-monitoring .action__btn {
+            position: relative;
+            width: 60px;
+            height: 60px;
+            margin-right: -7px;
+            flex-shrink: 0;
+            cursor: pointer;
+        }
+
+        .performance-monitoring .btn__bg {
+            display: block;
+            width: 100%;
+            height: 100%;
+        }
+
+        .performance-monitoring .action__btn .btn__text {
+            position: absolute;
+            top: 22.33px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-family: 'Pretendard', sans-serif;
+            font-weight: 600;
+            font-size: 13px;
+            white-space: nowrap;
+            margin: 0;
+        }
+
+        .performance-monitoring .btn__text--inactive {
+            color: #c0c0c0;
+        }
+
+        .performance-monitoring .btn__text--active {
+            color: #ffffff;
+        }
+
+        /* ==========================================================================
+           List
+           ========================================================================== */
+        .performance-monitoring .list {
+            position: absolute;
+            top: 72px;
+            left: 32px;
+            width: 507px;
+            height: 474px;
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+            overflow-y: auto;
+        }
+
+        .performance-monitoring .list__item {
+            display: flex;
+            align-items: flex-end;
+            gap: 16px;
+            width: 507px;
+            height: 33px;
+            flex-shrink: 0;
+            overflow: hidden;
+        }
+
+        /* ==========================================================================
+           Item Number
+           ========================================================================== */
+        .performance-monitoring .item__num {
+            width: 33px;
+            height: 33px;
+            background-color: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(2.817px);
+            border-radius: 8.854px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+            box-shadow: inset 0.805px 0.805px 0.805px 0px rgba(255, 255, 255, 0.25);
+        }
+
+        .performance-monitoring .num__text {
+            font-family: 'Pretendard', sans-serif;
+            font-weight: 300;
+            font-size: 19.622px;
+            color: #f2f9ef;
+            text-align: center;
+            white-space: nowrap;
+            margin: 0;
+        }
+
+        /* ==========================================================================
+           Item Box
+           ========================================================================== */
+        .performance-monitoring .item__box {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 7.135px;
+            width: 380px;
+            flex-shrink: 0;
+        }
+
+        .performance-monitoring .box__group {
+            display: flex;
+            align-items: center;
+            width: 100%;
+        }
+
+        .performance-monitoring .group__name {
+            width: 169.459px;
+            display: flex;
+            align-items: center;
+            flex-shrink: 0;
+        }
+
+        .performance-monitoring .name__text {
+            font-family: 'Pretendard', sans-serif;
+            font-weight: 600;
+            font-size: 14.27px;
+            color: #f9f9f9;
+            white-space: nowrap;
+            margin: 0;
+        }
+
+        .performance-monitoring .group__block {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            gap: 5.351px;
+            height: 16.054px;
+        }
+
+        .performance-monitoring .block__btn {
+            height: 100%;
+            background-color: #1f2621;
+            border: 0.669px solid #5bdcc6;
+            border-radius: 3.568px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0 10px;
+            flex-shrink: 0;
+        }
+
+        .performance-monitoring .btn__label {
+            font-family: 'Pretendard', sans-serif;
+            font-weight: 500;
+            font-size: 11px;
+            color: #eaeaea;
+            white-space: nowrap;
+            margin: 0;
+        }
+
+        .performance-monitoring .block__host {
+            flex: 1;
+            font-family: 'Pretendard', sans-serif;
+            font-weight: 400;
+            font-size: 12px;
+            color: #f2f9ef;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            margin: 0;
+        }
+
+        /* ==========================================================================
+           Progress Bar
+           ========================================================================== */
+        .performance-monitoring .box__progress {
+            width: 100%;
+            height: 9.811px;
+            position: relative;
+            border-radius: 1.784px;
+            background-color: rgba(226, 226, 228, 0.2);
+        }
+
+        .performance-monitoring .progress__bar {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: var(--progress, 0%);
+            height: 100%;
+            background-color: #5bdcc6;
+            border-radius: 1.784px 0 0 1.784px;
+        }
+
+        /* ==========================================================================
+           Item Value
+           ========================================================================== */
+        .performance-monitoring .item__value {
+            display: flex;
+            align-items: flex-end;
+            color: #5bdcc6;
+            white-space: nowrap;
+            flex-shrink: 0;
+        }
+
+        .performance-monitoring .value__number {
+            font-family: 'Pretendard', sans-serif;
+            font-weight: 300;
+            font-size: 36px;
+            line-height: 1;
+        }
+
+        .performance-monitoring .value__unit {
+            font-family: 'Pretendard', sans-serif;
+            font-weight: 500;
+            font-size: 20px;
+            line-height: 1;
+        }
+    </style>
     <style>
         * {
             margin: 0;

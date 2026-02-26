@@ -241,10 +241,8 @@ Figma 디자인 ←→ MCP 서버 ←→ Claude Code ←→ HTML/CSS 코드
 
 | 도구 | 역할 | 출력 |
 |------|------|------|
-| `get_metadata` | 크기/위치 정보 | `{width, height, x, y}` |
-| `get_code` | 코드 생성 | HTML/CSS 코드 |
-| `get_image` | 스크린샷 | PNG 이미지 |
-| `get_variable_defs` | 디자인 토큰 | 색상, 간격, 폰트 변수 |
+| `get_design_context` | 디자인 정보 + 코드 통합 조회 | 크기, 위치, HTML/CSS, 변수 등 |
+| `get_screenshot` | 스크린샷 캡처 | PNG 이미지 |
 
 ### 왜 MCP가 필요한가?
 
