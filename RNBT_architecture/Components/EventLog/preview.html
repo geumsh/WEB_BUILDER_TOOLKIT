@@ -1,0 +1,931 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EventLog Preview</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <style>
+        /* === component.css (inline - #event-log-container scoped) === */
+        #event-log-container {
+            min-width: 800px;
+            min-height: 100px;
+        }
+
+        #event-log-container .bottom-log {
+            width: 100%;
+            height: 100%;
+            backdrop-filter: blur(25px);
+            -webkit-backdrop-filter: blur(25px);
+            background: rgba(19, 21, 33, 0.8);
+            border: 2px solid rgba(255, 255, 255, 0.2);
+            border-bottom: none;
+            border-radius: 20px 20px 0 0;
+            overflow: clip;
+            padding: 2px 2px 0 2px;
+            display: flex;
+            flex-direction: column;
+            font-family: 'Pretendard', sans-serif;
+        }
+
+        #event-log-container .log-header {
+            height: 48px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding-left: 20px;
+            padding-right: 10px;
+            flex-shrink: 0;
+            position: relative;
+        }
+
+        #event-log-container .header-left {
+            display: flex;
+            align-items: center;
+            gap: 19.743px;
+            height: 28px;
+        }
+
+        #event-log-container .log-title {
+            font-weight: 700;
+            font-size: 16px;
+            color: #f8fafc;
+            white-space: nowrap;
+            line-height: normal;
+        }
+
+        #event-log-container .header-divider,
+        #event-log-container .right-divider {
+            width: 1.234px;
+            height: 19.743px;
+            background: rgba(255, 255, 255, 0.1);
+            flex-shrink: 0;
+        }
+
+        #event-log-container .sound-group {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        #event-log-container .sound-btn {
+            display: flex;
+            align-items: center;
+            gap: 4.936px;
+            background: none;
+            border: none;
+            cursor: pointer;
+            padding: 0;
+        }
+
+        #event-log-container .sound-btn .icon-volume {
+            width: 14.807px;
+            height: 14.807px;
+            display: block;
+        }
+
+        #event-log-container .sound-btn span {
+            font-weight: 400;
+            font-size: 14px;
+            color: #94a3b8;
+            white-space: nowrap;
+        }
+
+        #event-log-container .toggle-pill {
+            display: flex;
+            align-items: center;
+            gap: 7px;
+            padding: 4px 4px 4px 14px;
+            border: 1.234px solid rgba(255, 255, 255, 0.1);
+            border-radius: 100px;
+            background: rgba(15, 18, 30, 0.6);
+        }
+
+        #event-log-container .toggle-pill .auto-label {
+            font-weight: 400;
+            font-size: 12px;
+            color: #94a3b8;
+            white-space: nowrap;
+        }
+
+        #event-log-container .toggle-switch {
+            width: 40px;
+            height: 20px;
+            border-radius: 62.5px;
+            position: relative;
+            overflow: clip;
+            padding: 2.5px;
+            display: flex;
+            align-items: center;
+            justify-content: flex-end;
+            cursor: pointer;
+        }
+
+        #event-log-container .toggle-switch-bg {
+            position: absolute;
+            inset: 0;
+            border-radius: 62.5px;
+            background:
+                linear-gradient(-12.37deg, rgba(96, 235, 255, 0) 9.76%, rgb(96, 255, 234) 93.85%),
+                linear-gradient(-19.18deg, rgba(112, 132, 245, 0) 15.24%, rgb(129, 225, 197) 112.01%),
+                linear-gradient(90deg, rgb(175, 238, 247) 0%, rgb(175, 238, 247) 100%);
+            pointer-events: none;
+        }
+
+        #event-log-container .toggle-switch-overlay {
+            position: absolute;
+            inset: 0;
+            border-radius: 62.5px;
+            background: rgba(208, 208, 208, 0.5);
+            mix-blend-mode: color-burn;
+            pointer-events: none;
+        }
+
+        #event-log-container .toggle-knob {
+            width: 15px;
+            height: 15px;
+            border-radius: 100px;
+            background: #fff;
+            box-shadow: 0px 0.536px 0.536px 0px rgba(0, 0, 0, 0.22);
+            flex-shrink: 0;
+            position: relative;
+            z-index: 1;
+        }
+
+        #event-log-container .toggle-switch-inset {
+            position: absolute;
+            inset: 0;
+            border-radius: inherit;
+            box-shadow:
+                inset 0px -0.313px 0.625px 0px rgba(94, 94, 94, 0.3),
+                inset 0px -0.313px 0.625px 0px rgba(255, 255, 255, 0.2),
+                inset 0px 1.875px 1.875px 0px rgba(128, 128, 128, 0.18),
+                inset 0px 1.875px 1.875px 0px rgba(0, 0, 0, 0.15);
+            pointer-events: none;
+        }
+
+        #event-log-container .btn-expand {
+            width: 30px;
+            height: 30px;
+            border-radius: 78.947px;
+            border: 1px solid #60ebff;
+            background:
+                linear-gradient(90deg, rgba(144, 161, 185, 0.1) 0%, rgba(144, 161, 185, 0.1) 100%),
+                linear-gradient(90deg, rgba(33, 38, 50, 0.7) 0%, rgba(33, 38, 50, 0.7) 100%);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: clip;
+            padding: 1px;
+            flex-shrink: 0;
+            position: absolute;
+            left: 50%;
+            top: 50%;
+            transform: translate(-50%, -50%);
+        }
+
+        #event-log-container .btn-expand .icon-expand {
+            width: 16.364px;
+            height: 16.364px;
+            display: block;
+        }
+
+        #event-log-container .header-right {
+            display: flex;
+            align-items: center;
+            gap: 9.871px;
+        }
+
+        #event-log-container .action-buttons {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        #event-log-container .btn-action {
+            width: 54px;
+            height: 30px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0 12px;
+            border-radius: 6px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            background: #1e222d;
+            cursor: pointer;
+        }
+
+        #event-log-container .btn-action span {
+            font-weight: 400;
+            font-size: 15px;
+            color: #94a3b8;
+            text-align: center;
+            white-space: nowrap;
+        }
+
+        #event-log-container .status-items {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        #event-log-container .status-item {
+            width: 78px;
+            height: 31px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 10px 15px;
+            border-radius: 8px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            background: rgba(0, 0, 0, 0.4);
+            box-sizing: border-box;
+        }
+
+        #event-log-container .status-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 100px;
+            flex-shrink: 0;
+        }
+
+        #event-log-container .status-dot.critical { background: var(--critical, #f43130); box-shadow: 0px 0px 6px 0px var(--critical, #f43130); }
+        #event-log-container .status-dot.major    { background: var(--major, #fd8004);    box-shadow: 0px 0px 6px 0px var(--major, #fd8004); }
+        #event-log-container .status-dot.minor    { background: var(--minor, #fccf1e);    box-shadow: 0px 0px 6px 0px var(--minor, #fccf1e); }
+        #event-log-container .status-dot.warning  { background: var(--warning, #28e3ff);  box-shadow: 0px 0px 6px 0px var(--warning, #28e3ff); }
+        #event-log-container .status-dot.normal   { background: var(--normal, #34d28d);   box-shadow: 0px 0px 6px 0px var(--normal, #34d28d); }
+
+        #event-log-container .status-item .count {
+            font-family: 'Roboto Mono', monospace;
+            font-weight: 400;
+            font-size: 16px;
+            color: #e4ebf6;
+            text-align: right;
+            white-space: nowrap;
+        }
+
+        #event-log-container .table-header {
+            height: 33px;
+            background: rgba(15, 18, 30, 0.8);
+            border-bottom: 1.234px solid rgba(255, 255, 255, 0.05);
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            padding: 6px 20px;
+            flex-shrink: 0;
+        }
+
+        #event-log-container .th-cell {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            align-self: stretch;
+            flex-shrink: 0;
+            font-weight: 500;
+            font-size: 15px;
+            color: #d8dbdf;
+            white-space: nowrap;
+        }
+
+        #event-log-container .th-grade      { width: 36px; }
+        #event-log-container .th-asset-id   { width: 140px; }
+        #event-log-container .th-location   { width: 120px; }
+        #event-log-container .th-first-time { width: 200px; }
+        #event-log-container .th-last-time  { width: 200px; }
+        #event-log-container .th-group      { width: 120px; }
+        #event-log-container .th-message    { flex: 1; min-width: 0; padding-left: 20px; justify-content: flex-start; font-weight: 600; }
+
+        #event-log-container .table-body {
+            display: flex;
+            flex-direction: column;
+            flex: 1;
+            overflow-y: auto;
+        }
+
+        #event-log-container .table-row {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            height: 34px;
+            padding: 6px 20px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+            cursor: pointer;
+            flex-shrink: 0;
+        }
+
+        #event-log-container .table-row:hover { background: rgba(255, 255, 255, 0.03); }
+        #event-log-container .table-row.row-selected { background: rgba(96, 235, 255, 0.15); }
+        #event-log-container .table-row.row-alt { background: rgba(96, 235, 255, 0.05); }
+
+        #event-log-container .td-cell {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+            height: 100%;
+        }
+
+        #event-log-container .td-grade      { width: 36px; }
+        #event-log-container .td-asset-id   { width: 140px; }
+        #event-log-container .td-location   { width: 120px; }
+        #event-log-container .td-first-time { width: 200px; }
+        #event-log-container .td-last-time  { width: 200px; }
+        #event-log-container .td-group      { width: 120px; }
+        #event-log-container .td-message    { flex: 1; min-width: 0; justify-content: flex-start; padding-left: 20px; }
+
+        #event-log-container .row-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 100px;
+            flex-shrink: 0;
+        }
+
+        #event-log-container .row-dot.critical { background: var(--critical, #f43130); box-shadow: 0px 0px 4px 0px var(--critical, #f43130); }
+        #event-log-container .row-dot.major    { background: var(--major, #fd8004);    box-shadow: 0px 0px 4px 0px var(--major, #fd8004); }
+        #event-log-container .row-dot.minor    { background: var(--minor, #fccf1e);    box-shadow: 0px 0px 4px 0px var(--minor, #fccf1e); }
+        #event-log-container .row-dot.warning  { background: var(--warning, #28e3ff);  box-shadow: 0px 0px 4px 0px var(--warning, #28e3ff); }
+        #event-log-container .row-dot.normal   { background: var(--normal, #34d28d);   box-shadow: 0px 0px 4px 0px var(--normal, #34d28d); }
+
+        #event-log-container .text-default {
+            font-weight: 400;
+            font-size: 14px;
+            color: #94a3b8;
+            white-space: nowrap;
+        }
+
+        #event-log-container .text-time {
+            font-family: 'Roboto Mono', monospace;
+            font-weight: 400;
+            font-size: 13px;
+            color: #94a3b8;
+            letter-spacing: -0.8px;
+            white-space: nowrap;
+        }
+
+        #event-log-container .row-selected .text-default { font-weight: 500; color: #f8fafc; }
+        #event-log-container .row-selected .text-time    { font-weight: 500; color: #f8fafc; }
+        #event-log-container .row-alt .text-default      { color: #f8fafc; }
+        #event-log-container .row-alt .text-time         { color: #f8fafc; }
+
+        #event-log-container .row-actions {
+            display: flex;
+            align-items: center;
+            gap: 9.871px;
+            height: 28.785px;
+            flex-shrink: 0;
+        }
+
+        #event-log-container .btn-new {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 6px 10px;
+            border-radius: 5px;
+            border: 1px solid rgba(96, 235, 255, 0.3);
+            background: rgba(96, 235, 255, 0.2);
+            cursor: pointer;
+        }
+
+        #event-log-container .btn-new span { font-weight: 400; font-size: 12px; color: #60ebff; white-space: nowrap; }
+
+        #event-log-container .btn-row-action {
+            height: 26px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 5px;
+            padding: 0 10px;
+            border-radius: 5px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            background: #1e222d;
+            cursor: pointer;
+        }
+
+        #event-log-container .btn-row-action .icon-cctv { width: 12px; height: 12px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+        #event-log-container .btn-row-action .icon-cctv img { width: 10.286px; height: 9.144px; display: block; }
+        #event-log-container .btn-row-action span { font-weight: 400; font-size: 12px; color: #94a3b8; white-space: nowrap; }
+
+        #event-log-container .table-body::-webkit-scrollbar { width: 4px; }
+        #event-log-container .table-body::-webkit-scrollbar-track { background: transparent; }
+        #event-log-container .table-body::-webkit-scrollbar-thumb { background: rgba(100, 116, 139, 0.4); border-radius: 2px; }
+
+
+        /* === preview-specific === */
+        body {
+            margin: 0;
+            padding: 40px;
+            background: #0f1117;
+            font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        }
+        h1 { color: #f8fafc; margin-bottom: 24px; font-size: 20px; }
+        #event-log-container { width: 1880px; height: 300px; }
+        .controls { margin-top: 24px; display: flex; gap: 8px; flex-wrap: wrap; }
+        .controls button {
+            padding: 8px 16px;
+            background: #60ebff;
+            color: #131521;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 13px;
+            font-weight: 500;
+        }
+        .controls button:hover { background: #4dd8ec; }
+        .controls button.destroy { background: #f87171; color: #fff; }
+        .controls button.destroy:hover { background: #ef4444; }
+        .controls button.secondary { background: #3b82f6; color: #fff; }
+    </style>
+</head>
+<body>
+    <h1>EventLog Component Preview</h1>
+    <div id="event-log-container"></div>
+    <div class="controls">
+        <button onclick="sendMockData()">Load Data</button>
+        <button onclick="selectRow3()" class="secondary">Select Row 3</button>
+        <button onclick="destroy()" class="destroy">Destroy</button>
+    </div>
+
+    <script>
+        // ======================
+        // MOCK CONTEXT
+        // ======================
+
+        const mockThis = {
+            appendElement: document.getElementById('event-log-container')
+        };
+
+        // HTML 삽입 (views/component.html 내용)
+        mockThis.appendElement.innerHTML = `
+            <div class="bottom-log">
+                <div class="log-header">
+                    <div class="header-left">
+                        <span class="log-title">-</span>
+                        <div class="header-divider"></div>
+                        <div class="sound-group">
+                            <button class="sound-btn">
+                                <img src="./assets/icon-volume.svg" class="icon-volume" alt="">
+                                <span>소리 알림</span>
+                            </button>
+                            <div class="toggle-pill">
+                                <span class="auto-label">AUTO</span>
+                                <div class="toggle-switch">
+                                    <div class="toggle-switch-bg"></div>
+                                    <div class="toggle-switch-overlay"></div>
+                                    <div class="toggle-knob"></div>
+                                    <div class="toggle-switch-inset"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <button class="btn-expand">
+                        <img src="./assets/icon-expand.svg" class="icon-expand" alt="">
+                    </button>
+                    <div class="header-right">
+                        <div class="action-buttons">
+                            <button class="btn-action btn-ack"><span>Ack</span></button>
+                            <button class="btn-action btn-all"><span>All</span></button>
+                        </div>
+                        <div class="right-divider"></div>
+                        <div class="status-items"></div>
+                    </div>
+                </div>
+                <div class="table-header"></div>
+                <div class="table-body"></div>
+            </div>
+        `;
+
+        // ======================
+        // MOCK DEPENDENCIES
+        // ======================
+
+        const GlobalDataPublisher = {
+            subscribe: (topic, context, fn) => {
+                console.log(`[Mock] subscribe: ${topic}`);
+            },
+            unsubscribe: (topic, context) => {
+                console.log(`[Mock] unsubscribe: ${topic}`);
+            }
+        };
+
+        const Wkit = {
+            bindEvents: (context, events) => {
+                console.log('[Mock] bindEvents:', events);
+            },
+            removeCustomEvents: (context, events) => {
+                console.log('[Mock] removeCustomEvents:', events);
+            }
+        };
+
+        const fx = {
+            go: (arr, ...fns) => fns.reduce((acc, fn) => fn(acc), arr),
+            each: fn => arr => { arr.forEach(fn); return arr; }
+        };
+
+        // ======================
+        // REGISTER (scripts/register.js - TBD를 실제 값으로 변경)
+        // ======================
+
+        (function register() {
+            const { subscribe } = GlobalDataPublisher;
+            const { bindEvents } = Wkit;
+
+            // CONFIG (TBD → 실제 값)
+            const config = {
+                titleKey: 'title',
+                summaryKey: 'summary',
+                columnsKey: 'columns',
+                eventsKey: 'events',
+                eventFields: {
+                    level: 'level',
+                    assetId: 'assetId',
+                    location: 'location',
+                    firstTime: 'firstTime',
+                    lastTime: 'lastTime',
+                    group: 'group',
+                    message: 'message',
+                    isNew: 'isNew'
+                },
+                summaryOrder: ['critical', 'major', 'minor', 'warning', 'normal'],
+                columnClasses: {
+                    level: 'td-grade',
+                    assetId: 'td-asset-id',
+                    location: 'td-location',
+                    firstTime: 'td-first-time',
+                    lastTime: 'td-last-time',
+                    group: 'td-group',
+                    message: 'td-message'
+                },
+                headerClasses: {
+                    level: 'th-grade',
+                    assetId: 'th-asset-id',
+                    location: 'th-location',
+                    firstTime: 'th-first-time',
+                    lastTime: 'th-last-time',
+                    group: 'th-group',
+                    message: 'th-message'
+                },
+                timeFields: ['firstTime', 'lastTime']
+            };
+
+            // STATE
+            this._selectedRowIndex = null;
+            this._eventsData = null;
+            this._internalHandlers = {};
+
+            // BINDINGS
+            this.renderData = renderData.bind(this, config);
+            this.selectRow = selectRow.bind(this, config);
+
+            // SUBSCRIPTIONS
+            this.subscriptions = {
+                eventLogData: ['renderData']
+            };
+
+            fx.go(
+                Object.entries(this.subscriptions),
+                fx.each(([topic, fnList]) =>
+                    fx.each(fn => this[fn] && subscribe(topic, this, this[fn]), fnList)
+                )
+            );
+
+            // EVENT BINDING
+            this.customEvents = {
+                click: {
+                    '.table-row': '@rowClicked',
+                    '.btn-ack': '@ackClicked',
+                    '.btn-all': '@allClicked',
+                    '.btn-expand': '@expandClicked',
+                    '.sound-btn': '@soundToggled'
+                }
+            };
+
+            bindEvents(this, this.customEvents);
+
+            setupInternalHandlers.call(this);
+
+            // RENDER FUNCTIONS
+
+            function renderData(config, { response }) {
+                const { data } = response;
+                if (!data) return;
+
+                const titleEl = this.appendElement.querySelector('.log-title');
+                if (titleEl && data[config.titleKey]) {
+                    titleEl.textContent = data[config.titleKey];
+                }
+
+                const summary = data[config.summaryKey];
+                if (summary) {
+                    renderSummary.call(this, config, summary);
+                }
+
+                const columns = data[config.columnsKey];
+                if (columns && Array.isArray(columns)) {
+                    renderTableHeader.call(this, config, columns);
+                }
+
+                const events = data[config.eventsKey];
+                if (events && Array.isArray(events)) {
+                    this._eventsData = events;
+                    renderRows.call(this, config, events);
+                }
+            }
+
+            function renderSummary(config, summary) {
+                const container = this.appendElement.querySelector('.status-items');
+                if (!container) return;
+                container.innerHTML = '';
+
+                fx.go(
+                    config.summaryOrder,
+                    fx.each(level => {
+                        const count = summary[level] ?? 0;
+                        const item = document.createElement('div');
+                        item.className = 'status-item';
+                        item.innerHTML = `
+                            <div class="status-dot ${level}"></div>
+                            <span class="count">${count}</span>
+                        `;
+                        container.appendChild(item);
+                    })
+                );
+            }
+
+            function renderTableHeader(config, columns) {
+                const headerEl = this.appendElement.querySelector('.table-header');
+                if (!headerEl) return;
+                headerEl.innerHTML = '';
+
+                fx.go(
+                    columns,
+                    fx.each(col => {
+                        const cell = document.createElement('div');
+                        const cssClass = config.headerClasses[col.key] || '';
+                        cell.className = `th-cell ${cssClass}`;
+                        cell.textContent = col.label;
+                        headerEl.appendChild(cell);
+                    })
+                );
+            }
+
+            function renderRows(config, events) {
+                const bodyEl = this.appendElement.querySelector('.table-body');
+                if (!bodyEl) return;
+                bodyEl.innerHTML = '';
+
+                fx.go(
+                    events,
+                    fx.each((event, index) => {
+                        const row = createRow.call(this, config, event, index);
+                        bodyEl.appendChild(row);
+                    })
+                );
+            }
+
+            function createRow(config, event, index) {
+                const { eventFields, columnClasses, timeFields } = config;
+                const level = event[eventFields.level] || 'normal';
+                const isSelected = this._selectedRowIndex === index;
+
+                const row = document.createElement('div');
+                row.className = 'table-row';
+                row.dataset.index = index;
+                if (isSelected) row.classList.add('row-selected');
+
+                // 등급 (status dot)
+                const gradeCell = document.createElement('div');
+                gradeCell.className = `td-cell ${columnClasses.level}`;
+                gradeCell.innerHTML = `<div class="row-dot ${level}"></div>`;
+                row.appendChild(gradeCell);
+
+                // 나머지 컬럼
+                const fieldOrder = ['assetId', 'location', 'firstTime', 'lastTime', 'group', 'message'];
+                fx.go(
+                    fieldOrder,
+                    fx.each(field => {
+                        const cell = document.createElement('div');
+                        cell.className = `td-cell ${columnClasses[field] || ''}`;
+                        const value = event[eventFields[field]] || '-';
+                        const isTime = timeFields.includes(field);
+                        cell.innerHTML = `<span class="${isTime ? 'text-time' : 'text-default'}">${value}</span>`;
+                        row.appendChild(cell);
+                    })
+                );
+
+                // 선택된 행: 액션 버튼
+                if (isSelected && event[eventFields.isNew]) {
+                    const actions = document.createElement('div');
+                    actions.className = 'row-actions';
+                    actions.innerHTML = `
+                        <button class="btn-new"><span>신규</span></button>
+                        <button class="btn-row-action">
+                            <div class="icon-cctv"><img src="./assets/icon-cctv.svg" alt=""></div>
+                            <span>영상</span>
+                        </button>
+                        <button class="btn-row-action"><span>영상</span></button>
+                    `;
+                    row.appendChild(actions);
+                }
+
+                return row;
+            }
+
+            // INTERNAL HANDLERS
+
+            function setupInternalHandlers() {
+                const root = this.appendElement;
+
+                this._internalHandlers.rowClick = (e) => {
+                    const row = e.target.closest('.table-row');
+                    if (row) {
+                        const index = parseInt(row.dataset.index, 10);
+                        this.selectRow(index);
+                    }
+                };
+
+                this._internalHandlers.expandClick = (e) => {
+                    const btn = e.target.closest('.btn-expand');
+                    if (!btn) return;
+                    const bottomLog = root.querySelector('.bottom-log');
+                    if (!bottomLog) return;
+
+                    this._collapsed = !this._collapsed;
+                    root.style.overflow = this._collapsed ? 'hidden' : '';
+                    bottomLog.style.transition = 'transform 0.3s ease';
+                    bottomLog.style.transform = this._collapsed
+                        ? 'translateY(calc(100% - 48px))'
+                        : '';
+
+                    const icon = btn.querySelector('.icon-expand');
+                    if (icon) {
+                        icon.style.transition = 'transform 0.3s ease';
+                        icon.style.transform = this._collapsed ? 'rotate(180deg)' : '';
+                    }
+                };
+
+                this._internalHandlers.toggleClick = (e) => {
+                    const toggle = e.target.closest('.toggle-switch') || e.target.closest('.toggle-pill');
+                    if (!toggle) return;
+
+                    this._autoEnabled = !this._autoEnabled;
+                    const knob = root.querySelector('.toggle-knob');
+                    const bg = root.querySelector('.toggle-switch-bg');
+                    const label = root.querySelector('.auto-label');
+
+                    if (root.querySelector('.toggle-switch')) {
+                        root.querySelector('.toggle-switch').style.justifyContent =
+                            this._autoEnabled ? 'flex-end' : 'flex-start';
+                    }
+                    if (bg) {
+                        bg.style.opacity = this._autoEnabled ? '' : '0.3';
+                    }
+                    if (label) {
+                        label.style.color = this._autoEnabled ? '#94a3b8' : '#4a5568';
+                    }
+                };
+
+                root.addEventListener('click', this._internalHandlers.rowClick);
+                root.addEventListener('click', this._internalHandlers.expandClick);
+                root.addEventListener('click', this._internalHandlers.toggleClick);
+            }
+
+            function selectRow(config, index) {
+                const prevRow = this.appendElement.querySelector('.table-row.row-selected');
+                if (prevRow) prevRow.classList.remove('row-selected');
+
+                this._selectedRowIndex = index;
+
+                if (this._eventsData) {
+                    renderRows.call(this, config, this._eventsData);
+                }
+            }
+
+        }).call(mockThis);
+
+        // ======================
+        // BEFORE DESTROY
+        // ======================
+
+        function destroy() {
+            (function beforeDestroy() {
+                const { unsubscribe } = GlobalDataPublisher;
+                const { removeCustomEvents } = Wkit;
+                const { each } = fx;
+
+                fx.go(
+                    Object.entries(this.subscriptions),
+                    each(([topic, _]) => unsubscribe(topic, this))
+                );
+                this.subscriptions = null;
+
+                removeCustomEvents(this, this.customEvents);
+                this.customEvents = null;
+
+                if (this._internalHandlers) {
+                    const root = this.appendElement;
+                    root.removeEventListener('click', this._internalHandlers.rowClick);
+                }
+                this._internalHandlers = null;
+
+                this._selectedRowIndex = null;
+                this._eventsData = null;
+
+                this.renderData = null;
+                this.selectRow = null;
+
+                console.log('[EventLog] Destroyed');
+            }).call(mockThis);
+        }
+
+        // ======================
+        // TEST HELPERS
+        // ======================
+
+        function sendMockData() {
+            mockThis.renderData({
+                response: {
+                    data: {
+                        title: '이벤트 현황',
+                        summary: { critical: 3, major: 11, minor: 24, warning: 927, normal: 327 },
+                        columns: [
+                            { key: 'level', label: '등급', width: 36 },
+                            { key: 'assetId', label: '자산ID', width: 140 },
+                            { key: 'location', label: '위치', width: 120 },
+                            { key: 'firstTime', label: '최초발생시간', width: 200 },
+                            { key: 'lastTime', label: '마지막발생시간', width: 200 },
+                            { key: 'group', label: '구분(업무그룹)', width: 120 },
+                            { key: 'message', label: '메시지' }
+                        ],
+                        events: [
+                            {
+                                level: 'major',
+                                assetId: '변압기 #302',
+                                location: '전기실',
+                                firstTime: '2026-02-27 09:33:00',
+                                lastTime: '2026-02-27 09:33:00',
+                                group: '구분A',
+                                message: '배터리 잔량 저하 (현재35%)이벤트 내용',
+                                isNew: false
+                            },
+                            {
+                                level: 'minor',
+                                assetId: '변압기 #302',
+                                location: '전기실',
+                                firstTime: '2026-02-27 09:33:00',
+                                lastTime: '2026-02-27 09:33:00',
+                                group: '구분B',
+                                message: '정격 전류 초과 근접 (현재 부하 92%)전력 사용량 증가',
+                                isNew: false
+                            },
+                            {
+                                level: 'critical',
+                                assetId: '변압기 #302',
+                                location: '전기실',
+                                firstTime: '2026-02-27 09:33:00',
+                                lastTime: '2026-02-27 09:33:00',
+                                group: '구분A',
+                                message: '냉방 용량 부족 감지 (전산실 B존)',
+                                isNew: true
+                            },
+                            {
+                                level: 'normal',
+                                assetId: '변압기 #302',
+                                location: '전기실',
+                                firstTime: '2026-02-27 09:33:00',
+                                lastTime: '2026-02-27 09:33:00',
+                                group: '구분B',
+                                message: '온도 임계치 초과 (32.5 ℃)',
+                                isNew: false
+                            },
+                            {
+                                level: 'major',
+                                assetId: '변압기 #302',
+                                location: '전기실',
+                                firstTime: '2026-02-27 09:33:00',
+                                lastTime: '2026-02-27 09:33:00',
+                                group: '구분A',
+                                message: '온도 임계치 초과 (34.1 ℃)',
+                                isNew: false
+                            }
+                        ]
+                    }
+                }
+            });
+
+            // Figma 원본과 동일하게: 3번째 행(critical) 선택
+            mockThis.selectRow(2);
+        }
+
+        function selectRow3() {
+            mockThis.selectRow(2);
+        }
+
+        // 초기 렌더링
+        sendMockData();
+    </script>
+</body>
+</html>
