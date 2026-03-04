@@ -1,0 +1,1039 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ContentPanel Preview (Integrated)</title>
+    <link href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css" rel="stylesheet">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <style>
+        /* === ContentPanel component.css (inline for preview) === */
+        #content-panel-container {
+            width: 464px;
+            height: 790px;
+            overflow: auto;
+        }
+        #content-panel-container .content-panel {
+            width: 100%;
+            min-height: 100%;
+            padding: 22px;
+            box-sizing: border-box;
+            border-radius: 16px;
+            border: 2px solid rgba(144, 161, 185, 0.8);
+            background: rgba(19, 21, 33, 0.8);
+            backdrop-filter: blur(15px);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            font-family: 'Pretendard', sans-serif;
+        }
+        #content-panel-container .contents {
+            width: 420px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        #content-panel-container .contents + .contents {
+            margin-top: 20px;
+        }
+
+        /* === ContentsPowerChart component.css === */
+        #content-panel-container .contents-title {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            width: 100%;
+            height: 21px;
+        }
+        #content-panel-container .contents-title-txt {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        #content-panel-container .dot-indicator {
+            position: relative;
+            width: 6px;
+            height: 6px;
+        }
+        #content-panel-container .dot-indicator img {
+            display: block;
+            position: absolute;
+            width: 16px;
+            height: 16px;
+            top: -5px;
+            left: -5px;
+        }
+        #content-panel-container .contents-title-text {
+            font-family: 'Pretendard', sans-serif;
+            font-weight: 600;
+            font-size: 18px;
+            color: #f8fafc;
+            line-height: normal;
+        }
+        #content-panel-container .union-dots {
+            width: 55.176px;
+            height: 9px;
+            position: relative;
+        }
+        #content-panel-container .union-dots img {
+            display: block;
+            position: absolute;
+            width: 100%;
+            height: 100%;
+        }
+        #content-panel-container .section {
+            width: 420px;
+            backdrop-filter: blur(15px);
+            background: rgba(26, 34, 50, 0.6);
+            border: 1px solid rgba(81, 102, 145, 0.6);
+            border-radius: 12px;
+            position: relative;
+            box-sizing: border-box;
+        }
+        #content-panel-container .section-inset-shadow {
+            position: absolute;
+            inset: 0;
+            border-radius: inherit;
+            pointer-events: none;
+            box-shadow: inset 0px 0px 8px 0px rgba(0, 0, 0, 0.25);
+        }
+        #content-panel-container .contents-power-chart,
+        #content-panel-container .contents-system-status,
+        #content-panel-container .contents-battery-group {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        /* Bar Chart */
+        #content-panel-container .section--chart {
+            height: 241px;
+            padding: 19px 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+        #content-panel-container .chart-block {
+            width: 380px;
+            display: flex;
+            flex-direction: column;
+            gap: 25px;
+        }
+        #content-panel-container .chart-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            width: 100%;
+            height: 20px;
+            line-height: normal;
+        }
+        #content-panel-container .chart-label {
+            font-family: 'Pretendard', sans-serif;
+            font-weight: 500;
+            font-size: 16px;
+            color: #e4ebf6;
+            letter-spacing: -0.32px;
+        }
+        #content-panel-container .chart-value {
+            display: flex;
+            align-items: flex-end;
+            gap: 7px;
+        }
+        #content-panel-container .value-number {
+            font-family: 'Roboto Mono', monospace;
+            font-weight: 500;
+            font-size: 28px;
+            color: #f8fafc;
+            letter-spacing: -1.12px;
+            line-height: 1;
+        }
+        #content-panel-container .value-unit {
+            font-family: 'Roboto Mono', monospace;
+            font-weight: 400;
+            font-size: 14px;
+            color: #bbc2cf;
+            letter-spacing: -0.28px;
+            line-height: 1;
+        }
+        #content-panel-container .chart-body {
+            width: 380px;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            align-items: center;
+        }
+        #content-panel-container .chart-legend {
+            display: flex;
+            gap: 28px;
+            align-items: center;
+        }
+        #content-panel-container .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+        #content-panel-container .legend-color {
+            width: 7px;
+            height: 7px;
+            border-radius: 2px;
+        }
+        #content-panel-container .legend-color--blue { background: #445ed9; }
+        #content-panel-container .legend-color--green { background: #81e1c5; }
+        #content-panel-container .legend-text {
+            font-family: 'Pretendard', sans-serif;
+            font-weight: 400;
+            font-size: 13px;
+            color: #bbc2cf;
+            letter-spacing: -0.26px;
+            line-height: normal;
+        }
+        #content-panel-container .chart-area {
+            width: 372px;
+            height: 130px;
+            display: flex;
+            position: relative;
+        }
+        #content-panel-container .chart-y-axis {
+            width: 28px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            padding-bottom: 16px;
+            box-sizing: border-box;
+        }
+        #content-panel-container .axis-label {
+            font-family: 'Pretendard', sans-serif;
+            font-weight: 500;
+            font-size: 12px;
+            color: rgba(167, 172, 188, 0.6);
+            letter-spacing: -0.24px;
+            text-align: right;
+            line-height: normal;
+        }
+        #content-panel-container .axis-label--zero { text-align: right; padding-right: 4px; }
+        #content-panel-container .chart-grid-area { flex: 1; position: relative; margin-left: 4px; }
+        #content-panel-container .chart-grid {
+            position: absolute;
+            top: 7px;
+            left: 0;
+            right: 0;
+            height: 100px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+        #content-panel-container .grid-line { width: 100%; height: 1px; background: rgba(167, 172, 188, 0.15); }
+        #content-panel-container .grid-line--solid { background: rgba(167, 172, 188, 0.3); }
+        #content-panel-container .grid-line--dashed { background: repeating-linear-gradient(to right, rgba(167, 172, 188, 0.15) 0px, rgba(167, 172, 188, 0.15) 4px, transparent 4px, transparent 8px); }
+        #content-panel-container .grid-line img { display: block; width: 100%; height: 1px; }
+        #content-panel-container .chart-bars {
+            position: absolute;
+            top: 7px;
+            left: 21px;
+            width: 313px;
+            height: 100px;
+            display: flex;
+            justify-content: space-between;
+        }
+        #content-panel-container .bar-group { display: flex; gap: 6px; align-items: flex-end; }
+        #content-panel-container .bar { width: 6px; border-radius: 2px; }
+        #content-panel-container .bar--blue { background: #445ed9; }
+        #content-panel-container .bar--green { background: #81e1c5; }
+        #content-panel-container .chart-x-axis {
+            position: absolute;
+            bottom: 0;
+            left: 24px;
+            right: 0;
+            display: flex;
+            justify-content: space-between;
+            height: 14px;
+        }
+        #content-panel-container .axis-label-x {
+            font-family: 'Pretendard', sans-serif;
+            font-weight: 500;
+            font-size: 12px;
+            color: rgba(167, 172, 188, 0.6);
+            letter-spacing: -0.24px;
+            line-height: normal;
+        }
+
+        /* System Status */
+        #content-panel-container .section-row { display: flex; gap: 10px; width: 420px; }
+        #content-panel-container .section--gauge-box {
+            width: 140px;
+            height: 170px;
+            padding: 26px 17px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: space-between;
+        }
+        #content-panel-container .gauge-label {
+            font-family: 'Pretendard', sans-serif;
+            font-weight: 500;
+            font-size: 16px;
+            color: #e4ebf6;
+            letter-spacing: -0.32px;
+            text-align: center;
+            line-height: normal;
+            width: 106px;
+        }
+        #content-panel-container .gauge-chart { width: 106px; height: 81px; position: relative; }
+        #content-panel-container .gauge-image { position: absolute; width: 106px; height: 106px; top: 0; left: 0; }
+        #content-panel-container .gauge-image img { display: block; width: 100%; height: 100%; }
+        #content-panel-container .gauge-value {
+            position: absolute;
+            top: 39px;
+            left: 50%;
+            transform: translateX(calc(-50% - 0.5px));
+            display: flex;
+            align-items: flex-end;
+            gap: 3px;
+            line-height: normal;
+            text-align: center;
+        }
+        #content-panel-container .gauge-number {
+            font-family: 'Roboto Mono', monospace;
+            font-weight: 500;
+            font-size: 28px;
+            color: #f8fafc;
+            letter-spacing: -1.12px;
+            line-height: 1;
+        }
+        #content-panel-container .gauge-unit {
+            font-family: 'Roboto Mono', monospace;
+            font-weight: 400;
+            font-size: 14px;
+            color: #bbc2cf;
+            letter-spacing: -0.28px;
+            line-height: 1;
+        }
+        #content-panel-container .section--list-box {
+            flex: 1;
+            height: 170px;
+            padding: 26px 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        #content-panel-container .system-list {
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            width: 100%;
+            height: 100%;
+        }
+        #content-panel-container .system-list-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            width: 100%;
+            height: 26px;
+        }
+        #content-panel-container .system-group { display: flex; align-items: center; gap: 10px; }
+        #content-panel-container .system-icon-wrap {
+            width: 26px;
+            height: 26px;
+            border-radius: 5.032px;
+            background: #1f2633;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+        }
+        #content-panel-container .system-icon-wrap img { display: block; width: 12.581px; height: 12.581px; }
+        #content-panel-container .system-name {
+            font-family: 'Pretendard', sans-serif;
+            font-weight: 500;
+            font-size: 15px;
+            color: #e4ebf6;
+            letter-spacing: -0.3px;
+            line-height: normal;
+        }
+        #content-panel-container .system-value { display: flex; align-items: flex-end; gap: 6px; line-height: normal; }
+        #content-panel-container .system-number {
+            font-family: 'Roboto Mono', monospace;
+            font-weight: 500;
+            font-size: 24px;
+            color: #f8fafc;
+            letter-spacing: -0.96px;
+            line-height: 1;
+        }
+        #content-panel-container .system-percent {
+            font-family: 'Roboto Mono', monospace;
+            font-weight: 400;
+            font-size: 14px;
+            color: #bbc2cf;
+            letter-spacing: -0.28px;
+            text-align: center;
+            line-height: 1;
+        }
+        #content-panel-container .system-status {
+            font-family: 'Pretendard', sans-serif;
+            font-weight: 500;
+            font-size: 20px;
+            text-align: right;
+            letter-spacing: -0.4px;
+            line-height: normal;
+        }
+        #content-panel-container .system-status--normal { color: #81e1c5; }
+        #content-panel-container .system-status--warning { color: #edbc35; }
+        #content-panel-container .system-status-warn { display: flex; align-items: center; gap: 7px; }
+        #content-panel-container .warn-icon { width: 15px; height: 14px; position: relative; }
+        #content-panel-container .warn-icon img { display: block; position: absolute; width: 21px; height: 19.6px; top: -2.8px; left: -3px; }
+
+        /* Battery Group */
+        #content-panel-container .section--battery {
+            height: 202px;
+            padding: 19px 18px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+        #content-panel-container .battery-block {
+            width: 384px;
+            display: flex;
+            flex-direction: column;
+            gap: 26px;
+            align-items: flex-end;
+        }
+        #content-panel-container .battery-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            width: 100%;
+            height: 17px;
+        }
+        #content-panel-container .battery-header-item { display: flex; align-items: center; gap: 7px; }
+        #content-panel-container .battery-dot { width: 5px; height: 5px; position: relative; }
+        #content-panel-container .battery-dot img { display: block; width: 5px; height: 5px; }
+        #content-panel-container .battery-group-name {
+            font-family: 'Pretendard', sans-serif;
+            font-weight: 500;
+            font-size: 14px;
+            color: #e4ebf6;
+            letter-spacing: -0.28px;
+            line-height: normal;
+        }
+        #content-panel-container .battery-datetime {
+            font-family: 'Pretendard', sans-serif;
+            font-weight: 400;
+            font-size: 13px;
+            color: #bbc2cf;
+            letter-spacing: -0.26px;
+            line-height: normal;
+        }
+        #content-panel-container .battery-body { display: flex; align-items: center; gap: 55px; }
+        #content-panel-container .donut-chart { width: 121px; height: 121px; position: relative; }
+        #content-panel-container .donut-image { position: absolute; width: 121px; height: 121px; top: 0; left: 0; }
+        #content-panel-container .donut-image img { display: block; width: 100%; height: 100%; }
+        #content-panel-container .donut-value {
+            position: absolute;
+            top: 42px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 8px;
+            line-height: normal;
+            text-align: center;
+        }
+        #content-panel-container .donut-number {
+            font-family: 'Roboto Mono', monospace;
+            font-weight: 500;
+            font-size: 28px;
+            color: #f8fafc;
+            letter-spacing: -1.12px;
+            line-height: 1;
+        }
+        #content-panel-container .donut-unit {
+            font-family: 'Roboto Mono', monospace;
+            font-weight: 400;
+            font-size: 14px;
+            color: #bbc2cf;
+            letter-spacing: -0.28px;
+            line-height: 1;
+        }
+        #content-panel-container .battery-legend { width: 181px; display: flex; flex-direction: column; gap: 13px; }
+        #content-panel-container .battery-legend-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            width: 100%;
+            height: 18px;
+        }
+        #content-panel-container .battery-legend-item { display: flex; align-items: center; gap: 10px; }
+        #content-panel-container .battery-legend-color { width: 10px; height: 10px; border-radius: 2.857px; }
+        #content-panel-container .battery-legend-text {
+            font-family: 'Pretendard', sans-serif;
+            font-weight: 400;
+            font-size: 15px;
+            color: #bbc2cf;
+            letter-spacing: -0.3px;
+            line-height: normal;
+        }
+        #content-panel-container .battery-legend-value {
+            font-family: 'Pretendard', sans-serif;
+            font-weight: 500;
+            font-size: 15px;
+            color: #e4ebf6;
+            letter-spacing: -0.3px;
+            text-align: right;
+            line-height: normal;
+        }
+
+        /* === preview-specific === */
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            padding: 40px;
+            background: #0d0f1a;
+            font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, sans-serif;
+        }
+        h1 { color: #f8fafc; margin-bottom: 8px; font-size: 20px; }
+        .subtitle { color: #bbc2cf; margin-bottom: 24px; font-size: 13px; }
+        .controls { margin-top: 24px; display: flex; gap: 8px; flex-wrap: wrap; }
+        .controls-group {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+        .controls-label {
+            color: #bbc2cf;
+            font-size: 12px;
+            font-weight: 500;
+            min-width: 80px;
+        }
+        .controls button {
+            padding: 8px 16px;
+            background: #1a2232;
+            color: #e4ebf6;
+            border: 1px solid rgba(81, 102, 145, 0.6);
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 13px;
+        }
+        .controls button:hover { background: #253450; }
+        .controls button.slot-btn { border-color: #445ed9; }
+        .controls button.slot-btn:hover { background: #2a3a5a; }
+        .controls button.destroy { background: #f87171; color: #fff; border-color: #f87171; }
+        .divider { width: 100%; height: 1px; background: rgba(81, 102, 145, 0.3); margin: 8px 0; }
+    </style>
+</head>
+<body>
+    <h1>ContentPanel + Contents Components (Integrated)</h1>
+    <p class="subtitle">ContentPanel shell + 3개 컨텐츠 컴포넌트 (renderData 기반)</p>
+    <div id="content-panel-container"></div>
+    <div class="controls">
+        <div class="controls-group">
+            <span class="controls-label">Data</span>
+            <button class="slot-btn" onclick="sendAllData()">Load All Data</button>
+            <button class="slot-btn" onclick="updateChartData()">Update Chart</button>
+            <button class="slot-btn" onclick="updateSystemData()">Update System</button>
+            <button class="slot-btn" onclick="updateBatteryData()">Update Battery</button>
+        </div>
+        <div class="divider"></div>
+        <div class="controls-group">
+            <span class="controls-label">Slot API</span>
+            <button onclick="removeSystemSlot()">Remove 'system' Slot</button>
+            <button onclick="clearAllSlots()">Clear All</button>
+            <button onclick="resetAll()">Reset</button>
+        </div>
+        <div class="divider"></div>
+        <div class="controls-group">
+            <span class="controls-label">Common</span>
+            <button onclick="destroy()" class="destroy">Destroy</button>
+        </div>
+    </div>
+
+    <script>
+        // ======================
+        // MOCK DEPENDENCIES
+        // ======================
+
+        const GlobalDataPublisher = {
+            subscribe: (topic, context, fn) => console.log(`[Mock] subscribe: ${topic}`),
+            unsubscribe: (topic, context) => console.log(`[Mock] unsubscribe: ${topic}`)
+        };
+
+        const Wkit = {
+            bindEvents: (context, events) => console.log('[Mock] bindEvents:', events),
+            removeCustomEvents: (context, events) => console.log('[Mock] removeCustomEvents:', events)
+        };
+
+        const fx = {
+            go: (arr, ...fns) => fns.reduce((acc, fn) => fn(acc), arr),
+            each: fn => arr => { arr.forEach(fn); return arr; }
+        };
+
+        // ======================
+        // COMPONENT HTML TEMPLATES
+        // ======================
+
+        const chartHtml = `
+            <div class="contents-power-chart">
+                <div class="contents-title">
+                    <div class="contents-title-txt">
+                        <span class="dot-indicator"></span>
+                        <span class="contents-title-text">-</span>
+                    </div>
+                    <div class="union-dots"></div>
+                </div>
+                <div class="section section--chart">
+                    <div class="chart-block">
+                        <div class="chart-header">
+                            <span class="chart-label">-</span>
+                            <div class="chart-value">
+                                <span class="value-number">-</span>
+                                <span class="value-unit">-</span>
+                            </div>
+                        </div>
+                        <div class="chart-body">
+                            <div class="chart-legend"></div>
+                            <div class="chart-area">
+                                <div class="chart-y-axis"></div>
+                                <div class="chart-grid-area">
+                                    <div class="chart-grid"></div>
+                                    <div class="chart-bars"></div>
+                                </div>
+                                <div class="chart-x-axis"></div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="section-inset-shadow"></div>
+                </div>
+            </div>
+        `;
+
+        const systemHtml = `
+            <div class="contents-system-status">
+                <div class="contents-title">
+                    <div class="contents-title-txt">
+                        <span class="dot-indicator"></span>
+                        <span class="contents-title-text">-</span>
+                    </div>
+                    <div class="union-dots"></div>
+                </div>
+                <div class="section-row">
+                    <div class="section section--gauge-box">
+                        <span class="gauge-label">-</span>
+                        <div class="gauge-chart">
+                            <div class="gauge-image"></div>
+                            <div class="gauge-value">
+                                <span class="gauge-number">-</span>
+                                <span class="gauge-unit">-</span>
+                            </div>
+                        </div>
+                        <div class="section-inset-shadow"></div>
+                    </div>
+                    <div class="section section--list-box">
+                        <div class="system-list"></div>
+                        <div class="section-inset-shadow"></div>
+                    </div>
+                </div>
+            </div>
+        `;
+
+        const batteryHtml = `
+            <div class="contents-battery-group">
+                <div class="contents-title">
+                    <div class="contents-title-txt">
+                        <span class="dot-indicator"></span>
+                        <span class="contents-title-text">-</span>
+                    </div>
+                    <div class="union-dots"></div>
+                </div>
+                <div class="section section--battery">
+                    <div class="battery-block">
+                        <div class="battery-header">
+                            <div class="battery-header-item">
+                                <span class="battery-dot"></span>
+                                <span class="battery-group-name">-</span>
+                            </div>
+                            <div class="battery-header-item">
+                                <span class="battery-datetime">-</span>
+                            </div>
+                        </div>
+                        <div class="battery-body">
+                            <div class="donut-chart">
+                                <div class="donut-image"></div>
+                                <div class="donut-value">
+                                    <span class="donut-number">-</span>
+                                    <span class="donut-unit">-</span>
+                                </div>
+                            </div>
+                            <div class="battery-legend"></div>
+                        </div>
+                    </div>
+                    <div class="section-inset-shadow"></div>
+                </div>
+            </div>
+        `;
+
+        // ======================
+        // CONTENT PANEL (Shell)
+        // ======================
+
+        const panelThis = {
+            appendElement: document.getElementById('content-panel-container')
+        };
+
+        panelThis.appendElement.innerHTML = `<div class="content-panel"></div>`;
+
+        // Register ContentPanel shell
+        (function registerPanel() {
+            this.updateSlot = function(slotId, html) {
+                const panel = this.appendElement.querySelector('.content-panel');
+                if (!panel) return;
+                let slot = panel.querySelector('.contents[data-slot-id="' + slotId + '"]');
+                if (!slot) {
+                    slot = document.createElement('div');
+                    slot.className = 'contents';
+                    slot.setAttribute('data-slot-id', slotId);
+                    panel.appendChild(slot);
+                }
+                slot.innerHTML = html;
+            }.bind(this);
+
+            this.getSlot = function(slotId) {
+                const panel = this.appendElement.querySelector('.content-panel');
+                if (!panel) return null;
+                return panel.querySelector('.contents[data-slot-id="' + slotId + '"]');
+            }.bind(this);
+
+            this.removeSlot = function(slotId) {
+                const panel = this.appendElement.querySelector('.content-panel');
+                if (!panel) return;
+                const slot = panel.querySelector('.contents[data-slot-id="' + slotId + '"]');
+                if (slot) panel.removeChild(slot);
+            }.bind(this);
+
+            this.clearContents = function() {
+                const panel = this.appendElement.querySelector('.content-panel');
+                if (panel) panel.innerHTML = '';
+            }.bind(this);
+        }).call(panelThis);
+
+        // Initialize slots with component HTML
+        panelThis.updateSlot('chart', chartHtml);
+        panelThis.updateSlot('system', systemHtml);
+        panelThis.updateSlot('battery', batteryHtml);
+
+        // ======================
+        // CONTENT COMPONENTS (mock contexts targeting slots)
+        // ======================
+
+        // Each component targets its slot element as appendElement
+        const chartThis = { appendElement: panelThis.getSlot('chart') };
+        const systemThis = { appendElement: panelThis.getSlot('system') };
+        const batteryThis = { appendElement: panelThis.getSlot('battery') };
+
+        // --- ContentsPowerChart register ---
+        (function registerChart() {
+            const config = {
+                titleKey: 'title', chartLabelKey: 'chartLabel', valueKey: 'value',
+                unitKey: 'unit', legendItemsKey: 'legendItems', seriesKey: 'series',
+                xLabelsKey: 'xLabels', yAxisMax: 800, yAxisStep: 200,
+                barMaxHeight: 100, barColors: ['blue', 'green']
+            };
+            this.renderData = renderData.bind(this, config);
+            this.subscriptions = { powerChartData: ['renderData'] };
+
+            function renderData(config, { response }) {
+                const { data } = response;
+                if (!data) return;
+                const titleEl = this.appendElement.querySelector('.contents-title-text');
+                if (titleEl && data[config.titleKey]) titleEl.textContent = data[config.titleKey];
+                const labelEl = this.appendElement.querySelector('.chart-label');
+                if (labelEl && data[config.chartLabelKey]) labelEl.textContent = data[config.chartLabelKey];
+                const numberEl = this.appendElement.querySelector('.value-number');
+                if (numberEl && data[config.valueKey] !== undefined) numberEl.textContent = data[config.valueKey];
+                const unitEl = this.appendElement.querySelector('.value-unit');
+                if (unitEl && data[config.unitKey]) unitEl.textContent = data[config.unitKey];
+                const legendItems = data[config.legendItemsKey];
+                if (legendItems && Array.isArray(legendItems)) {
+                    const legendEl = this.appendElement.querySelector('.chart-legend');
+                    legendEl.innerHTML = '';
+                    legendItems.forEach(item => {
+                        const div = document.createElement('div');
+                        div.className = 'legend-item';
+                        div.innerHTML = `<div class="legend-color legend-color--${item.color}"></div><span class="legend-text">${item.text}</span>`;
+                        legendEl.appendChild(div);
+                    });
+                }
+                const yMax = data.yAxisMax || config.yAxisMax;
+                const yStep = data.yAxisStep || config.yAxisStep;
+                const yAxisEl = this.appendElement.querySelector('.chart-y-axis');
+                if (yAxisEl) {
+                    yAxisEl.innerHTML = '';
+                    for (let v = yMax; v > 0; v -= yStep) {
+                        const span = document.createElement('span');
+                        span.className = 'axis-label';
+                        span.textContent = v;
+                        yAxisEl.appendChild(span);
+                    }
+                    const zeroSpan = document.createElement('span');
+                    zeroSpan.className = 'axis-label axis-label--zero';
+                    zeroSpan.textContent = '0';
+                    yAxisEl.appendChild(zeroSpan);
+                }
+                const gridEl = this.appendElement.querySelector('.chart-grid');
+                if (gridEl) {
+                    const lineCount = yMax / yStep;
+                    gridEl.innerHTML = '';
+                    for (let i = 0; i <= lineCount; i++) {
+                        const line = document.createElement('div');
+                        line.className = i === 0 ? 'grid-line grid-line--solid' : 'grid-line grid-line--dashed';
+                        gridEl.appendChild(line);
+                    }
+                }
+                const series = data[config.seriesKey];
+                if (series && Array.isArray(series)) {
+                    const barsEl = this.appendElement.querySelector('.chart-bars');
+                    barsEl.innerHTML = '';
+                    series.forEach(group => {
+                        const groupDiv = document.createElement('div');
+                        groupDiv.className = 'bar-group';
+                        (group.values || []).forEach((val, i) => {
+                            const bar = document.createElement('div');
+                            bar.className = `bar bar--${config.barColors[i] || 'blue'}`;
+                            bar.style.height = Math.min(Math.round((val / yMax) * config.barMaxHeight), config.barMaxHeight) + 'px';
+                            groupDiv.appendChild(bar);
+                        });
+                        barsEl.appendChild(groupDiv);
+                    });
+                }
+                const xLabels = data[config.xLabelsKey];
+                if (xLabels && Array.isArray(xLabels)) {
+                    const xAxisEl = this.appendElement.querySelector('.chart-x-axis');
+                    xAxisEl.innerHTML = '';
+                    xLabels.forEach(label => {
+                        const span = document.createElement('span');
+                        span.className = 'axis-label-x';
+                        span.textContent = label;
+                        xAxisEl.appendChild(span);
+                    });
+                }
+            }
+        }).call(chartThis);
+
+        // --- ContentsSystemStatus register ---
+        (function registerSystem() {
+            const config = {
+                titleKey: 'title', gaugeLabelKey: 'gaugeLabel', gaugeValueKey: 'gaugeValue',
+                gaugeUnitKey: 'gaugeUnit', systemListKey: 'systemList',
+                systemFields: { name: 'name', value: 'value', unit: 'unit', status: 'status' },
+                statusMap: { normal: { text: '정상', class: 'normal' }, warning: { text: '비정상', class: 'warning' } }
+            };
+            this.renderData = renderData.bind(this, config);
+            this.subscriptions = { systemStatusData: ['renderData'] };
+
+            function renderData(config, { response }) {
+                const { data } = response;
+                if (!data) return;
+                const titleEl = this.appendElement.querySelector('.contents-title-text');
+                if (titleEl && data[config.titleKey]) titleEl.textContent = data[config.titleKey];
+                const gaugeLabelEl = this.appendElement.querySelector('.gauge-label');
+                if (gaugeLabelEl && data[config.gaugeLabelKey]) gaugeLabelEl.textContent = data[config.gaugeLabelKey];
+                const gaugeNumberEl = this.appendElement.querySelector('.gauge-number');
+                if (gaugeNumberEl && data[config.gaugeValueKey] !== undefined) gaugeNumberEl.textContent = data[config.gaugeValueKey];
+                const gaugeUnitEl = this.appendElement.querySelector('.gauge-unit');
+                if (gaugeUnitEl && data[config.gaugeUnitKey]) gaugeUnitEl.textContent = data[config.gaugeUnitKey];
+                const systemList = data[config.systemListKey];
+                if (systemList && Array.isArray(systemList)) {
+                    const listEl = this.appendElement.querySelector('.system-list');
+                    listEl.innerHTML = '';
+                    systemList.forEach(item => {
+                        const { systemFields, statusMap } = config;
+                        const row = document.createElement('div');
+                        row.className = 'system-list-row';
+                        const name = item[systemFields.name] || '-';
+                        const status = item[systemFields.status] || 'normal';
+                        let leftHtml = `<div class="system-group"><div class="system-icon-wrap"></div><span class="system-name">${name}</span></div>`;
+                        let rightHtml = '';
+                        if (status === 'value') {
+                            rightHtml = `<div class="system-value"><span class="system-number">${item[systemFields.value] || '-'}</span><span class="system-percent">${item[systemFields.unit] || ''}</span></div>`;
+                        } else if (status === 'warning') {
+                            const si = statusMap[status];
+                            rightHtml = `<div class="system-status-warn"><div class="warn-icon"></div><span class="system-status system-status--${si.class}">${si.text}</span></div>`;
+                        } else {
+                            const si = statusMap[status] || statusMap.normal;
+                            rightHtml = `<span class="system-status system-status--${si.class}">${si.text}</span>`;
+                        }
+                        row.innerHTML = leftHtml + rightHtml;
+                        listEl.appendChild(row);
+                    });
+                }
+            }
+        }).call(systemThis);
+
+        // --- ContentsBatteryGroup register ---
+        (function registerBattery() {
+            const config = {
+                titleKey: 'title', groupNameKey: 'groupName', datetimeKey: 'datetime',
+                totalValueKey: 'totalValue', totalUnitKey: 'totalUnit', itemsKey: 'items',
+                itemFields: { color: 'color', name: 'name', percentage: 'percentage' }
+            };
+            this.renderData = renderData.bind(this, config);
+            this.subscriptions = { batteryGroupData: ['renderData'] };
+
+            function renderData(config, { response }) {
+                const { data } = response;
+                if (!data) return;
+                const titleEl = this.appendElement.querySelector('.contents-title-text');
+                if (titleEl && data[config.titleKey]) titleEl.textContent = data[config.titleKey];
+                const groupNameEl = this.appendElement.querySelector('.battery-group-name');
+                if (groupNameEl && data[config.groupNameKey]) groupNameEl.textContent = data[config.groupNameKey];
+                const datetimeEl = this.appendElement.querySelector('.battery-datetime');
+                if (datetimeEl && data[config.datetimeKey]) datetimeEl.textContent = data[config.datetimeKey];
+                const totalNumberEl = this.appendElement.querySelector('.donut-number');
+                if (totalNumberEl && data[config.totalValueKey] !== undefined) totalNumberEl.textContent = data[config.totalValueKey];
+                const totalUnitEl = this.appendElement.querySelector('.donut-unit');
+                if (totalUnitEl && data[config.totalUnitKey]) totalUnitEl.textContent = data[config.totalUnitKey];
+                const items = data[config.itemsKey];
+                if (items && Array.isArray(items)) {
+                    const legendEl = this.appendElement.querySelector('.battery-legend');
+                    legendEl.innerHTML = '';
+                    items.forEach(item => {
+                        const { itemFields } = config;
+                        const row = document.createElement('div');
+                        row.className = 'battery-legend-row';
+                        row.innerHTML = `<div class="battery-legend-item"><div class="battery-legend-color" style="background:${item[itemFields.color] || '#445ed9'};"></div><span class="battery-legend-text">${item[itemFields.name] || '-'}</span></div><span class="battery-legend-value">${item[itemFields.percentage] || '-'}</span>`;
+                        legendEl.appendChild(row);
+                    });
+                }
+            }
+        }).call(batteryThis);
+
+        // ======================
+        // TEST DATA
+        // ======================
+
+        const chartData = {
+            title: '실제 전력 현황', chartLabel: '실제 전력 평균', value: '828.7883', unit: 'KW',
+            legendItems: [{ color: 'blue', text: '금일' }, { color: 'green', text: '금주' }],
+            series: [
+                { values: [560, 120] }, { values: [664, 560] }, { values: [656, 560] },
+                { values: [528, 400] }, { values: [528, 392] }, { values: [456, 296] }, { values: [296, 288] }
+            ],
+            xLabels: ['01', '02', '03', '04', '05', '06', '07']
+        };
+
+        const chartDataUpdated = {
+            title: '실제 전력 현황', chartLabel: '실제 전력 평균', value: '945.1200', unit: 'KW',
+            legendItems: [{ color: 'blue', text: '금일' }, { color: 'green', text: '금주' }],
+            series: [
+                { values: [720, 360] }, { values: [760, 640] }, { values: [704, 600] },
+                { values: [624, 480] }, { values: [576, 440] }, { values: [520, 384] }, { values: [400, 336] }
+            ],
+            xLabels: ['01', '02', '03', '04', '05', '06', '07']
+        };
+
+        const systemData = {
+            title: '시스템 현황', gaugeLabel: '시스템 상태 점수', gaugeValue: 92, gaugeUnit: '%',
+            systemList: [
+                { name: '시스템 #01', value: 76, unit: '%', status: 'value' },
+                { name: '시스템 #02', status: 'normal' },
+                { name: '시스템 #03', status: 'warning' }
+            ]
+        };
+
+        const systemDataUpdated = {
+            title: '시스템 현황', gaugeLabel: '시스템 상태 점수', gaugeValue: 78, gaugeUnit: '%',
+            systemList: [
+                { name: '시스템 #01', value: 65, unit: '%', status: 'value' },
+                { name: '시스템 #02', status: 'warning' },
+                { name: '시스템 #03', status: 'normal' }
+            ]
+        };
+
+        const batteryData = {
+            title: '배터리 현황', groupName: '배터리 그룹1', datetime: '2026-02-07 15:30',
+            totalValue: '1,110', totalUnit: 'KW',
+            items: [
+                { color: '#ff5c57', name: '아이템01', percentage: '40%' },
+                { color: '#edbc35', name: '아이템02', percentage: '10%' },
+                { color: '#445ed9', name: '아이템03', percentage: '10%' }
+            ]
+        };
+
+        const batteryDataUpdated = {
+            title: '배터리 현황', groupName: '배터리 그룹2', datetime: '2026-02-07 16:45',
+            totalValue: '2,350', totalUnit: 'KW',
+            items: [
+                { color: '#ff5c57', name: '충전', percentage: '55%' },
+                { color: '#edbc35', name: '방전', percentage: '25%' },
+                { color: '#445ed9', name: '대기', percentage: '15%' },
+                { color: '#81e1c5', name: '점검', percentage: '5%' }
+            ]
+        };
+
+        // ======================
+        // TEST ACTIONS
+        // ======================
+
+        function sendAllData() {
+            chartThis.renderData({ response: { data: chartData } });
+            systemThis.renderData({ response: { data: systemData } });
+            batteryThis.renderData({ response: { data: batteryData } });
+            console.log('[Test] All data loaded');
+        }
+
+        function updateChartData() {
+            chartThis.renderData({ response: { data: chartDataUpdated } });
+            console.log('[Test] Chart data updated');
+        }
+
+        function updateSystemData() {
+            systemThis.renderData({ response: { data: systemDataUpdated } });
+            console.log('[Test] System data updated');
+        }
+
+        function updateBatteryData() {
+            batteryThis.renderData({ response: { data: batteryDataUpdated } });
+            console.log('[Test] Battery data updated');
+        }
+
+        function removeSystemSlot() {
+            panelThis.removeSlot('system');
+            console.log('[Test] Removed system slot');
+        }
+
+        function clearAllSlots() {
+            panelThis.clearContents();
+            console.log('[Test] Cleared all slots');
+        }
+
+        function resetAll() {
+            panelThis.appendElement.innerHTML = '<div class="content-panel"></div>';
+            panelThis.updateSlot('chart', chartHtml);
+            panelThis.updateSlot('system', systemHtml);
+            panelThis.updateSlot('battery', batteryHtml);
+            chartThis.appendElement = panelThis.getSlot('chart');
+            systemThis.appendElement = panelThis.getSlot('system');
+            batteryThis.appendElement = panelThis.getSlot('battery');
+            sendAllData();
+            console.log('[Test] Reset all');
+        }
+
+        function destroy() {
+            chartThis.renderData = null;
+            systemThis.renderData = null;
+            batteryThis.renderData = null;
+            panelThis.updateSlot = null;
+            panelThis.getSlot = null;
+            panelThis.removeSlot = null;
+            panelThis.clearContents = null;
+            console.log('[ContentPanel + Contents] destroyed');
+        }
+
+        // 초기 렌더링
+        sendAllData();
+    </script>
+</body>
+</html>

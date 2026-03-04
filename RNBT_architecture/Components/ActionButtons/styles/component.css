@@ -1,0 +1,51 @@
+#action-buttons-container {
+    min-width: 50px;
+    min-height: 27px;
+
+    .action-group {
+        display: flex;
+        align-items: center;
+        gap: 9px;
+        width: 100%;
+        height: 100%;
+    }
+
+    .btn-type-a {
+        height: 27px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 5px 20px;
+        border-radius: 6px;
+        border: 1px solid #90a1b9;
+        backdrop-filter: blur(7px);
+        -webkit-backdrop-filter: blur(7px);
+        background:
+            linear-gradient(90deg, rgba(144, 161, 185, 0.1) 0%, rgba(144, 161, 185, 0.1) 100%),
+            linear-gradient(90deg, rgba(33, 38, 50, 0.7) 0%, rgba(33, 38, 50, 0.7) 100%);
+        box-shadow: 0px 4px 4px 0px rgba(44, 44, 44, 0.15);
+        cursor: pointer;
+        flex-shrink: 0;
+        font-family: 'Pretendard', sans-serif;
+    }
+
+    .btn-type-a span {
+        font-weight: 500;
+        font-size: 14px;
+        color: #94a3b8;
+        text-align: center;
+        white-space: nowrap;
+        line-height: normal;
+    }
+
+    .btn-type-a.active {
+        border-color: #60ebff;
+        background:
+            linear-gradient(90deg, rgba(96, 235, 255, 0.15) 0%, rgba(96, 235, 255, 0.15) 100%),
+            linear-gradient(90deg, rgba(33, 38, 50, 0.7) 0%, rgba(33, 38, 50, 0.7) 100%);
+    }
+
+    .btn-type-a.active span {
+        color: #60ebff;
+    }
+}

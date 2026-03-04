@@ -1,0 +1,103 @@
+#view-buttons-container {
+    min-width: 52px;
+    min-height: 52px;
+
+    .view-buttons {
+        display: flex;
+        align-items: flex-start;
+        gap: 12px;
+    }
+
+    /* Single Button Wrapper */
+    .view-btn {
+        width: 52px;
+        position: relative;
+        border-radius: 100px;
+        cursor: pointer;
+    }
+
+    /* Tooltip */
+    .view-btn .tooltip {
+        position: absolute;
+        bottom: -31px;
+        left: 50%;
+        transform: translateX(-50%);
+        padding: 4px 12px;
+        overflow: clip;
+        white-space: nowrap;
+    }
+
+    .view-btn .tooltip span {
+        font-family: 'Pretendard', sans-serif;
+        font-weight: 500;
+        font-size: 14px;
+        text-align: center;
+        white-space: nowrap;
+        line-height: normal;
+    }
+
+    .view-btn.active .tooltip span {
+        color: #f8fafc;
+    }
+
+    .view-btn.inactive .tooltip span {
+        color: #94a3b8;
+    }
+
+    /* Circle Button */
+    .view-btn .btn-circle {
+        width: 52px;
+        height: 52px;
+        border-radius: 100px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        overflow: clip;
+        position: relative;
+    }
+
+    /* Active State */
+    .view-btn.active .btn-circle {
+        border: 1px solid #ffffff;
+        background:
+            linear-gradient(-23.68deg, rgba(96, 235, 255, 0) 9.76%, rgb(96, 255, 234) 93.85%),
+            linear-gradient(-34.82deg, rgba(112, 132, 245, 0) 15.24%, rgb(129, 225, 197) 112.01%),
+            linear-gradient(90deg, rgb(175, 238, 247) 0%, rgb(175, 238, 247) 100%);
+    }
+
+    .view-btn.active .btn-circle::after {
+        content: '';
+        position: absolute;
+        inset: 0;
+        border-radius: inherit;
+        box-shadow: inset 0px 5px 4px 0px rgba(255, 255, 255, 0.25);
+        pointer-events: none;
+    }
+
+    /* Inactive State */
+    .view-btn.inactive .btn-circle {
+        border: 1px solid #90a1b9;
+        padding: 1px;
+        border-radius: 78.947px;
+        background:
+            linear-gradient(90deg, rgba(144, 161, 185, 0.1) 0%, rgba(144, 161, 185, 0.1) 100%),
+            linear-gradient(90deg, rgb(33, 45, 53) 0%, rgb(33, 45, 53) 100%);
+    }
+
+    /* Icon */
+    .btn-circle .btn-icon {
+        width: 22px;
+        height: 22px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .btn-circle .btn-icon img {
+        display: block;
+        max-width: none;
+        width: 22px;
+        height: 22px;
+    }
+}

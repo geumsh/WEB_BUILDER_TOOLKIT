@@ -1,0 +1,381 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ViewButtons Preview</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css">
+    <style>
+        /* === component.css (inline - #view-buttons-container scoped) === */
+        #view-buttons-container {
+            min-width: 52px;
+            min-height: 52px;
+        }
+        #view-buttons-container .view-buttons {
+            display: flex;
+            align-items: flex-start;
+            gap: 12px;
+        }
+        #view-buttons-container .view-btn {
+            width: 52px;
+            position: relative;
+            border-radius: 100px;
+            cursor: pointer;
+        }
+        #view-buttons-container .view-btn .tooltip {
+            position: absolute;
+            bottom: -31px;
+            left: 50%;
+            transform: translateX(-50%);
+            padding: 4px 12px;
+            overflow: clip;
+            white-space: nowrap;
+        }
+        #view-buttons-container .view-btn .tooltip span {
+            font-family: 'Pretendard', sans-serif;
+            font-weight: 500;
+            font-size: 14px;
+            text-align: center;
+            white-space: nowrap;
+            line-height: normal;
+        }
+        #view-buttons-container .view-btn.active .tooltip span { color: #f8fafc; }
+        #view-buttons-container .view-btn.inactive .tooltip span { color: #94a3b8; }
+        #view-buttons-container .view-btn .btn-circle {
+            width: 52px;
+            height: 52px;
+            border-radius: 100px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            overflow: clip;
+            position: relative;
+        }
+        #view-buttons-container .view-btn.active .btn-circle {
+            border: 1px solid #ffffff;
+            background:
+                linear-gradient(-23.68deg, rgba(96, 235, 255, 0) 9.76%, rgb(96, 255, 234) 93.85%),
+                linear-gradient(-34.82deg, rgba(112, 132, 245, 0) 15.24%, rgb(129, 225, 197) 112.01%),
+                linear-gradient(90deg, rgb(175, 238, 247) 0%, rgb(175, 238, 247) 100%);
+        }
+        #view-buttons-container .view-btn.active .btn-circle::after {
+            content: '';
+            position: absolute;
+            inset: 0;
+            border-radius: inherit;
+            box-shadow: inset 0px 5px 4px 0px rgba(255, 255, 255, 0.25);
+            pointer-events: none;
+        }
+        #view-buttons-container .view-btn.inactive .btn-circle {
+            border: 1px solid #90a1b9;
+            padding: 1px;
+            border-radius: 78.947px;
+            background:
+                linear-gradient(90deg, rgba(144, 161, 185, 0.1) 0%, rgba(144, 161, 185, 0.1) 100%),
+                linear-gradient(90deg, rgb(33, 45, 53) 0%, rgb(33, 45, 53) 100%);
+        }
+        #view-buttons-container .btn-circle .btn-icon {
+            width: 22px;
+            height: 22px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        #view-buttons-container .btn-circle .btn-icon img {
+            display: block;
+            max-width: none;
+            width: 22px;
+            height: 22px;
+        }
+
+        /* === preview-specific === */
+        body {
+            margin: 0;
+            padding: 40px;
+            background: #0f1117;
+            font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        }
+        h1 { color: #f8fafc; margin-bottom: 24px; font-size: 20px; }
+        #view-buttons-container { width: 300px; height: 83px; }
+        .controls { margin-top: 40px; display: flex; gap: 8px; flex-wrap: wrap; }
+        .controls button {
+            padding: 8px 16px;
+            background: #60ebff;
+            color: #131521;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 13px;
+            font-weight: 500;
+        }
+        .controls button:hover { background: #4dd8ec; }
+        .controls button.destroy { background: #f87171; color: #fff; }
+        .controls button.destroy:hover { background: #ef4444; }
+        .controls button.secondary { background: #3b82f6; color: #fff; }
+    </style>
+</head>
+<body>
+    <h1>ViewButtons Component Preview</h1>
+    <div id="view-buttons-container"></div>
+    <div class="controls">
+        <button onclick="sendTwoButtons()">2 Buttons</button>
+        <button onclick="sendThreeButtons()" class="secondary">3 Buttons</button>
+        <button onclick="sendFourButtons()" class="secondary">4 Buttons</button>
+        <button onclick="destroy()" class="destroy">Destroy</button>
+    </div>
+
+    <script>
+        // ======================
+        // MOCK CONTEXT
+        // ======================
+
+        const mockThis = {
+            appendElement: document.getElementById('view-buttons-container')
+        };
+
+        mockThis.appendElement.innerHTML = `<div class="view-buttons"></div>`;
+
+        // ======================
+        // MOCK DEPENDENCIES
+        // ======================
+
+        const GlobalDataPublisher = {
+            subscribe: (topic, context, fn) => { console.log(`[Mock] subscribe: ${topic}`); },
+            unsubscribe: (topic, context) => { console.log(`[Mock] unsubscribe: ${topic}`); }
+        };
+
+        const Wkit = {
+            bindEvents: (context, events) => { console.log('[Mock] bindEvents:', events); },
+            removeCustomEvents: (context, events) => { console.log('[Mock] removeCustomEvents:', events); }
+        };
+
+        const fx = {
+            go: (arr, ...fns) => fns.reduce((acc, fn) => fn(acc), arr),
+            each: fn => arr => { arr.forEach(fn); return arr; }
+        };
+
+        // ======================
+        // REGISTER
+        // ======================
+
+        (function register() {
+            const { subscribe } = GlobalDataPublisher;
+            const { bindEvents } = Wkit;
+
+            const config = {
+                buttonsKey: 'buttons',
+                activeKeyKey: 'activeKey',
+                buttonFields: {
+                    key: 'key',
+                    label: 'label',
+                    icon: 'icon'
+                }
+            };
+
+            this._activeKey = null;
+            this._buttonsData = null;
+            this._internalHandlers = {};
+
+            this.renderData = renderData.bind(this, config);
+            this.setActive = setActive.bind(this, config);
+
+            this.subscriptions = {
+                viewButtonsData: ['renderData']
+            };
+
+            fx.go(
+                Object.entries(this.subscriptions),
+                fx.each(([topic, fnList]) =>
+                    fx.each(fn => this[fn] && subscribe(topic, this, this[fn]), fnList)
+                )
+            );
+
+            this.customEvents = {
+                click: { '.view-btn': '@buttonClicked' }
+            };
+
+            bindEvents(this, this.customEvents);
+            setupInternalHandlers.call(this);
+
+            // RENDER
+
+            function renderData(config, { response }) {
+                const { data } = response;
+                if (!data) return;
+
+                const buttons = data[config.buttonsKey];
+                const activeKey = data[config.activeKeyKey];
+
+                if (activeKey !== undefined) {
+                    this._activeKey = activeKey;
+                }
+
+                if (buttons && Array.isArray(buttons)) {
+                    this._buttonsData = buttons;
+                    renderButtons.call(this, config, buttons);
+                }
+            }
+
+            function renderButtons(config, buttons) {
+                const { buttonFields } = config;
+                const container = this.appendElement.querySelector('.view-buttons');
+                if (!container) return;
+                container.innerHTML = '';
+
+                fx.go(
+                    buttons,
+                    fx.each(btn => {
+                        const key = btn[buttonFields.key] || '';
+                        const label = btn[buttonFields.label] || '';
+                        const icon = btn[buttonFields.icon] || '';
+                        const isActive = key === this._activeKey;
+
+                        const wrapper = document.createElement('div');
+                        wrapper.className = `view-btn ${isActive ? 'active' : 'inactive'}`;
+                        wrapper.dataset.key = key;
+
+                        const tooltip = document.createElement('div');
+                        tooltip.className = 'tooltip';
+                        const tooltipText = document.createElement('span');
+                        tooltipText.textContent = label;
+                        tooltip.appendChild(tooltipText);
+                        wrapper.appendChild(tooltip);
+
+                        const circle = document.createElement('div');
+                        circle.className = 'btn-circle';
+                        const iconWrap = document.createElement('div');
+                        iconWrap.className = 'btn-icon';
+                        const iconImg = document.createElement('img');
+                        iconImg.src = icon;
+                        iconImg.alt = '';
+                        iconWrap.appendChild(iconImg);
+                        circle.appendChild(iconWrap);
+
+                        wrapper.appendChild(circle);
+                        container.appendChild(wrapper);
+                    })
+                );
+            }
+
+            // INTERNAL HANDLERS
+
+            function setupInternalHandlers() {
+                const root = this.appendElement;
+
+                this._internalHandlers.btnClick = (e) => {
+                    const btn = e.target.closest('.view-btn');
+                    if (btn && btn.dataset.key) {
+                        this.setActive(btn.dataset.key);
+                    }
+                };
+
+                root.addEventListener('click', this._internalHandlers.btnClick);
+            }
+
+            function setActive(config, key) {
+                if (this._activeKey === key) return;
+                this._activeKey = key;
+
+                const allBtns = this.appendElement.querySelectorAll('.view-btn');
+                fx.go(
+                    Array.from(allBtns),
+                    fx.each(btn => {
+                        const isActive = btn.dataset.key === key;
+                        btn.classList.toggle('active', isActive);
+                        btn.classList.toggle('inactive', !isActive);
+                    })
+                );
+            }
+
+        }).call(mockThis);
+
+        // ======================
+        // BEFORE DESTROY
+        // ======================
+
+        function destroy() {
+            (function beforeDestroy() {
+                const { unsubscribe } = GlobalDataPublisher;
+                const { removeCustomEvents } = Wkit;
+                const { each } = fx;
+
+                fx.go(
+                    Object.entries(this.subscriptions),
+                    each(([topic, _]) => unsubscribe(topic, this))
+                );
+                this.subscriptions = null;
+
+                removeCustomEvents(this, this.customEvents);
+                this.customEvents = null;
+
+                const root = this.appendElement;
+                if (this._internalHandlers) {
+                    root.removeEventListener('click', this._internalHandlers.btnClick);
+                }
+                this._internalHandlers = null;
+
+                this._activeKey = null;
+                this._buttonsData = null;
+
+                this.renderData = null;
+                this.setActive = null;
+
+                console.log('[ViewButtons] Destroyed');
+            }).call(mockThis);
+        }
+
+        // ======================
+        // TEST HELPERS
+        // ======================
+
+        function sendTwoButtons() {
+            mockThis.renderData({
+                response: {
+                    data: {
+                        buttons: [
+                            { key: 'system', label: '계통도', icon: './assets/icon-system.svg' },
+                            { key: 'power', label: '전력도', icon: './assets/icon-power.svg' }
+                        ],
+                        activeKey: 'system'
+                    }
+                }
+            });
+        }
+
+        function sendThreeButtons() {
+            mockThis.renderData({
+                response: {
+                    data: {
+                        buttons: [
+                            { key: 'system', label: '계통도', icon: './assets/icon-system.svg' },
+                            { key: 'power', label: '전력도', icon: './assets/icon-power.svg' },
+                            { key: 'floor', label: '평면도', icon: './assets/icon-system.svg' }
+                        ],
+                        activeKey: 'power'
+                    }
+                }
+            });
+        }
+
+        function sendFourButtons() {
+            mockThis.renderData({
+                response: {
+                    data: {
+                        buttons: [
+                            { key: 'system', label: '계통도', icon: './assets/icon-system.svg' },
+                            { key: 'power', label: '전력도', icon: './assets/icon-power.svg' },
+                            { key: 'floor', label: '평면도', icon: './assets/icon-system.svg' },
+                            { key: 'cctv', label: 'CCTV', icon: './assets/icon-power.svg' }
+                        ],
+                        activeKey: 'system'
+                    }
+                }
+            });
+        }
+
+        // 초기 렌더링
+        sendTwoButtons();
+    </script>
+</body>
+</html>

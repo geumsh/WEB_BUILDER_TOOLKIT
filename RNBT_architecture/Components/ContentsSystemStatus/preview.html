@@ -1,0 +1,459 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ContentsSystemStatus Preview</title>
+    <link href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css" rel="stylesheet">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <style>
+        /* === component.css (inline) === */
+        #contents-system-status-container .contents-title {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            width: 100%;
+            height: 21px;
+        }
+        #contents-system-status-container .contents-title-txt {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        #contents-system-status-container .dot-indicator {
+            position: relative;
+            width: 6px;
+            height: 6px;
+        }
+        #contents-system-status-container .dot-indicator img {
+            display: block;
+            position: absolute;
+            width: 16px;
+            height: 16px;
+            top: -5px;
+            left: -5px;
+        }
+        #contents-system-status-container .contents-title-text {
+            font-family: 'Pretendard', sans-serif;
+            font-weight: 600;
+            font-size: 18px;
+            color: #f8fafc;
+            line-height: normal;
+        }
+        #contents-system-status-container .union-dots {
+            width: 55.176px;
+            height: 9px;
+            position: relative;
+        }
+        #contents-system-status-container .union-dots img {
+            display: block;
+            position: absolute;
+            width: 100%;
+            height: 100%;
+        }
+        #contents-system-status-container .section {
+            width: auto;
+            backdrop-filter: blur(15px);
+            background: rgba(26, 34, 50, 0.6);
+            border: 1px solid rgba(81, 102, 145, 0.6);
+            border-radius: 12px;
+            position: relative;
+            box-sizing: border-box;
+        }
+        #contents-system-status-container .section-inset-shadow {
+            position: absolute;
+            inset: 0;
+            border-radius: inherit;
+            pointer-events: none;
+            box-shadow: inset 0px 0px 8px 0px rgba(0, 0, 0, 0.25);
+        }
+        #contents-system-status-container .contents-system-status {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        #contents-system-status-container .section-row { display: flex; gap: 10px; width: 420px; }
+        #contents-system-status-container .section--gauge-box {
+            width: 140px;
+            height: 170px;
+            padding: 26px 17px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: space-between;
+        }
+        #contents-system-status-container .gauge-label {
+            font-family: 'Pretendard', sans-serif;
+            font-weight: 500;
+            font-size: 16px;
+            color: #e4ebf6;
+            letter-spacing: -0.32px;
+            text-align: center;
+            line-height: normal;
+            width: 106px;
+        }
+        #contents-system-status-container .gauge-chart { width: 106px; height: 81px; position: relative; }
+        #contents-system-status-container .gauge-image { position: absolute; width: 106px; height: 106px; top: 0; left: 0; }
+        #contents-system-status-container .gauge-image img { display: block; width: 100%; height: 100%; }
+        #contents-system-status-container .gauge-value {
+            position: absolute;
+            top: 39px;
+            left: 50%;
+            transform: translateX(calc(-50% - 0.5px));
+            display: flex;
+            align-items: flex-end;
+            gap: 3px;
+            line-height: normal;
+            text-align: center;
+        }
+        #contents-system-status-container .gauge-number {
+            font-family: 'Roboto Mono', monospace;
+            font-weight: 500;
+            font-size: 28px;
+            color: #f8fafc;
+            letter-spacing: -1.12px;
+            line-height: 1;
+        }
+        #contents-system-status-container .gauge-unit {
+            font-family: 'Roboto Mono', monospace;
+            font-weight: 400;
+            font-size: 14px;
+            color: #bbc2cf;
+            letter-spacing: -0.28px;
+            line-height: 1;
+        }
+        #contents-system-status-container .section--list-box {
+            flex: 1;
+            height: 170px;
+            padding: 26px 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        #contents-system-status-container .system-list {
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            width: 100%;
+            height: 100%;
+        }
+        #contents-system-status-container .system-list-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            width: 100%;
+            height: 26px;
+        }
+        #contents-system-status-container .system-group { display: flex; align-items: center; gap: 10px; }
+        #contents-system-status-container .system-icon-wrap {
+            width: 26px;
+            height: 26px;
+            border-radius: 5.032px;
+            background: #1f2633;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+        }
+        #contents-system-status-container .system-icon-wrap img { display: block; width: 12.581px; height: 12.581px; }
+        #contents-system-status-container .system-name {
+            font-family: 'Pretendard', sans-serif;
+            font-weight: 500;
+            font-size: 15px;
+            color: #e4ebf6;
+            letter-spacing: -0.3px;
+            line-height: normal;
+        }
+        #contents-system-status-container .system-value { display: flex; align-items: flex-end; gap: 6px; line-height: normal; }
+        #contents-system-status-container .system-number {
+            font-family: 'Roboto Mono', monospace;
+            font-weight: 500;
+            font-size: 24px;
+            color: #f8fafc;
+            letter-spacing: -0.96px;
+            line-height: 1;
+        }
+        #contents-system-status-container .system-percent {
+            font-family: 'Roboto Mono', monospace;
+            font-weight: 400;
+            font-size: 14px;
+            color: #bbc2cf;
+            letter-spacing: -0.28px;
+            text-align: center;
+            line-height: 1;
+        }
+        #contents-system-status-container .system-status {
+            font-family: 'Pretendard', sans-serif;
+            font-weight: 500;
+            font-size: 20px;
+            text-align: right;
+            letter-spacing: -0.4px;
+            line-height: normal;
+        }
+        #contents-system-status-container .system-status--normal { color: #81e1c5; }
+        #contents-system-status-container .system-status--warning { color: #edbc35; }
+        #contents-system-status-container .system-status-warn { display: flex; align-items: center; gap: 7px; }
+        #contents-system-status-container .warn-icon { width: 15px; height: 14px; position: relative; }
+        #contents-system-status-container .warn-icon img { display: block; position: absolute; width: 21px; height: 19.6px; top: -2.8px; left: -3px; }
+
+        /* === preview-specific === */
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            padding: 40px;
+            background: #0d0f1a;
+            font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, sans-serif;
+        }
+        h1 { color: #f8fafc; margin-bottom: 24px; font-size: 20px; }
+        .controls { margin-top: 24px; }
+        .controls button {
+            padding: 8px 16px;
+            margin-right: 8px;
+            background: #1a2232;
+            color: #e4ebf6;
+            border: 1px solid rgba(81, 102, 145, 0.6);
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 13px;
+        }
+        .controls button:hover { background: #253450; }
+        .controls button.destroy { background: #f87171; color: #fff; border-color: #f87171; }
+    </style>
+</head>
+<body>
+    <h1>ContentsSystemStatus Component Preview</h1>
+    <div id="contents-system-status-container"></div>
+    <div class="controls">
+        <button onclick="sendMockData()">Load Data</button>
+        <button onclick="sendUpdatedData()">Update Data</button>
+        <button onclick="destroy()" class="destroy">Destroy</button>
+    </div>
+
+    <script>
+        // ======================
+        // MOCK CONTEXT
+        // ======================
+
+        const mockThis = {
+            appendElement: document.getElementById('contents-system-status-container')
+        };
+
+        // HTML 삽입 (views/component.html)
+        mockThis.appendElement.innerHTML = `
+            <div class="contents-system-status">
+                <div class="contents-title">
+                    <div class="contents-title-txt">
+                        <span class="dot-indicator"></span>
+                        <span class="contents-title-text">-</span>
+                    </div>
+                    <div class="union-dots"></div>
+                </div>
+                <div class="section-row">
+                    <div class="section section--gauge-box">
+                        <span class="gauge-label">-</span>
+                        <div class="gauge-chart">
+                            <div class="gauge-image"></div>
+                            <div class="gauge-value">
+                                <span class="gauge-number">-</span>
+                                <span class="gauge-unit">-</span>
+                            </div>
+                        </div>
+                        <div class="section-inset-shadow"></div>
+                    </div>
+                    <div class="section section--list-box">
+                        <div class="system-list"></div>
+                        <div class="section-inset-shadow"></div>
+                    </div>
+                </div>
+            </div>
+        `;
+
+        // ======================
+        // MOCK DEPENDENCIES
+        // ======================
+
+        const GlobalDataPublisher = {
+            subscribe: (topic, context, fn) => console.log(`[Mock] subscribe: ${topic}`),
+            unsubscribe: (topic, context) => console.log(`[Mock] unsubscribe: ${topic}`)
+        };
+
+        const fx = {
+            go: (arr, ...fns) => fns.reduce((acc, fn) => fn(acc), arr),
+            each: fn => arr => { arr.forEach(fn); return arr; }
+        };
+
+        // ======================
+        // REGISTER (inline)
+        // ======================
+
+        (function register() {
+            const { subscribe } = GlobalDataPublisher;
+
+            const config = {
+                titleKey: 'title',
+                gaugeLabelKey: 'gaugeLabel',
+                gaugeValueKey: 'gaugeValue',
+                gaugeUnitKey: 'gaugeUnit',
+                systemListKey: 'systemList',
+                systemFields: {
+                    name: 'name',
+                    value: 'value',
+                    unit: 'unit',
+                    status: 'status'
+                },
+                statusMap: {
+                    normal: { text: '정상', class: 'normal' },
+                    warning: { text: '비정상', class: 'warning' }
+                }
+            };
+
+            this.renderData = renderData.bind(this, config);
+
+            this.subscriptions = {
+                systemStatusData: ['renderData']
+            };
+
+            fx.go(
+                Object.entries(this.subscriptions),
+                fx.each(([topic, fnList]) =>
+                    fx.each(fn => this[fn] && subscribe(topic, this, this[fn]), fnList)
+                )
+            );
+
+            function renderData(config, { response }) {
+                const { data } = response;
+                if (!data) return;
+
+                const titleEl = this.appendElement.querySelector('.contents-title-text');
+                if (titleEl && data[config.titleKey]) {
+                    titleEl.textContent = data[config.titleKey];
+                }
+
+                const gaugeLabelEl = this.appendElement.querySelector('.gauge-label');
+                if (gaugeLabelEl && data[config.gaugeLabelKey]) {
+                    gaugeLabelEl.textContent = data[config.gaugeLabelKey];
+                }
+
+                const gaugeNumberEl = this.appendElement.querySelector('.gauge-number');
+                if (gaugeNumberEl && data[config.gaugeValueKey] !== undefined) {
+                    gaugeNumberEl.textContent = data[config.gaugeValueKey];
+                }
+
+                const gaugeUnitEl = this.appendElement.querySelector('.gauge-unit');
+                if (gaugeUnitEl && data[config.gaugeUnitKey]) {
+                    gaugeUnitEl.textContent = data[config.gaugeUnitKey];
+                }
+
+                const systemList = data[config.systemListKey];
+                if (systemList && Array.isArray(systemList)) {
+                    const listEl = this.appendElement.querySelector('.system-list');
+                    listEl.innerHTML = '';
+                    systemList.forEach(item => appendSystemRow.call(this, config, listEl, item));
+                }
+            }
+
+            function appendSystemRow(config, listEl, item) {
+                const { systemFields, statusMap } = config;
+                const row = document.createElement('div');
+                row.className = 'system-list-row';
+
+                const name = item[systemFields.name] || '-';
+                const status = item[systemFields.status] || 'normal';
+
+                let leftHtml = `
+                    <div class="system-group">
+                        <div class="system-icon-wrap"></div>
+                        <span class="system-name">${name}</span>
+                    </div>
+                `;
+
+                let rightHtml = '';
+                if (status === 'value') {
+                    const value = item[systemFields.value] || '-';
+                    const unit = item[systemFields.unit] || '';
+                    rightHtml = `
+                        <div class="system-value">
+                            <span class="system-number">${value}</span>
+                            <span class="system-percent">${unit}</span>
+                        </div>
+                    `;
+                } else if (status === 'warning') {
+                    const statusInfo = statusMap[status];
+                    rightHtml = `
+                        <div class="system-status-warn">
+                            <div class="warn-icon"></div>
+                            <span class="system-status system-status--${statusInfo.class}">${statusInfo.text}</span>
+                        </div>
+                    `;
+                } else {
+                    const statusInfo = statusMap[status] || statusMap.normal;
+                    rightHtml = `<span class="system-status system-status--${statusInfo.class}">${statusInfo.text}</span>`;
+                }
+
+                row.innerHTML = leftHtml + rightHtml;
+                listEl.appendChild(row);
+            }
+        }).call(mockThis);
+
+        // ======================
+        // BEFORE DESTROY
+        // ======================
+
+        function destroy() {
+            (function beforeDestroy() {
+                const { unsubscribe } = GlobalDataPublisher;
+
+                fx.go(
+                    Object.entries(this.subscriptions),
+                    fx.each(([topic, _]) => unsubscribe(topic, this))
+                );
+                this.subscriptions = null;
+
+                this.renderData = null;
+
+                console.log('[ContentsSystemStatus] destroyed');
+            }).call(mockThis);
+        }
+
+        // ======================
+        // TEST DATA
+        // ======================
+
+        const mockData = {
+            title: '시스템 현황',
+            gaugeLabel: '시스템 상태 점수',
+            gaugeValue: 92,
+            gaugeUnit: '%',
+            systemList: [
+                { name: '시스템 #01', value: 76, unit: '%', status: 'value' },
+                { name: '시스템 #02', status: 'normal' },
+                { name: '시스템 #03', status: 'warning' }
+            ]
+        };
+
+        const updatedData = {
+            title: '시스템 현황',
+            gaugeLabel: '시스템 상태 점수',
+            gaugeValue: 78,
+            gaugeUnit: '%',
+            systemList: [
+                { name: '시스템 #01', value: 65, unit: '%', status: 'value' },
+                { name: '시스템 #02', status: 'warning' },
+                { name: '시스템 #03', status: 'normal' }
+            ]
+        };
+
+        function sendMockData() {
+            mockThis.renderData({ response: { data: mockData } });
+        }
+
+        function sendUpdatedData() {
+            mockThis.renderData({ response: { data: updatedData } });
+        }
+
+        // 초기 렌더링
+        sendMockData();
+    </script>
+</body>
+</html>

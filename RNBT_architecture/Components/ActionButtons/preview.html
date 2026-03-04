@@ -1,0 +1,369 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ActionButtons - Preview</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            background: #0f1117;
+            font-family: 'Pretendard', sans-serif;
+            color: #e4ebf6;
+            padding: 40px;
+        }
+        h2 { font-size: 16px; color: #94a3b8; margin-bottom: 12px; }
+        .test-section { margin-bottom: 40px; }
+        .test-controls { margin-top: 12px; display: flex; gap: 8px; }
+        .test-controls button {
+            padding: 6px 14px;
+            border-radius: 4px;
+            border: 1px solid #475569;
+            background: #1e293b;
+            color: #e4ebf6;
+            font-size: 12px;
+            cursor: pointer;
+        }
+        .test-controls button:hover { border-color: #60ebff; }
+
+        /* ===== component.css 인라인 ===== */
+        #action-buttons-container {
+            min-width: 50px;
+            min-height: 27px;
+        }
+        #action-buttons-container .action-group {
+            display: flex;
+            align-items: center;
+            gap: 9px;
+            width: 100%;
+            height: 100%;
+        }
+        #action-buttons-container .btn-type-a {
+            height: 27px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 5px 20px;
+            border-radius: 6px;
+            border: 1px solid #90a1b9;
+            backdrop-filter: blur(7px);
+            -webkit-backdrop-filter: blur(7px);
+            background:
+                linear-gradient(90deg, rgba(144, 161, 185, 0.1) 0%, rgba(144, 161, 185, 0.1) 100%),
+                linear-gradient(90deg, rgba(33, 38, 50, 0.7) 0%, rgba(33, 38, 50, 0.7) 100%);
+            box-shadow: 0px 4px 4px 0px rgba(44, 44, 44, 0.15);
+            cursor: pointer;
+            flex-shrink: 0;
+            font-family: 'Pretendard', sans-serif;
+        }
+        #action-buttons-container .btn-type-a span {
+            font-weight: 500;
+            font-size: 14px;
+            color: #94a3b8;
+            text-align: center;
+            white-space: nowrap;
+            line-height: normal;
+        }
+        #action-buttons-container .btn-type-a.active {
+            border-color: #60ebff;
+            background:
+                linear-gradient(90deg, rgba(96, 235, 255, 0.15) 0%, rgba(96, 235, 255, 0.15) 100%),
+                linear-gradient(90deg, rgba(33, 38, 50, 0.7) 0%, rgba(33, 38, 50, 0.7) 100%);
+        }
+        #action-buttons-container .btn-type-a.active span {
+            color: #60ebff;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- ===== Test 1: 2 Buttons ===== -->
+    <div class="test-section">
+        <h2>Test 1: 2 Buttons (온습도현황 / 온도분포도)</h2>
+        <div id="action-buttons-container">
+            <div class="action-group"></div>
+        </div>
+        <div class="test-controls">
+            <button onclick="sendMockData(mockThis1, data2Buttons)">Load Data</button>
+            <button onclick="sendMockData(mockThis1, data2ButtonsChanged)">Change Active</button>
+        </div>
+    </div>
+
+    <!-- ===== Test 2: 3 Buttons ===== -->
+    <div class="test-section">
+        <h2>Test 2: 3 Buttons (온습도현황 / 온도분포도 / 전력현황)</h2>
+        <div id="action-buttons-container-2">
+            <div class="action-group"></div>
+        </div>
+        <div class="test-controls">
+            <button onclick="sendMockData(mockThis2, data3Buttons)">Load Data</button>
+        </div>
+    </div>
+
+    <!-- ===== Test 3: 4 Buttons (no active) ===== -->
+    <div class="test-section">
+        <h2>Test 3: 4 Buttons (active 없음)</h2>
+        <div id="action-buttons-container-3">
+            <div class="action-group"></div>
+        </div>
+        <div class="test-controls">
+            <button onclick="sendMockData(mockThis3, data4Buttons)">Load Data</button>
+        </div>
+    </div>
+
+<script>
+// ===========================
+// Mock Dependencies
+// ===========================
+
+const fx = {
+    go: (arr, ...fns) => fns.reduce((acc, fn) => fn(acc), arr),
+    each: (fn) => (arr) => { arr.forEach(fn); return arr; },
+    map: (fn) => (arr) => arr.map(fn)
+};
+
+const GlobalDataPublisher = {
+    _subs: {},
+    subscribe(topic, ctx, fn) {
+        if (!this._subs[topic]) this._subs[topic] = [];
+        this._subs[topic].push({ ctx, fn });
+    },
+    unsubscribe(topic, ctx) {
+        if (this._subs[topic]) {
+            this._subs[topic] = this._subs[topic].filter(s => s.ctx !== ctx);
+        }
+    },
+    publish(topic, data) {
+        (this._subs[topic] || []).forEach(s => s.fn.call(s.ctx, data));
+    }
+};
+
+const Wkit = {
+    bindEvents(ctx, events) {
+        if (!events) return;
+        Object.entries(events).forEach(([eventType, selectorMap]) => {
+            Object.entries(selectorMap).forEach(([selector, customEventName]) => {
+                ctx.appendElement.addEventListener(eventType, (e) => {
+                    if (e.target.closest(selector)) {
+                        const detail = { key: e.target.closest(selector).dataset.key };
+                        ctx.appendElement.dispatchEvent(
+                            new CustomEvent(customEventName.replace('@', ''), { detail, bubbles: true })
+                        );
+                    }
+                });
+            });
+        });
+    },
+    removeCustomEvents() {}
+};
+
+// ===========================
+// Mock Data
+// ===========================
+
+const data2Buttons = {
+    response: {
+        data: {
+            TBD_buttons: [
+                { TBD_key: 'tempHumidity', TBD_label: '온습도현황' },
+                { TBD_key: 'tempDist', TBD_label: '온도분포도' }
+            ],
+            TBD_activeKey: 'tempHumidity'
+        }
+    }
+};
+
+const data2ButtonsChanged = {
+    response: {
+        data: {
+            TBD_buttons: [
+                { TBD_key: 'tempHumidity', TBD_label: '온습도현황' },
+                { TBD_key: 'tempDist', TBD_label: '온도분포도' }
+            ],
+            TBD_activeKey: 'tempDist'
+        }
+    }
+};
+
+const data3Buttons = {
+    response: {
+        data: {
+            TBD_buttons: [
+                { TBD_key: 'tempHumidity', TBD_label: '온습도현황' },
+                { TBD_key: 'tempDist', TBD_label: '온도분포도' },
+                { TBD_key: 'powerStatus', TBD_label: '전력현황' }
+            ],
+            TBD_activeKey: 'tempHumidity'
+        }
+    }
+};
+
+const data4Buttons = {
+    response: {
+        data: {
+            TBD_buttons: [
+                { TBD_key: 'overview', TBD_label: '개요' },
+                { TBD_key: 'detail', TBD_label: '상세' },
+                { TBD_key: 'history', TBD_label: '이력' },
+                { TBD_key: 'settings', TBD_label: '설정' }
+            ]
+        }
+    }
+};
+
+// ===========================
+// Create Mock Instances
+// ===========================
+
+function createMockThis(containerId) {
+    const container = document.getElementById(containerId);
+    const mockCtx = {
+        appendElement: container,
+        _activeKey: null,
+        _buttonsData: null,
+        _internalHandlers: {},
+        subscriptions: {}
+    };
+
+    // Apply container styles for non-first instances
+    if (containerId !== 'action-buttons-container') {
+        container.style.minWidth = '50px';
+        container.style.minHeight = '27px';
+    }
+
+    return mockCtx;
+}
+
+function initComponent(mockCtx) {
+    const { subscribe } = GlobalDataPublisher;
+    const { bindEvents } = Wkit;
+
+    const config = {
+        buttonsKey: 'TBD_buttons',
+        activeKeyKey: 'TBD_activeKey',
+        buttonFields: {
+            key: 'TBD_key',
+            label: 'TBD_label'
+        }
+    };
+
+    mockCtx.renderData = renderData.bind(mockCtx, config);
+    mockCtx.setActive = setActive.bind(mockCtx, config);
+
+    mockCtx.subscriptions = {
+        TBD_topicName: ['renderData']
+    };
+
+    fx.go(
+        Object.entries(mockCtx.subscriptions),
+        fx.each(([topic, fnList]) =>
+            fx.each(fn => mockCtx[fn] && subscribe(topic, mockCtx, mockCtx[fn]), fnList)
+        )
+    );
+
+    mockCtx.customEvents = {
+        click: {
+            '.btn-type-a': '@TBD_buttonClicked'
+        }
+    };
+
+    bindEvents(mockCtx, mockCtx.customEvents);
+    setupInternalHandlers.call(mockCtx);
+
+    // Listen for custom events (debug)
+    mockCtx.appendElement.addEventListener('TBD_buttonClicked', (e) => {
+        console.log('[ActionButtons] buttonClicked:', e.detail);
+    });
+
+    function renderData(config, { response }) {
+        const { data } = response;
+        if (!data) return;
+
+        const buttons = data[config.buttonsKey];
+        const activeKey = data[config.activeKeyKey];
+
+        if (activeKey !== undefined) {
+            this._activeKey = activeKey;
+        }
+
+        if (buttons && Array.isArray(buttons)) {
+            this._buttonsData = buttons;
+            renderButtons.call(this, config, buttons);
+        }
+    }
+
+    function renderButtons(config, buttons) {
+        const { buttonFields } = config;
+        const container = this.appendElement.querySelector('.action-group');
+        if (!container) return;
+        container.innerHTML = '';
+
+        fx.go(
+            buttons,
+            fx.each(btn => {
+                const key = btn[buttonFields.key] || '';
+                const label = btn[buttonFields.label] || '';
+                const isActive = key === this._activeKey;
+
+                const el = document.createElement('button');
+                el.className = 'btn-type-a';
+                if (isActive) el.classList.add('active');
+                el.dataset.key = key;
+
+                const span = document.createElement('span');
+                span.textContent = label;
+                el.appendChild(span);
+
+                container.appendChild(el);
+            })
+        );
+    }
+
+    function setupInternalHandlers() {
+        const root = this.appendElement;
+        this._internalHandlers.btnClick = (e) => {
+            const btn = e.target.closest('.btn-type-a');
+            if (btn && btn.dataset.key) {
+                this.setActive(btn.dataset.key);
+            }
+        };
+        root.addEventListener('click', this._internalHandlers.btnClick);
+    }
+
+    function setActive(config, key) {
+        if (this._activeKey === key) return;
+        this._activeKey = key;
+
+        const allBtns = this.appendElement.querySelectorAll('.btn-type-a');
+        fx.go(
+            Array.from(allBtns),
+            fx.each(btn => {
+                btn.classList.toggle('active', btn.dataset.key === key);
+            })
+        );
+    }
+}
+
+// ===========================
+// Initialize
+// ===========================
+
+const mockThis1 = createMockThis('action-buttons-container');
+const mockThis2 = createMockThis('action-buttons-container-2');
+const mockThis3 = createMockThis('action-buttons-container-3');
+
+initComponent(mockThis1);
+initComponent(mockThis2);
+initComponent(mockThis3);
+
+function sendMockData(mockCtx, data) {
+    mockCtx.renderData(data);
+}
+
+// Auto-load first test
+sendMockData(mockThis1, data2Buttons);
+</script>
+
+</body>
+</html>

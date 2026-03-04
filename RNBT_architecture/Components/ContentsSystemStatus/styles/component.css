@@ -1,0 +1,221 @@
+/* ==========================================================================
+   ContentsSystemStatus Component
+   게이지 차트 + 시스템 리스트
+   ========================================================================== */
+
+#contents-system-status-container {
+
+    /* Contents Title (공통) */
+    .contents-title {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        width: 100%;
+        height: 21px;
+    }
+    .contents-title-txt {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+    }
+    .dot-indicator {
+        position: relative;
+        width: 6px;
+        height: 6px;
+
+        img {
+            display: block;
+            position: absolute;
+            width: 16px;
+            height: 16px;
+            top: -5px;
+            left: -5px;
+        }
+    }
+    .contents-title-text {
+        font-family: 'Pretendard', sans-serif;
+        font-weight: 600;
+        font-size: 18px;
+        color: #f8fafc;
+        line-height: normal;
+    }
+    .union-dots {
+        width: 55.176px;
+        height: 9px;
+        position: relative;
+
+        img {
+            display: block;
+            position: absolute;
+            width: 100%;
+            height: 100%;
+        }
+    }
+
+    /* Section (공통) */
+    .section {
+        width: auto;
+        backdrop-filter: blur(15px);
+        background: rgba(26, 34, 50, 0.6);
+        border: 1px solid rgba(81, 102, 145, 0.6);
+        border-radius: 12px;
+        position: relative;
+        box-sizing: border-box;
+    }
+    .section-inset-shadow {
+        position: absolute;
+        inset: 0;
+        border-radius: inherit;
+        pointer-events: none;
+        box-shadow: inset 0px 0px 8px 0px rgba(0, 0, 0, 0.25);
+    }
+
+    /* Root */
+    .contents-system-status {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+    }
+
+    /* Layout */
+    .section-row { display: flex; gap: 10px; width: 420px; }
+
+    /* Gauge Box */
+    .section--gauge-box {
+        width: 140px;
+        height: 170px;
+        padding: 26px 17px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: space-between;
+    }
+    .gauge-label {
+        font-family: 'Pretendard', sans-serif;
+        font-weight: 500;
+        font-size: 16px;
+        color: #e4ebf6;
+        letter-spacing: -0.32px;
+        text-align: center;
+        line-height: normal;
+        width: 106px;
+    }
+    .gauge-chart { width: 106px; height: 81px; position: relative; }
+    .gauge-image {
+        position: absolute;
+        width: 106px;
+        height: 106px;
+        top: 0;
+        left: 0;
+
+        img { display: block; width: 100%; height: 100%; }
+    }
+    .gauge-value {
+        position: absolute;
+        top: 39px;
+        left: 50%;
+        transform: translateX(calc(-50% - 0.5px));
+        display: flex;
+        align-items: flex-end;
+        gap: 3px;
+        line-height: normal;
+        text-align: center;
+    }
+    .gauge-number {
+        font-family: 'Roboto Mono', monospace;
+        font-weight: 500;
+        font-size: 28px;
+        color: #f8fafc;
+        letter-spacing: -1.12px;
+        line-height: 1;
+    }
+    .gauge-unit {
+        font-family: 'Roboto Mono', monospace;
+        font-weight: 400;
+        font-size: 14px;
+        color: #bbc2cf;
+        letter-spacing: -0.28px;
+        line-height: 1;
+    }
+
+    /* List Box */
+    .section--list-box {
+        flex: 1;
+        height: 170px;
+        padding: 26px 20px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+    .system-list {
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+        width: 100%;
+        height: 100%;
+    }
+    .system-list-row {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        width: 100%;
+        height: 26px;
+    }
+    .system-group { display: flex; align-items: center; gap: 10px; }
+    .system-icon-wrap {
+        width: 26px;
+        height: 26px;
+        border-radius: 5.032px;
+        background: #1f2633;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        overflow: hidden;
+
+        img { display: block; width: 12.581px; height: 12.581px; }
+    }
+    .system-name {
+        font-family: 'Pretendard', sans-serif;
+        font-weight: 500;
+        font-size: 15px;
+        color: #e4ebf6;
+        letter-spacing: -0.3px;
+        line-height: normal;
+    }
+    .system-value { display: flex; align-items: flex-end; gap: 6px; line-height: normal; }
+    .system-number {
+        font-family: 'Roboto Mono', monospace;
+        font-weight: 500;
+        font-size: 24px;
+        color: #f8fafc;
+        letter-spacing: -0.96px;
+        line-height: 1;
+    }
+    .system-percent {
+        font-family: 'Roboto Mono', monospace;
+        font-weight: 400;
+        font-size: 14px;
+        color: #bbc2cf;
+        letter-spacing: -0.28px;
+        text-align: center;
+        line-height: 1;
+    }
+    .system-status {
+        font-family: 'Pretendard', sans-serif;
+        font-weight: 500;
+        font-size: 20px;
+        text-align: right;
+        letter-spacing: -0.4px;
+        line-height: normal;
+    }
+    .system-status--normal { color: #81e1c5; }
+    .system-status--warning { color: #edbc35; }
+    .system-status-warn { display: flex; align-items: center; gap: 7px; }
+    .warn-icon {
+        width: 15px;
+        height: 14px;
+        position: relative;
+
+        img { display: block; position: absolute; width: 21px; height: 19.6px; top: -2.8px; left: -3px; }
+    }
+}

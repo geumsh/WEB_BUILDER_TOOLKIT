@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>EventLog - Bottom Log Panel</title>
+  <link rel="stylesheet" href="event-log.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Roboto+Mono:wght@400;500&display=swap" rel="stylesheet">
+</head>
+<body>
+  <div id="component-container">
+    <div class="bottom-log">
+
+      <!-- ===== Header ===== -->
+      <div class="log-header">
+        <!-- Left Section -->
+        <div class="header-left">
+          <!-- Title -->
+          <span class="log-title">이벤트 현황</span>
+          <!-- Divider -->
+          <div class="header-divider"></div>
+          <!-- Sound + Toggle -->
+          <div class="sound-group">
+            <button class="sound-btn">
+              <img src="./assets/icon-volume.svg" class="icon-volume" alt="">
+              <span>소리 알림</span>
+            </button>
+            <div class="toggle-pill">
+              <span class="auto-label">AUTO</span>
+              <div class="toggle-switch">
+                <div class="toggle-switch-bg"></div>
+                <div class="toggle-switch-overlay"></div>
+                <div class="toggle-knob"></div>
+                <div class="toggle-switch-inset"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Center: Expand Button -->
+        <button class="btn-expand">
+          <img src="./assets/icon-expand.svg" class="icon-expand" alt="">
+        </button>
+
+        <!-- Right Section -->
+        <div class="header-right">
+          <!-- Ack / All Buttons -->
+          <div class="action-buttons">
+            <button class="btn-action"><span>Ack</span></button>
+            <button class="btn-action"><span>All</span></button>
+          </div>
+          <div class="right-divider"></div>
+          <!-- Status Items -->
+          <div class="status-items">
+            <div class="status-item">
+              <div class="status-dot critical"></div>
+              <span class="count">3</span>
+            </div>
+            <div class="status-item">
+              <div class="status-dot major"></div>
+              <span class="count">11</span>
+            </div>
+            <div class="status-item">
+              <div class="status-dot minor"></div>
+              <span class="count">24</span>
+            </div>
+            <div class="status-item">
+              <div class="status-dot warning"></div>
+              <span class="count">927</span>
+            </div>
+            <div class="status-item">
+              <div class="status-dot normal"></div>
+              <span class="count">327</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ===== Table Header ===== -->
+      <div class="table-header">
+        <div class="th-cell th-grade"><span>등급</span></div>
+        <div class="th-cell th-asset-id"><span>자산ID</span></div>
+        <div class="th-cell th-location"><span>위치</span></div>
+        <div class="th-cell th-first-time"><span>최초발생시간</span></div>
+        <div class="th-cell th-last-time"><span>마지막발생시간</span></div>
+        <div class="th-cell th-group"><span>구분(업무그룹)</span></div>
+        <div class="th-cell th-message"><span>메시지</span></div>
+      </div>
+
+      <!-- ===== Table Body ===== -->
+      <div class="table-body">
+        <!-- Row 1: Major -->
+        <div class="table-row">
+          <div class="td-cell td-grade"><div class="row-dot major"></div></div>
+          <div class="td-cell td-asset-id"><span class="text-default">변압기 #302</span></div>
+          <div class="td-cell td-location"><span class="text-default">전기실</span></div>
+          <div class="td-cell td-first-time"><span class="text-time">2026-02-27 09:33:00</span></div>
+          <div class="td-cell td-last-time"><span class="text-time">2026-02-27 09:33:00</span></div>
+          <div class="td-cell td-group"><span class="text-default">구분A</span></div>
+          <div class="td-cell td-message"><span class="text-default">배터리 잔량 저하 (현재35%)이벤트 내용</span></div>
+        </div>
+
+        <!-- Row 2: Minor -->
+        <div class="table-row">
+          <div class="td-cell td-grade"><div class="row-dot minor"></div></div>
+          <div class="td-cell td-asset-id"><span class="text-default">변압기 #302</span></div>
+          <div class="td-cell td-location"><span class="text-default">전기실</span></div>
+          <div class="td-cell td-first-time"><span class="text-time">2026-02-27 09:33:00</span></div>
+          <div class="td-cell td-last-time"><span class="text-time">2026-02-27 09:33:00</span></div>
+          <div class="td-cell td-group"><span class="text-default">구분B</span></div>
+          <div class="td-cell td-message"><span class="text-default">정격 전류 초과 근접 (현재 부하 92%)전력 사용량 증가</span></div>
+        </div>
+
+        <!-- Row 3: Critical (Selected) -->
+        <div class="table-row row-selected">
+          <div class="td-cell td-grade"><div class="row-dot critical"></div></div>
+          <div class="td-cell td-asset-id"><span class="text-default">변압기 #302</span></div>
+          <div class="td-cell td-location"><span class="text-default">전기실</span></div>
+          <div class="td-cell td-first-time"><span class="text-time">2026-02-27 09:33:00</span></div>
+          <div class="td-cell td-last-time"><span class="text-time">2026-02-27 09:33:00</span></div>
+          <div class="td-cell td-group"><span class="text-default">구분A</span></div>
+          <div class="td-cell td-message"><span class="text-default">냉방 용량 부족 감지 (전산실 B존)</span></div>
+          <div class="row-actions">
+            <button class="btn-new"><span>신규</span></button>
+            <button class="btn-row-action">
+              <div class="icon-cctv"><img src="./assets/icon-cctv.svg" alt=""></div>
+              <span>영상</span>
+            </button>
+            <button class="btn-row-action"><span>영상</span></button>
+          </div>
+        </div>
+
+        <!-- Row 4: Normal -->
+        <div class="table-row">
+          <div class="td-cell td-grade"><div class="row-dot normal"></div></div>
+          <div class="td-cell td-asset-id"><span class="text-default">변압기 #302</span></div>
+          <div class="td-cell td-location"><span class="text-default">전기실</span></div>
+          <div class="td-cell td-first-time"><span class="text-time">2026-02-27 09:33:00</span></div>
+          <div class="td-cell td-last-time"><span class="text-time">2026-02-27 09:33:00</span></div>
+          <div class="td-cell td-group"><span class="text-default">구분B</span></div>
+          <div class="td-cell td-message"><span class="text-default">온도 임계치 초과 (32.5 ℃)</span></div>
+        </div>
+
+        <!-- Row 5: Major (Alt) -->
+        <div class="table-row row-alt">
+          <div class="td-cell td-grade"><div class="row-dot major"></div></div>
+          <div class="td-cell td-asset-id"><span class="text-default">변압기 #302</span></div>
+          <div class="td-cell td-location"><span class="text-default">전기실</span></div>
+          <div class="td-cell td-first-time"><span class="text-time">2026-02-27 09:33:00</span></div>
+          <div class="td-cell td-last-time"><span class="text-time">2026-02-27 09:33:00</span></div>
+          <div class="td-cell td-group"><span class="text-default">구분A</span></div>
+          <div class="td-cell td-message"><span class="text-default">온도 임계치 초과 (34.1 ℃)</span></div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</body>
+</html>

@@ -1,0 +1,425 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ContentsBatteryGroup Preview</title>
+    <link href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css" rel="stylesheet">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <style>
+        /* === component.css (inline) === */
+        #contents-battery-group-container .contents-title {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            width: 100%;
+            height: 21px;
+        }
+        #contents-battery-group-container .contents-title-txt {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        #contents-battery-group-container .dot-indicator {
+            position: relative;
+            width: 6px;
+            height: 6px;
+        }
+        #contents-battery-group-container .dot-indicator img {
+            display: block;
+            position: absolute;
+            width: 16px;
+            height: 16px;
+            top: -5px;
+            left: -5px;
+        }
+        #contents-battery-group-container .contents-title-text {
+            font-family: 'Pretendard', sans-serif;
+            font-weight: 600;
+            font-size: 18px;
+            color: #f8fafc;
+            line-height: normal;
+        }
+        #contents-battery-group-container .union-dots {
+            width: 55.176px;
+            height: 9px;
+            position: relative;
+        }
+        #contents-battery-group-container .union-dots img {
+            display: block;
+            position: absolute;
+            width: 100%;
+            height: 100%;
+        }
+        #contents-battery-group-container .section {
+            width: 420px;
+            backdrop-filter: blur(15px);
+            background: rgba(26, 34, 50, 0.6);
+            border: 1px solid rgba(81, 102, 145, 0.6);
+            border-radius: 12px;
+            position: relative;
+            box-sizing: border-box;
+        }
+        #contents-battery-group-container .section-inset-shadow {
+            position: absolute;
+            inset: 0;
+            border-radius: inherit;
+            pointer-events: none;
+            box-shadow: inset 0px 0px 8px 0px rgba(0, 0, 0, 0.25);
+        }
+        #contents-battery-group-container .contents-battery-group {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        #contents-battery-group-container .section--battery {
+            height: 202px;
+            padding: 19px 18px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+        #contents-battery-group-container .battery-block {
+            width: 384px;
+            display: flex;
+            flex-direction: column;
+            gap: 26px;
+            align-items: flex-end;
+        }
+        #contents-battery-group-container .battery-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            width: 100%;
+            height: 17px;
+        }
+        #contents-battery-group-container .battery-header-item { display: flex; align-items: center; gap: 7px; }
+        #contents-battery-group-container .battery-dot { width: 5px; height: 5px; position: relative; }
+        #contents-battery-group-container .battery-dot img { display: block; width: 5px; height: 5px; }
+        #contents-battery-group-container .battery-group-name {
+            font-family: 'Pretendard', sans-serif;
+            font-weight: 500;
+            font-size: 14px;
+            color: #e4ebf6;
+            letter-spacing: -0.28px;
+            line-height: normal;
+        }
+        #contents-battery-group-container .battery-datetime {
+            font-family: 'Pretendard', sans-serif;
+            font-weight: 400;
+            font-size: 13px;
+            color: #bbc2cf;
+            letter-spacing: -0.26px;
+            line-height: normal;
+        }
+        #contents-battery-group-container .battery-body { display: flex; align-items: center; gap: 55px; }
+        #contents-battery-group-container .donut-chart { width: 121px; height: 121px; position: relative; }
+        #contents-battery-group-container .donut-image { position: absolute; width: 121px; height: 121px; top: 0; left: 0; }
+        #contents-battery-group-container .donut-image img { display: block; width: 100%; height: 100%; }
+        #contents-battery-group-container .donut-value {
+            position: absolute;
+            top: 42px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 8px;
+            line-height: normal;
+            text-align: center;
+        }
+        #contents-battery-group-container .donut-number {
+            font-family: 'Roboto Mono', monospace;
+            font-weight: 500;
+            font-size: 28px;
+            color: #f8fafc;
+            letter-spacing: -1.12px;
+            line-height: 1;
+        }
+        #contents-battery-group-container .donut-unit {
+            font-family: 'Roboto Mono', monospace;
+            font-weight: 400;
+            font-size: 14px;
+            color: #bbc2cf;
+            letter-spacing: -0.28px;
+            line-height: 1;
+        }
+        #contents-battery-group-container .battery-legend { width: 181px; display: flex; flex-direction: column; gap: 13px; }
+        #contents-battery-group-container .battery-legend-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            width: 100%;
+            height: 18px;
+        }
+        #contents-battery-group-container .battery-legend-item { display: flex; align-items: center; gap: 10px; }
+        #contents-battery-group-container .battery-legend-color { width: 10px; height: 10px; border-radius: 2.857px; }
+        #contents-battery-group-container .battery-legend-text {
+            font-family: 'Pretendard', sans-serif;
+            font-weight: 400;
+            font-size: 15px;
+            color: #bbc2cf;
+            letter-spacing: -0.3px;
+            line-height: normal;
+        }
+        #contents-battery-group-container .battery-legend-value {
+            font-family: 'Pretendard', sans-serif;
+            font-weight: 500;
+            font-size: 15px;
+            color: #e4ebf6;
+            letter-spacing: -0.3px;
+            text-align: right;
+            line-height: normal;
+        }
+
+        /* === preview-specific === */
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            padding: 40px;
+            background: #0d0f1a;
+            font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, sans-serif;
+        }
+        h1 { color: #f8fafc; margin-bottom: 24px; font-size: 20px; }
+        .controls { margin-top: 24px; }
+        .controls button {
+            padding: 8px 16px;
+            margin-right: 8px;
+            background: #1a2232;
+            color: #e4ebf6;
+            border: 1px solid rgba(81, 102, 145, 0.6);
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 13px;
+        }
+        .controls button:hover { background: #253450; }
+        .controls button.destroy { background: #f87171; color: #fff; border-color: #f87171; }
+    </style>
+</head>
+<body>
+    <h1>ContentsBatteryGroup Component Preview</h1>
+    <div id="contents-battery-group-container"></div>
+    <div class="controls">
+        <button onclick="sendMockData()">Load Data</button>
+        <button onclick="sendUpdatedData()">Update Data</button>
+        <button onclick="destroy()" class="destroy">Destroy</button>
+    </div>
+
+    <script>
+        // ======================
+        // MOCK CONTEXT
+        // ======================
+
+        const mockThis = {
+            appendElement: document.getElementById('contents-battery-group-container')
+        };
+
+        // HTML 삽입 (views/component.html)
+        mockThis.appendElement.innerHTML = `
+            <div class="contents-battery-group">
+                <div class="contents-title">
+                    <div class="contents-title-txt">
+                        <span class="dot-indicator"></span>
+                        <span class="contents-title-text">-</span>
+                    </div>
+                    <div class="union-dots"></div>
+                </div>
+                <div class="section section--battery">
+                    <div class="battery-block">
+                        <div class="battery-header">
+                            <div class="battery-header-item">
+                                <span class="battery-dot"></span>
+                                <span class="battery-group-name">-</span>
+                            </div>
+                            <div class="battery-header-item">
+                                <span class="battery-datetime">-</span>
+                            </div>
+                        </div>
+                        <div class="battery-body">
+                            <div class="donut-chart">
+                                <div class="donut-image"></div>
+                                <div class="donut-value">
+                                    <span class="donut-number">-</span>
+                                    <span class="donut-unit">-</span>
+                                </div>
+                            </div>
+                            <div class="battery-legend"></div>
+                        </div>
+                    </div>
+                    <div class="section-inset-shadow"></div>
+                </div>
+            </div>
+        `;
+
+        // ======================
+        // MOCK DEPENDENCIES
+        // ======================
+
+        const GlobalDataPublisher = {
+            subscribe: (topic, context, fn) => console.log(`[Mock] subscribe: ${topic}`),
+            unsubscribe: (topic, context) => console.log(`[Mock] unsubscribe: ${topic}`)
+        };
+
+        const fx = {
+            go: (arr, ...fns) => fns.reduce((acc, fn) => fn(acc), arr),
+            each: fn => arr => { arr.forEach(fn); return arr; }
+        };
+
+        // ======================
+        // REGISTER (inline)
+        // ======================
+
+        (function register() {
+            const { subscribe } = GlobalDataPublisher;
+
+            const config = {
+                titleKey: 'title',
+                groupNameKey: 'groupName',
+                datetimeKey: 'datetime',
+                totalValueKey: 'totalValue',
+                totalUnitKey: 'totalUnit',
+                itemsKey: 'items',
+                itemFields: {
+                    color: 'color',
+                    name: 'name',
+                    percentage: 'percentage'
+                }
+            };
+
+            this.renderData = renderData.bind(this, config);
+
+            this.subscriptions = {
+                batteryGroupData: ['renderData']
+            };
+
+            fx.go(
+                Object.entries(this.subscriptions),
+                fx.each(([topic, fnList]) =>
+                    fx.each(fn => this[fn] && subscribe(topic, this, this[fn]), fnList)
+                )
+            );
+
+            function renderData(config, { response }) {
+                const { data } = response;
+                if (!data) return;
+
+                const titleEl = this.appendElement.querySelector('.contents-title-text');
+                if (titleEl && data[config.titleKey]) {
+                    titleEl.textContent = data[config.titleKey];
+                }
+
+                const groupNameEl = this.appendElement.querySelector('.battery-group-name');
+                if (groupNameEl && data[config.groupNameKey]) {
+                    groupNameEl.textContent = data[config.groupNameKey];
+                }
+
+                const datetimeEl = this.appendElement.querySelector('.battery-datetime');
+                if (datetimeEl && data[config.datetimeKey]) {
+                    datetimeEl.textContent = data[config.datetimeKey];
+                }
+
+                const totalNumberEl = this.appendElement.querySelector('.donut-number');
+                if (totalNumberEl && data[config.totalValueKey] !== undefined) {
+                    totalNumberEl.textContent = data[config.totalValueKey];
+                }
+
+                const totalUnitEl = this.appendElement.querySelector('.donut-unit');
+                if (totalUnitEl && data[config.totalUnitKey]) {
+                    totalUnitEl.textContent = data[config.totalUnitKey];
+                }
+
+                const items = data[config.itemsKey];
+                if (items && Array.isArray(items)) {
+                    const legendEl = this.appendElement.querySelector('.battery-legend');
+                    legendEl.innerHTML = '';
+                    items.forEach(item => appendLegendRow.call(this, config, legendEl, item));
+                }
+            }
+
+            function appendLegendRow(config, legendEl, item) {
+                const { itemFields } = config;
+                const row = document.createElement('div');
+                row.className = 'battery-legend-row';
+
+                const color = item[itemFields.color] || '#445ed9';
+                const name = item[itemFields.name] || '-';
+                const percentage = item[itemFields.percentage] || '-';
+
+                row.innerHTML = `
+                    <div class="battery-legend-item">
+                        <div class="battery-legend-color" style="background:${color};"></div>
+                        <span class="battery-legend-text">${name}</span>
+                    </div>
+                    <span class="battery-legend-value">${percentage}</span>
+                `;
+
+                legendEl.appendChild(row);
+            }
+        }).call(mockThis);
+
+        // ======================
+        // BEFORE DESTROY
+        // ======================
+
+        function destroy() {
+            (function beforeDestroy() {
+                const { unsubscribe } = GlobalDataPublisher;
+
+                fx.go(
+                    Object.entries(this.subscriptions),
+                    fx.each(([topic, _]) => unsubscribe(topic, this))
+                );
+                this.subscriptions = null;
+
+                this.renderData = null;
+
+                console.log('[ContentsBatteryGroup] destroyed');
+            }).call(mockThis);
+        }
+
+        // ======================
+        // TEST DATA
+        // ======================
+
+        const mockData = {
+            title: '배터리 현황',
+            groupName: '배터리 그룹1',
+            datetime: '2026-02-07 15:30',
+            totalValue: '1,110',
+            totalUnit: 'KW',
+            items: [
+                { color: '#ff5c57', name: '아이템01', percentage: '40%' },
+                { color: '#edbc35', name: '아이템02', percentage: '10%' },
+                { color: '#445ed9', name: '아이템03', percentage: '10%' }
+            ]
+        };
+
+        const updatedData = {
+            title: '배터리 현황',
+            groupName: '배터리 그룹2',
+            datetime: '2026-02-07 16:45',
+            totalValue: '2,350',
+            totalUnit: 'KW',
+            items: [
+                { color: '#ff5c57', name: '충전', percentage: '55%' },
+                { color: '#edbc35', name: '방전', percentage: '25%' },
+                { color: '#445ed9', name: '대기', percentage: '15%' },
+                { color: '#81e1c5', name: '점검', percentage: '5%' }
+            ]
+        };
+
+        function sendMockData() {
+            mockThis.renderData({ response: { data: mockData } });
+        }
+
+        function sendUpdatedData() {
+            mockThis.renderData({ response: { data: updatedData } });
+        }
+
+        // 초기 렌더링
+        sendMockData();
+    </script>
+</body>
+</html>

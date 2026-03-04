@@ -1,0 +1,811 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SpaceTree Preview</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css">
+    <style>
+        /* === component.css (inline - #space-tree-container scoped) === */
+        #space-tree-container {
+            min-width: 240px;
+            min-height: 200px;
+        }
+        #space-tree-container .space-tree {
+            display: flex;
+            flex-direction: column;
+            width: 100%;
+            height: 100%;
+            border-radius: 16px;
+            border: 2px solid rgba(144, 161, 185, 0.8);
+            background: rgba(19, 21, 33, 0.8);
+            backdrop-filter: blur(15px);
+            -webkit-backdrop-filter: blur(15px);
+            overflow: hidden;
+            font-family: 'Pretendard', sans-serif;
+        }
+        #space-tree-container .tree-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            height: 40px;
+            padding: 10px 14px 11px 14px;
+            background: rgba(19, 21, 33, 0.7);
+            border-bottom: 1px solid #1e293b;
+            flex-shrink: 0;
+        }
+        #space-tree-container .tree-title {
+            font-family: 'Pretendard', sans-serif;
+            font-weight: 700;
+            font-size: 16px;
+            color: #f8fafc;
+            white-space: nowrap;
+            line-height: normal;
+        }
+        #space-tree-container .tree-controls {
+            display: flex;
+            gap: 4px;
+        }
+        #space-tree-container .tree-controls button {
+            width: 24px;
+            height: 24px;
+            padding: 0;
+            border: none;
+            border-radius: 4px;
+            background: transparent;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: background 0.2s;
+        }
+        #space-tree-container .tree-controls button:hover {
+            background: rgba(100, 116, 139, 0.3);
+        }
+        #space-tree-container .ctrl-icon {
+            width: 14px;
+            height: 14px;
+            display: block;
+        }
+        #space-tree-container .ctrl-icon.expand-icon {
+            transform: rotate(90deg);
+        }
+        #space-tree-container .ctrl-icon.collapse-icon {
+            transform: rotate(0deg);
+        }
+        #space-tree-container .tree-search {
+            display: flex;
+            align-items: center;
+            padding: 8px 14px;
+            background: rgba(40, 42, 55, 0.5);
+            border-bottom: 1px solid #1e293b;
+            flex-shrink: 0;
+        }
+        #space-tree-container .search-input {
+            flex: 1;
+            padding: 6px 10px;
+            font-family: 'Pretendard', sans-serif;
+            font-size: 13px;
+            border: 1px solid rgba(100, 116, 139, 0.4);
+            border-radius: 4px;
+            background: rgba(19, 21, 33, 0.6);
+            color: #e4ebf6;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+        #space-tree-container .search-input::placeholder { color: #64748b; }
+        #space-tree-container .search-input:focus { border-color: #60ebff; }
+        #space-tree-container .tree-container {
+            flex: 1;
+            overflow-y: auto;
+            background: rgba(40, 42, 55, 0.5);
+            padding-top: 8px;
+        }
+        #space-tree-container .tree-root {
+            margin: 0;
+            padding: 0;
+            list-style: none;
+        }
+        #space-tree-container .tree-node {
+            margin: 0;
+            padding: 0;
+            list-style: none;
+        }
+        #space-tree-container .node-content {
+            display: flex;
+            align-items: center;
+            height: 30px;
+            cursor: pointer;
+            transition: background 0.15s;
+            user-select: none;
+            position: relative;
+        }
+        #space-tree-container .node-content:hover {
+            background: rgba(100, 116, 139, 0.15);
+        }
+        #space-tree-container .node-content.selected {
+            background:
+                linear-gradient(0deg, rgba(129, 225, 197, 0) 12.5%, rgba(129, 225, 197, 0.2) 137.5%),
+                linear-gradient(90deg, rgba(96, 235, 255, 0.2) 0%, rgba(96, 235, 255, 0.2) 100%),
+                linear-gradient(90deg, rgba(30, 41, 59, 0.6) 0%, rgba(30, 41, 59, 0.6) 100%);
+        }
+        #space-tree-container .node-content.highlight {
+            background: rgba(96, 235, 255, 0.1);
+        }
+        #space-tree-container .select-tag {
+            position: absolute;
+            left: 0;
+            top: 0;
+            width: 3px;
+            height: 30px;
+            border-radius: 0 500px 500px 0;
+            background:
+                linear-gradient(0deg, rgba(129, 225, 197, 0) 12.5%, rgb(129, 225, 197) 137.5%),
+                linear-gradient(90deg, rgb(175, 238, 247) 0%, rgb(175, 238, 247) 100%);
+            box-shadow: 0px 0px 8px 0px rgba(96, 165, 250, 0.6);
+            display: none;
+        }
+        #space-tree-container .node-content.selected .select-tag {
+            display: block;
+        }
+        #space-tree-container .node-toggle {
+            flex-shrink: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: transform 0.2s;
+        }
+        #space-tree-container .node-toggle img {
+            display: block;
+            transition: transform 0.2s;
+        }
+        #space-tree-container .node-toggle.expanded img {
+            transform: rotate(90deg);
+        }
+        #space-tree-container .node-toggle.leaf {
+            visibility: hidden;
+        }
+        #space-tree-container .node-toggle-14 {
+            width: 14px;
+            height: 14px;
+        }
+        #space-tree-container .node-toggle-14 img {
+            width: 14px;
+            height: 14px;
+        }
+        #space-tree-container .node-toggle-16 {
+            width: 16px;
+            height: 16px;
+        }
+        #space-tree-container .node-toggle-16 img {
+            width: 16px;
+            height: 16px;
+        }
+        #space-tree-container .node-icon {
+            width: 16px;
+            height: 16px;
+            flex-shrink: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-left: 6px;
+        }
+        #space-tree-container .node-icon img {
+            width: 16px;
+            height: 16px;
+            display: block;
+        }
+        #space-tree-container .node-bullet {
+            width: 16px;
+            height: 16px;
+            flex-shrink: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        #space-tree-container .node-bullet .dot {
+            width: 4px;
+            height: 4px;
+            border-radius: 500px;
+            background: #e4ebf6;
+        }
+        #space-tree-container .node-content.selected .node-bullet .dot {
+            background: #60ebff;
+            box-shadow: 0px 0px 8px 0px rgba(96, 165, 250, 0.6);
+        }
+        #space-tree-container .node-label {
+            flex: 1;
+            font-family: 'Pretendard', sans-serif;
+            font-weight: 400;
+            font-size: 14px;
+            color: #e4ebf6;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            margin-left: 6px;
+            line-height: normal;
+        }
+        #space-tree-container .node-content.selected .node-label {
+            font-weight: 500;
+            color: #60ebff;
+            letter-spacing: -0.35px;
+        }
+        #space-tree-container .node-label.dimmed { opacity: 0.4; }
+        #space-tree-container .node-children {
+            margin: 0;
+            padding: 0;
+            list-style: none;
+            display: none;
+        }
+        #space-tree-container .node-children.expanded { display: block; }
+        #space-tree-container .tree-container::-webkit-scrollbar { width: 4px; }
+        #space-tree-container .tree-container::-webkit-scrollbar-track { background: transparent; }
+        #space-tree-container .tree-container::-webkit-scrollbar-thumb { background: rgba(100, 116, 139, 0.4); border-radius: 2px; }
+        #space-tree-container .tree-container::-webkit-scrollbar-thumb:hover { background: rgba(100, 116, 139, 0.6); }
+
+        /* === preview-specific === */
+        body {
+            margin: 0;
+            padding: 40px;
+            background: #0f1117;
+            font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        }
+        h1 { color: #f8fafc; margin-bottom: 24px; font-size: 20px; }
+        #space-tree-container { width: 240px; height: 485px; }
+        .controls { margin-top: 24px; display: flex; gap: 8px; flex-wrap: wrap; }
+        .controls button {
+            padding: 8px 16px;
+            background: #60ebff;
+            color: #131521;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 13px;
+            font-weight: 500;
+        }
+        .controls button:hover { background: #4dd8ec; }
+        .controls button.destroy { background: #f87171; color: #fff; }
+        .controls button.destroy:hover { background: #ef4444; }
+        .controls button.secondary { background: #3b82f6; color: #fff; }
+    </style>
+</head>
+<body>
+    <h1>SpaceTree Component Preview</h1>
+    <div id="space-tree-container"></div>
+    <div class="controls">
+        <button onclick="sendMockData()">Load Data</button>
+        <button onclick="sendLargeData()" class="secondary">Large Data</button>
+        <button onclick="destroy()" class="destroy">Destroy</button>
+    </div>
+
+    <script>
+        // ======================
+        // MOCK CONTEXT
+        // ======================
+
+        const mockThis = {
+            appendElement: document.getElementById('space-tree-container')
+        };
+
+        // HTML 삽입 (views/component.html 내용)
+        mockThis.appendElement.innerHTML = `
+            <div class="space-tree">
+                <div class="tree-header">
+                    <span class="tree-title">-</span>
+                    <div class="tree-controls">
+                        <button class="btn-expand-all" title="Expand All">
+                            <img src="./assets/icon-chevron.svg" class="ctrl-icon expand-icon" alt="">
+                        </button>
+                        <button class="btn-collapse-all" title="Collapse All">
+                            <img src="./assets/icon-chevron.svg" class="ctrl-icon collapse-icon" alt="">
+                        </button>
+                    </div>
+                </div>
+                <div class="tree-search">
+                    <input type="text" class="search-input" placeholder="Search...">
+                </div>
+                <div class="tree-container">
+                    <ul class="tree-root"></ul>
+                </div>
+            </div>
+        `;
+
+        // ======================
+        // MOCK DEPENDENCIES
+        // ======================
+
+        const GlobalDataPublisher = {
+            subscribe: (topic, context, fn) => {
+                console.log(`[Mock] subscribe: ${topic}`);
+            },
+            unsubscribe: (topic, context) => {
+                console.log(`[Mock] unsubscribe: ${topic}`);
+            }
+        };
+
+        const Wkit = {
+            bindEvents: (context, events) => {
+                console.log('[Mock] bindEvents:', events);
+            },
+            removeCustomEvents: (context, events) => {
+                console.log('[Mock] removeCustomEvents:', events);
+            }
+        };
+
+        const fx = {
+            go: (arr, ...fns) => fns.reduce((acc, fn) => fn(acc), arr),
+            each: fn => arr => { arr.forEach(fn); return arr; }
+        };
+
+        // ======================
+        // REGISTER (scripts/register.js - TBD를 실제 값으로 변경)
+        // ======================
+
+        (function register() {
+            const { subscribe } = GlobalDataPublisher;
+            const { bindEvents } = Wkit;
+
+            // CONFIG (TBD → 실제 값)
+            const config = {
+                titleKey: 'title',
+                itemsKey: 'items',
+                fields: {
+                    id: 'id',
+                    name: 'name',
+                    type: 'type',
+                    children: 'children'
+                },
+                defaultType: 'default',
+                icons: {
+                    toggle: './assets/icon-chevron.svg',
+                    chevron: './assets/icon-chevron-sm.svg',
+                    typeIcons: {
+                        site: './assets/icon-location.svg',
+                        building: './assets/icon-building.svg',
+                        default: null
+                    }
+                },
+                depthPadding: [8, 16, 26, 46],
+                depthToggleSize: { 0: 14 }
+            };
+
+            // STATE
+            this._expandedNodes = new Set();
+            this._selectedNodeId = null;
+            this._searchTerm = '';
+            this._treeData = null;
+            this._internalHandlers = {};
+
+            // BINDINGS
+            this.renderData = renderData.bind(this, config);
+            this.toggleNode = toggleNode.bind(this);
+            this.selectNode = selectNode.bind(this);
+            this.expandAll = expandAll.bind(this);
+            this.collapseAll = collapseAll.bind(this);
+            this.handleSearch = handleSearch.bind(this, config);
+
+            // SUBSCRIPTIONS
+            this.subscriptions = {
+                spaceData: ['renderData']
+            };
+
+            fx.go(
+                Object.entries(this.subscriptions),
+                fx.each(([topic, fnList]) =>
+                    fx.each(fn => this[fn] && subscribe(topic, this, this[fn]), fnList)
+                )
+            );
+
+            // EVENT BINDING
+            this.customEvents = {
+                click: {
+                    '.node-toggle': '@nodeToggled',
+                    '.node-content': '@nodeClicked',
+                    '.btn-expand-all': '@expandAllClicked',
+                    '.btn-collapse-all': '@collapseAllClicked'
+                },
+                input: {
+                    '.search-input': '@searchChanged'
+                }
+            };
+
+            bindEvents(this, this.customEvents);
+
+            // 내부 이벤트 핸들러
+            setupInternalHandlers.call(this);
+
+            // RENDER FUNCTIONS
+
+            function renderData(config, { response }) {
+                const { data } = response;
+                if (!data) return;
+
+                const titleEl = this.appendElement.querySelector('.tree-title');
+                if (titleEl && data[config.titleKey]) {
+                    titleEl.textContent = data[config.titleKey];
+                }
+
+                const items = data[config.itemsKey];
+                if (items && Array.isArray(items)) {
+                    this._treeData = items;
+                    renderTree.call(this, config, items);
+                }
+            }
+
+            function renderTree(config, items, searchTerm = '') {
+                const rootEl = this.appendElement.querySelector('.tree-root');
+                if (!rootEl) return;
+
+                rootEl.innerHTML = '';
+                const normalizedSearch = searchTerm.toLowerCase().trim();
+
+                fx.go(
+                    items,
+                    fx.each(item => {
+                        const nodeEl = createNodeElement.call(this, config, item, normalizedSearch, 0);
+                        if (nodeEl) rootEl.appendChild(nodeEl);
+                    })
+                );
+            }
+
+            function createNodeElement(config, item, searchTerm, depth) {
+                const { fields, defaultType, icons, depthPadding, depthToggleSize } = config;
+
+                const id = item[fields.id];
+                const name = item[fields.name] || '-';
+                const type = item[fields.type] || defaultType;
+                const children = item[fields.children] || [];
+                const hasChildren = children.length > 0;
+                const isExpanded = this._expandedNodes.has(id);
+                const isSelected = this._selectedNodeId === id;
+                const isLeaf = !hasChildren;
+
+                const matchesSearch = !searchTerm || name.toLowerCase().includes(searchTerm);
+                const hasMatchingChildren = hasChildren && hasMatchingDescendants(children, fields, searchTerm);
+
+                if (searchTerm && !matchesSearch && !hasMatchingChildren) {
+                    return null;
+                }
+
+                const li = document.createElement('li');
+                li.className = 'tree-node';
+                li.dataset.nodeId = id;
+
+                const contentDiv = document.createElement('div');
+                contentDiv.className = 'node-content';
+                if (isSelected) contentDiv.classList.add('selected');
+                if (searchTerm && matchesSearch) contentDiv.classList.add('highlight');
+
+                // Depth-based padding
+                const paddingLeft = depthPadding[Math.min(depth, depthPadding.length - 1)];
+                contentDiv.style.paddingLeft = paddingLeft + 'px';
+                contentDiv.style.paddingRight = '8px';
+
+                // Selection Tag Bar
+                const tagBar = document.createElement('div');
+                tagBar.className = 'select-tag';
+                contentDiv.appendChild(tagBar);
+
+                // Toggle / Bullet
+                if (isLeaf) {
+                    const bulletDiv = document.createElement('div');
+                    bulletDiv.className = 'node-bullet';
+                    const dotDiv = document.createElement('div');
+                    dotDiv.className = 'dot';
+                    bulletDiv.appendChild(dotDiv);
+                    contentDiv.appendChild(bulletDiv);
+                } else {
+                    const toggleSize = depthToggleSize[depth] || 16;
+                    const toggleSpan = document.createElement('span');
+                    toggleSpan.className = `node-toggle node-toggle-${toggleSize}`;
+                    if (isExpanded) toggleSpan.classList.add('expanded');
+
+                    const toggleImg = document.createElement('img');
+                    toggleImg.src = toggleSize === 14 ? icons.toggle : icons.chevron;
+                    toggleImg.alt = '';
+                    toggleSpan.appendChild(toggleImg);
+                    contentDiv.appendChild(toggleSpan);
+                }
+
+                // Type Icon
+                const typeIconSrc = icons.typeIcons[type] || icons.typeIcons[defaultType];
+                if (typeIconSrc) {
+                    const iconDiv = document.createElement('div');
+                    iconDiv.className = 'node-icon';
+                    const iconImg = document.createElement('img');
+                    iconImg.src = typeIconSrc;
+                    iconImg.alt = '';
+                    iconDiv.appendChild(iconImg);
+                    contentDiv.appendChild(iconDiv);
+                }
+
+                // Label
+                const labelSpan = document.createElement('span');
+                labelSpan.className = 'node-label';
+                labelSpan.textContent = name;
+                if (searchTerm && !matchesSearch && hasMatchingChildren) {
+                    labelSpan.classList.add('dimmed');
+                }
+
+                contentDiv.appendChild(labelSpan);
+                li.appendChild(contentDiv);
+
+                // Children
+                if (hasChildren) {
+                    const childrenUl = document.createElement('ul');
+                    childrenUl.className = 'node-children';
+                    if (isExpanded || (searchTerm && hasMatchingChildren)) {
+                        childrenUl.classList.add('expanded');
+                    }
+
+                    fx.go(
+                        children,
+                        fx.each(child => {
+                            const childEl = createNodeElement.call(this, config, child, searchTerm, depth + 1);
+                            if (childEl) childrenUl.appendChild(childEl);
+                        })
+                    );
+
+                    li.appendChild(childrenUl);
+                }
+
+                return li;
+            }
+
+            function hasMatchingDescendants(children, fields, searchTerm) {
+                if (!searchTerm) return false;
+                return children.some(child => {
+                    const name = (child[fields.name] || '').toLowerCase();
+                    if (name.includes(searchTerm)) return true;
+                    const grandChildren = child[fields.children] || [];
+                    return grandChildren.length > 0 && hasMatchingDescendants(grandChildren, fields, searchTerm);
+                });
+            }
+
+            function setupInternalHandlers() {
+                const root = this.appendElement;
+
+                this._internalHandlers.toggleClick = (e) => {
+                    const toggle = e.target.closest('.node-toggle');
+                    if (toggle) {
+                        e.stopPropagation();
+                        const nodeEl = toggle.closest('.tree-node');
+                        if (nodeEl) this.toggleNode(nodeEl.dataset.nodeId);
+                    }
+                };
+
+                this._internalHandlers.nodeClick = (e) => {
+                    const content = e.target.closest('.node-content');
+                    if (content && !e.target.closest('.node-toggle')) {
+                        const nodeEl = content.closest('.tree-node');
+                        if (nodeEl) this.selectNode(nodeEl.dataset.nodeId);
+                    }
+                };
+
+                this._internalHandlers.expandAllClick = () => this.expandAll();
+                this._internalHandlers.collapseAllClick = () => this.collapseAll();
+                this._internalHandlers.searchInput = (e) => this.handleSearch(e.target.value);
+
+                root.addEventListener('click', this._internalHandlers.toggleClick);
+                root.addEventListener('click', this._internalHandlers.nodeClick);
+                root.querySelector('.btn-expand-all')?.addEventListener('click', this._internalHandlers.expandAllClick);
+                root.querySelector('.btn-collapse-all')?.addEventListener('click', this._internalHandlers.collapseAllClick);
+                root.querySelector('.search-input')?.addEventListener('input', this._internalHandlers.searchInput);
+            }
+
+            function toggleNode(nodeId) {
+                if (this._expandedNodes.has(nodeId)) {
+                    this._expandedNodes.delete(nodeId);
+                } else {
+                    this._expandedNodes.add(nodeId);
+                }
+                updateNodeVisuals.call(this, nodeId);
+            }
+
+            function selectNode(nodeId) {
+                const prevSelected = this.appendElement.querySelector('.node-content.selected');
+                if (prevSelected) prevSelected.classList.remove('selected');
+                this._selectedNodeId = nodeId;
+                const nodeEl = this.appendElement.querySelector(`[data-node-id="${nodeId}"] > .node-content`);
+                if (nodeEl) nodeEl.classList.add('selected');
+                console.log('[SpaceTree] Selected:', nodeId);
+            }
+
+            function expandAll() {
+                collectAllNodeIds.call(this, this._treeData, this._expandedNodes);
+                if (this._treeData) renderTree.call(this, config, this._treeData, this._searchTerm);
+            }
+
+            function collapseAll() {
+                this._expandedNodes.clear();
+                if (this._treeData) renderTree.call(this, config, this._treeData, this._searchTerm);
+            }
+
+            function collectAllNodeIds(items, set) {
+                if (!items) return;
+                const { fields } = config;
+                fx.go(items, fx.each(item => {
+                    const children = item[fields.children];
+                    if (children && children.length > 0) {
+                        set.add(item[fields.id]);
+                        collectAllNodeIds.call(this, children, set);
+                    }
+                }));
+            }
+
+            function handleSearch(config, value) {
+                this._searchTerm = value;
+                if (this._treeData) renderTree.call(this, config, this._treeData, value);
+            }
+
+            function updateNodeVisuals(nodeId) {
+                const nodeEl = this.appendElement.querySelector(`[data-node-id="${nodeId}"]`);
+                if (!nodeEl) return;
+                const toggle = nodeEl.querySelector(':scope > .node-content > .node-toggle');
+                const children = nodeEl.querySelector(':scope > .node-children');
+                const isExpanded = this._expandedNodes.has(nodeId);
+                if (toggle) toggle.classList.toggle('expanded', isExpanded);
+                if (children) children.classList.toggle('expanded', isExpanded);
+            }
+
+        }).call(mockThis);
+
+        // ======================
+        // BEFORE DESTROY
+        // ======================
+
+        function destroy() {
+            (function beforeDestroy() {
+                const { unsubscribe } = GlobalDataPublisher;
+                const { removeCustomEvents } = Wkit;
+                const { each } = fx;
+
+                fx.go(
+                    Object.entries(this.subscriptions),
+                    each(([topic, _]) => unsubscribe(topic, this))
+                );
+                this.subscriptions = null;
+
+                removeCustomEvents(this, this.customEvents);
+                this.customEvents = null;
+
+                if (this._internalHandlers) {
+                    const root = this.appendElement;
+                    root.removeEventListener('click', this._internalHandlers.toggleClick);
+                    root.removeEventListener('click', this._internalHandlers.nodeClick);
+                    root.querySelector('.btn-expand-all')?.removeEventListener('click', this._internalHandlers.expandAllClick);
+                    root.querySelector('.btn-collapse-all')?.removeEventListener('click', this._internalHandlers.collapseAllClick);
+                    root.querySelector('.search-input')?.removeEventListener('input', this._internalHandlers.searchInput);
+                }
+                this._internalHandlers = null;
+
+                this._expandedNodes = null;
+                this._selectedNodeId = null;
+                this._searchTerm = null;
+                this._treeData = null;
+
+                this.renderData = null;
+                this.toggleNode = null;
+                this.selectNode = null;
+                this.expandAll = null;
+                this.collapseAll = null;
+                this.handleSearch = null;
+
+                console.log('[SpaceTree] Destroyed');
+            }).call(mockThis);
+        }
+
+        // ======================
+        // TEST HELPERS
+        // ======================
+
+        function sendMockData() {
+            mockThis.renderData({
+                response: {
+                    data: {
+                        title: 'Space Tree',
+                        items: [
+                            {
+                                id: '1',
+                                name: 'eCOBIT 통합 센터',
+                                type: 'site',
+                                children: [
+                                    {
+                                        id: '1-1',
+                                        name: '본관',
+                                        type: 'building',
+                                        children: [
+                                            { id: '1-1-1', name: '5F', type: 'default' },
+                                            {
+                                                id: '1-1-2',
+                                                name: '4F',
+                                                type: 'default',
+                                                children: [
+                                                    { id: '1-1-2-1', name: '통합 상황실', type: 'default' },
+                                                    { id: '1-1-2-2', name: '전기실', type: 'default' },
+                                                    { id: '1-1-2-3', name: '서버실', type: 'default' }
+                                                ]
+                                            },
+                                            { id: '1-1-3', name: '3F', type: 'default' },
+                                            { id: '1-1-4', name: '2F', type: 'default' },
+                                            { id: '1-1-5', name: '1F', type: 'default' },
+                                            { id: '1-1-6', name: 'B1', type: 'default' },
+                                            { id: '1-1-7', name: 'B2', type: 'default' }
+                                        ]
+                                    },
+                                    {
+                                        id: '1-2',
+                                        name: '별관',
+                                        type: 'building'
+                                    }
+                                ]
+                            }
+                        ]
+                    }
+                }
+            });
+
+            // Figma 원본과 동일하게: 1depth, 본관, 4F를 펼침 + 전기실 선택
+            mockThis.toggleNode('1');
+            mockThis.toggleNode('1-1');
+            mockThis.toggleNode('1-1-2');
+            mockThis.selectNode('1-1-2-2');
+        }
+
+        function sendLargeData() {
+            const floors = ['B2', 'B1', '1F', '2F', '3F', '4F', '5F', '6F', '7F', '8F'];
+            const rooms = ['전기실', '기계실', '서버실', '회의실', '사무실', '통합 상황실', '보안실'];
+
+            mockThis.renderData({
+                response: {
+                    data: {
+                        title: 'Large Space Tree',
+                        items: [
+                            {
+                                id: 'site-1',
+                                name: 'eCOBIT 통합 센터',
+                                type: 'site',
+                                children: Array.from({ length: 3 }, (_, bi) => ({
+                                    id: `bld-${bi + 1}`,
+                                    name: `${['본관', '별관', '신관'][bi]}`,
+                                    type: 'building',
+                                    children: floors.map((floor, fi) => ({
+                                        id: `bld-${bi + 1}-f-${fi}`,
+                                        name: floor,
+                                        type: 'default',
+                                        children: rooms.slice(0, 3 + Math.floor(Math.random() * 4)).map((room, ri) => ({
+                                            id: `bld-${bi + 1}-f-${fi}-r-${ri}`,
+                                            name: room,
+                                            type: 'default'
+                                        }))
+                                    }))
+                                }))
+                            },
+                            {
+                                id: 'site-2',
+                                name: '제2센터',
+                                type: 'site',
+                                children: [
+                                    {
+                                        id: 'bld-4',
+                                        name: 'A동',
+                                        type: 'building',
+                                        children: floors.slice(0, 5).map((floor, fi) => ({
+                                            id: `bld-4-f-${fi}`,
+                                            name: floor,
+                                            type: 'default'
+                                        }))
+                                    }
+                                ]
+                            }
+                        ]
+                    }
+                }
+            });
+        }
+
+        // 초기 렌더링
+        sendMockData();
+    </script>
+</body>
+</html>

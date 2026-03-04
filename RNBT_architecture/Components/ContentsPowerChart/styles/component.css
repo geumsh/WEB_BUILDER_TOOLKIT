@@ -1,0 +1,235 @@
+/* ==========================================================================
+   ContentsPowerChart Component
+   실제 전력 평균 바 차트
+   ========================================================================== */
+
+#contents-power-chart-container {
+
+    /* Contents Title (공통) */
+    .contents-title {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        width: 100%;
+        height: 21px;
+    }
+    .contents-title-txt {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+    }
+    .dot-indicator {
+        position: relative;
+        width: 6px;
+        height: 6px;
+
+        img {
+            display: block;
+            position: absolute;
+            width: 16px;
+            height: 16px;
+            top: -5px;
+            left: -5px;
+        }
+    }
+    .contents-title-text {
+        font-family: 'Pretendard', sans-serif;
+        font-weight: 600;
+        font-size: 18px;
+        color: #f8fafc;
+        line-height: normal;
+    }
+    .union-dots {
+        width: 55.176px;
+        height: 9px;
+        position: relative;
+
+        img {
+            display: block;
+            position: absolute;
+            width: 100%;
+            height: 100%;
+        }
+    }
+
+    /* Section (공통) */
+    .section {
+        width: 420px;
+        backdrop-filter: blur(15px);
+        background: rgba(26, 34, 50, 0.6);
+        border: 1px solid rgba(81, 102, 145, 0.6);
+        border-radius: 12px;
+        position: relative;
+        box-sizing: border-box;
+    }
+    .section-inset-shadow {
+        position: absolute;
+        inset: 0;
+        border-radius: inherit;
+        pointer-events: none;
+        box-shadow: inset 0px 0px 8px 0px rgba(0, 0, 0, 0.25);
+    }
+
+    /* Root */
+    .contents-power-chart {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+    }
+
+    /* Bar Chart */
+    .section--chart {
+        height: 241px;
+        padding: 19px 20px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+    }
+    .chart-block {
+        width: 380px;
+        display: flex;
+        flex-direction: column;
+        gap: 25px;
+    }
+    .chart-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        width: 100%;
+        height: 20px;
+        line-height: normal;
+    }
+    .chart-label {
+        font-family: 'Pretendard', sans-serif;
+        font-weight: 500;
+        font-size: 16px;
+        color: #e4ebf6;
+        letter-spacing: -0.32px;
+    }
+    .chart-value {
+        display: flex;
+        align-items: flex-end;
+        gap: 7px;
+    }
+    .value-number {
+        font-family: 'Roboto Mono', monospace;
+        font-weight: 500;
+        font-size: 28px;
+        color: #f8fafc;
+        letter-spacing: -1.12px;
+        line-height: 1;
+    }
+    .value-unit {
+        font-family: 'Roboto Mono', monospace;
+        font-weight: 400;
+        font-size: 14px;
+        color: #bbc2cf;
+        letter-spacing: -0.28px;
+        line-height: 1;
+    }
+    .chart-body {
+        width: 380px;
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+        align-items: center;
+    }
+    .chart-legend {
+        display: flex;
+        gap: 28px;
+        align-items: center;
+    }
+    .legend-item {
+        display: flex;
+        align-items: center;
+        gap: 4px;
+    }
+    .legend-color {
+        width: 7px;
+        height: 7px;
+        border-radius: 2px;
+    }
+    .legend-color--blue { background: #445ed9; }
+    .legend-color--green { background: #81e1c5; }
+    .legend-text {
+        font-family: 'Pretendard', sans-serif;
+        font-weight: 400;
+        font-size: 13px;
+        color: #bbc2cf;
+        letter-spacing: -0.26px;
+        line-height: normal;
+    }
+    .chart-area {
+        width: 372px;
+        height: 130px;
+        display: flex;
+        position: relative;
+    }
+    .chart-y-axis {
+        width: 28px;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+        padding-bottom: 16px;
+        box-sizing: border-box;
+    }
+    .axis-label {
+        font-family: 'Pretendard', sans-serif;
+        font-weight: 500;
+        font-size: 12px;
+        color: rgba(167, 172, 188, 0.6);
+        letter-spacing: -0.24px;
+        text-align: right;
+        line-height: normal;
+    }
+    .axis-label--zero { text-align: right; padding-right: 4px; }
+    .chart-grid-area { flex: 1; position: relative; margin-left: 4px; }
+    .chart-grid {
+        position: absolute;
+        top: 7px;
+        left: 0;
+        right: 0;
+        height: 100px;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+    }
+    .grid-line {
+        width: 100%;
+        height: 1px;
+        overflow: hidden;
+
+        img { display: block; width: 100%; height: 1px; }
+    }
+    .chart-bars {
+        position: absolute;
+        top: 7px;
+        left: 21px;
+        width: 313px;
+        height: 100px;
+        display: flex;
+        justify-content: space-between;
+    }
+    .bar-group { display: flex; gap: 6px; align-items: flex-end; }
+    .bar { width: 6px; border-radius: 2px; }
+    .bar--blue { background: #445ed9; }
+    .bar--green { background: #81e1c5; }
+    .chart-x-axis {
+        position: absolute;
+        bottom: 0;
+        left: 24px;
+        right: 0;
+        display: flex;
+        justify-content: space-between;
+        height: 14px;
+    }
+    .axis-label-x {
+        font-family: 'Pretendard', sans-serif;
+        font-weight: 500;
+        font-size: 12px;
+        color: rgba(167, 172, 188, 0.6);
+        letter-spacing: -0.24px;
+        line-height: normal;
+    }
+}

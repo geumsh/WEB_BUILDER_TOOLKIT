@@ -1,0 +1,650 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>StatusBox Preview</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <style>
+        /* === component.css (inline - #status-box-container scoped) === */
+        #status-box-container {
+            min-width: 400px;
+            min-height: 100px;
+        }
+        #status-box-container .status-box {
+            width: 100%;
+            height: 100%;
+            backdrop-filter: blur(15px);
+            -webkit-backdrop-filter: blur(15px);
+            background: rgba(15, 31, 36, 0.4);
+            border: 2px solid #81e1c5;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            padding: 12px 12px 12px 23px;
+            position: relative;
+            overflow: clip;
+            font-family: 'Pretendard', sans-serif;
+        }
+        #status-box-container .status-box::after {
+            content: '';
+            position: absolute;
+            inset: -2px;
+            border-radius: inherit;
+            box-shadow: inset 0px 4px 8px 0px rgba(0, 0, 0, 0.25);
+            pointer-events: none;
+        }
+        #status-box-container .pue-section {
+            width: 140px;
+            flex-shrink: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 8px;
+            padding-bottom: 2px;
+        }
+        #status-box-container .pue-title {
+            width: 100%;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        #status-box-container .pue-title .icon-pue {
+            width: 11px;
+            height: 11px;
+            display: block;
+        }
+        #status-box-container .pue-title span {
+            font-weight: 500;
+            font-size: 15px;
+            color: #e4ebf6;
+            letter-spacing: -0.3px;
+            white-space: nowrap;
+            line-height: normal;
+        }
+        #status-box-container .gauge-wrapper {
+            width: 118px;
+            height: 59px;
+            position: relative;
+        }
+        #status-box-container .gauge-bg {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 118px;
+            height: 59px;
+            overflow: hidden;
+        }
+        #status-box-container .gauge-bg img {
+            width: 118px;
+            height: 118px;
+            display: block;
+        }
+        #status-box-container .gauge-value {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 113.198px;
+            height: 59px;
+            overflow: hidden;
+        }
+        #status-box-container .gauge-value img {
+            width: 113.198px;
+            height: 118px;
+            display: block;
+        }
+        #status-box-container .gauge-num {
+            position: absolute;
+            bottom: 0;
+            left: 50%;
+            transform: translateX(calc(-50% - 0.56px));
+            text-align: center;
+        }
+        #status-box-container .gauge-num span {
+            font-weight: 600;
+            font-size: 30px;
+            color: #f9fdff;
+            white-space: nowrap;
+            line-height: normal;
+        }
+        #status-box-container .gauge-label-left {
+            position: absolute;
+            bottom: 0;
+            left: 2.226px;
+        }
+        #status-box-container .gauge-label-left span,
+        #status-box-container .gauge-label-right span {
+            font-weight: 400;
+            font-size: 11px;
+            color: #94a3b8;
+            white-space: nowrap;
+            line-height: normal;
+        }
+        #status-box-container .gauge-label-right {
+            position: absolute;
+            bottom: 0;
+            right: 2.226px;
+        }
+        #status-box-container .info-grid {
+            flex: 1;
+            min-width: 0;
+            min-height: 0;
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            grid-template-rows: repeat(2, auto);
+            gap: 6px;
+        }
+        #status-box-container .info-card {
+            backdrop-filter: blur(15px);
+            -webkit-backdrop-filter: blur(15px);
+            background: #090909;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 6px 17px 6px 7px;
+        }
+        #status-box-container .info-card .card-left {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        #status-box-container .info-card .symbol {
+            width: 31px;
+            height: 31px;
+            background: rgba(228, 235, 246, 0.2);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+        #status-box-container .info-card .symbol .icon-wrap {
+            width: 15px;
+            height: 15px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        #status-box-container .info-card .symbol .icon-wrap img {
+            display: block;
+            max-width: none;
+        }
+        #status-box-container .icon-wrap.electricity img { width: 8.85px; height: 15px; }
+        #status-box-container .icon-wrap.temperature img { width: 7.5px; height: 15px; }
+        #status-box-container .icon-wrap.humidity img    { width: 10.5px; height: 15px; }
+        #status-box-container .icon-wrap.alarm img       { width: 13.57px; height: 15px; }
+        #status-box-container .info-card .card-label {
+            font-weight: 500;
+            font-size: 15px;
+            color: #e4ebf6;
+            letter-spacing: -0.3px;
+            white-space: nowrap;
+            line-height: normal;
+        }
+        #status-box-container .info-card .card-right {
+            display: flex;
+            align-items: flex-end;
+            gap: 6px;
+        }
+        #status-box-container .info-card .card-right .arrow-icon {
+            width: 16px;
+            height: 16px;
+            display: block;
+            margin-bottom: 2px;
+        }
+        #status-box-container .info-card .card-right .value {
+            font-family: 'Roboto Mono', monospace;
+            font-weight: 500;
+            font-size: 26px;
+            letter-spacing: -1.04px;
+            white-space: nowrap;
+            line-height: normal;
+            text-align: right;
+            background:
+                linear-gradient(180deg, rgba(129, 225, 197, 0) 12.5%, rgb(129, 225, 197) 137.5%),
+                linear-gradient(90deg, rgb(175, 238, 247) 0%, rgb(175, 238, 247) 100%);
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        #status-box-container .info-card .card-right .unit {
+            font-family: 'Roboto Mono', monospace;
+            font-weight: 400;
+            font-size: 14px;
+            color: #bbc2cf;
+            letter-spacing: -0.28px;
+            white-space: nowrap;
+            line-height: normal;
+            text-align: center;
+        }
+        #status-box-container .info-card .card-right .unit-kr {
+            font-family: 'Pretendard', sans-serif;
+            font-weight: 400;
+            font-size: 14px;
+            color: #bbc2cf;
+            letter-spacing: -0.28px;
+            white-space: nowrap;
+            line-height: normal;
+            text-align: center;
+        }
+
+        /* === preview-specific === */
+        body {
+            margin: 0;
+            padding: 40px;
+            background: #0f1117;
+            font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        }
+        h1 { color: #f8fafc; margin-bottom: 24px; font-size: 20px; }
+        #status-box-container { width: 740px; height: 116px; }
+        .controls { margin-top: 24px; display: flex; gap: 8px; flex-wrap: wrap; }
+        .controls button {
+            padding: 8px 16px;
+            background: #60ebff;
+            color: #131521;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 13px;
+            font-weight: 500;
+        }
+        .controls button:hover { background: #4dd8ec; }
+        .controls button.destroy { background: #f87171; color: #fff; }
+        .controls button.destroy:hover { background: #ef4444; }
+        .controls button.secondary { background: #3b82f6; color: #fff; }
+    </style>
+</head>
+<body>
+    <h1>StatusBox Component Preview</h1>
+    <div id="status-box-container"></div>
+    <div class="controls">
+        <button onclick="sendMockData()">Load Data</button>
+        <button onclick="sendUpdatedData()" class="secondary">Update Values</button>
+        <button onclick="destroy()" class="destroy">Destroy</button>
+    </div>
+
+    <script>
+        // ======================
+        // MOCK CONTEXT
+        // ======================
+
+        const mockThis = {
+            appendElement: document.getElementById('status-box-container')
+        };
+
+        // HTML 삽입 (views/component.html 내용)
+        mockThis.appendElement.innerHTML = `
+            <div class="status-box">
+                <div class="pue-section">
+                    <div class="pue-title">
+                        <img src="./assets/icon-pue.svg" class="icon-pue" alt="">
+                        <span>-</span>
+                    </div>
+                    <div class="gauge-wrapper">
+                        <div class="gauge-bg">
+                            <img src="./assets/gauge-bg.svg" alt="">
+                        </div>
+                        <div class="gauge-value">
+                            <img src="./assets/gauge-value.svg" alt="">
+                        </div>
+                        <div class="gauge-num"><span>-</span></div>
+                        <div class="gauge-label-left"><span>-</span></div>
+                        <div class="gauge-label-right"><span>-</span></div>
+                    </div>
+                </div>
+                <div class="info-grid"></div>
+            </div>
+        `;
+
+        // ======================
+        // MOCK DEPENDENCIES
+        // ======================
+
+        const GlobalDataPublisher = {
+            subscribe: (topic, context, fn) => {
+                console.log(`[Mock] subscribe: ${topic}`);
+            },
+            unsubscribe: (topic, context) => {
+                console.log(`[Mock] unsubscribe: ${topic}`);
+            }
+        };
+
+        const Wkit = {
+            bindEvents: (context, events) => {
+                console.log('[Mock] bindEvents:', events);
+            },
+            removeCustomEvents: (context, events) => {
+                console.log('[Mock] removeCustomEvents:', events);
+            }
+        };
+
+        const fx = {
+            go: (arr, ...fns) => fns.reduce((acc, fn) => fn(acc), arr),
+            each: fn => arr => { arr.forEach(fn); return arr; }
+        };
+
+        // ======================
+        // REGISTER (scripts/register.js - TBD를 실제 값으로 변경)
+        // ======================
+
+        (function register() {
+            const { subscribe } = GlobalDataPublisher;
+            const { bindEvents } = Wkit;
+
+            // CONFIG (TBD → 실제 값)
+            const config = {
+                gaugeKey: 'gauge',
+                cardsKey: 'cards',
+                gaugeFields: {
+                    title: 'title',
+                    value: 'value',
+                    min: 'min',
+                    max: 'max'
+                },
+                cardFields: {
+                    key: 'key',
+                    label: 'label',
+                    iconType: 'iconType',
+                    arrow: 'arrow',
+                    value: 'value',
+                    unit: 'unit',
+                    unitFont: 'unitFont'
+                },
+                iconMap: {
+                    electricity: './assets/icon-electricity.svg',
+                    temperature: './assets/icon-temperature.svg',
+                    humidity: './assets/icon-humidity.svg',
+                    alarm: './assets/icon-alarm.svg'
+                },
+                arrowIcons: {
+                    up: './assets/icon-arrow-up.svg',
+                    down: './assets/icon-arrow-down.svg'
+                }
+            };
+
+            // STATE
+            this._internalHandlers = {};
+
+            // BINDINGS
+            this.renderData = renderData.bind(this, config);
+
+            // SUBSCRIPTIONS
+            this.subscriptions = {
+                statusBoxData: ['renderData']
+            };
+
+            fx.go(
+                Object.entries(this.subscriptions),
+                fx.each(([topic, fnList]) =>
+                    fx.each(fn => this[fn] && subscribe(topic, this, this[fn]), fnList)
+                )
+            );
+
+            // EVENT BINDING
+            this.customEvents = {
+                click: {
+                    '.info-card': '@cardClicked'
+                }
+            };
+
+            bindEvents(this, this.customEvents);
+
+            // RENDER FUNCTIONS
+
+            function renderData(config, { response }) {
+                const { data } = response;
+                if (!data) return;
+
+                const gauge = data[config.gaugeKey];
+                if (gauge) {
+                    renderGauge.call(this, config, gauge);
+                }
+
+                const cards = data[config.cardsKey];
+                if (cards && Array.isArray(cards)) {
+                    renderCards.call(this, config, cards);
+                }
+            }
+
+            function renderGauge(config, gauge) {
+                const { gaugeFields } = config;
+
+                const titleEl = this.appendElement.querySelector('.pue-title span');
+                if (titleEl && gauge[gaugeFields.title]) {
+                    titleEl.textContent = gauge[gaugeFields.title];
+                }
+
+                const numEl = this.appendElement.querySelector('.gauge-num span');
+                if (numEl && gauge[gaugeFields.value] !== undefined) {
+                    numEl.textContent = gauge[gaugeFields.value];
+                }
+
+                const minEl = this.appendElement.querySelector('.gauge-label-left span');
+                if (minEl && gauge[gaugeFields.min] !== undefined) {
+                    minEl.textContent = gauge[gaugeFields.min];
+                }
+
+                const maxEl = this.appendElement.querySelector('.gauge-label-right span');
+                if (maxEl && gauge[gaugeFields.max] !== undefined) {
+                    maxEl.textContent = gauge[gaugeFields.max];
+                }
+            }
+
+            function renderCards(config, cards) {
+                const gridEl = this.appendElement.querySelector('.info-grid');
+                if (!gridEl) return;
+                gridEl.innerHTML = '';
+
+                fx.go(
+                    cards,
+                    fx.each(card => {
+                        const cardEl = createCard(config, card);
+                        gridEl.appendChild(cardEl);
+                    })
+                );
+            }
+
+            function createCard(config, card) {
+                const { cardFields, iconMap, arrowIcons } = config;
+
+                const iconType = card[cardFields.iconType] || 'electricity';
+                const arrow = card[cardFields.arrow];
+                const value = card[cardFields.value] ?? '-';
+                const unit = card[cardFields.unit] || '';
+                const unitFont = card[cardFields.unitFont];
+                const label = card[cardFields.label] || '-';
+                const key = card[cardFields.key] || '';
+
+                const el = document.createElement('div');
+                el.className = 'info-card';
+                if (key) el.dataset.key = key;
+
+                const leftDiv = document.createElement('div');
+                leftDiv.className = 'card-left';
+
+                const symbolDiv = document.createElement('div');
+                symbolDiv.className = 'symbol';
+                const iconWrap = document.createElement('div');
+                iconWrap.className = `icon-wrap ${iconType}`;
+                const iconImg = document.createElement('img');
+                iconImg.src = iconMap[iconType] || iconMap.electricity;
+                iconImg.alt = '';
+                iconWrap.appendChild(iconImg);
+                symbolDiv.appendChild(iconWrap);
+                leftDiv.appendChild(symbolDiv);
+
+                const labelSpan = document.createElement('span');
+                labelSpan.className = 'card-label';
+                labelSpan.textContent = label;
+                leftDiv.appendChild(labelSpan);
+
+                el.appendChild(leftDiv);
+
+                const rightDiv = document.createElement('div');
+                rightDiv.className = 'card-right';
+
+                if (arrow && arrowIcons[arrow]) {
+                    const arrowImg = document.createElement('img');
+                    arrowImg.className = 'arrow-icon';
+                    arrowImg.src = arrowIcons[arrow];
+                    arrowImg.alt = '';
+                    rightDiv.appendChild(arrowImg);
+                }
+
+                const valueSpan = document.createElement('span');
+                valueSpan.className = 'value';
+                valueSpan.textContent = value;
+                rightDiv.appendChild(valueSpan);
+
+                const unitSpan = document.createElement('span');
+                unitSpan.className = unitFont === 'kr' ? 'unit-kr' : 'unit';
+                unitSpan.textContent = unit;
+                rightDiv.appendChild(unitSpan);
+
+                el.appendChild(rightDiv);
+
+                return el;
+            }
+
+        }).call(mockThis);
+
+        // ======================
+        // BEFORE DESTROY
+        // ======================
+
+        function destroy() {
+            (function beforeDestroy() {
+                const { unsubscribe } = GlobalDataPublisher;
+                const { removeCustomEvents } = Wkit;
+                const { each } = fx;
+
+                fx.go(
+                    Object.entries(this.subscriptions),
+                    each(([topic, _]) => unsubscribe(topic, this))
+                );
+                this.subscriptions = null;
+
+                removeCustomEvents(this, this.customEvents);
+                this.customEvents = null;
+
+                this._internalHandlers = null;
+                this.renderData = null;
+
+                console.log('[StatusBox] Destroyed');
+            }).call(mockThis);
+        }
+
+        // ======================
+        // TEST HELPERS
+        // ======================
+
+        function sendMockData() {
+            mockThis.renderData({
+                response: {
+                    data: {
+                        gauge: {
+                            title: 'PUE',
+                            value: 1.5,
+                            min: 1,
+                            max: 3
+                        },
+                        cards: [
+                            {
+                                key: 'power',
+                                label: '전력 사용량',
+                                iconType: 'electricity',
+                                arrow: 'up',
+                                value: 784,
+                                unit: 'KW'
+                            },
+                            {
+                                key: 'alarm',
+                                label: '주요알람',
+                                iconType: 'alarm',
+                                arrow: null,
+                                value: 5,
+                                unit: '건',
+                                unitFont: 'kr'
+                            },
+                            {
+                                key: 'temperature',
+                                label: '온도',
+                                iconType: 'temperature',
+                                arrow: 'up',
+                                value: 24,
+                                unit: '℃'
+                            },
+                            {
+                                key: 'humidity',
+                                label: '습도',
+                                iconType: 'humidity',
+                                arrow: 'down',
+                                value: 46,
+                                unit: '%'
+                            }
+                        ]
+                    }
+                }
+            });
+        }
+
+        function sendUpdatedData() {
+            mockThis.renderData({
+                response: {
+                    data: {
+                        gauge: {
+                            title: 'PUE',
+                            value: 1.8,
+                            min: 1,
+                            max: 3
+                        },
+                        cards: [
+                            {
+                                key: 'power',
+                                label: '전력 사용량',
+                                iconType: 'electricity',
+                                arrow: 'up',
+                                value: 912,
+                                unit: 'KW'
+                            },
+                            {
+                                key: 'alarm',
+                                label: '주요알람',
+                                iconType: 'alarm',
+                                arrow: null,
+                                value: 12,
+                                unit: '건',
+                                unitFont: 'kr'
+                            },
+                            {
+                                key: 'temperature',
+                                label: '온도',
+                                iconType: 'temperature',
+                                arrow: 'up',
+                                value: 28,
+                                unit: '℃'
+                            },
+                            {
+                                key: 'humidity',
+                                label: '습도',
+                                iconType: 'humidity',
+                                arrow: 'down',
+                                value: 38,
+                                unit: '%'
+                            }
+                        ]
+                    }
+                }
+            });
+        }
+
+        // 초기 렌더링
+        sendMockData();
+    </script>
+</body>
+</html>

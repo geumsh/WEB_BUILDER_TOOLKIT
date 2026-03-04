@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sidebar - Space Tree</title>
+  <link rel="stylesheet" href="sidebar.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css">
+</head>
+<body>
+  <div id="component-container">
+    <div class="sidebar">
+      <!-- Header -->
+      <div class="sidebar-header">
+        <span class="sidebar-header-title">Space Tree</span>
+      </div>
+
+      <!-- Tree Area -->
+      <div class="tree-area">
+        <!-- 1Depth: eCOBIT 통합 센터 -->
+        <div class="tree-1depth-group">
+          <div class="icon-wrapper-14">
+            <img src="./assets/icon-chevron.svg" alt="">
+          </div>
+          <div class="depth1-label">
+            <div class="icon-16">
+              <img src="./assets/icon-location.svg" alt="">
+            </div>
+            <span class="tree-text">eCOBIT 통합 센터</span>
+          </div>
+        </div>
+
+        <!-- 2Depth Container -->
+        <div class="tree-2depth-container">
+          <!-- 2Depth: 본관 -->
+          <div class="tree-2depth">
+            <div class="tree-2depth-item">
+              <div class="icon-wrapper-16">
+                <img src="./assets/icon-chevron-sm.svg" alt="">
+              </div>
+              <div class="icon-16">
+                <img src="./assets/icon-building.svg" alt="">
+              </div>
+              <span class="tree-text">본관</span>
+            </div>
+
+            <!-- 3Depth Container -->
+            <div class="tree-3depth-container">
+              <!-- 5F -->
+              <div class="tree-3depth-item">
+                <div class="empty-16"></div>
+                <span class="tree-text">5F</span>
+              </div>
+
+              <!-- 3Depth: 4F (expanded) -->
+              <div class="tree-3depth">
+                <div class="tree-3depth-item">
+                  <div class="icon-wrapper-16">
+                    <img src="./assets/icon-chevron-sm.svg" alt="">
+                  </div>
+                  <span class="tree-text">4F</span>
+                </div>
+
+                <!-- Leaf items -->
+                <div class="tree-leaf-container">
+                  <!-- 통합 상황실 -->
+                  <div class="tree-leaf-item">
+                    <div class="bullet">
+                      <div class="dot"></div>
+                    </div>
+                    <span class="tree-text">통합 상황실</span>
+                  </div>
+
+                  <!-- 전기실 (Selected) -->
+                  <div class="tree-leaf-item-selected">
+                    <div class="select-tag"></div>
+                    <div class="select-txt">
+                      <div class="bullet bullet-selected">
+                        <div class="dot"></div>
+                      </div>
+                      <span class="tree-text-selected">전기실</span>
+                    </div>
+                  </div>
+
+                  <!-- 서버실 -->
+                  <div class="tree-leaf-item">
+                    <div class="bullet">
+                      <div class="dot"></div>
+                    </div>
+                    <span class="tree-text">서버실</span>
+                  </div>
+                </div>
+              </div>
+
+              <!-- 3F -->
+              <div class="tree-3depth-item">
+                <div class="empty-16"></div>
+                <span class="tree-text">3F</span>
+              </div>
+
+              <!-- 2F -->
+              <div class="tree-3depth-item">
+                <div class="empty-16"></div>
+                <span class="tree-text">2F</span>
+              </div>
+
+              <!-- 1F -->
+              <div class="tree-3depth-item">
+                <div class="empty-16"></div>
+                <span class="tree-text">1F</span>
+              </div>
+
+              <!-- B1 -->
+              <div class="tree-3depth-item">
+                <div class="empty-16"></div>
+                <span class="tree-text">B1</span>
+              </div>
+
+              <!-- B2 -->
+              <div class="tree-3depth-item">
+                <div class="empty-16"></div>
+                <span class="tree-text">B2</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- 2Depth: 별관 -->
+          <div class="tree-2depth-no-gap">
+            <div class="tree-2depth-item-no-chevron">
+              <div class="empty-16"></div>
+              <div class="icon-16">
+                <img src="./assets/icon-building.svg" alt="">
+              </div>
+              <span class="tree-text">별관</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</body>
+</html>

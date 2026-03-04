@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Status Box - PUE & Info Cards</title>
+  <link rel="stylesheet" href="status-box.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Roboto+Mono:wght@400;500&display=swap" rel="stylesheet">
+</head>
+<body>
+  <div id="component-container">
+    <div class="status-box">
+
+      <!-- Left: PUE Gauge -->
+      <div class="pue-section">
+        <div class="pue-title">
+          <img src="./assets/icon-pue.svg" class="icon-pue" alt="">
+          <span>PUE</span>
+        </div>
+        <div class="gauge-wrapper">
+          <!-- Background arc (gray) -->
+          <div class="gauge-bg">
+            <img src="./assets/gauge-bg.svg" alt="">
+          </div>
+          <!-- Value arc (gradient) -->
+          <div class="gauge-value">
+            <img src="./assets/gauge-value.svg" alt="">
+          </div>
+          <!-- Center number -->
+          <div class="gauge-num"><span>1.5</span></div>
+          <!-- Min label -->
+          <div class="gauge-label-left"><span>1</span></div>
+          <!-- Max label -->
+          <div class="gauge-label-right"><span>3</span></div>
+        </div>
+      </div>
+
+      <!-- Right: Info Grid (2x2) -->
+      <div class="info-grid">
+        <!-- Row 1, Col 1: 전력 사용량 -->
+        <div class="info-card">
+          <div class="card-left">
+            <div class="symbol">
+              <div class="icon-wrap electricity">
+                <img src="./assets/icon-electricity.svg" alt="">
+              </div>
+            </div>
+            <span class="card-label">전력 사용량</span>
+          </div>
+          <div class="card-right">
+            <img src="./assets/icon-arrow-up.svg" class="arrow-icon" alt="">
+            <span class="value">784</span>
+            <span class="unit">KW</span>
+          </div>
+        </div>
+
+        <!-- Row 1, Col 2: 주요알람 -->
+        <div class="info-card">
+          <div class="card-left">
+            <div class="symbol">
+              <div class="icon-wrap alarm">
+                <img src="./assets/icon-alarm.svg" alt="">
+              </div>
+            </div>
+            <span class="card-label">주요알람</span>
+          </div>
+          <div class="card-right">
+            <span class="value">5</span>
+            <span class="unit-kr">건</span>
+          </div>
+        </div>
+
+        <!-- Row 2, Col 1: 온도 -->
+        <div class="info-card">
+          <div class="card-left">
+            <div class="symbol">
+              <div class="icon-wrap temperature">
+                <img src="./assets/icon-temperature.svg" alt="">
+              </div>
+            </div>
+            <span class="card-label">온도</span>
+          </div>
+          <div class="card-right">
+            <img src="./assets/icon-arrow-up.svg" class="arrow-icon" alt="">
+            <span class="value">24</span>
+            <span class="unit">℃</span>
+          </div>
+        </div>
+
+        <!-- Row 2, Col 2: 습도 -->
+        <div class="info-card">
+          <div class="card-left">
+            <div class="symbol">
+              <div class="icon-wrap humidity">
+                <img src="./assets/icon-humidity.svg" alt="">
+              </div>
+            </div>
+            <span class="card-label">습도</span>
+          </div>
+          <div class="card-right">
+            <img src="./assets/icon-arrow-down.svg" class="arrow-icon" alt="">
+            <span class="value">46</span>
+            <span class="unit">%</span>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</body>
+</html>

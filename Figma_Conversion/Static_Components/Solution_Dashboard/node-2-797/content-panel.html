@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Content Panel</title>
+    <link rel="stylesheet" href="./content-panel.css">
+    <link href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css" rel="stylesheet">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto+Mono:wght@400;500&display=swap" rel="stylesheet">
+</head>
+<body style="margin:0;padding:0;background:#0d0f1a;">
+    <div id="component-container">
+        <div class="content-panel">
+
+            <!-- ===== Contents 1: Bar Chart ===== -->
+            <div class="contents">
+                <div class="contents-title">
+                    <div class="contents-title-txt">
+                        <div class="dot-indicator">
+                            <img src="./assets/fef271bea2b0df646c2568bef92262f3566af55a.svg" alt="">
+                        </div>
+                        <span class="contents-title-text">컨텐츠 그룹</span>
+                    </div>
+                    <div class="union-dots">
+                        <img src="./assets/fbcfa2e9dca117fa1b4661a24085f8659741d655.svg" alt="">
+                    </div>
+                </div>
+                <div class="section section--chart">
+                    <div class="chart-block">
+                        <div class="chart-header">
+                            <span class="chart-label">실제 전력 평균</span>
+                            <div class="chart-value">
+                                <span class="value-number">828.7883</span>
+                                <span class="value-unit">KW</span>
+                            </div>
+                        </div>
+                        <div class="chart-body">
+                            <div class="chart-legend">
+                                <div class="legend-item">
+                                    <div class="legend-color legend-color--blue"></div>
+                                    <span class="legend-text">금일</span>
+                                </div>
+                                <div class="legend-item">
+                                    <div class="legend-color legend-color--green"></div>
+                                    <span class="legend-text">금주</span>
+                                </div>
+                            </div>
+                            <div class="chart-area">
+                                <!-- Y Axis -->
+                                <div class="chart-y-axis">
+                                    <span class="axis-label">800</span>
+                                    <span class="axis-label">600</span>
+                                    <span class="axis-label">400</span>
+                                    <span class="axis-label">200</span>
+                                    <span class="axis-label axis-label--zero">0</span>
+                                </div>
+                                <!-- Grid + Bars -->
+                                <div class="chart-grid-area">
+                                    <div class="chart-grid">
+                                        <div class="grid-line grid-line--solid">
+                                            <img src="./assets/82e6e1eaf29d8a6b5bf65b4f87f1821b855baffa.svg" alt="">
+                                        </div>
+                                        <div class="grid-line grid-line--dashed">
+                                            <img src="./assets/bbf37bd799e44fd3863089d04680cf58bf8fa664.svg" alt="">
+                                        </div>
+                                        <div class="grid-line grid-line--dashed">
+                                            <img src="./assets/bbf37bd799e44fd3863089d04680cf58bf8fa664.svg" alt="">
+                                        </div>
+                                        <div class="grid-line grid-line--dashed">
+                                            <img src="./assets/bbf37bd799e44fd3863089d04680cf58bf8fa664.svg" alt="">
+                                        </div>
+                                        <div class="grid-line grid-line--dashed">
+                                            <img src="./assets/bbf37bd799e44fd3863089d04680cf58bf8fa664.svg" alt="">
+                                        </div>
+                                    </div>
+                                    <!-- Bar Groups -->
+                                    <div class="chart-bars">
+                                        <div class="bar-group">
+                                            <div class="bar bar--blue" style="height:70px;"></div>
+                                            <div class="bar bar--green" style="height:15px;"></div>
+                                        </div>
+                                        <div class="bar-group">
+                                            <div class="bar bar--blue" style="height:83px;"></div>
+                                            <div class="bar bar--green" style="height:70px;"></div>
+                                        </div>
+                                        <div class="bar-group">
+                                            <div class="bar bar--blue" style="height:82px;"></div>
+                                            <div class="bar bar--green" style="height:70px;"></div>
+                                        </div>
+                                        <div class="bar-group">
+                                            <div class="bar bar--blue" style="height:66px;"></div>
+                                            <div class="bar bar--green" style="height:50px;"></div>
+                                        </div>
+                                        <div class="bar-group">
+                                            <div class="bar bar--blue" style="height:66px;"></div>
+                                            <div class="bar bar--green" style="height:49px;"></div>
+                                        </div>
+                                        <div class="bar-group">
+                                            <div class="bar bar--blue" style="height:57px;"></div>
+                                            <div class="bar bar--green" style="height:37px;"></div>
+                                        </div>
+                                        <div class="bar-group">
+                                            <div class="bar bar--blue" style="height:37px;"></div>
+                                            <div class="bar bar--green" style="height:36px;"></div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <!-- X Axis -->
+                                <div class="chart-x-axis">
+                                    <span class="axis-label-x">01</span>
+                                    <span class="axis-label-x">02</span>
+                                    <span class="axis-label-x">03</span>
+                                    <span class="axis-label-x">04</span>
+                                    <span class="axis-label-x">05</span>
+                                    <span class="axis-label-x">06</span>
+                                    <span class="axis-label-x">07</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="section-inset-shadow"></div>
+                </div>
+            </div>
+
+            <!-- ===== Contents 2: System Status ===== -->
+            <div class="contents">
+                <div class="contents-title">
+                    <div class="contents-title-txt">
+                        <div class="dot-indicator">
+                            <img src="./assets/fef271bea2b0df646c2568bef92262f3566af55a.svg" alt="">
+                        </div>
+                        <span class="contents-title-text">컨텐츠 그룹</span>
+                    </div>
+                    <div class="union-dots">
+                        <img src="./assets/fbcfa2e9dca117fa1b4661a24085f8659741d655.svg" alt="">
+                    </div>
+                </div>
+                <div class="section-row">
+                    <!-- Gauge Box -->
+                    <div class="section section--gauge-box">
+                        <span class="gauge-label">시스템 상태 점수</span>
+                        <div class="gauge-chart">
+                            <div class="gauge-image">
+                                <img src="./assets/7d6c1c08eac33d9ecb24d45b9cccbfdd9892c5fb.svg" alt="">
+                            </div>
+                            <div class="gauge-value">
+                                <span class="gauge-number">92</span>
+                                <span class="gauge-unit">%</span>
+                            </div>
+                        </div>
+                        <div class="section-inset-shadow"></div>
+                    </div>
+                    <!-- System List Box -->
+                    <div class="section section--list-box">
+                        <div class="system-list">
+                            <div class="system-list-row">
+                                <div class="system-group">
+                                    <div class="system-icon-wrap">
+                                        <img src="./assets/e5ae19b24cfc059c160e4e65a4a7f842a3ab523e.svg" alt="">
+                                    </div>
+                                    <span class="system-name">시스템 #01</span>
+                                </div>
+                                <div class="system-value">
+                                    <span class="system-number">76</span>
+                                    <span class="system-percent">%</span>
+                                </div>
+                            </div>
+                            <div class="system-list-row">
+                                <div class="system-group">
+                                    <div class="system-icon-wrap">
+                                        <img src="./assets/8f615f2137bda6c04a6d9b8016d1e65c9a58bf75.svg" alt="">
+                                    </div>
+                                    <span class="system-name">시스템 #02</span>
+                                </div>
+                                <span class="system-status system-status--normal">정상</span>
+                            </div>
+                            <div class="system-list-row">
+                                <div class="system-group">
+                                    <div class="system-icon-wrap">
+                                        <img src="./assets/5b74f7d6ad317f88e5a8fc793ddb28ea14213cf9.svg" alt="">
+                                    </div>
+                                    <span class="system-name">시스템 #03</span>
+                                </div>
+                                <div class="system-status-warn">
+                                    <div class="warn-icon">
+                                        <img src="./assets/e55751d897a3cae66b45ae7bfe85431262b6108e.svg" alt="">
+                                    </div>
+                                    <span class="system-status system-status--warning">비정상</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="section-inset-shadow"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ===== Contents 3: Battery Group ===== -->
+            <div class="contents">
+                <div class="contents-title">
+                    <div class="contents-title-txt">
+                        <div class="dot-indicator">
+                            <img src="./assets/fef271bea2b0df646c2568bef92262f3566af55a.svg" alt="">
+                        </div>
+                        <span class="contents-title-text">컨텐츠 그룹</span>
+                    </div>
+                    <div class="union-dots">
+                        <img src="./assets/fbcfa2e9dca117fa1b4661a24085f8659741d655.svg" alt="">
+                    </div>
+                </div>
+                <div class="section section--battery">
+                    <div class="battery-block">
+                        <div class="battery-header">
+                            <div class="battery-header-item">
+                                <div class="battery-dot">
+                                    <img src="./assets/3006c8a67b6c0fb56a3fcbf95f0691465bb28b1a.svg" alt="">
+                                </div>
+                                <span class="battery-group-name">배터리 그룹1</span>
+                            </div>
+                            <div class="battery-header-item">
+                                <span class="battery-datetime">2026-02-07 15:30</span>
+                            </div>
+                        </div>
+                        <div class="battery-body">
+                            <div class="donut-chart">
+                                <div class="donut-image">
+                                    <img src="./assets/9f2f43dc52f85765b95262e70dcb55ebb0dd1b05.svg" alt="">
+                                </div>
+                                <div class="donut-value">
+                                    <span class="donut-number">1,110</span>
+                                    <span class="donut-unit">KW</span>
+                                </div>
+                            </div>
+                            <div class="battery-legend">
+                                <div class="battery-legend-row">
+                                    <div class="battery-legend-item">
+                                        <div class="battery-legend-color" style="background:#ff5c57;"></div>
+                                        <span class="battery-legend-text">아이템01</span>
+                                    </div>
+                                    <span class="battery-legend-value">40%</span>
+                                </div>
+                                <div class="battery-legend-row">
+                                    <div class="battery-legend-item">
+                                        <div class="battery-legend-color" style="background:#edbc35;"></div>
+                                        <span class="battery-legend-text">아이템02</span>
+                                    </div>
+                                    <span class="battery-legend-value">10%</span>
+                                </div>
+                                <div class="battery-legend-row">
+                                    <div class="battery-legend-item">
+                                        <div class="battery-legend-color" style="background:#445ed9;"></div>
+                                        <span class="battery-legend-text">아이템03</span>
+                                    </div>
+                                    <span class="battery-legend-value">10%</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="section-inset-shadow"></div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+</body>
+</html>

@@ -1,0 +1,686 @@
+/* Content Panel - 464x790 */
+#component-container {
+    width: 464px;
+    height: 790px;
+    overflow: auto;
+}
+
+.content-panel {
+    width: 100%;
+    height: 100%;
+    padding: 22px;
+    box-sizing: border-box;
+    border-radius: 16px;
+    border: 2px solid rgba(144, 161, 185, 0.8);
+    background: rgba(19, 21, 33, 0.8);
+    backdrop-filter: blur(15px);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    font-family: 'Pretendard', sans-serif;
+}
+
+/* ===== Contents Group ===== */
+.contents {
+    width: 420px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.contents + .contents {
+    margin-top: 20px;
+}
+
+/* ===== Title ===== */
+.contents-title {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
+    height: 21px;
+}
+
+.contents-title-txt {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.dot-indicator {
+    position: relative;
+    width: 6px;
+    height: 6px;
+}
+
+.dot-indicator img {
+    display: block;
+    position: absolute;
+    width: 16px;
+    height: 16px;
+    top: -5px;
+    left: -5px;
+}
+
+.contents-title-text {
+    font-family: 'Pretendard', sans-serif;
+    font-weight: 600;
+    font-size: 18px;
+    color: #f8fafc;
+    line-height: normal;
+}
+
+.union-dots {
+    width: 55.176px;
+    height: 9px;
+    position: relative;
+}
+
+.union-dots img {
+    display: block;
+    position: absolute;
+    width: 100%;
+    height: 100%;
+}
+
+/* ===== Section (공통) ===== */
+.section {
+    width: 420px;
+    backdrop-filter: blur(15px);
+    background: rgba(26, 34, 50, 0.6);
+    border: 1px solid rgba(81, 102, 145, 0.6);
+    border-radius: 12px;
+    position: relative;
+    box-sizing: border-box;
+}
+
+.section-inset-shadow {
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    pointer-events: none;
+    box-shadow: inset 0px 0px 8px 0px rgba(0, 0, 0, 0.25);
+}
+
+/* ===== Contents 1: Bar Chart Section ===== */
+.section--chart {
+    height: 241px;
+    padding: 19px 20px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+}
+
+.chart-block {
+    width: 380px;
+    display: flex;
+    flex-direction: column;
+    gap: 25px;
+}
+
+.chart-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
+    height: 20px;
+    line-height: normal;
+}
+
+.chart-label {
+    font-family: 'Pretendard', sans-serif;
+    font-weight: 500;
+    font-size: 16px;
+    color: #e4ebf6;
+    letter-spacing: -0.32px;
+}
+
+.chart-value {
+    display: flex;
+    align-items: flex-end;
+    gap: 7px;
+}
+
+.value-number {
+    font-family: 'Roboto Mono', monospace;
+    font-weight: 500;
+    font-size: 28px;
+    color: #f8fafc;
+    letter-spacing: -1.12px;
+    line-height: 1;
+}
+
+.value-unit {
+    font-family: 'Roboto Mono', monospace;
+    font-weight: 400;
+    font-size: 14px;
+    color: #bbc2cf;
+    letter-spacing: -0.28px;
+    line-height: 1;
+}
+
+/* Chart Body */
+.chart-body {
+    width: 380px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    align-items: center;
+}
+
+.chart-legend {
+    display: flex;
+    gap: 28px;
+    align-items: center;
+}
+
+.legend-item {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.legend-color {
+    width: 7px;
+    height: 7px;
+    border-radius: 2px;
+}
+
+.legend-color--blue {
+    background: #445ed9;
+}
+
+.legend-color--green {
+    background: #81e1c5;
+}
+
+.legend-text {
+    font-family: 'Pretendard', sans-serif;
+    font-weight: 400;
+    font-size: 13px;
+    color: #bbc2cf;
+    letter-spacing: -0.26px;
+    line-height: normal;
+}
+
+/* Chart Area */
+.chart-area {
+    width: 372px;
+    height: 130px;
+    display: flex;
+    position: relative;
+}
+
+.chart-y-axis {
+    width: 28px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    padding-top: 0;
+    padding-bottom: 16px;
+    box-sizing: border-box;
+}
+
+.axis-label {
+    font-family: 'Pretendard', sans-serif;
+    font-weight: 500;
+    font-size: 12px;
+    color: rgba(167, 172, 188, 0.6);
+    letter-spacing: -0.24px;
+    text-align: right;
+    line-height: normal;
+}
+
+.axis-label--zero {
+    text-align: right;
+    padding-right: 4px;
+}
+
+.chart-grid-area {
+    flex: 1;
+    position: relative;
+    margin-left: 4px;
+}
+
+.chart-grid {
+    position: absolute;
+    top: 7px;
+    left: 0;
+    right: 0;
+    height: 100px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+}
+
+.grid-line {
+    width: 100%;
+    height: 1px;
+    overflow: hidden;
+}
+
+.grid-line img {
+    display: block;
+    width: 100%;
+    height: 1px;
+}
+
+/* Bar Chart */
+.chart-bars {
+    position: absolute;
+    top: 7px;
+    left: 21px;
+    width: 313px;
+    height: 100px;
+    display: flex;
+    justify-content: space-between;
+}
+
+.bar-group {
+    display: flex;
+    gap: 6px;
+    align-items: flex-end;
+}
+
+.bar {
+    width: 6px;
+    border-radius: 2px;
+}
+
+.bar--blue {
+    background: #445ed9;
+}
+
+.bar--green {
+    background: #81e1c5;
+}
+
+/* X Axis */
+.chart-x-axis {
+    position: absolute;
+    bottom: 0;
+    left: 24px;
+    right: 0;
+    display: flex;
+    justify-content: space-between;
+    height: 14px;
+}
+
+.axis-label-x {
+    font-family: 'Pretendard', sans-serif;
+    font-weight: 500;
+    font-size: 12px;
+    color: rgba(167, 172, 188, 0.6);
+    letter-spacing: -0.24px;
+    line-height: normal;
+}
+
+/* ===== Contents 2: System Status ===== */
+.section-row {
+    display: flex;
+    gap: 10px;
+    width: 420px;
+}
+
+.section--gauge-box {
+    width: 140px;
+    height: 170px;
+    padding: 26px 17px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.gauge-label {
+    font-family: 'Pretendard', sans-serif;
+    font-weight: 500;
+    font-size: 16px;
+    color: #e4ebf6;
+    letter-spacing: -0.32px;
+    text-align: center;
+    line-height: normal;
+    width: 106px;
+}
+
+.gauge-chart {
+    width: 106px;
+    height: 81px;
+    position: relative;
+}
+
+.gauge-image {
+    position: absolute;
+    width: 106px;
+    height: 106px;
+    top: 0;
+    left: 0;
+}
+
+.gauge-image img {
+    display: block;
+    width: 100%;
+    height: 100%;
+}
+
+.gauge-value {
+    position: absolute;
+    top: 39px;
+    left: 50%;
+    transform: translateX(calc(-50% - 0.5px));
+    display: flex;
+    align-items: flex-end;
+    gap: 3px;
+    line-height: normal;
+    text-align: center;
+}
+
+.gauge-number {
+    font-family: 'Roboto Mono', monospace;
+    font-weight: 500;
+    font-size: 28px;
+    color: #f8fafc;
+    letter-spacing: -1.12px;
+    line-height: 1;
+}
+
+.gauge-unit {
+    font-family: 'Roboto Mono', monospace;
+    font-weight: 400;
+    font-size: 14px;
+    color: #bbc2cf;
+    letter-spacing: -0.28px;
+    line-height: 1;
+}
+
+/* System List Box */
+.section--list-box {
+    flex: 1;
+    height: 170px;
+    padding: 26px 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.system-list {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    width: 100%;
+    height: 100%;
+}
+
+.system-list-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
+    height: 26px;
+}
+
+.system-group {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.system-icon-wrap {
+    width: 26px;
+    height: 26px;
+    border-radius: 5.032px;
+    background: #1f2633;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+}
+
+.system-icon-wrap img {
+    display: block;
+    width: 12.581px;
+    height: 12.581px;
+}
+
+.system-name {
+    font-family: 'Pretendard', sans-serif;
+    font-weight: 500;
+    font-size: 15px;
+    color: #e4ebf6;
+    letter-spacing: -0.3px;
+    line-height: normal;
+}
+
+.system-value {
+    display: flex;
+    align-items: flex-end;
+    gap: 6px;
+    line-height: normal;
+}
+
+.system-number {
+    font-family: 'Roboto Mono', monospace;
+    font-weight: 500;
+    font-size: 24px;
+    color: #f8fafc;
+    letter-spacing: -0.96px;
+    line-height: 1;
+}
+
+.system-percent {
+    font-family: 'Roboto Mono', monospace;
+    font-weight: 400;
+    font-size: 14px;
+    color: #bbc2cf;
+    letter-spacing: -0.28px;
+    text-align: center;
+    line-height: 1;
+}
+
+.system-status {
+    font-family: 'Pretendard', sans-serif;
+    font-weight: 500;
+    font-size: 20px;
+    text-align: right;
+    letter-spacing: -0.4px;
+    line-height: normal;
+}
+
+.system-status--normal {
+    color: #81e1c5;
+}
+
+.system-status--warning {
+    color: #edbc35;
+}
+
+.system-status-warn {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+}
+
+.warn-icon {
+    width: 15px;
+    height: 14px;
+    position: relative;
+}
+
+.warn-icon img {
+    display: block;
+    position: absolute;
+    width: 21px;
+    height: 19.6px;
+    top: -2.8px;
+    left: -3px;
+}
+
+/* ===== Contents 3: Battery Group ===== */
+.section--battery {
+    height: 202px;
+    padding: 19px 18px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+}
+
+.battery-block {
+    width: 384px;
+    display: flex;
+    flex-direction: column;
+    gap: 26px;
+    align-items: flex-end;
+}
+
+.battery-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
+    height: 17px;
+}
+
+.battery-header-item {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+}
+
+.battery-dot {
+    width: 5px;
+    height: 5px;
+    position: relative;
+}
+
+.battery-dot img {
+    display: block;
+    width: 5px;
+    height: 5px;
+}
+
+.battery-group-name {
+    font-family: 'Pretendard', sans-serif;
+    font-weight: 500;
+    font-size: 14px;
+    color: #e4ebf6;
+    letter-spacing: -0.28px;
+    line-height: normal;
+}
+
+.battery-datetime {
+    font-family: 'Pretendard', sans-serif;
+    font-weight: 400;
+    font-size: 13px;
+    color: #bbc2cf;
+    letter-spacing: -0.26px;
+    line-height: normal;
+}
+
+/* Battery Body */
+.battery-body {
+    display: flex;
+    align-items: center;
+    gap: 55px;
+}
+
+/* Donut Chart */
+.donut-chart {
+    width: 121px;
+    height: 121px;
+    position: relative;
+}
+
+.donut-image {
+    position: absolute;
+    width: 121px;
+    height: 121px;
+    top: 0;
+    left: 0;
+}
+
+.donut-image img {
+    display: block;
+    width: 100%;
+    height: 100%;
+}
+
+.donut-value {
+    position: absolute;
+    top: 42px;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    line-height: normal;
+    text-align: center;
+}
+
+.donut-number {
+    font-family: 'Roboto Mono', monospace;
+    font-weight: 500;
+    font-size: 28px;
+    color: #f8fafc;
+    letter-spacing: -1.12px;
+    line-height: 1;
+}
+
+.donut-unit {
+    font-family: 'Roboto Mono', monospace;
+    font-weight: 400;
+    font-size: 14px;
+    color: #bbc2cf;
+    letter-spacing: -0.28px;
+    line-height: 1;
+}
+
+/* Battery Legend */
+.battery-legend {
+    width: 181px;
+    display: flex;
+    flex-direction: column;
+    gap: 13px;
+}
+
+.battery-legend-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
+    height: 18px;
+}
+
+.battery-legend-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.battery-legend-color {
+    width: 10px;
+    height: 10px;
+    border-radius: 2.857px;
+}
+
+.battery-legend-text {
+    font-family: 'Pretendard', sans-serif;
+    font-weight: 400;
+    font-size: 15px;
+    color: #bbc2cf;
+    letter-spacing: -0.3px;
+    line-height: normal;
+}
+
+.battery-legend-value {
+    font-family: 'Pretendard', sans-serif;
+    font-weight: 500;
+    font-size: 15px;
+    color: #e4ebf6;
+    letter-spacing: -0.3px;
+    text-align: right;
+    line-height: normal;
+}

@@ -1,0 +1,259 @@
+#status-box-container {
+    min-width: 400px;
+    min-height: 100px;
+
+    /* Main Box */
+    .status-box {
+        width: 100%;
+        height: 100%;
+        backdrop-filter: blur(15px);
+        -webkit-backdrop-filter: blur(15px);
+        background: rgba(15, 31, 36, 0.4);
+        border: 2px solid #81e1c5;
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        gap: 16px;
+        padding: 12px 12px 12px 23px;
+        position: relative;
+        overflow: clip;
+        font-family: 'Pretendard', sans-serif;
+    }
+
+    .status-box::after {
+        content: '';
+        position: absolute;
+        inset: -2px;
+        border-radius: inherit;
+        box-shadow: inset 0px 4px 8px 0px rgba(0, 0, 0, 0.25);
+        pointer-events: none;
+    }
+
+    /* ===== PUE Gauge ===== */
+    .pue-section {
+        width: 140px;
+        flex-shrink: 0;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 8px;
+        padding-bottom: 2px;
+    }
+
+    .pue-title {
+        width: 100%;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+    }
+
+    .pue-title .icon-pue {
+        width: 11px;
+        height: 11px;
+        display: block;
+    }
+
+    .pue-title span {
+        font-weight: 500;
+        font-size: 15px;
+        color: #e4ebf6;
+        letter-spacing: -0.3px;
+        white-space: nowrap;
+        line-height: normal;
+    }
+
+    .gauge-wrapper {
+        width: 118px;
+        height: 59px;
+        position: relative;
+    }
+
+    .gauge-bg {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 118px;
+        height: 59px;
+        overflow: hidden;
+    }
+
+    .gauge-bg img {
+        width: 118px;
+        height: 118px;
+        display: block;
+    }
+
+    .gauge-value {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 113.198px;
+        height: 59px;
+        overflow: hidden;
+    }
+
+    .gauge-value img {
+        width: 113.198px;
+        height: 118px;
+        display: block;
+    }
+
+    .gauge-num {
+        position: absolute;
+        bottom: 0;
+        left: 50%;
+        transform: translateX(calc(-50% - 0.56px));
+        text-align: center;
+    }
+
+    .gauge-num span {
+        font-weight: 600;
+        font-size: 30px;
+        color: #f9fdff;
+        white-space: nowrap;
+        line-height: normal;
+    }
+
+    .gauge-label-left {
+        position: absolute;
+        bottom: 0;
+        left: 2.226px;
+    }
+
+    .gauge-label-left span,
+    .gauge-label-right span {
+        font-weight: 400;
+        font-size: 11px;
+        color: #94a3b8;
+        white-space: nowrap;
+        line-height: normal;
+    }
+
+    .gauge-label-right {
+        position: absolute;
+        bottom: 0;
+        right: 2.226px;
+    }
+
+    /* ===== Info Grid ===== */
+    .info-grid {
+        flex: 1;
+        min-width: 0;
+        min-height: 0;
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        grid-template-rows: repeat(2, auto);
+        gap: 6px;
+    }
+
+    .info-card {
+        backdrop-filter: blur(15px);
+        -webkit-backdrop-filter: blur(15px);
+        background: #090909;
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 6px 17px 6px 7px;
+    }
+
+    .info-card .card-left {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .info-card .symbol {
+        width: 31px;
+        height: 31px;
+        background: rgba(228, 235, 246, 0.2);
+        border-radius: 8px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+    }
+
+    .info-card .symbol .icon-wrap {
+        width: 15px;
+        height: 15px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .info-card .symbol .icon-wrap img {
+        display: block;
+        max-width: none;
+    }
+
+    .icon-wrap.electricity img { width: 8.85px; height: 15px; }
+    .icon-wrap.temperature img { width: 7.5px; height: 15px; }
+    .icon-wrap.humidity img    { width: 10.5px; height: 15px; }
+    .icon-wrap.alarm img       { width: 13.57px; height: 15px; }
+
+    .info-card .card-label {
+        font-weight: 500;
+        font-size: 15px;
+        color: #e4ebf6;
+        letter-spacing: -0.3px;
+        white-space: nowrap;
+        line-height: normal;
+    }
+
+    .info-card .card-right {
+        display: flex;
+        align-items: flex-end;
+        gap: 6px;
+    }
+
+    .info-card .card-right .arrow-icon {
+        width: 16px;
+        height: 16px;
+        display: block;
+        margin-bottom: 2px;
+    }
+
+    .info-card .card-right .value {
+        font-family: 'Roboto Mono', monospace;
+        font-weight: 500;
+        font-size: 26px;
+        letter-spacing: -1.04px;
+        white-space: nowrap;
+        line-height: normal;
+        text-align: right;
+        background:
+            linear-gradient(180deg, rgba(129, 225, 197, 0) 12.5%, rgb(129, 225, 197) 137.5%),
+            linear-gradient(90deg, rgb(175, 238, 247) 0%, rgb(175, 238, 247) 100%);
+        -webkit-background-clip: text;
+        background-clip: text;
+        -webkit-text-fill-color: transparent;
+    }
+
+    .info-card .card-right .unit {
+        font-family: 'Roboto Mono', monospace;
+        font-weight: 400;
+        font-size: 14px;
+        color: #bbc2cf;
+        letter-spacing: -0.28px;
+        white-space: nowrap;
+        line-height: normal;
+        text-align: center;
+    }
+
+    .info-card .card-right .unit-kr {
+        font-family: 'Pretendard', sans-serif;
+        font-weight: 400;
+        font-size: 14px;
+        color: #bbc2cf;
+        letter-spacing: -0.28px;
+        white-space: nowrap;
+        line-height: normal;
+        text-align: center;
+    }
+
+    /* Scrollbar */
+    .info-grid::-webkit-scrollbar { width: 4px; }
+    .info-grid::-webkit-scrollbar-track { background: transparent; }
+    .info-grid::-webkit-scrollbar-thumb { background: rgba(100, 116, 139, 0.4); border-radius: 2px; }
+}

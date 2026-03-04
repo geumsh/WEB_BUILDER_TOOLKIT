@@ -1,0 +1,40 @@
+/* ==========================================================================
+   Content Panel Component (Shell)
+   Figma Node ID: 2:797
+
+   범용 컨테이너 - 내부 .contents 그룹은 외부에서 주입
+   ========================================================================== */
+
+#content-panel-container {
+    width: 464px;
+    height: 790px;
+    overflow: auto;
+
+    /* Shell Wrapper */
+    .content-panel {
+        width: 100%;
+        min-height: 100%;
+        padding: 22px;
+        box-sizing: border-box;
+        border-radius: 16px;
+        border: 2px solid rgba(144, 161, 185, 0.8);
+        background: rgba(19, 21, 33, 0.8);
+        backdrop-filter: blur(15px);
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        font-family: 'Pretendard', sans-serif;
+    }
+
+    /* Contents Group (주입되는 단위) */
+    .contents {
+        width: 420px;
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+    }
+
+    .contents + .contents {
+        margin-top: 20px;
+    }
+}

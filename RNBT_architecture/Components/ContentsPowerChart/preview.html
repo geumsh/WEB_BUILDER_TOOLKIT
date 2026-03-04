@@ -1,0 +1,537 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ContentsPowerChart Preview</title>
+    <link href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css" rel="stylesheet">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <style>
+        /* === component.css (inline) === */
+        #contents-power-chart-container .contents-title {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            width: 100%;
+            height: 21px;
+        }
+        #contents-power-chart-container .contents-title-txt {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        #contents-power-chart-container .dot-indicator {
+            position: relative;
+            width: 6px;
+            height: 6px;
+        }
+        #contents-power-chart-container .dot-indicator img {
+            display: block;
+            position: absolute;
+            width: 16px;
+            height: 16px;
+            top: -5px;
+            left: -5px;
+        }
+        #contents-power-chart-container .contents-title-text {
+            font-family: 'Pretendard', sans-serif;
+            font-weight: 600;
+            font-size: 18px;
+            color: #f8fafc;
+            line-height: normal;
+        }
+        #contents-power-chart-container .union-dots {
+            width: 55.176px;
+            height: 9px;
+            position: relative;
+        }
+        #contents-power-chart-container .union-dots img {
+            display: block;
+            position: absolute;
+            width: 100%;
+            height: 100%;
+        }
+        #contents-power-chart-container .section {
+            width: 420px;
+            backdrop-filter: blur(15px);
+            background: rgba(26, 34, 50, 0.6);
+            border: 1px solid rgba(81, 102, 145, 0.6);
+            border-radius: 12px;
+            position: relative;
+            box-sizing: border-box;
+        }
+        #contents-power-chart-container .section-inset-shadow {
+            position: absolute;
+            inset: 0;
+            border-radius: inherit;
+            pointer-events: none;
+            box-shadow: inset 0px 0px 8px 0px rgba(0, 0, 0, 0.25);
+        }
+        #contents-power-chart-container .contents-power-chart {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        #contents-power-chart-container .section--chart {
+            height: 241px;
+            padding: 19px 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+        #contents-power-chart-container .chart-block {
+            width: 380px;
+            display: flex;
+            flex-direction: column;
+            gap: 25px;
+        }
+        #contents-power-chart-container .chart-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            width: 100%;
+            height: 20px;
+            line-height: normal;
+        }
+        #contents-power-chart-container .chart-label {
+            font-family: 'Pretendard', sans-serif;
+            font-weight: 500;
+            font-size: 16px;
+            color: #e4ebf6;
+            letter-spacing: -0.32px;
+        }
+        #contents-power-chart-container .chart-value {
+            display: flex;
+            align-items: flex-end;
+            gap: 7px;
+        }
+        #contents-power-chart-container .value-number {
+            font-family: 'Roboto Mono', monospace;
+            font-weight: 500;
+            font-size: 28px;
+            color: #f8fafc;
+            letter-spacing: -1.12px;
+            line-height: 1;
+        }
+        #contents-power-chart-container .value-unit {
+            font-family: 'Roboto Mono', monospace;
+            font-weight: 400;
+            font-size: 14px;
+            color: #bbc2cf;
+            letter-spacing: -0.28px;
+            line-height: 1;
+        }
+        #contents-power-chart-container .chart-body {
+            width: 380px;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            align-items: center;
+        }
+        #contents-power-chart-container .chart-legend {
+            display: flex;
+            gap: 28px;
+            align-items: center;
+        }
+        #contents-power-chart-container .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+        #contents-power-chart-container .legend-color {
+            width: 7px;
+            height: 7px;
+            border-radius: 2px;
+        }
+        #contents-power-chart-container .legend-color--blue { background: #445ed9; }
+        #contents-power-chart-container .legend-color--green { background: #81e1c5; }
+        #contents-power-chart-container .legend-text {
+            font-family: 'Pretendard', sans-serif;
+            font-weight: 400;
+            font-size: 13px;
+            color: #bbc2cf;
+            letter-spacing: -0.26px;
+            line-height: normal;
+        }
+        #contents-power-chart-container .chart-area {
+            width: 372px;
+            height: 130px;
+            display: flex;
+            position: relative;
+        }
+        #contents-power-chart-container .chart-y-axis {
+            width: 28px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            padding-bottom: 16px;
+            box-sizing: border-box;
+        }
+        #contents-power-chart-container .axis-label {
+            font-family: 'Pretendard', sans-serif;
+            font-weight: 500;
+            font-size: 12px;
+            color: rgba(167, 172, 188, 0.6);
+            letter-spacing: -0.24px;
+            text-align: right;
+            line-height: normal;
+        }
+        #contents-power-chart-container .axis-label--zero { text-align: right; padding-right: 4px; }
+        #contents-power-chart-container .chart-grid-area { flex: 1; position: relative; margin-left: 4px; }
+        #contents-power-chart-container .chart-grid {
+            position: absolute;
+            top: 7px;
+            left: 0;
+            right: 0;
+            height: 100px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+        #contents-power-chart-container .grid-line { width: 100%; height: 1px; background: rgba(167, 172, 188, 0.15); }
+        #contents-power-chart-container .grid-line--solid { background: rgba(167, 172, 188, 0.3); }
+        #contents-power-chart-container .grid-line--dashed { background: repeating-linear-gradient(to right, rgba(167, 172, 188, 0.15) 0px, rgba(167, 172, 188, 0.15) 4px, transparent 4px, transparent 8px); }
+        #contents-power-chart-container .chart-bars {
+            position: absolute;
+            top: 7px;
+            left: 21px;
+            width: 313px;
+            height: 100px;
+            display: flex;
+            justify-content: space-between;
+        }
+        #contents-power-chart-container .bar-group { display: flex; gap: 6px; align-items: flex-end; }
+        #contents-power-chart-container .bar { width: 6px; border-radius: 2px; }
+        #contents-power-chart-container .bar--blue { background: #445ed9; }
+        #contents-power-chart-container .bar--green { background: #81e1c5; }
+        #contents-power-chart-container .chart-x-axis {
+            position: absolute;
+            bottom: 0;
+            left: 24px;
+            right: 0;
+            display: flex;
+            justify-content: space-between;
+            height: 14px;
+        }
+        #contents-power-chart-container .axis-label-x {
+            font-family: 'Pretendard', sans-serif;
+            font-weight: 500;
+            font-size: 12px;
+            color: rgba(167, 172, 188, 0.6);
+            letter-spacing: -0.24px;
+            line-height: normal;
+        }
+
+        /* === preview-specific === */
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            padding: 40px;
+            background: #0d0f1a;
+            font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, sans-serif;
+        }
+        h1 { color: #f8fafc; margin-bottom: 24px; font-size: 20px; }
+        .controls { margin-top: 24px; }
+        .controls button {
+            padding: 8px 16px;
+            margin-right: 8px;
+            background: #1a2232;
+            color: #e4ebf6;
+            border: 1px solid rgba(81, 102, 145, 0.6);
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 13px;
+        }
+        .controls button:hover { background: #253450; }
+        .controls button.destroy { background: #f87171; color: #fff; border-color: #f87171; }
+    </style>
+</head>
+<body>
+    <h1>ContentsPowerChart Component Preview</h1>
+    <div id="contents-power-chart-container"></div>
+    <div class="controls">
+        <button onclick="sendMockData()">Load Data</button>
+        <button onclick="sendUpdatedData()">Update Data</button>
+        <button onclick="destroy()" class="destroy">Destroy</button>
+    </div>
+
+    <script>
+        // ======================
+        // MOCK CONTEXT
+        // ======================
+
+        const mockThis = {
+            appendElement: document.getElementById('contents-power-chart-container')
+        };
+
+        // HTML 삽입 (views/component.html)
+        mockThis.appendElement.innerHTML = `
+            <div class="contents-power-chart">
+                <div class="contents-title">
+                    <div class="contents-title-txt">
+                        <span class="dot-indicator"></span>
+                        <span class="contents-title-text">-</span>
+                    </div>
+                    <div class="union-dots"></div>
+                </div>
+                <div class="section section--chart">
+                    <div class="chart-block">
+                        <div class="chart-header">
+                            <span class="chart-label">-</span>
+                            <div class="chart-value">
+                                <span class="value-number">-</span>
+                                <span class="value-unit">-</span>
+                            </div>
+                        </div>
+                        <div class="chart-body">
+                            <div class="chart-legend"></div>
+                            <div class="chart-area">
+                                <div class="chart-y-axis"></div>
+                                <div class="chart-grid-area">
+                                    <div class="chart-grid"></div>
+                                    <div class="chart-bars"></div>
+                                </div>
+                                <div class="chart-x-axis"></div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="section-inset-shadow"></div>
+                </div>
+            </div>
+        `;
+
+        // ======================
+        // MOCK DEPENDENCIES
+        // ======================
+
+        const GlobalDataPublisher = {
+            subscribe: (topic, context, fn) => console.log(`[Mock] subscribe: ${topic}`),
+            unsubscribe: (topic, context) => console.log(`[Mock] unsubscribe: ${topic}`)
+        };
+
+        const fx = {
+            go: (arr, ...fns) => fns.reduce((acc, fn) => fn(acc), arr),
+            each: fn => arr => { arr.forEach(fn); return arr; }
+        };
+
+        // ======================
+        // REGISTER (inline)
+        // ======================
+
+        (function register() {
+            const { subscribe } = GlobalDataPublisher;
+
+            const config = {
+                titleKey: 'title',
+                chartLabelKey: 'chartLabel',
+                valueKey: 'value',
+                unitKey: 'unit',
+                legendItemsKey: 'legendItems',
+                seriesKey: 'series',
+                xLabelsKey: 'xLabels',
+                yAxisMax: 800,
+                yAxisStep: 200,
+                barMaxHeight: 100,
+                barColors: ['blue', 'green']
+            };
+
+            this.renderData = renderData.bind(this, config);
+
+            this.subscriptions = {
+                powerChartData: ['renderData']
+            };
+
+            fx.go(
+                Object.entries(this.subscriptions),
+                fx.each(([topic, fnList]) =>
+                    fx.each(fn => this[fn] && subscribe(topic, this, this[fn]), fnList)
+                )
+            );
+
+            function renderData(config, { response }) {
+                const { data } = response;
+                if (!data) return;
+
+                const titleEl = this.appendElement.querySelector('.contents-title-text');
+                if (titleEl && data[config.titleKey]) {
+                    titleEl.textContent = data[config.titleKey];
+                }
+
+                const labelEl = this.appendElement.querySelector('.chart-label');
+                if (labelEl && data[config.chartLabelKey]) {
+                    labelEl.textContent = data[config.chartLabelKey];
+                }
+
+                const numberEl = this.appendElement.querySelector('.value-number');
+                if (numberEl && data[config.valueKey] !== undefined) {
+                    numberEl.textContent = data[config.valueKey];
+                }
+
+                const unitEl = this.appendElement.querySelector('.value-unit');
+                if (unitEl && data[config.unitKey]) {
+                    unitEl.textContent = data[config.unitKey];
+                }
+
+                const legendItems = data[config.legendItemsKey];
+                if (legendItems && Array.isArray(legendItems)) {
+                    const legendEl = this.appendElement.querySelector('.chart-legend');
+                    legendEl.innerHTML = '';
+                    legendItems.forEach(item => {
+                        const div = document.createElement('div');
+                        div.className = 'legend-item';
+                        div.innerHTML = `
+                            <div class="legend-color legend-color--${item.color}"></div>
+                            <span class="legend-text">${item.text}</span>
+                        `;
+                        legendEl.appendChild(div);
+                    });
+                }
+
+                const yMax = data.yAxisMax || config.yAxisMax;
+                const yStep = data.yAxisStep || config.yAxisStep;
+                const yAxisEl = this.appendElement.querySelector('.chart-y-axis');
+                if (yAxisEl) {
+                    yAxisEl.innerHTML = '';
+                    for (let v = yMax; v > 0; v -= yStep) {
+                        const span = document.createElement('span');
+                        span.className = 'axis-label';
+                        span.textContent = v;
+                        yAxisEl.appendChild(span);
+                    }
+                    const zeroSpan = document.createElement('span');
+                    zeroSpan.className = 'axis-label axis-label--zero';
+                    zeroSpan.textContent = '0';
+                    yAxisEl.appendChild(zeroSpan);
+                }
+
+                const gridEl = this.appendElement.querySelector('.chart-grid');
+                if (gridEl) {
+                    const lineCount = yMax / yStep;
+                    gridEl.innerHTML = '';
+                    for (let i = 0; i <= lineCount; i++) {
+                        const line = document.createElement('div');
+                        line.className = i === 0 ? 'grid-line grid-line--solid' : 'grid-line grid-line--dashed';
+                        gridEl.appendChild(line);
+                    }
+                }
+
+                const series = data[config.seriesKey];
+                if (series && Array.isArray(series)) {
+                    const barsEl = this.appendElement.querySelector('.chart-bars');
+                    barsEl.innerHTML = '';
+                    const barMax = config.barMaxHeight;
+                    series.forEach(group => {
+                        const groupDiv = document.createElement('div');
+                        groupDiv.className = 'bar-group';
+                        const values = group.values || [];
+                        values.forEach((val, i) => {
+                            const bar = document.createElement('div');
+                            const color = config.barColors[i] || 'blue';
+                            bar.className = `bar bar--${color}`;
+                            const height = Math.min(Math.round((val / yMax) * barMax), barMax);
+                            bar.style.height = height + 'px';
+                            groupDiv.appendChild(bar);
+                        });
+                        barsEl.appendChild(groupDiv);
+                    });
+                }
+
+                const xLabels = data[config.xLabelsKey];
+                if (xLabels && Array.isArray(xLabels)) {
+                    const xAxisEl = this.appendElement.querySelector('.chart-x-axis');
+                    xAxisEl.innerHTML = '';
+                    xLabels.forEach(label => {
+                        const span = document.createElement('span');
+                        span.className = 'axis-label-x';
+                        span.textContent = label;
+                        xAxisEl.appendChild(span);
+                    });
+                }
+            }
+        }).call(mockThis);
+
+        // ======================
+        // BEFORE DESTROY
+        // ======================
+
+        function destroy() {
+            (function beforeDestroy() {
+                const { unsubscribe } = GlobalDataPublisher;
+
+                fx.go(
+                    Object.entries(this.subscriptions),
+                    fx.each(([topic, _]) => unsubscribe(topic, this))
+                );
+                this.subscriptions = null;
+
+                this.renderData = null;
+
+                console.log('[ContentsPowerChart] destroyed');
+            }).call(mockThis);
+        }
+
+        // ======================
+        // TEST DATA
+        // ======================
+
+        const mockData = {
+            title: '실제 전력 현황',
+            chartLabel: '실제 전력 평균',
+            value: '828.7883',
+            unit: 'KW',
+            legendItems: [
+                { color: 'blue', text: '금일' },
+                { color: 'green', text: '금주' }
+            ],
+            series: [
+                { values: [560, 120] },
+                { values: [664, 560] },
+                { values: [656, 560] },
+                { values: [528, 400] },
+                { values: [528, 392] },
+                { values: [456, 296] },
+                { values: [296, 288] }
+            ],
+            xLabels: ['01', '02', '03', '04', '05', '06', '07'],
+            yAxisMax: 800,
+            yAxisStep: 200
+        };
+
+        const updatedData = {
+            title: '실제 전력 현황',
+            chartLabel: '실제 전력 평균',
+            value: '945.1200',
+            unit: 'KW',
+            legendItems: [
+                { color: 'blue', text: '금일' },
+                { color: 'green', text: '금주' }
+            ],
+            series: [
+                { values: [720, 360] },
+                { values: [760, 640] },
+                { values: [704, 600] },
+                { values: [624, 480] },
+                { values: [576, 440] },
+                { values: [520, 384] },
+                { values: [400, 336] }
+            ],
+            xLabels: ['01', '02', '03', '04', '05', '06', '07'],
+            yAxisMax: 800,
+            yAxisStep: 200
+        };
+
+        function sendMockData() {
+            mockThis.renderData({ response: { data: mockData } });
+        }
+
+        function sendUpdatedData() {
+            mockThis.renderData({ response: { data: updatedData } });
+        }
+
+        // 초기 렌더링
+        sendMockData();
+    </script>
+</body>
+</html>
