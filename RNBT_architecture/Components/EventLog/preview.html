@@ -244,7 +244,17 @@
             border: 1px solid rgba(255, 255, 255, 0.2);
             background: rgba(0, 0, 0, 0.4);
             box-sizing: border-box;
+            cursor: pointer;
+            transition: opacity 0.15s, border-color 0.15s, background 0.15s;
         }
+
+        #event-log-container .status-item.filter-inactive { opacity: 0.3; }
+
+        #event-log-container .status-item.filter-active.critical { border-color: var(--critical, #f43130); background: rgba(244, 49, 48, 0.15); }
+        #event-log-container .status-item.filter-active.major    { border-color: var(--major, #fd8004);    background: rgba(253, 128, 4, 0.15); }
+        #event-log-container .status-item.filter-active.minor    { border-color: var(--minor, #fccf1e);    background: rgba(252, 207, 30, 0.15); }
+        #event-log-container .status-item.filter-active.warning  { border-color: var(--warning, #28e3ff);  background: rgba(40, 227, 255, 0.15); }
+        #event-log-container .status-item.filter-active.normal   { border-color: var(--normal, #34d28d);   background: rgba(52, 210, 141, 0.15); }
 
         #event-log-container .status-dot {
             width: 10px;
@@ -370,6 +380,9 @@
         #event-log-container .row-selected .text-time    { font-weight: 500; color: #f8fafc; }
         #event-log-container .row-alt .text-default      { color: #f8fafc; }
         #event-log-container .row-alt .text-time         { color: #f8fafc; }
+        #event-log-container .row-acked .row-dot         { opacity: 0.35; }
+        #event-log-container .row-acked .text-default    { color: #475569; }
+        #event-log-container .row-acked .text-time       { color: #475569; }
 
         #event-log-container .row-actions {
             display: flex;
@@ -573,8 +586,10 @@
 
             // STATE
             this._selectedRowIndex = null;
+            this._selectedEvent = null;
             this._eventsData = null;
             this._internalHandlers = {};
+            this._activeFilters = new Set();
 
             // BINDINGS
             this.renderData = renderData.bind(this, config);
@@ -645,7 +660,8 @@
                     fx.each(level => {
                         const count = summary[level] ?? 0;
                         const item = document.createElement('div');
-                        item.className = 'status-item';
+                        item.className = `status-item ${level}`;
+                        item.dataset.level = level;
                         item.innerHTML = `
                             <div class="status-dot ${level}"></div>
                             <span class="count">${count}</span>
@@ -694,7 +710,9 @@
                 const row = document.createElement('div');
                 row.className = 'table-row';
                 row.dataset.index = index;
+                row._eventData = event;
                 if (isSelected) row.classList.add('row-selected');
+                if (event._acked) row.classList.add('row-acked');
 
                 // 등급 (status dot)
                 const gradeCell = document.createElement('div');
@@ -743,6 +761,7 @@
                     const row = e.target.closest('.table-row');
                     if (row) {
                         const index = parseInt(row.dataset.index, 10);
+                        this._selectedEvent = row._eventData || null;
                         this.selectRow(index);
                     }
                 };
@@ -788,9 +807,62 @@
                     }
                 };
 
+                this._internalHandlers.ackClick = (e) => {
+                    const btn = e.target.closest('.btn-ack');
+                    if (!btn || !this._selectedEvent) return;
+                    this._selectedEvent._acked = true;
+                    this._selectedEvent[config.eventFields.isNew] = false;
+                    applyFilter.call(this, config);
+                };
+
+                this._internalHandlers.allClick = (e) => {
+                    const btn = e.target.closest('.btn-all');
+                    if (!btn || !this._eventsData) return;
+                    this._eventsData.forEach(event => {
+                        event._acked = true;
+                        event[config.eventFields.isNew] = false;
+                    });
+                    applyFilter.call(this, config);
+                };
+
+                this._internalHandlers.filterClick = (e) => {
+                    const item = e.target.closest('.status-item[data-level]');
+                    if (!item) return;
+                    const level = item.dataset.level;
+                    if (this._activeFilters.has(level)) {
+                        this._activeFilters.delete(level);
+                    } else {
+                        this._activeFilters.add(level);
+                    }
+                    this._selectedRowIndex = null;
+                    updateFilterUI.call(this);
+                    applyFilter.call(this, config);
+                };
+
                 root.addEventListener('click', this._internalHandlers.rowClick);
                 root.addEventListener('click', this._internalHandlers.expandClick);
                 root.addEventListener('click', this._internalHandlers.toggleClick);
+                root.addEventListener('click', this._internalHandlers.ackClick);
+                root.addEventListener('click', this._internalHandlers.allClick);
+                root.addEventListener('click', this._internalHandlers.filterClick);
+            }
+
+            function updateFilterUI() {
+                const items = this.appendElement.querySelectorAll('.status-item[data-level]');
+                const hasFilter = this._activeFilters.size > 0;
+                items.forEach(item => {
+                    const level = item.dataset.level;
+                    item.classList.toggle('filter-active', this._activeFilters.has(level));
+                    item.classList.toggle('filter-inactive', hasFilter && !this._activeFilters.has(level));
+                });
+            }
+
+            function applyFilter(config) {
+                if (!this._eventsData) return;
+                const events = this._activeFilters.size === 0
+                    ? this._eventsData
+                    : this._eventsData.filter(e => this._activeFilters.has(e[config.eventFields.level]));
+                renderRows.call(this, config, events);
             }
 
             function selectRow(config, index) {
@@ -800,7 +872,7 @@
                 this._selectedRowIndex = index;
 
                 if (this._eventsData) {
-                    renderRows.call(this, config, this._eventsData);
+                    applyFilter.call(this, config);
                 }
             }
 

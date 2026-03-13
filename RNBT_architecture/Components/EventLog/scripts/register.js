@@ -79,10 +79,12 @@ const config = {
 // ======================
 
 this._selectedRowIndex = null;
+this._selectedEvent = null;
 this._eventsData = null;
 this._collapsed = false;
 this._autoEnabled = true;
 this._internalHandlers = {};
+this._activeFilters = new Set();
 
 // ======================
 // BINDINGS
@@ -203,7 +205,8 @@ function renderSummary(config, summary) {
         fx.each(level => {
             const count = summary[level] ?? 0;
             const item = document.createElement('div');
-            item.className = 'status-item';
+            item.className = `status-item ${level}`;
+            item.dataset.level = level;
             item.innerHTML = `
                 <div class="status-dot ${level}"></div>
                 <span class="count">${count}</span>
@@ -235,13 +238,10 @@ function renderRows(config, events) {
     if (!bodyEl) return;
     bodyEl.innerHTML = '';
 
-    fx.go(
-        events,
-        fx.each((event, index) => {
-            const row = createRow.call(this, config, event, index);
-            bodyEl.appendChild(row);
-        })
-    );
+    events.forEach((event, index) => {
+        const row = createRow.call(this, config, event, index);
+        bodyEl.appendChild(row);
+    });
 }
 
 function createRow(config, event, index) {
@@ -252,7 +252,9 @@ function createRow(config, event, index) {
     const row = document.createElement('div');
     row.className = 'table-row';
     row.dataset.index = index;
+    row._eventData = event;
     if (isSelected) row.classList.add('row-selected');
+    if (event._acked) row.classList.add('row-acked');
 
     // 등급 (status dot)
     const gradeCell = document.createElement('div');
@@ -303,6 +305,7 @@ function setupInternalHandlers() {
         const row = e.target.closest('.table-row');
         if (row) {
             const index = parseInt(row.dataset.index, 10);
+            this._selectedEvent = row._eventData || null;
             this.selectRow(index);
         }
     };
@@ -353,9 +356,62 @@ function setupInternalHandlers() {
         }
     };
 
+    this._internalHandlers.ackClick = (e) => {
+        const btn = e.target.closest('.btn-ack');
+        if (!btn || !this._selectedEvent) return;
+        this._selectedEvent._acked = true;
+        this._selectedEvent[config.eventFields.isNew] = false;
+        applyFilter.call(this, config);
+    };
+
+    this._internalHandlers.allClick = (e) => {
+        const btn = e.target.closest('.btn-all');
+        if (!btn || !this._eventsData) return;
+        this._eventsData.forEach(event => {
+            event._acked = true;
+            event[config.eventFields.isNew] = false;
+        });
+        applyFilter.call(this, config);
+    };
+
+    this._internalHandlers.filterClick = (e) => {
+        const item = e.target.closest('.status-item[data-level]');
+        if (!item) return;
+        const level = item.dataset.level;
+        if (this._activeFilters.has(level)) {
+            this._activeFilters.delete(level);
+        } else {
+            this._activeFilters.add(level);
+        }
+        this._selectedRowIndex = null;
+        updateFilterUI.call(this);
+        applyFilter.call(this, config);
+    };
+
     root.addEventListener('click', this._internalHandlers.rowClick);
     root.addEventListener('click', this._internalHandlers.expandClick);
     root.addEventListener('click', this._internalHandlers.toggleClick);
+    root.addEventListener('click', this._internalHandlers.ackClick);
+    root.addEventListener('click', this._internalHandlers.allClick);
+    root.addEventListener('click', this._internalHandlers.filterClick);
+}
+
+function updateFilterUI() {
+    const items = this.appendElement.querySelectorAll('.status-item[data-level]');
+    const hasFilter = this._activeFilters.size > 0;
+    items.forEach(item => {
+        const level = item.dataset.level;
+        item.classList.toggle('filter-active', this._activeFilters.has(level));
+        item.classList.toggle('filter-inactive', hasFilter && !this._activeFilters.has(level));
+    });
+}
+
+function applyFilter(config) {
+    if (!this._eventsData) return;
+    const events = this._activeFilters.size === 0
+        ? this._eventsData
+        : this._eventsData.filter(e => this._activeFilters.has(e[config.eventFields.level]));
+    renderRows.call(this, config, events);
 }
 
 function selectRow(config, index) {
@@ -365,8 +421,8 @@ function selectRow(config, index) {
 
     this._selectedRowIndex = index;
 
-    // 전체 다시 렌더링 (액션 버튼 표시/숨김 처리)
+    // 전체 다시 렌더링 (액션 버튼 표시/숨김 처리, 필터 적용)
     if (this._eventsData) {
-        renderRows.call(this, config, this._eventsData);
+        applyFilter.call(this, config);
     }
 }

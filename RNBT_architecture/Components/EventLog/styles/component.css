@@ -252,6 +252,33 @@
     border: 1px solid rgba(255, 255, 255, 0.2);
     background: rgba(0, 0, 0, 0.4);
     box-sizing: border-box;
+    cursor: pointer;
+    transition: opacity 0.15s, border-color 0.15s, background 0.15s;
+  }
+
+  .status-item.filter-inactive {
+    opacity: 0.3;
+  }
+
+  .status-item.filter-active.critical {
+    border-color: var(--critical, #f43130);
+    background: rgba(244, 49, 48, 0.15);
+  }
+  .status-item.filter-active.major {
+    border-color: var(--major, #fd8004);
+    background: rgba(253, 128, 4, 0.15);
+  }
+  .status-item.filter-active.minor {
+    border-color: var(--minor, #fccf1e);
+    background: rgba(252, 207, 30, 0.15);
+  }
+  .status-item.filter-active.warning {
+    border-color: var(--warning, #28e3ff);
+    background: rgba(40, 227, 255, 0.15);
+  }
+  .status-item.filter-active.normal {
+    border-color: var(--normal, #34d28d);
+    background: rgba(52, 210, 141, 0.15);
   }
 
   .status-dot {
@@ -463,6 +490,15 @@
   }
   .row-alt .text-time {
     color: #f8fafc;
+  }
+  .row-acked .row-dot {
+    opacity: 0.35;
+  }
+  .row-acked .text-default {
+    color: #475569;
+  }
+  .row-acked .text-time {
+    color: #475569;
   }
 
   /* Row Action Buttons */
