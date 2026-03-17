@@ -1,0 +1,283 @@
+/* frame-header.css */
+@import url('https://fonts.googleapis.com/css2?family=Pretendard:wght@500;600&display=swap');
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+/* Container */
+#component-container {
+  width: 1920px;
+  height: 80px;
+  overflow: auto;
+  background: #162420;
+  position: relative;
+}
+
+/* Header wrapper - centered within container */
+.header {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 1860px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+/* ===== Hana Logo ===== */
+.hana-logo {
+  position: relative;
+  width: 119.391px;
+  height: 32.032px;
+  flex-shrink: 0;
+  overflow: hidden;
+}
+
+.hana-logo .logo-part {
+  position: absolute;
+  overflow: hidden;
+}
+
+.hana-logo .logo-part img {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.hana-logo .logo-v1 {
+  top: 15.34%;
+  left: 29.14%;
+  right: 52.96%;
+  bottom: 14.69%;
+}
+
+.hana-logo .logo-v2 {
+  top: 15.34%;
+  left: 48.52%;
+  right: 34.21%;
+  bottom: 14.69%;
+}
+
+.hana-logo .logo-v3 {
+  top: 14.15%;
+  left: 66.11%;
+  right: 16.95%;
+  bottom: 14.7%;
+}
+
+.hana-logo .logo-v4 {
+  top: 13.76%;
+  left: 83.37%;
+  right: 0;
+  bottom: 12.72%;
+}
+
+.hana-logo .logo-v5 {
+  top: 0;
+  left: 10.18%;
+  right: 84.74%;
+  bottom: 80.74%;
+}
+
+.hana-logo .logo-v6 {
+  top: 20.96%;
+  left: 0;
+  right: 74.28%;
+  bottom: 61.77%;
+}
+
+.hana-logo .logo-v7 {
+  top: 41.77%;
+  left: 7.19%;
+  right: 81.92%;
+  bottom: 0;
+}
+
+/* ===== GNB Navigation ===== */
+.gnb {
+  display: flex;
+  align-items: center;
+  gap: 10.677px;
+  flex-shrink: 0;
+}
+
+.btn-gnb {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 14px 32px;
+  background: #162420;
+  border: 1px solid #384645;
+  border-radius: 50px;
+  flex-shrink: 0;
+  cursor: pointer;
+}
+
+.btn-gnb .btn-text {
+  font-family: 'Pretendard', sans-serif;
+  font-weight: 500;
+  font-size: 16px;
+  line-height: normal;
+  color: #829291;
+  white-space: nowrap;
+}
+
+/* Active GNB button (시스템현황) */
+.btn-gnb-active {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 14px 26px;
+  border-radius: 40px;
+  flex-shrink: 0;
+  cursor: pointer;
+  position: relative;
+  border: none;
+  overflow: hidden;
+}
+
+.btn-gnb-active .btn-bg {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  border-radius: 40px;
+}
+
+.btn-gnb-active .btn-bg-solid {
+  position: absolute;
+  inset: 0;
+  background: #004e42;
+  border-radius: 40px;
+}
+
+.btn-gnb-active .btn-bg-gradient {
+  position: absolute;
+  inset: 0;
+  border-radius: 40px;
+  mix-blend-mode: overlay;
+  background-image: url("data:image/svg+xml;utf8,<svg viewBox='0 0 147 47' xmlns='http://www.w3.org/2000/svg' preserveAspectRatio='none'><rect x='0' y='0' height='100%25' width='100%25' fill='url(%23grad)' opacity='0.5'/><defs><radialGradient id='grad' gradientUnits='userSpaceOnUse' cx='0' cy='0' r='10' gradientTransform='matrix(-3.7532e-15 2.35 -7.35 1.3641e-14 73.5 49.238)'><stop stop-color='rgba(224,255,238,1)' offset='0'/><stop stop-color='rgba(255,255,255,0)' offset='1'/></radialGradient></defs></svg>");
+}
+
+.btn-gnb-active .btn-border-overlay {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  border-radius: inherit;
+  box-shadow: inset 0px 1px 4px 0px rgba(128, 188, 183, 0.5),
+              inset 0px 1px 0px 0px rgba(128, 188, 183, 0.5);
+}
+
+.btn-gnb-active .btn-content {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  position: relative;
+  flex-shrink: 0;
+}
+
+.btn-gnb-active .btn-text {
+  font-family: 'Pretendard', sans-serif;
+  font-weight: 600;
+  font-size: 16px;
+  line-height: normal;
+  color: #f2f9ef;
+  white-space: nowrap;
+}
+
+.btn-gnb-active .btn-icon {
+  width: 15px;
+  height: 15px;
+  flex-shrink: 0;
+  position: relative;
+}
+
+.btn-gnb-active .btn-icon img {
+  position: absolute;
+  display: block;
+  max-width: none;
+  width: 100%;
+  height: 100%;
+}
+
+/* ===== Time & Actions ===== */
+.time-section {
+  display: flex;
+  align-items: center;
+  gap: 21.354px;
+  flex-shrink: 0;
+}
+
+.date-display {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  justify-content: center;
+  gap: 2.135px;
+  font-family: 'Pretendard', sans-serif;
+  font-weight: 500;
+  color: #f5fffd;
+  white-space: nowrap;
+}
+
+.date-display .date-text {
+  font-size: 17.084px;
+  line-height: normal;
+}
+
+.date-display .time-text {
+  font-size: 21.354px;
+  line-height: normal;
+}
+
+/* Action buttons */
+.action-buttons {
+  display: flex;
+  align-items: center;
+  gap: 6.406px;
+  height: 61.928px;
+  flex-shrink: 0;
+}
+
+.action-btn {
+  width: 42.709px;
+  height: 42.709px;
+  background: #1f2621;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 10.309px;
+  flex-shrink: 0;
+  border: none;
+  cursor: pointer;
+  position: relative;
+}
+
+.action-btn.btn-user {
+  border: 1.473px solid #009178;
+  border-radius: 12.813px;
+}
+
+.action-btn .icon-wrapper {
+  position: relative;
+  width: 21.354px;
+  height: 21.354px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.action-btn .icon-img {
+  width: 18.507px;
+  height: 18.507px;
+  display: block;
+}
+
+.action-btn .icon-img.logout-icon {
+  transform: rotate(180deg) scaleY(-1);
+}

@@ -1,0 +1,60 @@
+/* Container: Figma size 141 x 143.57 */
+#symbol-container {
+    width: 141px;
+    height: 143.57px;
+    overflow: auto;
+}
+
+#symbol-container {
+    .symbol-group {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .symbol-icon {
+        width: 70px;
+        height: 98.57px;
+        opacity: 0.5;
+        position: relative;
+
+        & img {
+            display: block;
+            width: 70px;
+            height: 98.57px;
+        }
+    }
+
+    .symbol-label {
+        display: flex;
+        align-items: flex-end;
+        justify-content: center;
+        padding: 7px 22px;
+        background: rgba(153, 153, 153, 0.2);
+        border-radius: 8px;
+        position: relative;
+    }
+
+    .symbol-label-inner-shadow {
+        position: absolute;
+        inset: 0;
+        border-radius: inherit;
+        pointer-events: none;
+        box-shadow:
+            inset 1px 1px 1px 0px rgba(84, 105, 104, 0.35),
+            inset -1px 1px 1px 0px rgba(84, 105, 104, 0.35),
+            inset 0px 1px 0px 0px rgba(84, 105, 104, 0.55);
+    }
+
+    .symbol-label-text {
+        font-family: 'Pretendard', sans-serif;
+        font-weight: 700;
+        font-size: 16px;
+        line-height: normal;
+        text-align: center;
+        color: #ffffff;
+        width: 97px;
+    }
+}
