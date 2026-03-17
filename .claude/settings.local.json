@@ -45,7 +45,12 @@
       "Bash(cd:*)",
       "Bash(head:*)",
       "Bash(ls:*)",
-      "Bash(cd \"C:/Users/WEMB/Desktop/WEB_BUILDER_TOOLKIT\" && git status -u)"
+      "Bash(cd \"C:/Users/WEMB/Desktop/WEB_BUILDER_TOOLKIT\" && git status -u)",
+      "Bash(cp -r \"C:/Users/WEMB/Desktop/WEB_BUILDER_TOOLKIT/RNBT_architecture/Components/FrameHeader\" \"C:/Users/WEMB/Desktop/WEB_BUILDER_TOOLKIT/RNBT_architecture/Projects/HANA-BANK/page/components/FrameHeader\")",
+      "Bash(taskkill //F //IM \"node.exe\" //FI \"WINDOWTITLE eq *serve*\" 2>/dev/null; pkill -f \"serve.*3001\" 2>/dev/null; echo \"done\")",
+      "Bash(mkdir:*)",
+      "Bash(wc -l /c/Users/WEMB/Desktop/WEB_BUILDER_TOOLKIT/RNBT_architecture/Utils/*.js)",
+      "Bash(grep -l \"3D\\\\|three\\\\|THREE\" /c/Users/WEMB/Desktop/WEB_BUILDER_TOOLKIT/RNBT_architecture/Utils/*.js)"
     ],
     "deny": [],
     "ask": []
