@@ -1,0 +1,581 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>EventBrowser - Preview</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css">
+  <link rel="stylesheet" href="styles/component.css">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      background: #0a0c0b;
+      font-family: 'Pretendard', sans-serif;
+      color: #e4ebf6;
+      padding: 30px;
+    }
+    h2 { font-size: 14px; color: #94a3b8; margin-bottom: 10px; }
+    .test-section { margin-bottom: 30px; }
+    .test-controls { margin-top: 12px; display: flex; gap: 8px; flex-wrap: wrap; }
+    .test-controls button {
+      padding: 6px 14px;
+      border-radius: 4px;
+      border: 1px solid #475569;
+      background: #1e293b;
+      color: #e4ebf6;
+      font-size: 12px;
+      cursor: pointer;
+    }
+    .test-controls button:hover { border-color: #00c8a5; }
+    .event-log {
+      margin-top: 16px;
+      padding: 10px;
+      background: #1a1c1b;
+      border-radius: 6px;
+      font-size: 12px;
+      color: #6b7280;
+      max-height: 120px;
+      overflow: auto;
+    }
+    .event-log div { padding: 2px 0; border-bottom: 1px solid #2a2c2b; }
+  </style>
+</head>
+<body>
+
+  <!-- ===== Test: EventBrowser ===== -->
+  <div class="test-section">
+    <h2>EventBrowser - 동작 테스트</h2>
+    <div id="event-browser-container">
+      <div class="event-browser">
+        <div class="eb-header">
+          <div class="eb-title-group">
+            <span class="eb-title">이벤트 현황</span>
+            <div class="eb-action">
+              <div class="eb-arrows">
+                <div class="eb-arrow-btn" data-action="arrow-up">
+                  <div class="eb-arrow-icon">
+                    <img src="./assets/c1c7d4516ac3295abe570952aabccf8b07949667.svg" alt="">
+                  </div>
+                </div>
+                <div class="eb-arrow-btn" data-action="arrow-down">
+                  <div class="eb-arrow-icon">
+                    <img src="./assets/8aabd7e9c4b94dd81395dcbfb6efbe696375d5d6.svg" alt="">
+                  </div>
+                </div>
+              </div>
+              <div class="eb-event-btns">
+                <div class="eb-btn eb-btn-reset" data-action="reset">
+                  <span>초기화</span>
+                </div>
+                <div class="eb-btn eb-btn-delete" data-action="delete">
+                  <span>삭제</span>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="eb-status-group"></div>
+        </div>
+        <div class="eb-table-header"></div>
+        <div class="eb-table-body"></div>
+      </div>
+    </div>
+    <div class="test-controls">
+      <button onclick="loadData()">Load Data</button>
+      <button onclick="loadMoreData()">Load More Data</button>
+      <button onclick="resetAll()">Full Reset</button>
+    </div>
+    <div class="event-log" id="eventLog"></div>
+  </div>
+
+<script>
+// ===========================
+// Mock Dependencies
+// ===========================
+
+const fx = {
+    go: (arr, ...fns) => fns.reduce((acc, fn) => fn(acc), arr),
+    each: (fn) => (arr) => { arr.forEach(fn); return arr; },
+    map: (fn) => (arr) => arr.map(fn),
+};
+
+const GlobalDataPublisher = {
+    _subs: {},
+    subscribe(topic, ctx, fn) {
+        if (!this._subs[topic]) this._subs[topic] = [];
+        this._subs[topic].push({ ctx, fn });
+    },
+    unsubscribe(topic, ctx) {
+        if (this._subs[topic]) {
+            this._subs[topic] = this._subs[topic].filter((s) => s.ctx !== ctx);
+        }
+    },
+    publish(topic, data) {
+        (this._subs[topic] || []).forEach((s) => s.fn.call(s.ctx, data));
+    },
+};
+
+const Wkit = {
+    bindEvents(ctx, events) {
+        if (!events) return;
+        Object.entries(events).forEach(([eventType, selectorMap]) => {
+            Object.entries(selectorMap).forEach(([selector, customEventName]) => {
+                ctx.appendElement.addEventListener(eventType, (e) => {
+                    if (e.target.closest(selector)) {
+                        const detail = {};
+                        const row = e.target.closest(".eb-row");
+                        if (row) {
+                            detail.index = parseInt(row.dataset.index, 10);
+                            detail.data = row._eventData || null;
+                        }
+                        ctx.appendElement.dispatchEvent(
+                            new CustomEvent(customEventName.replace("@", ""), {
+                                detail,
+                                bubbles: true,
+                            })
+                        );
+                    }
+                });
+            });
+        });
+    },
+    removeCustomEvents() {},
+};
+
+// ===========================
+// Event Log Helper
+// ===========================
+
+function logEvent(msg) {
+    const log = document.getElementById("eventLog");
+    const div = document.createElement("div");
+    div.textContent = `[${new Date().toLocaleTimeString()}] ${msg}`;
+    log.insertBefore(div, log.firstChild);
+}
+
+// ===========================
+// Init Component
+// ===========================
+
+const container = document.getElementById("event-browser-container");
+const mockCtx = {
+    appendElement: container,
+    _selectedRowIndex: null,
+    _eventsData: null,
+    _columnsData: null,
+    _collapsed: false,
+    _internalHandlers: {},
+    _activeFilters: new Set(),
+    subscriptions: {},
+};
+
+function initComponent(ctx) {
+    const { subscribe } = GlobalDataPublisher;
+    const { bindEvents } = Wkit;
+
+    const config = {
+        summaryKey: "TBD_summary",
+        columnsKey: "TBD_columns",
+        eventsKey: "TBD_events",
+        eventFields: {
+            level: "TBD_level",
+            group: "TBD_group",
+            task: "TBD_task",
+            host: "TBD_host",
+            time: "TBD_time",
+            solution: "TBD_solution",
+            area: "TBD_area",
+            content: "TBD_content",
+        },
+        summaryOrder: ["심각", "경계", "주의", "정상"],
+        summaryMeta: {
+            "심각": { cssClass: "critical", dotImg: "./assets/dc1b586bd7be301000547f2aa94c8a80974995e0.svg", rowDotImg: "./assets/f8c96fe5aec848e875d2f64fd50e8c17fc2d4d7a.svg" },
+            "경계": { cssClass: "warning", dotImg: "./assets/41835b7ef08121b1457c6ec0f844fd99834b0c30.svg", rowDotImg: "./assets/3fad991e559f2aab32ceaec0ccd8f0c1dc56e6db.svg" },
+            "주의": { cssClass: "caution", dotImg: "./assets/6c6aaa9c177c588d408997943b32c4740898a829.svg", rowDotImg: "./assets/d107558bfde3ce070c5fff37e7bfc41300f0a6d6.svg" },
+            "정상": { cssClass: "normal", dotImg: "./assets/9f1ad830ab21c2b805c4cdb15123f5cd40f87791.svg", rowDotImg: "./assets/282c62b57f173f0c5886bbbd35d43cf04cdf9a86.svg" },
+        },
+    };
+
+    ctx.renderData = renderData.bind(ctx, config);
+    ctx.selectRow = selectRow.bind(ctx, config);
+
+    ctx.subscriptions = { TBD_topicName: ["renderData"] };
+    fx.go(
+        Object.entries(ctx.subscriptions),
+        fx.each(([topic, fnList]) =>
+            fx.each((fn) => ctx[fn] && subscribe(topic, ctx, ctx[fn]), fnList)
+        )
+    );
+
+    ctx.customEvents = {
+        click: {
+            ".eb-row": "@TBD_rowClicked",
+            ".eb-btn-delete": "@TBD_deleteClicked",
+            ".eb-btn-reset": "@TBD_resetClicked",
+        },
+    };
+    bindEvents(ctx, ctx.customEvents);
+    setupInternalHandlers.call(ctx, config);
+
+    // Listen for custom events
+    ctx.appendElement.addEventListener("TBD_rowClicked", (e) => {
+        logEvent(`rowClicked: index=${e.detail.index}, level=${e.detail.data?.[config.eventFields.level]}`);
+    });
+    ctx.appendElement.addEventListener("TBD_deleteClicked", () => {
+        logEvent("deleteClicked");
+    });
+    ctx.appendElement.addEventListener("TBD_resetClicked", () => {
+        logEvent("resetClicked");
+    });
+
+    // --- Render Functions ---
+
+    function renderData(config, { response }) {
+        const { data } = response;
+        if (!data) return;
+
+        const summary = data[config.summaryKey];
+        if (summary) renderSummary.call(this, config, summary);
+
+        const columns = data[config.columnsKey];
+        if (columns && Array.isArray(columns)) {
+            this._columnsData = columns;
+            renderTableHeader.call(this, config, columns);
+        }
+
+        const events = data[config.eventsKey];
+        if (events && Array.isArray(events)) {
+            this._eventsData = events;
+            this._selectedRowIndex = null;
+            applyFilter.call(this, config);
+        }
+    }
+
+    function renderSummary(config, summary) {
+        const container = this.appendElement.querySelector(".eb-status-group");
+        if (!container) return;
+        container.innerHTML = "";
+
+        fx.go(
+            config.summaryOrder,
+            fx.each((level) => {
+                const count = summary[level] ?? 0;
+                const meta = config.summaryMeta[level];
+                const badge = document.createElement("div");
+                badge.className = `eb-status-badge badge-${meta.cssClass}`;
+                badge.dataset.level = level;
+                badge.innerHTML = `
+                    <div class="eb-badge-block">
+                        <div class="eb-badge-box">
+                            <div class="eb-badge-label-group">
+                                <div class="eb-status-dot dot-${meta.cssClass}">
+                                    <img src="${meta.dotImg}" alt="">
+                                    <div class="eb-dot-stroke stroke-${meta.cssClass}"></div>
+                                </div>
+                                <span class="eb-badge-name">${level}</span>
+                            </div>
+                            <div class="eb-badge-divider divider-${meta.cssClass}"></div>
+                        </div>
+                        <span class="eb-badge-count">${count}</span>
+                    </div>
+                `;
+                container.appendChild(badge);
+            })
+        );
+    }
+
+    function renderTableHeader(config, columns) {
+        const headerEl = this.appendElement.querySelector(".eb-table-header");
+        if (!headerEl) return;
+        headerEl.innerHTML = "";
+
+        fx.go(
+            columns,
+            fx.each((col) => {
+                const th = document.createElement("div");
+                th.className = "eb-th";
+                if (col.width) {
+                    th.style.width = col.width + "px";
+                } else {
+                    th.style.flex = "1 0 0";
+                    th.style.minWidth = "0";
+                }
+                th.textContent = col.label;
+                headerEl.appendChild(th);
+            })
+        );
+    }
+
+    function renderRows(config, events) {
+        const bodyEl = this.appendElement.querySelector(".eb-table-body");
+        if (!bodyEl) return;
+        bodyEl.innerHTML = "";
+
+        events.forEach((event, index) => {
+            const row = createRow.call(this, config, event, index);
+            bodyEl.appendChild(row);
+        });
+    }
+
+    function createRow(config, event, index) {
+        const { eventFields, summaryMeta } = config;
+        const level = event[eventFields.level] || "정상";
+        const meta = summaryMeta[level] || summaryMeta["정상"];
+        const isSelected = this._selectedRowIndex === index;
+
+        const row = document.createElement("div");
+        row.className = "eb-row";
+        row.dataset.index = index;
+        row._eventData = event;
+        if (isSelected) row.classList.add("eb-row-active");
+
+        const levelCell = document.createElement("div");
+        levelCell.className = "eb-cell eb-cell-status";
+        levelCell.style.width = "122px";
+        levelCell.innerHTML = `
+            <div class="eb-row-status-group">
+                <div class="eb-row-dot dot-${meta.cssClass}">
+                    <img src="${meta.rowDotImg}" alt="">
+                    <div class="eb-dot-stroke stroke-${meta.cssClass}"></div>
+                </div>
+                <span class="eb-row-status-label${isSelected ? " active-text" : ""}">${level}</span>
+            </div>
+        `;
+        row.appendChild(levelCell);
+
+        const fieldOrder = ["group", "task", "host", "time", "solution", "area", "content"];
+        const columns = this._columnsData || [];
+
+        fx.go(
+            fieldOrder,
+            fx.each((field) => {
+                const col = columns.find((c) => c.key === field);
+                const value = event[eventFields[field]] || "-";
+                const cell = document.createElement("div");
+                cell.className = "eb-cell";
+
+                if (col && col.width) {
+                    cell.style.width = col.width + "px";
+                } else {
+                    cell.className += " eb-cell-flex";
+                }
+
+                const span = document.createElement("span");
+                span.textContent = value;
+                if (isSelected) span.classList.add("active-text");
+                cell.appendChild(span);
+                row.appendChild(cell);
+            })
+        );
+
+        return row;
+    }
+
+    // --- Internal Handlers ---
+
+    function setupInternalHandlers(config) {
+        const root = this.appendElement;
+
+        this._internalHandlers.rowClick = (e) => {
+            const row = e.target.closest(".eb-row");
+            if (!row) return;
+            const index = parseInt(row.dataset.index, 10);
+            this.selectRow(index);
+        };
+
+        this._internalHandlers.filterClick = (e) => {
+            const badge = e.target.closest(".eb-status-badge[data-level]");
+            if (!badge) return;
+            const level = badge.dataset.level;
+            if (this._activeFilters.has(level)) {
+                this._activeFilters.delete(level);
+            } else {
+                this._activeFilters.add(level);
+            }
+            this._selectedRowIndex = null;
+            updateFilterUI.call(this);
+            applyFilter.call(this, config);
+            logEvent(`filter toggled: ${level} (active: ${[...this._activeFilters].join(", ") || "none"})`);
+        };
+
+        this._internalHandlers.resetClick = (e) => {
+            const btn = e.target.closest(".eb-btn-reset");
+            if (!btn) return;
+            this._activeFilters.clear();
+            this._selectedRowIndex = null;
+            updateFilterUI.call(this);
+            applyFilter.call(this, config);
+            logEvent("filters reset");
+        };
+
+        this._internalHandlers.deleteClick = (e) => {
+            const btn = e.target.closest(".eb-btn-delete");
+            if (!btn || this._selectedRowIndex === null || !this._eventsData) return;
+
+            const filteredEvents = getFilteredEvents.call(this, config);
+            const targetEvent = filteredEvents[this._selectedRowIndex];
+            if (targetEvent) {
+                const realIndex = this._eventsData.indexOf(targetEvent);
+                if (realIndex !== -1) {
+                    this._eventsData.splice(realIndex, 1);
+                }
+            }
+            this._selectedRowIndex = null;
+            updateSummaryCounts.call(this, config);
+            applyFilter.call(this, config);
+            logEvent("row deleted");
+        };
+
+        this._internalHandlers.collapseClick = (e) => {
+            const arrowBtn = e.target.closest(".eb-arrow-btn");
+            if (!arrowBtn) return;
+            const action = arrowBtn.dataset.action;
+
+            const tableHeader = root.querySelector(".eb-table-header");
+            const tableBody = root.querySelector(".eb-table-body");
+
+            if (action === "arrow-up" && !this._collapsed) {
+                this._collapsed = true;
+                if (tableHeader) tableHeader.style.display = "none";
+                if (tableBody) tableBody.style.display = "none";
+                root.classList.add("eb-collapsed");
+                logEvent("collapsed");
+            } else if (action === "arrow-down" && this._collapsed) {
+                this._collapsed = false;
+                if (tableHeader) tableHeader.style.display = "";
+                if (tableBody) tableBody.style.display = "";
+                root.classList.remove("eb-collapsed");
+                logEvent("expanded");
+            }
+        };
+
+        root.addEventListener("click", this._internalHandlers.rowClick);
+        root.addEventListener("click", this._internalHandlers.filterClick);
+        root.addEventListener("click", this._internalHandlers.resetClick);
+        root.addEventListener("click", this._internalHandlers.deleteClick);
+        root.addEventListener("click", this._internalHandlers.collapseClick);
+    }
+
+    function getFilteredEvents(config) {
+        if (!this._eventsData) return [];
+        if (this._activeFilters.size === 0) return this._eventsData;
+        return this._eventsData.filter(
+            (e) => this._activeFilters.has(e[config.eventFields.level])
+        );
+    }
+
+    function applyFilter(config) {
+        const events = getFilteredEvents.call(this, config);
+        renderRows.call(this, config, events);
+    }
+
+    function updateFilterUI() {
+        const badges = this.appendElement.querySelectorAll(".eb-status-badge[data-level]");
+        const hasFilter = this._activeFilters.size > 0;
+        badges.forEach((badge) => {
+            const level = badge.dataset.level;
+            badge.classList.toggle("filter-active", this._activeFilters.has(level));
+            badge.classList.toggle("filter-inactive", hasFilter && !this._activeFilters.has(level));
+        });
+    }
+
+    function updateSummaryCounts(config) {
+        if (!this._eventsData) return;
+        const counts = {};
+        config.summaryOrder.forEach((level) => (counts[level] = 0));
+        this._eventsData.forEach((e) => {
+            const level = e[config.eventFields.level];
+            if (counts[level] !== undefined) counts[level]++;
+        });
+        const badges = this.appendElement.querySelectorAll(".eb-status-badge[data-level]");
+        badges.forEach((badge) => {
+            const level = badge.dataset.level;
+            const countEl = badge.querySelector(".eb-badge-count");
+            if (countEl && counts[level] !== undefined) {
+                countEl.textContent = counts[level];
+            }
+        });
+    }
+
+    function selectRow(config, index) {
+        this._selectedRowIndex = index;
+        applyFilter.call(this, config);
+    }
+}
+
+initComponent(mockCtx);
+
+// ===========================
+// Mock Data
+// ===========================
+
+const mockData = {
+    response: {
+        data: {
+            TBD_summary: { "심각": 23, "경계": 10, "주의": 8, "정상": 216 },
+            TBD_columns: [
+                { key: "level", label: "등급", width: 122 },
+                { key: "group", label: "업무그룹", width: 135 },
+                { key: "task", label: "업무명", width: 135 },
+                { key: "host", label: "호스트명", width: 135 },
+                { key: "time", label: "발생시간", width: 165 },
+                { key: "solution", label: "솔루션", width: 135 },
+                { key: "area", label: "영역", width: 135 },
+                { key: "content", label: "내용" },
+            ],
+            TBD_events: [
+                { TBD_level: "심각", TBD_group: "인프라", TBD_task: "DB모니터링", TBD_host: "DB-SVR-01", TBD_time: "2025-03-17 09:33:00", TBD_solution: "Scouter", TBD_area: "데이터센터", TBD_content: "CPU 사용률 95% 초과" },
+                { TBD_level: "심각", TBD_group: "네트워크", TBD_task: "방화벽관리", TBD_host: "FW-CORE-02", TBD_time: "2025-03-17 09:31:22", TBD_solution: "SNMP", TBD_area: "IDC-A동", TBD_content: "패킷 드랍률 급증 감지" },
+                { TBD_level: "주의", TBD_group: "서버", TBD_task: "WAS관리", TBD_host: "WAS-AP-03", TBD_time: "2025-03-17 09:28:10", TBD_solution: "Jennifer", TBD_area: "클라우드", TBD_content: "힙 메모리 사용률 80% 도달" },
+                { TBD_level: "정상", TBD_group: "스토리지", TBD_task: "백업관리", TBD_host: "NAS-BK-01", TBD_time: "2025-03-17 09:25:00", TBD_solution: "NetBackup", TBD_area: "백업센터", TBD_content: "일일 백업 정상 완료" },
+                { TBD_level: "정상", TBD_group: "보안", TBD_task: "IDS관리", TBD_host: "IDS-GW-01", TBD_time: "2025-03-17 09:20:15", TBD_solution: "Snort", TBD_area: "DMZ", TBD_content: "정기 패턴 업데이트 완료" },
+                { TBD_level: "경계", TBD_group: "인프라", TBD_task: "전력관리", TBD_host: "UPS-MAIN-01", TBD_time: "2025-03-17 09:15:30", TBD_solution: "PowerMon", TBD_area: "전기실", TBD_content: "배터리 잔량 40% 이하 경보" },
+                { TBD_level: "심각", TBD_group: "네트워크", TBD_task: "스위치관리", TBD_host: "SW-DIST-05", TBD_time: "2025-03-17 09:10:00", TBD_solution: "SNMP", TBD_area: "IDC-B동", TBD_content: "포트 CRC 에러 급증" },
+                { TBD_level: "주의", TBD_group: "서버", TBD_task: "OS관리", TBD_host: "LNX-WEB-12", TBD_time: "2025-03-17 09:05:44", TBD_solution: "Zabbix", TBD_area: "클라우드", TBD_content: "디스크 사용률 75% 도달" },
+            ],
+        },
+    },
+};
+
+const mockDataMore = {
+    response: {
+        data: {
+            TBD_summary: { "심각": 5, "경계": 3, "주의": 4, "정상": 8 },
+            TBD_columns: mockData.response.data.TBD_columns,
+            TBD_events: [
+                { TBD_level: "심각", TBD_group: "인프라", TBD_task: "DB모니터링", TBD_host: "DB-SVR-01", TBD_time: "2025-03-17 10:01:00", TBD_solution: "Scouter", TBD_area: "데이터센터", TBD_content: "쿼리 응답시간 30초 초과" },
+                { TBD_level: "경계", TBD_group: "네트워크", TBD_task: "라우터관리", TBD_host: "RTR-CORE-01", TBD_time: "2025-03-17 10:00:30", TBD_solution: "SNMP", TBD_area: "IDC-A동", TBD_content: "BGP 세션 flapping 감지" },
+                { TBD_level: "정상", TBD_group: "보안", TBD_task: "WAF관리", TBD_host: "WAF-WEB-01", TBD_time: "2025-03-17 09:58:00", TBD_solution: "ModSec", TBD_area: "DMZ", TBD_content: "룰셋 업데이트 완료" },
+                { TBD_level: "주의", TBD_group: "서버", TBD_task: "컨테이너관리", TBD_host: "K8S-NODE-04", TBD_time: "2025-03-17 09:55:12", TBD_solution: "Prometheus", TBD_area: "클라우드", TBD_content: "Pod 재시작 3회 감지" },
+                { TBD_level: "심각", TBD_group: "스토리지", TBD_task: "SAN관리", TBD_host: "SAN-LUN-02", TBD_time: "2025-03-17 09:50:00", TBD_solution: "EMC", TBD_area: "스토리지룸", TBD_content: "디스크 I/O 지연 500ms 초과" },
+            ],
+        },
+    },
+};
+
+// ===========================
+// Test Functions
+// ===========================
+
+function loadData() {
+    mockCtx.renderData(mockData);
+    logEvent("data loaded (8 events)");
+}
+
+function loadMoreData() {
+    mockCtx.renderData(mockDataMore);
+    logEvent("new data loaded (5 events)");
+}
+
+function resetAll() {
+    mockCtx._activeFilters.clear();
+    mockCtx._selectedRowIndex = null;
+    mockCtx.renderData(mockData);
+    logEvent("full reset");
+}
+
+// Auto-load
+loadData();
+</script>
+
+</body>
+</html>

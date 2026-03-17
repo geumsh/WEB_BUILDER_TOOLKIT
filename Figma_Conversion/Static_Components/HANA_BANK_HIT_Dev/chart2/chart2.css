@@ -1,0 +1,384 @@
+/* Container: Figma size 831 x 350 */
+#chart2-container {
+    width: 831px;
+    height: 350px;
+    overflow: auto;
+}
+
+#chart2-container {
+    .block {
+        width: 100%;
+        height: 100%;
+        padding: 14px 24px 13px 24px;
+        border: 1.5px solid #004e42;
+        border-radius: 15px;
+        background-image: linear-gradient(229.581deg, rgba(3, 28, 24, 0.1) 0.80733%, rgba(0, 78, 66, 0.2) 48.298%, rgba(3, 28, 24, 0.1) 97.404%);
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        align-items: flex-start;
+        position: relative;
+        box-sizing: border-box;
+    }
+
+    .block-inner-shadow {
+        position: absolute;
+        inset: 0;
+        pointer-events: none;
+        border-radius: inherit;
+        box-shadow:
+            inset -6px -6px 12px 0px rgba(255, 255, 255, 0.25),
+            inset 6px 6px 12px 0px rgba(0, 0, 0, 0.25);
+    }
+
+    /* ===== Header ===== */
+
+    .header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        width: 100%;
+        height: 38px;
+        flex-shrink: 0;
+    }
+
+    .title {
+        display: flex;
+        gap: 9px;
+        align-items: center;
+    }
+
+    .title-icon {
+        width: 16.681px;
+        height: 18.27px;
+        position: relative;
+    }
+
+    .title-icon img {
+        position: absolute;
+        display: block;
+        max-width: none;
+        width: 100%;
+        height: 100%;
+    }
+
+    .title-text {
+        font-family: 'Pretendard', sans-serif;
+        font-weight: 600;
+        font-size: 18px;
+        line-height: normal;
+        color: #f2f9ef;
+        white-space: nowrap;
+    }
+
+    .action {
+        display: flex;
+        gap: 4px;
+        align-items: center;
+    }
+
+    .btn {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 4px 16px;
+        border-radius: 6px;
+        background: #30403b;
+    }
+
+    .btn-text {
+        font-family: 'Pretendard', sans-serif;
+        font-weight: 400;
+        font-size: 15px;
+        line-height: normal;
+        color: #6f8c83;
+        text-align: right;
+        white-space: nowrap;
+    }
+
+    .btn.active {
+        background: #162420;
+        border: 0.75px solid #009178;
+    }
+
+    .btn.active .btn-text {
+        font-weight: 500;
+        color: #5bdcc6;
+    }
+
+    /* ===== Container ===== */
+
+    .container {
+        display: flex;
+        flex-direction: column;
+        gap: 11px;
+        align-items: center;
+        justify-content: center;
+        width: 100%;
+        flex: 1;
+        min-height: 0;
+    }
+
+    /* ===== Contents ===== */
+
+    .contents {
+        display: flex;
+        flex-direction: column;
+        gap: 3px;
+        align-items: flex-start;
+        width: 100%;
+    }
+
+    /* Date box */
+    .date-row {
+        display: flex;
+        align-items: center;
+        justify-content: flex-end;
+        width: 100%;
+    }
+
+    .date-box {
+        display: flex;
+        gap: 6px;
+        align-items: center;
+        justify-content: center;
+        padding: 4px 16px;
+        background: #162420;
+        border-radius: 6px;
+    }
+
+    .date-label {
+        font-family: 'Pretendard', sans-serif;
+        font-weight: 500;
+        font-size: 14px;
+        line-height: normal;
+        color: #999999;
+        text-align: center;
+        white-space: nowrap;
+    }
+
+    .date-value {
+        font-family: 'Pretendard', sans-serif;
+        font-weight: 500;
+        font-size: 14px;
+        line-height: normal;
+        color: #c3dad6;
+        text-align: right;
+        white-space: nowrap;
+    }
+
+    /* ===== Chart ===== */
+
+    .chart {
+        display: grid;
+        grid-template-columns: max-content;
+        grid-template-rows: max-content;
+        width: 100%;
+        position: relative;
+        line-height: 0;
+    }
+
+    .chart > * {
+        grid-column: 1;
+        grid-row: 1;
+    }
+
+    /* Grid lines */
+    .chart-lines {
+        width: 743.073px;
+        height: 172.126px;
+        margin-left: 39.85px;
+        margin-top: 12.62px;
+        position: relative;
+    }
+
+    .chart-lines img {
+        position: absolute;
+        inset: -0.73% 0 0 0;
+        display: block;
+        max-width: none;
+        width: 100%;
+        height: 100%;
+    }
+
+    /* Y-axis */
+    .y-axis {
+        display: flex;
+        flex-direction: column;
+        align-items: flex-end;
+        justify-content: space-between;
+        width: 29.49px;
+        height: 194.473px;
+        font-family: 'Pretendard', sans-serif;
+        font-weight: 400;
+        font-size: 12px;
+        line-height: 20.066px;
+        color: #cccccc;
+        text-align: right;
+        letter-spacing: -0.24px;
+        white-space: nowrap;
+    }
+
+    /* X-axis */
+    .x-axis {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        width: 742.325px;
+        height: 18.265px;
+        margin-left: 38.31px;
+        margin-top: 191.05px;
+        font-family: 'Pretendard', sans-serif;
+        font-weight: 400;
+        font-size: 12px;
+        line-height: normal;
+        color: #cccccc;
+        white-space: nowrap;
+    }
+
+    /* Graph */
+    .graph {
+        width: 743.072px;
+        height: 177.694px;
+        margin-left: 39.93px;
+        margin-top: 2.09px;
+        position: relative;
+    }
+
+    .graph img {
+        position: absolute;
+        display: block;
+        max-width: none;
+        width: 100%;
+        height: 100%;
+    }
+
+    /* Tooltip */
+    .tooltip {
+        display: inline-grid;
+        grid-template-columns: max-content;
+        grid-template-rows: max-content;
+        margin-left: 514.93px;
+        margin-top: 11.45px;
+    }
+
+    .tooltip > * {
+        grid-column: 1;
+        grid-row: 1;
+    }
+
+    .tooltip-line {
+        width: 2.034px;
+        height: 171.199px;
+        margin-left: 5.76px;
+        margin-top: 0;
+        background: rgba(0, 145, 120, 0.5);
+    }
+
+    .tooltip-dot {
+        width: 13.558px;
+        height: 12px;
+        margin-left: 0;
+        margin-top: 105.87px;
+        position: relative;
+    }
+
+    .tooltip-dot img {
+        position: absolute;
+        display: block;
+        max-width: none;
+        width: 26.1px;
+        height: 24.54px;
+        top: -6.27px;
+        left: -6.27px;
+    }
+
+    .tooltip-box {
+        display: flex;
+        gap: 5.017px;
+        align-items: center;
+        margin-left: 19.57px;
+        margin-top: 98.58px;
+        padding: 4.289px 8px;
+        background: rgba(0, 145, 120, 0.2);
+        backdrop-filter: blur(2.508px);
+        border-radius: 11.438px;
+        box-shadow: 0px 5.017px 5.017px 0px rgba(0, 0, 0, 0.25);
+        overflow: clip;
+    }
+
+    .tooltip-arrow {
+        width: 6.271px;
+        height: 10.033px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .tooltip-arrow img {
+        display: block;
+        width: 6.271px;
+        height: 10.033px;
+        transform: rotate(-90deg) scaleY(-1);
+    }
+
+    .tooltip-value {
+        font-family: 'Pretendard', sans-serif;
+        font-weight: 600;
+        font-size: 15px;
+        line-height: normal;
+        color: #ffffff;
+        letter-spacing: 0.1072px;
+        white-space: nowrap;
+    }
+
+    /* ===== Legend ===== */
+
+    .legend {
+        display: flex;
+        gap: 16px;
+        align-items: center;
+        padding: 5px 13px;
+        background: #162420;
+        border: 1px solid #666666;
+        border-radius: 50px;
+        position: relative;
+    }
+
+    .legend-inner-shadow {
+        position: absolute;
+        inset: 0;
+        pointer-events: none;
+        border-radius: inherit;
+        box-shadow: inset 0px 0px 7px 0px rgba(0, 0, 0, 0.5);
+    }
+
+    .legend-item {
+        display: flex;
+        gap: 4px;
+        align-items: center;
+    }
+
+    .legend-dot {
+        width: 4px;
+        height: 4px;
+        position: relative;
+    }
+
+    .legend-dot img {
+        position: absolute;
+        display: block;
+        max-width: none;
+        width: 100%;
+        height: 100%;
+    }
+
+    .legend-text {
+        font-family: 'Pretendard', sans-serif;
+        font-weight: 500;
+        font-size: 13px;
+        line-height: normal;
+        color: #dddddd;
+        white-space: nowrap;
+    }
+}

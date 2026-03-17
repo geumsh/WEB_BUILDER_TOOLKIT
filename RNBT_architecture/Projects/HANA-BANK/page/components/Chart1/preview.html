@@ -1,0 +1,359 @@
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Chart1 - Preview</title>
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css"
+    />
+    <script src="https://cdn.jsdelivr.net/npm/echarts@5/dist/echarts.min.js"></script>
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+      body {
+        background: #0f1117;
+        font-family: "Pretendard", sans-serif;
+        padding: 40px;
+      }
+
+      /* ===== component.css (flattened) ===== */
+      #chart1-container {
+        width: 400px;
+        height: 216.51px;
+        overflow: auto;
+      }
+      #chart1-container .block {
+        width: 100%;
+        height: 100%;
+        padding: 18px 16px;
+        border: 1.5px solid #004e42;
+        border-radius: 15px;
+        background-image: linear-gradient(
+          236.469deg,
+          rgba(3, 28, 24, 0.1) 0.80733%,
+          rgba(0, 78, 66, 0.2) 48.298%,
+          rgba(3, 28, 24, 0.1) 97.404%
+        );
+        display: flex;
+        flex-direction: column;
+        align-items: flex-start;
+        justify-content: center;
+        position: relative;
+        box-sizing: border-box;
+      }
+      #chart1-container .block-inner-shadow {
+        position: absolute;
+        inset: 0;
+        pointer-events: none;
+        border-radius: inherit;
+        box-shadow:
+          inset -6px -6px 12px 0px rgba(255, 255, 255, 0.25),
+          inset 6px 6px 12px 0px rgba(0, 0, 0, 0.25);
+      }
+      #chart1-container .group {
+        display: flex;
+        flex-direction: column;
+        gap: 13px;
+        align-items: center;
+        justify-content: center;
+        width: 100%;
+        height: 100%;
+      }
+      #chart1-container .header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        width: 100%;
+        flex-shrink: 0;
+      }
+      #chart1-container .title {
+        display: flex;
+        gap: 9px;
+        align-items: center;
+      }
+      #chart1-container .title-icon {
+        width: 16.681px;
+        height: 18.27px;
+        position: relative;
+      }
+      #chart1-container .title-icon img {
+        position: absolute;
+        display: block;
+        max-width: none;
+        width: 100%;
+        height: 100%;
+      }
+      #chart1-container .title-text {
+        font-family: "Pretendard", sans-serif;
+        font-weight: 600;
+        font-size: 18px;
+        line-height: normal;
+        color: #f2f9ef;
+        white-space: nowrap;
+      }
+      #chart1-container .action {
+        display: flex;
+        gap: 4px;
+        align-items: center;
+      }
+      #chart1-container .btn {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 4px 10px;
+        border-radius: 6px;
+        background: #30403b;
+        cursor: pointer;
+      }
+      #chart1-container .btn-text {
+        font-family: "Pretendard", sans-serif;
+        font-weight: 400;
+        font-size: 12px;
+        line-height: normal;
+        color: #6f8c83;
+        text-align: right;
+        white-space: nowrap;
+      }
+      #chart1-container .btn.active {
+        background: #162420;
+        border: 0.75px solid #009178;
+      }
+      #chart1-container .btn.active .btn-text {
+        font-weight: 500;
+        color: #5bdcc6;
+      }
+      #chart1-container .chart-container {
+        width: 100%;
+        flex: 1;
+        min-height: 0;
+      }
+
+      /* Test controls */
+      .test-controls {
+        margin-top: 30px;
+        display: flex;
+        gap: 8px;
+      }
+      .test-controls button {
+        padding: 6px 14px;
+        border-radius: 4px;
+        border: 1px solid #475569;
+        background: #1e293b;
+        color: #e4ebf6;
+        font-size: 12px;
+        cursor: pointer;
+        font-family: "Pretendard", sans-serif;
+      }
+      .test-controls button:hover {
+        border-color: #009178;
+      }
+    </style>
+  </head>
+  <body>
+    <!-- ===== Component ===== -->
+    <div id="chart1-container">
+      <div class="block">
+        <div class="group">
+          <div class="header">
+            <div class="title">
+              <div class="title-icon">
+                <img
+                  src="./assets/a3c2ab6590a36270718937ec11e700f8f2584c7e.svg"
+                  alt="icon"
+                />
+              </div>
+              <span class="title-text">Chart</span>
+            </div>
+            <div class="action">
+              <div class="btn active" data-tab="tab01">
+                <span class="btn-text">tab01</span>
+              </div>
+              <div class="btn" data-tab="tab02">
+                <span class="btn-text">tab02</span>
+              </div>
+              <div class="btn" data-tab="tab03">
+                <span class="btn-text">tab03</span>
+              </div>
+              <div class="btn" data-tab="tab04">
+                <span class="btn-text">tab04</span>
+              </div>
+            </div>
+          </div>
+          <div class="chart-container"></div>
+        </div>
+        <div class="block-inner-shadow"></div>
+      </div>
+    </div>
+
+    <!-- ===== Test Controls ===== -->
+    <div class="test-controls">
+      <button onclick="loadMockData()">Load Data</button>
+      <button onclick="loadMockData2()">Update Data</button>
+    </div>
+
+    <script>
+      // ===========================
+      // Mock Chart Init & Render
+      // ===========================
+
+      const chartContainer = document.querySelector(
+        "#chart1-container .chart-container",
+      );
+      const chartInstance = echarts.init(chartContainer);
+
+      // Tab switching
+      document
+        .getElementById("chart1-container")
+        .addEventListener("click", (e) => {
+          const btn = e.target.closest(".btn");
+          if (!btn || !btn.dataset.tab) return;
+          document.querySelectorAll("#chart1-container .btn").forEach((b) => {
+            b.classList.toggle("active", b === btn);
+          });
+        });
+
+      function renderChart(data) {
+        const option = {
+          grid: { top: 10, right: 10, bottom: 20, left: 35 },
+          legend: {
+            show: true,
+            top: 0,
+            right: 0,
+            itemWidth: 6,
+            itemHeight: 6,
+            icon: "circle",
+            textStyle: {
+              fontFamily: "Pretendard",
+              fontSize: 11,
+              fontWeight: 500,
+              color: "#eeeeee",
+            },
+            itemGap: 10,
+          },
+          tooltip: {
+            trigger: "axis",
+            backgroundColor: "rgba(0, 145, 120, 0.2)",
+            borderColor: "transparent",
+            textStyle: {
+              fontFamily: "Pretendard",
+              fontSize: 13,
+              fontWeight: 600,
+              color: "#ffffff",
+            },
+            axisPointer: {
+              type: "line",
+              lineStyle: { color: "rgba(0, 145, 120, 0.5)", width: 1.5 },
+            },
+          },
+          xAxis: {
+            type: "category",
+            data: data.timestamps,
+            axisLine: { show: false },
+            axisTick: { show: false },
+            axisLabel: {
+              fontFamily: "Pretendard",
+              fontSize: 12,
+              color: "rgba(255, 255, 255, 0.5)",
+            },
+            splitLine: { show: false },
+          },
+          yAxis: {
+            type: "value",
+            min: 0,
+            max: 400,
+            interval: 200,
+            axisLine: { show: false },
+            axisTick: { show: false },
+            axisLabel: {
+              fontFamily: "Pretendard",
+              fontSize: 12,
+              color: "rgba(255, 255, 255, 0.5)",
+            },
+            splitLine: { lineStyle: { color: "rgba(255, 255, 255, 0.08)" } },
+          },
+          series: [
+            {
+              name: "PEAK 데이",
+              type: "line",
+              data: data.peakDay,
+              smooth: true,
+              symbol: "none",
+              lineStyle: { color: "rgba(255, 255, 255, 0.7)", width: 1.5 },
+              itemStyle: { color: "rgba(255, 255, 255, 0.7)" },
+            },
+            {
+              name: "금월 PEAK",
+              type: "line",
+              data: data.monthPeak,
+              smooth: true,
+              symbol: "none",
+              lineStyle: { color: "#5bdcc6", width: 1.5 },
+              itemStyle: { color: "#5bdcc6" },
+            },
+            {
+              name: "금일",
+              type: "line",
+              data: data.today,
+              smooth: true,
+              symbol: "none",
+              lineStyle: { color: "#00cded", width: 1.5 },
+              itemStyle: { color: "#00cded" },
+            },
+          ],
+        };
+
+        chartInstance.setOption(option, true);
+      }
+
+      // ===========================
+      // Mock Data
+      // ===========================
+
+      function loadMockData() {
+        renderChart({
+          timestamps: [
+            "08:00",
+            "09:00",
+            "10:00",
+            "11:00",
+            "12:00",
+            "13:00",
+            "14:00",
+            "15:00",
+            "16:00",
+          ],
+          peakDay: [180, 200, 210, 195, 190, 185, 180, 175, 170],
+          monthPeak: [120, 130, 140, 135, 125, 150, 160, 155, 180],
+          today: [30, 40, 35, 50, 45, 60, 275, 280, 350],
+        });
+      }
+
+      function loadMockData2() {
+        renderChart({
+          timestamps: [
+            "08:00",
+            "09:00",
+            "10:00",
+            "11:00",
+            "12:00",
+            "13:00",
+            "14:00",
+            "15:00",
+            "16:00",
+          ],
+          peakDay: [160, 180, 190, 175, 170, 165, 160, 155, 150],
+          monthPeak: [100, 110, 120, 115, 105, 130, 140, 135, 160],
+          today: [50, 60, 55, 70, 65, 80, 195, 200, 250],
+        });
+      }
+
+      // Auto-load
+      loadMockData();
+    </script>
+  </body>
+</html>

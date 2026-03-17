@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Symbol - Preview</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            background: #1a1a2e;
+            font-family: 'Pretendard', sans-serif;
+            padding: 40px;
+        }
+
+        /* ===== component.css (flattened for preview) ===== */
+        #symbol-container {
+            width: 141px;
+            height: 143.57px;
+            overflow: auto;
+        }
+        #symbol-container .symbol-group {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            align-items: center;
+            justify-content: center;
+        }
+
+        /* Icon */
+        #symbol-container .symbol-icon {
+            width: 70px;
+            height: 98.57px;
+            position: relative;
+            opacity: 0.5;
+        }
+        #symbol-container .symbol-base,
+        #symbol-container .symbol-active {
+            position: absolute;
+            display: block;
+            width: 100%;
+            height: 100%;
+        }
+        #symbol-container .symbol-base { display: block; }
+        #symbol-container .symbol-active { display: none; }
+        #symbol-container .symbol-union {
+            position: absolute;
+            inset: 0;
+            mix-blend-mode: multiply;
+            display: none;
+        }
+        #symbol-container .symbol-union-img {
+            position: absolute;
+            display: block;
+            width: 100%;
+            height: 100%;
+        }
+
+        /* Label */
+        #symbol-container .symbol-label {
+            display: flex;
+            align-items: flex-end;
+            justify-content: center;
+            padding: 7px 22px;
+            background: rgba(153, 153, 153, 0.2);
+            border-radius: 8px;
+            position: relative;
+        }
+        #symbol-container .symbol-label-inner-shadow {
+            position: absolute;
+            inset: 0;
+            border-radius: inherit;
+            pointer-events: none;
+            box-shadow:
+                inset 1px 1px 1px 0px rgba(84, 105, 104, 0.35),
+                inset -1px 1px 1px 0px rgba(84, 105, 104, 0.35),
+                inset 0px 1px 0px 0px rgba(84, 105, 104, 0.55);
+        }
+        #symbol-container .symbol-label-text {
+            font-family: 'Pretendard', sans-serif;
+            font-weight: 700;
+            font-size: 16px;
+            line-height: normal;
+            text-align: center;
+            color: #ffffff;
+            width: 97px;
+        }
+
+        /* Status: normal (cyan) */
+        #symbol-container.status-normal .symbol-icon { opacity: 1; }
+        #symbol-container.status-normal .symbol-base { display: none; }
+        #symbol-container.status-normal .symbol-active { display: block; }
+        #symbol-container.status-normal .symbol-union { display: block; }
+        #symbol-container.status-normal .symbol-label { background: rgba(42, 227, 255, 0.2); }
+        #symbol-container.status-normal .symbol-label-inner-shadow {
+            box-shadow:
+                inset 1px 1px 1px 0px rgba(0, 205, 237, 0.35),
+                inset -1px 1px 1px 0px rgba(0, 205, 237, 0.35),
+                inset 0px 1px 0px 0px rgba(0, 205, 237, 0.55);
+        }
+        #symbol-container.status-normal .symbol-label-text { color: #00cded; }
+
+        /* Status: warning (yellow) */
+        #symbol-container.status-warning .symbol-icon { opacity: 1; }
+        #symbol-container.status-warning .symbol-base { display: none; }
+        #symbol-container.status-warning .symbol-active { display: block; }
+        #symbol-container.status-warning .symbol-union { display: block; }
+        #symbol-container.status-warning .symbol-label { background: rgba(253, 208, 31, 0.2); }
+        #symbol-container.status-warning .symbol-label-inner-shadow {
+            box-shadow:
+                inset 1px 1px 1px 0px rgba(253, 208, 31, 0.35),
+                inset -1px 1px 1px 0px rgba(253, 208, 31, 0.35),
+                inset 0px 1px 0px 0px rgba(253, 208, 31, 0.55);
+        }
+        #symbol-container.status-warning .symbol-label-text { color: #e3b604; }
+
+        /* Status: major (orange) */
+        #symbol-container.status-major .symbol-icon { opacity: 1; }
+        #symbol-container.status-major .symbol-base { display: none; }
+        #symbol-container.status-major .symbol-active { display: block; }
+        #symbol-container.status-major .symbol-union { display: block; }
+        #symbol-container.status-major .symbol-label { background: rgba(253, 127, 4, 0.2); }
+        #symbol-container.status-major .symbol-label-inner-shadow {
+            box-shadow:
+                inset 1px 1px 1px 0px rgba(253, 127, 4, 0.35),
+                inset -1px 1px 1px 0px rgba(253, 127, 4, 0.35),
+                inset 0px 1px 0px 0px rgba(253, 127, 4, 0.55);
+        }
+        #symbol-container.status-major .symbol-label-text { color: #e45c08; }
+
+        /* Status: critical (red) */
+        #symbol-container.status-critical .symbol-icon { opacity: 1; }
+        #symbol-container.status-critical .symbol-base { display: none; }
+        #symbol-container.status-critical .symbol-active { display: block; }
+        #symbol-container.status-critical .symbol-union { display: block; }
+        #symbol-container.status-critical .symbol-label { background: rgba(244, 48, 49, 0.2); }
+        #symbol-container.status-critical .symbol-label-inner-shadow {
+            box-shadow:
+                inset 1px 1px 1px 0px rgba(244, 48, 49, 0.35),
+                inset -1px 1px 1px 0px rgba(244, 48, 49, 0.35),
+                inset 0px 1px 0px 0px rgba(244, 48, 49, 0.55);
+        }
+        #symbol-container.status-critical .symbol-label-text { color: #f43031; }
+
+        /* Test controls */
+        .test-controls {
+            margin-top: 30px;
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+        .test-controls button {
+            padding: 6px 14px;
+            border-radius: 4px;
+            border: 1px solid #475569;
+            background: #1e293b;
+            color: #e4ebf6;
+            font-size: 12px;
+            cursor: pointer;
+            font-family: 'Pretendard', sans-serif;
+        }
+        .test-controls button:hover { border-color: #009178; }
+    </style>
+</head>
+<body>
+
+    <!-- ===== Component ===== -->
+    <div id="symbol-container">
+        <div class="symbol-group">
+            <div class="symbol-icon">
+                <img class="symbol-base" src="./assets/1a341b9f2162b6a42ccf9d8931c46a36a996f423.svg" alt="symbol">
+                <img class="symbol-active" src="./assets/e4b2ca488498b47447c25ef47b4f3140e6ad6c9f.svg" alt="symbol">
+                <div class="symbol-union">
+                    <img class="symbol-union-img" src="" alt="">
+                </div>
+            </div>
+            <div class="symbol-label">
+                <span class="symbol-label-text">빅데이터플랫폼</span>
+                <div class="symbol-label-inner-shadow"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ===== Test Controls ===== -->
+    <div class="test-controls">
+        <button onclick="setStatus('default')">Default</button>
+        <button onclick="setStatus('normal')">Normal</button>
+        <button onclick="setStatus('warning')">Warning</button>
+        <button onclick="setStatus('major')">Major</button>
+        <button onclick="setStatus('critical')">Critical</button>
+    </div>
+
+<script>
+// ===========================
+// Union SVG mapping per status
+// ===========================
+
+const unionAssets = {
+    normal: './assets/db0bb541496ad4daac7fbfc191b07309f6e784c0.svg',
+    warning: './assets/527fde6aa9c4b1a03be02679e3403f4c5da57b5d.svg',
+    major: './assets/67bf4741cae12c73fc194f587a95a57fa2e17a80.svg',
+    critical: './assets/2f597b6ded00aa587429c059bcbbe8077537e7b5.svg',
+};
+
+function setStatus(status) {
+    const container = document.getElementById('symbol-container');
+
+    // Update status class
+    container.className = container.className.replace(/\bstatus-\w+\b/g, '').trim();
+    if (status !== 'default') {
+        container.classList.add(`status-${status}`);
+    }
+
+    // Update union overlay SVG
+    const unionImg = container.querySelector('.symbol-union-img');
+    if (unionImg) {
+        unionImg.src = unionAssets[status] || '';
+    }
+}
+</script>
+
+</body>
+</html>

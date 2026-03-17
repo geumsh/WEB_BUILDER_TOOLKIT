@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chart2 - Preview</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css">
+    <script src="https://cdn.jsdelivr.net/npm/echarts@5/dist/echarts.min.js"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { background: #0f1117; font-family: 'Pretendard', sans-serif; padding: 20px; }
+
+        /* ===== component.css (flattened) ===== */
+        #chart2-container { width: 831px; height: 350px; overflow: auto; }
+        #chart2-container .block {
+            width: 100%; height: 100%; padding: 14px 24px 13px 24px;
+            border: 1.5px solid #004e42; border-radius: 15px;
+            background-image: linear-gradient(229.581deg, rgba(3,28,24,0.1) 0.80733%, rgba(0,78,66,0.2) 48.298%, rgba(3,28,24,0.1) 97.404%);
+            display: flex; flex-direction: column; gap: 8px; align-items: flex-start; position: relative; box-sizing: border-box;
+        }
+        #chart2-container .block-inner-shadow { position: absolute; inset: 0; pointer-events: none; border-radius: inherit; box-shadow: inset -6px -6px 12px 0px rgba(255,255,255,0.25), inset 6px 6px 12px 0px rgba(0,0,0,0.25); }
+        #chart2-container .group { display: flex; flex-direction: column; gap: 8px; width: 100%; height: 100%; }
+        #chart2-container .header { display: flex; align-items: center; justify-content: space-between; width: 100%; height: 38px; flex-shrink: 0; }
+        #chart2-container .title { display: flex; gap: 9px; align-items: center; }
+        #chart2-container .title-icon { width: 16.681px; height: 18.27px; position: relative; }
+        #chart2-container .title-icon img { position: absolute; display: block; max-width: none; width: 100%; height: 100%; }
+        #chart2-container .title-text { font-family: 'Pretendard', sans-serif; font-weight: 600; font-size: 18px; line-height: normal; color: #f2f9ef; white-space: nowrap; }
+        #chart2-container .action { display: flex; gap: 4px; align-items: center; }
+        #chart2-container .btn { display: flex; align-items: center; justify-content: center; padding: 4px 16px; border-radius: 6px; background: #30403b; cursor: pointer; }
+        #chart2-container .btn-text { font-family: 'Pretendard', sans-serif; font-weight: 400; font-size: 15px; line-height: normal; color: #6f8c83; text-align: right; white-space: nowrap; }
+        #chart2-container .btn.active { background: #162420; border: 0.75px solid #009178; }
+        #chart2-container .btn.active .btn-text { font-weight: 500; color: #5bdcc6; }
+        #chart2-container .container { display: flex; flex-direction: column; gap: 11px; align-items: center; justify-content: center; width: 100%; flex: 1; min-height: 0; }
+        #chart2-container .contents { display: flex; flex-direction: column; gap: 3px; align-items: flex-start; width: 100%; flex: 1; min-height: 0; }
+        #chart2-container .date-row { display: flex; align-items: center; justify-content: flex-end; width: 100%; flex-shrink: 0; }
+        #chart2-container .date-box { display: flex; gap: 6px; align-items: center; justify-content: center; padding: 4px 16px; background: #162420; border-radius: 6px; }
+        #chart2-container .date-label { font-family: 'Pretendard', sans-serif; font-weight: 500; font-size: 14px; line-height: normal; color: #999; white-space: nowrap; }
+        #chart2-container .date-value { font-family: 'Pretendard', sans-serif; font-weight: 500; font-size: 14px; line-height: normal; color: #c3dad6; text-align: right; white-space: nowrap; }
+        #chart2-container .chart-container { width: 100%; flex: 1; min-height: 0; }
+        #chart2-container .legend { display: flex; gap: 16px; align-items: center; padding: 5px 13px; background: #162420; border: 1px solid #666; border-radius: 50px; position: relative; flex-shrink: 0; }
+        #chart2-container .legend-inner-shadow { position: absolute; inset: 0; pointer-events: none; border-radius: inherit; box-shadow: inset 0px 0px 7px 0px rgba(0,0,0,0.5); }
+        #chart2-container .legend-item { display: flex; gap: 4px; align-items: center; }
+        #chart2-container .legend-dot { width: 4px; height: 4px; border-radius: 50%; flex-shrink: 0; }
+        #chart2-container .legend-text { font-family: 'Pretendard', sans-serif; font-weight: 500; font-size: 13px; line-height: normal; color: #ddd; white-space: nowrap; }
+
+        .test-controls { margin-top: 20px; display: flex; gap: 8px; }
+        .test-controls button { padding: 6px 14px; border-radius: 4px; border: 1px solid #475569; background: #1e293b; color: #e4ebf6; font-size: 12px; cursor: pointer; font-family: 'Pretendard', sans-serif; }
+        .test-controls button:hover { border-color: #009178; }
+    </style>
+</head>
+<body>
+    <div id="chart2-container">
+        <div class="block">
+            <div class="group">
+                <div class="header">
+                    <div class="title">
+                        <div class="title-icon"><img src="./assets/a3c2ab6590a36270718937ec11e700f8f2584c7e.svg" alt="icon"></div>
+                        <span class="title-text">시간대별 거래추이</span>
+                    </div>
+                    <div class="action">
+                        <div class="btn active" data-tab="all"><span class="btn-text">전체</span></div>
+                        <div class="btn" data-tab="product"><span class="btn-text">상품</span></div>
+                        <div class="btn" data-tab="1q"><span class="btn-text">1Q</span></div>
+                    </div>
+                </div>
+                <div class="container">
+                    <div class="contents">
+                        <div class="date-row">
+                            <div class="date-box">
+                                <span class="date-label">PEAK일</span>
+                                <span class="date-value">2025/08/05</span>
+                            </div>
+                        </div>
+                        <div class="chart-container"></div>
+                    </div>
+                    <div class="legend">
+                        <div class="legend-item"><span class="legend-dot" style="background:#f43031;"></span><span class="legend-text">역대픽</span></div>
+                        <div class="legend-item"><span class="legend-dot" style="background:#5bdcc6;"></span><span class="legend-text">연중최고픽</span></div>
+                        <div class="legend-item"><span class="legend-dot" style="background:#00cded;"></span><span class="legend-text">월픽</span></div>
+                        <div class="legend-item"><span class="legend-dot" style="background:#8b7cf6;"></span><span class="legend-text">전일</span></div>
+                        <div class="legend-item"><span class="legend-dot" style="background:#ffaa00;"></span><span class="legend-text">금일</span></div>
+                        <div class="legend-inner-shadow"></div>
+                    </div>
+                </div>
+            </div>
+            <div class="block-inner-shadow"></div>
+        </div>
+    </div>
+
+    <div class="test-controls">
+        <button onclick="loadMockData()">Load Data</button>
+        <button onclick="loadMockData2()">Update Data</button>
+    </div>
+
+<script>
+const chartEl = document.querySelector('#chart2-container .chart-container');
+const chart = echarts.init(chartEl);
+
+// Tab switching
+document.getElementById('chart2-container').addEventListener('click', (e) => {
+    const btn = e.target.closest('.btn');
+    if (!btn || !btn.dataset.tab) return;
+    document.querySelectorAll('#chart2-container .btn').forEach(b => b.classList.toggle('active', b === btn));
+});
+
+function renderChart(data) {
+    const series = [
+        { name: '역대픽', color: '#f43031' },
+        { name: '연중최고픽', color: '#5bdcc6' },
+        { name: '월픽', color: '#00cded' },
+        { name: '전일', color: '#8b7cf6' },
+        { name: '금일', color: '#ffaa00' },
+    ].map((s, i) => ({
+        name: s.name, type: 'line', data: data.series[i],
+        smooth: false, symbol: 'none',
+        lineStyle: { color: s.color, width: 1.5 },
+        itemStyle: { color: s.color },
+    }));
+
+    chart.setOption({
+        grid: { top: 5, right: 5, bottom: 25, left: 40 },
+        tooltip: {
+            trigger: 'axis',
+            backgroundColor: 'rgba(0,145,120,0.2)', borderColor: 'transparent',
+            textStyle: { fontFamily: 'Pretendard', fontSize: 13, fontWeight: 600, color: '#fff' },
+            axisPointer: { type: 'line', lineStyle: { color: 'rgba(0,145,120,0.5)', width: 2 } },
+        },
+        xAxis: {
+            type: 'category', data: data.timestamps,
+            axisLine: { show: false }, axisTick: { show: false },
+            axisLabel: { fontFamily: 'Pretendard', fontSize: 12, color: '#ccc' },
+            splitLine: { show: false },
+        },
+        yAxis: {
+            type: 'value', min: 0, max: 1800, interval: 600,
+            axisLine: { show: false }, axisTick: { show: false },
+            axisLabel: { fontFamily: 'Pretendard', fontSize: 12, color: '#ccc', formatter: v => v.toLocaleString() },
+            splitLine: { lineStyle: { color: 'rgba(255,255,255,0.08)', type: 'dashed' } },
+        },
+        series: series,
+    }, true);
+}
+
+function genWave(base, amp, len) {
+    return Array.from({ length: len }, (_, i) => Math.max(0, Math.round(base + amp * Math.sin(i * 0.5) + (Math.random() - 0.5) * amp * 0.6)));
+}
+
+function loadMockData() {
+    const ts = ['00','01','02','03','04','05','06','07','08','09','10','11','12','13','14','15','16','17','18','19','20','21','22','23'];
+    renderChart({
+        timestamps: ts,
+        series: [
+            [1600,1500,1100,900,700,500,400,500,700,800,900,850,800,750,700,650,700,750,800,700,650,600,580,550],
+            [900,850,800,750,700,650,600,620,680,750,800,780,720,700,680,660,640,680,720,700,650,630,610,600],
+            [400,380,350,320,300,280,260,290,350,420,500,480,450,430,600,580,560,540,520,500,480,460,440,420],
+            [300,280,250,220,200,180,160,180,220,280,350,380,400,420,450,500,480,460,440,420,400,380,360,340],
+            [100,90,80,70,60,50,40,50,80,120,160,180,200,220,250,280,260,240,220,200,180,160,140,120],
+        ],
+    });
+}
+
+function loadMockData2() {
+    const ts = ['00','01','02','03','04','05','06','07','08','09','10','11','12','13','14','15','16','17','18','19','20','21','22','23'];
+    renderChart({
+        timestamps: ts,
+        series: [
+            [1400,1300,1000,800,600,450,380,480,680,780,880,830,780,730,680,630,680,730,780,680,630,580,560,530],
+            [800,750,700,650,600,550,500,520,580,650,700,680,620,600,580,560,540,580,620,600,550,530,510,500],
+            [350,330,300,270,250,230,210,240,300,370,450,430,400,380,550,530,510,490,470,450,430,410,390,370],
+            [250,230,200,170,150,130,110,130,170,230,300,330,350,370,400,450,430,410,390,370,350,330,310,290],
+            [80,70,60,50,40,30,20,30,60,100,140,160,180,200,230,260,240,220,200,180,160,140,120,100],
+        ],
+    });
+}
+
+loadMockData();
+</script>
+</body>
+</html>

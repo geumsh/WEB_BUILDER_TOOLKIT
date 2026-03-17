@@ -1,0 +1,526 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FrameHeader - Preview</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            background: #0f1117;
+            font-family: 'Pretendard', sans-serif;
+        }
+
+        /* ===== component.css 인라인 ===== */
+        #frame-header-container {
+            width: 1920px;
+            height: 80px;
+            overflow: auto;
+            background: #162420;
+            position: relative;
+        }
+        #frame-header-container .frame-header {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 1860px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        /* GNB */
+        #frame-header-container .gnb {
+            display: flex;
+            align-items: center;
+            gap: 10.677px;
+            flex-shrink: 0;
+        }
+        #frame-header-container .btn-gnb {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 14px 32px;
+            background: #162420;
+            border: 1px solid #384645;
+            border-radius: 50px;
+            flex-shrink: 0;
+            cursor: pointer;
+        }
+        #frame-header-container .btn-gnb .btn-text {
+            font-family: 'Pretendard', sans-serif;
+            font-weight: 500;
+            font-size: 16px;
+            line-height: normal;
+            color: #829291;
+            white-space: nowrap;
+        }
+        #frame-header-container .btn-gnb.active {
+            padding: 14px 26px;
+            border-radius: 40px;
+            position: relative;
+            border: none;
+            overflow: hidden;
+        }
+        #frame-header-container .btn-gnb.active .btn-bg {
+            position: absolute;
+            inset: 0;
+            pointer-events: none;
+            border-radius: 40px;
+        }
+        #frame-header-container .btn-gnb.active .btn-bg-solid {
+            position: absolute;
+            inset: 0;
+            background: #004e42;
+            border-radius: 40px;
+        }
+        #frame-header-container .btn-gnb.active .btn-bg-gradient {
+            position: absolute;
+            inset: 0;
+            border-radius: 40px;
+            mix-blend-mode: overlay;
+            background-image: url("data:image/svg+xml;utf8,<svg viewBox='0 0 147 47' xmlns='http://www.w3.org/2000/svg' preserveAspectRatio='none'><rect x='0' y='0' height='100%25' width='100%25' fill='url(%23grad)' opacity='0.5'/><defs><radialGradient id='grad' gradientUnits='userSpaceOnUse' cx='0' cy='0' r='10' gradientTransform='matrix(-3.7532e-15 2.35 -7.35 1.3641e-14 73.5 49.238)'><stop stop-color='rgba(224,255,238,1)' offset='0'/><stop stop-color='rgba(255,255,255,0)' offset='1'/></radialGradient></defs></svg>");
+        }
+        #frame-header-container .btn-gnb.active .btn-border-overlay {
+            position: absolute;
+            inset: 0;
+            pointer-events: none;
+            border-radius: inherit;
+            box-shadow: inset 0px 1px 4px 0px rgba(128, 188, 183, 0.5),
+                        inset 0px 1px 0px 0px rgba(128, 188, 183, 0.5);
+        }
+        #frame-header-container .btn-gnb.active .btn-content {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            position: relative;
+            flex-shrink: 0;
+        }
+        #frame-header-container .btn-gnb.active .btn-text {
+            font-weight: 600;
+            color: #f2f9ef;
+        }
+        #frame-header-container .btn-gnb.active .btn-icon {
+            width: 15px;
+            height: 15px;
+            flex-shrink: 0;
+            position: relative;
+        }
+        #frame-header-container .btn-gnb.active .btn-icon img {
+            position: absolute;
+            display: block;
+            max-width: none;
+            width: 100%;
+            height: 100%;
+        }
+
+        /* Time & Actions */
+        #frame-header-container .time-section {
+            position: absolute;
+            right: 0;
+            display: flex;
+            align-items: center;
+            gap: 21.354px;
+            flex-shrink: 0;
+        }
+        #frame-header-container .date-display {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-end;
+            justify-content: center;
+            gap: 2.135px;
+            font-family: 'Pretendard', sans-serif;
+            font-weight: 500;
+            color: #f5fffd;
+            white-space: nowrap;
+        }
+        #frame-header-container .date-display .date-text {
+            font-size: 17.084px;
+            line-height: normal;
+        }
+        #frame-header-container .date-display .time-text {
+            font-size: 21.354px;
+            line-height: normal;
+        }
+        #frame-header-container .header-action-buttons {
+            display: flex;
+            align-items: center;
+            gap: 6.406px;
+            height: 61.928px;
+            flex-shrink: 0;
+        }
+        #frame-header-container .action-btn {
+            width: 42.709px;
+            height: 42.709px;
+            background: #1f2621;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 10.309px;
+            flex-shrink: 0;
+            border: none;
+            cursor: pointer;
+            position: relative;
+        }
+        #frame-header-container .action-btn.btn-user {
+            border: 1.473px solid #009178;
+            border-radius: 12.813px;
+        }
+        #frame-header-container .action-btn .icon-wrapper {
+            position: relative;
+            width: 21.354px;
+            height: 21.354px;
+            flex-shrink: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        #frame-header-container .action-btn .icon-img {
+            width: 18.507px;
+            height: 18.507px;
+            display: block;
+        }
+        #frame-header-container .action-btn .icon-img.logout-icon {
+            transform: rotate(180deg) scaleY(-1);
+        }
+
+        /* Test controls */
+        .test-controls {
+            padding: 20px 40px;
+            display: flex;
+            gap: 8px;
+        }
+        .test-controls button {
+            padding: 6px 14px;
+            border-radius: 4px;
+            border: 1px solid #475569;
+            background: #1e293b;
+            color: #e4ebf6;
+            font-size: 12px;
+            cursor: pointer;
+            font-family: 'Pretendard', sans-serif;
+        }
+        .test-controls button:hover { border-color: #009178; }
+        .event-log {
+            padding: 10px 40px;
+            color: #829291;
+            font-size: 12px;
+            font-family: monospace;
+        }
+        .event-log .log-entry {
+            padding: 2px 0;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- ===== Component ===== -->
+    <div id="frame-header-container">
+        <div class="frame-header">
+            <!-- GNB Navigation -->
+            <div class="gnb"></div>
+
+            <!-- Time & Actions -->
+            <div class="time-section">
+                <div class="date-display">
+                    <span class="date-text"></span>
+                    <span class="time-text"></span>
+                </div>
+                <div class="header-action-buttons">
+                    <div class="action-btn" data-action="logout">
+                        <div class="icon-wrapper">
+                            <img class="icon-img logout-icon" src="./assets/34293ac75e74381de2c0ae9316d22d181deb7348.svg" alt="logout">
+                        </div>
+                    </div>
+                    <div class="action-btn btn-user" data-action="user">
+                        <div class="icon-wrapper">
+                            <img class="icon-img" src="./assets/64a1831eed80a8ed563feb5105ee8f73b192cd1b.svg" alt="user">
+                        </div>
+                    </div>
+                    <div class="action-btn" data-action="settings">
+                        <div class="icon-wrapper">
+                            <img class="icon-img" src="./assets/ea7e6e5b1031c2d7eda89cb7f3fef70d065bf28b.svg" alt="settings">
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ===== Test Controls ===== -->
+    <div class="test-controls">
+        <button onclick="sendMockData(mockCtx, mockMenuData)">Load Menus</button>
+        <button onclick="sendMockData(mockCtx, mockMenuDataChanged)">Change Active → 종합현황</button>
+    </div>
+    <div class="event-log" id="eventLog"></div>
+
+<script>
+// ===========================
+// Mock Dependencies
+// ===========================
+
+const fx = {
+    go: (arr, ...fns) => fns.reduce((acc, fn) => fn(acc), arr),
+    each: (fn) => (arr) => { arr.forEach(fn); return arr; },
+    map: (fn) => (arr) => arr.map(fn)
+};
+
+const GlobalDataPublisher = {
+    _subs: {},
+    subscribe(topic, ctx, fn) {
+        if (!this._subs[topic]) this._subs[topic] = [];
+        this._subs[topic].push({ ctx, fn });
+    },
+    unsubscribe(topic, ctx) {
+        if (this._subs[topic]) {
+            this._subs[topic] = this._subs[topic].filter(s => s.ctx !== ctx);
+        }
+    }
+};
+
+const Wkit = {
+    bindEvents(ctx, events) {
+        if (!events) return;
+        Object.entries(events).forEach(([eventType, selectorMap]) => {
+            Object.entries(selectorMap).forEach(([selector, customEventName]) => {
+                ctx.appendElement.addEventListener(eventType, (e) => {
+                    const target = e.target.closest(selector);
+                    if (target) {
+                        const detail = { ...target.dataset };
+                        ctx.appendElement.dispatchEvent(
+                            new CustomEvent(customEventName.replace('@', ''), { detail, bubbles: true })
+                        );
+                    }
+                });
+            });
+        });
+    },
+    removeCustomEvents() {}
+};
+
+// ===========================
+// Mock Data
+// ===========================
+
+const mockMenuData = {
+    response: {
+        data: {
+            TBD_menus: [
+                { TBD_key: 'overview', TBD_label: '종합현황' },
+                { TBD_key: 'executive', TBD_label: '임원현황' },
+                { TBD_key: 'admin', TBD_label: '관리자현황' },
+                { TBD_key: 'system', TBD_label: '시스템현황' },
+                { TBD_key: 'event', TBD_label: '이벤트현황' },
+                { TBD_key: 'floor', TBD_label: '상면관리' },
+                { TBD_key: 'operation', TBD_label: '운영관리' }
+            ],
+            TBD_activeKey: 'system'
+        }
+    }
+};
+
+const mockMenuDataChanged = {
+    response: {
+        data: {
+            TBD_menus: [
+                { TBD_key: 'overview', TBD_label: '종합현황' },
+                { TBD_key: 'executive', TBD_label: '임원현황' },
+                { TBD_key: 'admin', TBD_label: '관리자현황' },
+                { TBD_key: 'system', TBD_label: '시스템현황' },
+                { TBD_key: 'event', TBD_label: '이벤트현황' },
+                { TBD_key: 'floor', TBD_label: '상면관리' },
+                { TBD_key: 'operation', TBD_label: '운영관리' }
+            ],
+            TBD_activeKey: 'overview'
+        }
+    }
+};
+
+// ===========================
+// Event Log Helper
+// ===========================
+
+function logEvent(name, detail) {
+    const log = document.getElementById('eventLog');
+    const entry = document.createElement('div');
+    entry.className = 'log-entry';
+    entry.textContent = `[${new Date().toLocaleTimeString()}] ${name}: ${JSON.stringify(detail)}`;
+    log.prepend(entry);
+    if (log.children.length > 10) log.removeChild(log.lastChild);
+}
+
+// ===========================
+// Initialize Component
+// ===========================
+
+function createMockCtx(containerId) {
+    const container = document.getElementById(containerId);
+    return {
+        appendElement: container,
+        _activeKey: null,
+        _menusData: null,
+        _clockInterval: null,
+        _internalHandlers: {},
+        subscriptions: {}
+    };
+}
+
+const mockCtx = createMockCtx('frame-header-container');
+
+function initComponent(ctx) {
+    const { subscribe } = GlobalDataPublisher;
+    const { bindEvents } = Wkit;
+    const { each, go } = fx;
+
+    const config = {
+        menusKey: 'TBD_menus',
+        activeKeyKey: 'TBD_activeKey',
+        menuFields: {
+            key: 'TBD_key',
+            label: 'TBD_label'
+        },
+        iconSrc: './assets/e1871278b22da1080d53be256d6678d09a0ec9c9.svg'
+    };
+
+    ctx.renderData = renderData.bind(ctx, config);
+    ctx.setActiveMenu = setActiveMenu.bind(ctx, config);
+
+    ctx.subscriptions = { TBD_headerData: ['renderData'] };
+
+    go(
+        Object.entries(ctx.subscriptions),
+        each(([topic, fnList]) =>
+            each(fn => ctx[fn] && subscribe(topic, ctx, ctx[fn]), fnList)
+        )
+    );
+
+    ctx.customEvents = {
+        click: {
+            '.btn-gnb': '@gnbClicked',
+            '.action-btn': '@headerActionClicked'
+        }
+    };
+
+    bindEvents(ctx, ctx.customEvents);
+    setupInternalHandlers.call(ctx);
+    startClock.call(ctx);
+
+    // Listen for events (debug)
+    ctx.appendElement.addEventListener('gnbClicked', (e) => {
+        logEvent('@gnbClicked', e.detail);
+    });
+    ctx.appendElement.addEventListener('headerActionClicked', (e) => {
+        logEvent('@headerActionClicked', e.detail);
+    });
+
+    function renderData(config, { response }) {
+        const { data } = response;
+        if (!data) return;
+
+        const menus = data[config.menusKey];
+        const activeKey = data[config.activeKeyKey];
+
+        if (activeKey !== undefined) this._activeKey = activeKey;
+        if (menus && Array.isArray(menus)) {
+            this._menusData = menus;
+            renderMenus.call(this, config, menus);
+        }
+    }
+
+    function renderMenus(config, menus) {
+        const { menuFields } = config;
+        const gnb = this.appendElement.querySelector('.gnb');
+        if (!gnb) return;
+        gnb.innerHTML = '';
+
+        go(
+            menus,
+            each(menu => {
+                const key = menu[menuFields.key] || '';
+                const label = menu[menuFields.label] || '';
+                const isActive = key === this._activeKey;
+
+                const btn = document.createElement('div');
+                btn.className = 'btn-gnb';
+                btn.dataset.key = key;
+
+                if (isActive) {
+                    btn.classList.add('active');
+                    btn.innerHTML = `
+                        <div class="btn-bg">
+                            <div class="btn-bg-solid"></div>
+                            <div class="btn-bg-gradient"></div>
+                        </div>
+                        <div class="btn-content">
+                            <span class="btn-text">${label}</span>
+                            <div class="btn-icon">
+                                <img src="${config.iconSrc}" alt="">
+                            </div>
+                        </div>
+                        <div class="btn-border-overlay"></div>
+                    `;
+                } else {
+                    btn.innerHTML = `<span class="btn-text">${label}</span>`;
+                }
+
+                gnb.appendChild(btn);
+            })
+        );
+    }
+
+    function setupInternalHandlers() {
+        const root = this.appendElement;
+        this._internalHandlers.gnbClick = (e) => {
+            const btn = e.target.closest('.btn-gnb');
+            if (btn && btn.dataset.key) {
+                this.setActiveMenu(btn.dataset.key);
+            }
+        };
+        root.addEventListener('click', this._internalHandlers.gnbClick);
+    }
+
+    function setActiveMenu(config, key) {
+        if (this._activeKey === key) return;
+        this._activeKey = key;
+        if (this._menusData) renderMenus.call(this, config, this._menusData);
+    }
+
+    function startClock() {
+        const dayNames = ['일', '월', '화', '수', '목', '금', '토'];
+        const dateEl = this.appendElement.querySelector('.date-text');
+        const timeEl = this.appendElement.querySelector('.time-text');
+
+        function updateClock() {
+            const now = new Date();
+            const y = now.getFullYear();
+            const m = String(now.getMonth() + 1).padStart(2, '0');
+            const d = String(now.getDate()).padStart(2, '0');
+            const day = dayNames[now.getDay()];
+            const h = String(now.getHours()).padStart(2, '0');
+            const min = String(now.getMinutes()).padStart(2, '0');
+            const s = String(now.getSeconds()).padStart(2, '0');
+
+            if (dateEl) dateEl.textContent = `${y}-${m}-${d}(${day})`;
+            if (timeEl) timeEl.textContent = `${h}:${min}:${s}`;
+        }
+
+        updateClock();
+        this._clockInterval = setInterval(updateClock, 1000);
+    }
+}
+
+initComponent(mockCtx);
+
+function sendMockData(ctx, data) {
+    ctx.renderData(data);
+}
+
+// Auto-load
+sendMockData(mockCtx, mockMenuData);
+</script>
+
+</body>
+</html>

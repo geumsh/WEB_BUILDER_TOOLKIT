@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chart3 - Preview</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css">
+    <script src="https://cdn.jsdelivr.net/npm/echarts@5/dist/echarts.min.js"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { background: #0f1117; font-family: 'Pretendard', sans-serif; padding: 40px; }
+
+        /* ===== component.css (flattened) ===== */
+        #chart3-container { width: 453.75px; height: 298px; overflow: visible; }
+        #chart3-container .block {
+            width: 100%; height: 100%; padding: 14px 24px 24px 24px;
+            border: 1.5px solid #004e42; border-radius: 14.831px;
+            background-image: linear-gradient(241.358deg, rgba(3,28,24,0.1) 0.80733%, rgba(0,78,66,0.2) 48.298%, rgba(3,28,24,0.1) 97.404%);
+            display: flex; flex-direction: column; gap: 19px; align-items: flex-start; position: relative; box-sizing: border-box;
+        }
+        #chart3-container .block-inner-shadow { position: absolute; inset: 0; pointer-events: none; border-radius: inherit; box-shadow: inset -6px -6px 12px 0px rgba(255,255,255,0.25), inset 6px 6px 12px 0px rgba(0,0,0,0.25); }
+        #chart3-container .group { display: flex; flex-direction: column; gap: 19px; width: 100%; height: 100%; }
+        #chart3-container .header { display: flex; align-items: center; justify-content: space-between; width: 100%; height: 38px; flex-shrink: 0; }
+        #chart3-container .title { display: flex; gap: 9px; align-items: center; }
+        #chart3-container .title-icon { width: 16.681px; height: 18.27px; position: relative; }
+        #chart3-container .title-icon img { position: absolute; display: block; max-width: none; width: 100%; height: 100%; }
+        #chart3-container .title-text { font-family: 'Pretendard', sans-serif; font-weight: 600; font-size: 18px; line-height: normal; color: #f2f9ef; white-space: nowrap; }
+        #chart3-container .frame { display: flex; align-items: center; justify-content: space-between; width: 100%; flex: 1; min-height: 0; }
+        #chart3-container .pie-chart { width: 193.65px; height: 193.65px; flex-shrink: 0; }
+        #chart3-container .info-panel { display: flex; flex-direction: column; align-items: center; justify-content: center; width: 183px; height: 100%; border-radius: 16px; flex-shrink: 0; }
+        #chart3-container .info-title { display: flex; gap: 10px; align-items: flex-end; padding: 10px 0; width: 100%; }
+        #chart3-container .info-label { display: flex; align-items: center; justify-content: center; padding: 5px 14px; width: 53px; background: rgba(153,153,153,0.1); border: 1px solid #223331; border-radius: 8px; box-sizing: border-box; }
+        #chart3-container .info-label-text { font-family: 'Pretendard', sans-serif; font-weight: 500; font-size: 14px; line-height: normal; color: #f1f1f1; white-space: nowrap; }
+        #chart3-container .info-total { display: flex; flex: 1; align-items: center; justify-content: flex-end; }
+        #chart3-container .info-total-value { font-family: 'Pretendard', sans-serif; font-weight: 600; font-size: 34px; line-height: normal; color: #f1f1f1; letter-spacing: -0.68px; white-space: nowrap; }
+        #chart3-container .legend-list { display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 14px 10px; gap: 2px; width: 100%; border: 1px solid rgba(255,255,255,0.15); border-radius: 15px; position: relative; background: rgba(255,255,255,0.05); }
+        #chart3-container .legend-row { display: flex; align-items: center; justify-content: space-between; padding: 4px 10px; width: 100%; border-radius: 7.711px; }
+        #chart3-container .legend-tag { display: flex; align-items: center; gap: 4px; }
+        #chart3-container .legend-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+        #chart3-container .legend-name { font-family: 'Pretendard', sans-serif; font-weight: 500; font-size: 13px; line-height: normal; color: #fff; white-space: nowrap; }
+        #chart3-container .legend-badge { display: flex; align-items: center; justify-content: center; width: 54px; height: 20px; background: rgba(0,78,66,0.2); border: 0.75px solid #009178; border-radius: 40px; box-sizing: border-box; }
+        #chart3-container .legend-badge-value { font-family: 'Pretendard', sans-serif; font-weight: 500; font-size: 13px; line-height: normal; color: #f1f1f1; text-align: center; white-space: nowrap; }
+
+        .test-controls { margin-top: 20px; display: flex; gap: 8px; }
+        .test-controls button { padding: 6px 14px; border-radius: 4px; border: 1px solid #475569; background: #1e293b; color: #e4ebf6; font-size: 12px; cursor: pointer; font-family: 'Pretendard', sans-serif; }
+        .test-controls button:hover { border-color: #009178; }
+    </style>
+</head>
+<body>
+    <div id="chart3-container">
+        <div class="block">
+            <div class="group">
+                <div class="header">
+                    <div class="title">
+                        <div class="title-icon"><img src="./assets/a3c2ab6590a36270718937ec11e700f8f2584c7e.svg" alt="icon"></div>
+                        <span class="title-text">백업현황</span>
+                    </div>
+                </div>
+                <div class="frame">
+                    <div class="pie-chart"></div>
+                    <div class="info-panel">
+                        <div class="info-title">
+                            <div class="info-label"><span class="info-label-text">전체</span></div>
+                            <div class="info-total"><span class="info-total-value"></span></div>
+                        </div>
+                        <div class="legend-list"></div>
+                    </div>
+                </div>
+            </div>
+            <div class="block-inner-shadow"></div>
+        </div>
+    </div>
+
+    <div class="test-controls">
+        <button onclick="loadMockData()">Load Data</button>
+        <button onclick="loadMockData2()">Update Data</button>
+    </div>
+
+<script>
+const chartEl = document.querySelector('#chart3-container .pie-chart');
+const chart = echarts.init(chartEl);
+
+function renderAll(items) {
+    // Total
+    const total = items.reduce((s, i) => s + i.value, 0);
+    document.querySelector('#chart3-container .info-total-value').textContent = total.toLocaleString();
+
+    // Legend list
+    const list = document.querySelector('#chart3-container .legend-list');
+    list.innerHTML = items.map(item => `
+        <div class="legend-row">
+            <div class="legend-tag">
+                <span class="legend-dot" style="background:${item.color};"></span>
+                <span class="legend-name">${item.name}</span>
+            </div>
+            <div class="legend-badge">
+                <span class="legend-badge-value">${item.value.toLocaleString()}</span>
+            </div>
+        </div>
+    `).join('');
+
+    // Pie chart
+    chart.setOption({
+        series: [{
+            type: 'pie',
+            radius: ['55%', '85%'],
+            center: ['50%', '50%'],
+            avoidLabelOverlap: false,
+            label: { show: false },
+            labelLine: { show: false },
+            emphasis: { scale: true, scaleSize: 5 },
+            itemStyle: { borderColor: 'rgba(0,0,0,0.3)', borderWidth: 2 },
+            data: items.map(i => ({ name: i.name, value: i.value, itemStyle: { color: i.color } })),
+        }],
+        tooltip: {
+            trigger: 'item',
+            confine: false,
+            appendToBody: true,
+            backgroundColor: 'rgba(0,145,120,0.2)',
+            borderColor: 'transparent',
+            textStyle: { fontFamily: 'Pretendard', fontSize: 13, fontWeight: 600, color: '#fff' },
+            formatter: '{b}: {c} ({d}%)',
+        },
+    }, true);
+}
+
+function loadMockData() {
+    renderAll([
+        { name: '성공', value: 9476, color: '#5bdcc6' },
+        { name: '진행중', value: 1123, color: '#00cded' },
+        { name: '실패', value: 8, color: '#f43031' },
+    ]);
+}
+
+function loadMockData2() {
+    renderAll([
+        { name: '성공', value: 8200, color: '#5bdcc6' },
+        { name: '진행중', value: 2300, color: '#00cded' },
+        { name: '실패', value: 107, color: '#f43031' },
+    ]);
+}
+
+loadMockData();
+</script>
+</body>
+</html>
