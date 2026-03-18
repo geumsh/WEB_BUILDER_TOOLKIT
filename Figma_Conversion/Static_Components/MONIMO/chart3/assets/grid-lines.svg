@@ -1,0 +1,8 @@
+<svg preserveAspectRatio="none" width="100%" height="100%" overflow="visible" style="display: block;" viewBox="0 0 349.115 77.9417" fill="none" xmlns="http://www.w3.org/2000/svg">
+<g id="line">
+<rect id="base-line" x="4.24274e-05" y="77.9417" width="1.01154" height="349.115" transform="rotate(-90 4.24274e-05 77.9417)" fill="var(--fill-0, #DDDDDD)" fill-opacity="0.3"/>
+<line id="line03" x1="4.24274e-05" y1="51.2025" x2="349.115" y2="51.2025" stroke="var(--stroke-0, white)" stroke-opacity="0.2" stroke-width="0.505771" stroke-dasharray="1.01 1.01"/>
+<line id="line02" x1="4.24274e-05" y1="25.7276" x2="349.115" y2="25.7276" stroke="var(--stroke-0, white)" stroke-opacity="0.2" stroke-width="0.505771" stroke-dasharray="1.01 1.01"/>
+<line id="line01" y1="0.252886" x2="349.115" y2="0.252886" stroke="var(--stroke-0, white)" stroke-opacity="0.2" stroke-width="0.505771" stroke-dasharray="1.01 1.01"/>
+</g>
+</svg>

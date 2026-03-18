@@ -1,0 +1,241 @@
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Chart3 - Preview (ECharts)</title>
+    <script src="https://cdn.jsdelivr.net/npm/echarts@5/dist/echarts.min.js"></script>
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+      body {
+        background: #1a1a1a;
+        font-family: "Samsung Sharp Sans", sans-serif;
+      }
+
+      #chart3-container {
+        width: 419px;
+        height: 165px;
+        overflow: auto;
+      }
+      #chart3-container .chart3-group {
+        position: relative;
+        width: 100%;
+        height: 100%;
+      }
+      #chart3-container .chart3-title {
+        position: absolute;
+        top: 0;
+        left: 0;
+        height: 9px;
+        display: flex;
+        gap: 8px;
+        align-items: center;
+      }
+      #chart3-container .chart3-title-bullet {
+        width: 6px;
+        height: 6px;
+        flex-shrink: 0;
+        position: relative;
+      }
+      #chart3-container .chart3-title-bullet img {
+        position: absolute;
+        display: block;
+        max-width: none;
+        width: 100%;
+        height: 100%;
+      }
+      #chart3-container .chart3-title-text {
+        font-family: "Samsung Sharp Sans", sans-serif;
+        font-weight: 500;
+        font-size: 13px;
+        line-height: normal;
+        color: #fff;
+        white-space: nowrap;
+      }
+      #chart3-container .chart3-area {
+        position: absolute;
+        top: 21px;
+        left: 0;
+        width: 419px;
+        height: 144px;
+      }
+
+      .test-controls {
+        padding: 20px 30px;
+        display: flex;
+        gap: 8px;
+      }
+      .test-controls button {
+        padding: 6px 14px;
+        border-radius: 4px;
+        border: 1px solid #475569;
+        background: #1e293b;
+        color: #e4ebf6;
+        font-size: 12px;
+        cursor: pointer;
+      }
+      .test-controls button:hover {
+        border-color: #0068ff;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="chart3-container">
+      <div class="chart3-group">
+        <div class="chart3-title">
+          <div class="chart3-title-bullet">
+            <img src="./assets/bullet-title.svg" alt="" />
+          </div>
+          <span class="chart3-title-text"></span>
+        </div>
+        <div class="chart3-area"></div>
+      </div>
+    </div>
+
+    <div class="test-controls">
+      <button onclick="loadLogicalRead()">Logical Read</button>
+      <button onclick="loadPhysicalRead()">Physical Read</button>
+    </div>
+
+    <script>
+      const container = document.getElementById("chart3-container");
+      const chart = echarts.init(container.querySelector(".chart3-area"));
+
+      function buildOption(xLabels, seriesArr) {
+        return {
+          grid: { top: 15, right: 15, bottom: 40, left: 35 },
+          xAxis: {
+            type: "category",
+            data: xLabels,
+            axisLine: { show: true, lineStyle: { color: "#444" } },
+            axisTick: { show: false },
+            axisLabel: {
+              color: "#cdcfd2",
+              fontSize: 9,
+              interval: function (i) {
+                return (
+                  i === 0 ||
+                  i === Math.floor(xLabels.length / 2) ||
+                  i === xLabels.length - 1
+                );
+              },
+            },
+            splitLine: { show: false },
+          },
+          yAxis: {
+            type: "value",
+            axisLine: { show: false },
+            axisTick: { show: false },
+            axisLabel: { color: "#cdcfd2", fontSize: 9 },
+            splitLine: {
+              show: true,
+              lineStyle: { color: "#333", type: "dashed", width: 1 },
+            },
+          },
+          legend: {
+            show: true,
+            bottom: 0,
+            left: "42.5%",
+            itemWidth: 10,
+            itemHeight: 2,
+            textStyle: { color: "#cdcfd2", fontSize: 8 },
+            data: seriesArr.map((s) => ({
+              name: s.name,
+              itemStyle: { color: s.color },
+            })),
+          },
+          series: seriesArr.map((s) => ({
+            type: "line",
+            name: s.name,
+            data: s.data,
+            smooth: true,
+            symbol: "none",
+            lineStyle: { color: s.color, width: 1.5 },
+            itemStyle: { color: s.color },
+          })),
+          tooltip: {
+            trigger: "axis",
+            backgroundColor: "rgba(30,30,30,0.9)",
+            borderColor: "#475569",
+            textStyle: { color: "#e4ebf6", fontSize: 10 },
+          },
+        };
+      }
+
+      function render(data) {
+        container.querySelector(".chart3-title-text").textContent = data.title;
+        chart.setOption(buildOption(data.xLabels, data.series), true);
+      }
+
+      function loadLogicalRead() {
+        render({
+          title: "Logical Read(Blocks)",
+          xLabels: [
+            "15:00",
+            "15:02",
+            "15:04",
+            "15:06",
+            "15:08",
+            "15:10",
+            "15:12",
+            "15:14",
+            "15:16",
+            "15:18",
+            "15:20",
+          ],
+          series: [
+            {
+              name: "1.85",
+              color: "#0068ff",
+              data: [1.3, 1.4, 1.5, 1.7, 1.9, 2.0, 1.95, 1.8, 1.6, 1.4, 1.3],
+            },
+            {
+              name: "1.81",
+              color: "#77dea4",
+              data: [1.2, 1.3, 1.3, 1.5, 1.7, 1.8, 1.75, 1.6, 1.4, 1.3, 1.2],
+            },
+          ],
+        });
+      }
+
+      function loadPhysicalRead() {
+        render({
+          title: "Physical Read(Blocks)",
+          xLabels: [
+            "10:00",
+            "10:02",
+            "10:04",
+            "10:06",
+            "10:08",
+            "10:10",
+            "10:12",
+            "10:14",
+            "10:16",
+            "10:18",
+            "10:20",
+          ],
+          series: [
+            {
+              name: "0.52",
+              color: "#0068ff",
+              data: [0.3, 0.4, 0.5, 0.6, 0.55, 0.5, 0.45, 0.4, 0.35, 0.3, 0.3],
+            },
+            {
+              name: "0.48",
+              color: "#77dea4",
+              data: [
+                0.25, 0.3, 0.35, 0.5, 0.45, 0.4, 0.38, 0.35, 0.3, 0.28, 0.25,
+              ],
+            },
+          ],
+        });
+      }
+
+      loadLogicalRead();
+    </script>
+  </body>
+</html>

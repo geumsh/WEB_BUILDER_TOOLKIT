@@ -1,0 +1,150 @@
+<!doctype html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Header - Preview</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { background: #121212; font-family: 'Samsung Sharp Sans', sans-serif; }
+
+        /* ===== component.css (flattened) ===== */
+        #header-container { width: 1920px; height: 75px; overflow: hidden; }
+        #header-container .header { width: 100%; height: 100%; position: relative; }
+        #header-container .header-bg { position: absolute; inset: 0; background: #1e1e1e; box-shadow: 0px -2px 6px 0px rgba(148,163,184,0.25); }
+        #header-container .gnb { position: absolute; top: 2.78%; right: 1.52%; bottom: 2.78%; left: 1.55%; display: flex; align-items: center; justify-content: space-between; }
+        #header-container .menu { position: absolute; left: 50%; transform: translateX(-50%); display: flex; gap: 29px; align-items: center; flex-shrink: 0; }
+        #header-container .ci { display: flex; gap: 8px; align-items: center; flex-shrink: 0; }
+        #header-container .ci-text { font-family: 'Samsung Sharp Sans', sans-serif; font-weight: 400; font-size: 12px; line-height: normal; color: #fff; white-space: nowrap; }
+        #header-container .menu-item { display: flex; align-items: center; justify-content: center; width: 152px; height: 40px; padding: 8px 22px; border-radius: 15px; flex-shrink: 0; cursor: pointer; }
+        #header-container .menu-item-text { font-family: 'Samsung Sharp Sans', sans-serif; font-weight: 400; font-size: 16px; line-height: normal; color: #b1b7bf; text-align: center; white-space: nowrap; }
+        #header-container .menu-item.active { background: linear-gradient(to bottom, rgba(0,104,255,0.5), rgba(0,104,255,0)); position: relative; }
+        #header-container .menu-item.active .menu-item-text { font-weight: 500; font-size: 17px; line-height: 24px; color: #fff; letter-spacing: 0.085px; }
+        #header-container .menu-item.active .menu-item-glow { position: absolute; inset: 0; pointer-events: none; border-radius: inherit; box-shadow: inset 0px 0px 14px 0px #0068ff; }
+        #header-container .info { display: flex; gap: 45px; align-items: center; flex-shrink: 0; }
+        #header-container .user-name { display: flex; gap: 8px; align-items: center; flex-shrink: 0; }
+        #header-container .user-name-text { font-family: 'Samsung Sharp Sans', sans-serif; font-weight: 500; font-size: 17px; line-height: normal; color: #fff; letter-spacing: -0.34px; white-space: nowrap; }
+        #header-container .user-name-text .name { color: #94a3b8; }
+        #header-container .user-name-text .suffix { font-weight: 400; }
+        #header-container .user-icon { width: 15.64px; height: 15.64px; position: relative; }
+        #header-container .user-icon img { position: absolute; display: block; max-width: none; width: 100%; height: 100%; }
+        #header-container .info-group { display: flex; gap: 21px; align-items: center; flex-shrink: 0; }
+        #header-container .day { display: flex; gap: 12px; align-items: center; font-family: 'Samsung Sharp Sans', sans-serif; font-weight: 500; text-align: right; flex-shrink: 0; }
+        #header-container .date-col { display: flex; flex-direction: column; align-items: flex-end; font-size: 12px; line-height: 1.2; color: #fff; letter-spacing: -0.24px; }
+        #header-container .date-col p { margin: 0; }
+        #header-container .time-text { font-size: 30px; line-height: normal; color: #94a3b8; letter-spacing: -0.6px; white-space: nowrap; }
+        #header-container .btn-logout { width: 30px; height: 30px; position: relative; flex-shrink: 0; cursor: pointer; }
+        #header-container .btn-logout img { position: absolute; display: block; max-width: none; width: 100%; height: 100%; }
+
+        .test-controls { padding: 20px 30px; display: flex; gap: 8px; }
+        .test-controls button { padding: 6px 14px; border-radius: 4px; border: 1px solid #475569; background: #1e293b; color: #e4ebf6; font-size: 12px; cursor: pointer; }
+        .test-controls button:hover { border-color: #0068ff; }
+        .event-log { padding: 0 30px; color: #94a3b8; font-size: 12px; font-family: monospace; }
+    </style>
+</head>
+<body>
+    <div id="header-container">
+        <div class="header">
+            <div class="header-bg"></div>
+            <div class="gnb">
+                <div class="ci">
+                    <span class="ci-text">통합대시보드</span>
+                </div>
+                <div class="menu"></div>
+                <div class="info">
+                    <div class="user-name">
+                        <div class="user-icon"><img src="./assets/user.svg" alt="user"></div>
+                        <span class="user-name-text"><span class="name"></span> <span class="suffix">님</span></span>
+                    </div>
+                    <div class="info-group">
+                        <div class="day">
+                            <div class="date-col">
+                                <p class="date-text"></p>
+                                <p class="day-text"></p>
+                            </div>
+                            <span class="time-text"></span>
+                        </div>
+                        <div class="btn-logout"><img src="./assets/logout.svg" alt="logout"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="test-controls">
+        <button onclick="loadMenus()">Load Menus</button>
+        <button onclick="switchTo('overview')">→ 종합현황</button>
+        <button onclick="switchTo('infra')">→ 인프라현황</button>
+    </div>
+    <div class="event-log" id="eventLog"></div>
+
+<script>
+const container = document.getElementById('header-container');
+let activeKey = null;
+let menusData = null;
+
+// Clock
+const dayNames = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+function updateClock() {
+    const now = new Date();
+    const y = now.getFullYear();
+    const m = String(now.getMonth()+1).padStart(2,'0');
+    const d = String(now.getDate()).padStart(2,'0');
+    container.querySelector('.date-text').textContent = `${y}/${m}/${d}`;
+    container.querySelector('.day-text').textContent = dayNames[now.getDay()];
+    const h = String(now.getHours()).padStart(2,'0');
+    const min = String(now.getMinutes()).padStart(2,'0');
+    const s = String(now.getSeconds()).padStart(2,'0');
+    container.querySelector('.time-text').textContent = `${h}:${min}:${s}`;
+}
+updateClock();
+setInterval(updateClock, 1000);
+
+// Render menus
+function renderMenus(menus, active) {
+    const menuEl = container.querySelector('.menu');
+    menuEl.innerHTML = menus.map(m => {
+        const isActive = m.key === active;
+        return isActive
+            ? `<div class="menu-item active" data-key="${m.key}"><span class="menu-item-text">${m.label}</span><div class="menu-item-glow"></div></div>`
+            : `<div class="menu-item" data-key="${m.key}"><span class="menu-item-text">${m.label}</span></div>`;
+    }).join('');
+}
+
+function loadMenus() {
+    menusData = [
+        { key: 'overview', label: '종합현황' },
+        { key: 'business', label: '비지니스현황' },
+        { key: 'infra', label: '인프라현황' },
+        { key: 'itops', label: 'IT운영관리' },
+    ];
+    activeKey = 'infra';
+    container.querySelector('.name').textContent = '홍길동';
+    renderMenus(menusData, activeKey);
+}
+
+function switchTo(key) {
+    if (!menusData) return;
+    activeKey = key;
+    renderMenus(menusData, activeKey);
+    logEvent('@gnbClicked', { key });
+}
+
+container.addEventListener('click', (e) => {
+    const item = e.target.closest('.menu-item');
+    if (item && item.dataset.key) switchTo(item.dataset.key);
+    if (e.target.closest('.btn-logout')) logEvent('@logoutClicked', {});
+});
+
+function logEvent(name, detail) {
+    const log = document.getElementById('eventLog');
+    const entry = document.createElement('div');
+    entry.textContent = `[${new Date().toLocaleTimeString()}] ${name}: ${JSON.stringify(detail)}`;
+    log.prepend(entry);
+    if (log.children.length > 5) log.removeChild(log.lastChild);
+}
+
+loadMenus();
+</script>
+</body>
+</html>

@@ -1,0 +1,201 @@
+/* Container: 863 x 186 (group 875:19162) */
+#chart-container {
+    width: 863px;
+    height: 186px;
+    overflow: auto;
+
+    .chart-group {
+        position: relative;
+        width: 100%;
+        height: 100%;
+    }
+
+    /* ===== 타이틀 ===== */
+    .chart-title {
+        position: absolute;
+        top: 0;
+        left: 0;
+        height: 9px;
+        display: flex;
+        gap: 8px;
+        align-items: center;
+    }
+
+    .chart-title-bullet {
+        width: 6px;
+        height: 6px;
+        flex-shrink: 0;
+        position: relative;
+    }
+
+    .chart-title-bullet img {
+        position: absolute;
+        display: block;
+        max-width: none;
+        width: 100%;
+        height: 100%;
+    }
+
+    .chart-title-txt {
+        display: flex;
+        gap: 3px;
+        align-items: center;
+        font-family: 'Samsung Sharp Sans', sans-serif;
+        font-weight: 500;
+        font-size: 13px;
+        line-height: normal;
+        color: #ffffff;
+        text-align: center;
+        white-space: nowrap;
+        flex-shrink: 0;
+    }
+
+    .chart-title-txt p {
+        margin: 0;
+    }
+
+    /* ===== 차트 영역 ===== */
+    .chart {
+        position: absolute;
+        top: 21px;
+        left: 0;
+        width: 862px;
+        height: 165px;
+    }
+
+    /* 배경 */
+    .chart-bg {
+        position: absolute;
+        inset: 0;
+    }
+
+    .chart-bg img {
+        display: block;
+        width: 100%;
+        height: 100%;
+    }
+
+    /* Y축 라벨 */
+    .chart-y-axis {
+        position: absolute;
+        top: 16px;
+        left: 26.14px;
+        width: 18px;
+        height: 120px;
+        display: flex;
+        flex-direction: column;
+        align-items: flex-end;
+        justify-content: space-between;
+        font-family: 'Samsung Sharp Sans', sans-serif;
+        font-weight: 400;
+        font-size: 12px;
+        line-height: normal;
+        color: #cdcfd2;
+        text-align: right;
+        white-space: nowrap;
+    }
+
+    .chart-y-axis p {
+        margin: 0;
+    }
+
+    /* 그리드 라인 */
+    .chart-grid-lines {
+        position: absolute;
+        top: 15px;
+        left: 54.14px;
+        width: 768px;
+        height: 124px;
+    }
+
+    .chart-grid-lines img {
+        position: absolute;
+        display: block;
+        max-width: none;
+        width: 100%;
+        height: 100%;
+    }
+
+    /* 그래프 라인 */
+    .chart-graph {
+        position: absolute;
+        top: 31px;
+        left: 54.14px;
+        width: 768.27px;
+        height: 98.82px;
+    }
+
+    .chart-graph-inner {
+        position: absolute;
+        top: -0.51%;
+        left: 0;
+        right: 0;
+        bottom: 0;
+    }
+
+    .chart-graph-inner img {
+        display: block;
+        max-width: none;
+        width: 100%;
+        height: 100%;
+    }
+
+    /* X축 라벨 그룹 */
+    .chart-x-axis {
+        position: absolute;
+        top: 138px;
+        left: 56.14px;
+        width: 767px;
+        height: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+    }
+
+    .chart-x-label {
+        width: 28.21px;
+        padding: 3.94px 17.06px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+        font-family: 'Samsung Sharp Sans', sans-serif;
+        font-weight: 400;
+        font-size: 12px;
+        line-height: normal;
+        color: #cdcfd2;
+        text-align: center;
+        white-space: nowrap;
+    }
+
+    /* + 버튼 */
+    .chart-btn-plus {
+        position: absolute;
+        top: 9px;
+        right: 9px;
+        width: 18px;
+        height: 18px;
+        background: rgba(51, 51, 51, 0.3);
+        border: 0.38px solid #363c46;
+        border-radius: 6px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        box-sizing: border-box;
+    }
+
+    .chart-btn-plus-icon {
+        width: 6.47px;
+        height: 6.47px;
+        transform: rotate(-135deg);
+        position: relative;
+    }
+
+    .chart-btn-plus-icon img {
+        position: absolute;
+        display: block;
+        max-width: none;
+        width: 100%;
+        height: 100%;
+    }
+}

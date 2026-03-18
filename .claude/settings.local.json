@@ -50,7 +50,15 @@
       "Bash(taskkill //F //IM \"node.exe\" //FI \"WINDOWTITLE eq *serve*\" 2>/dev/null; pkill -f \"serve.*3001\" 2>/dev/null; echo \"done\")",
       "Bash(mkdir:*)",
       "Bash(wc -l /c/Users/WEMB/Desktop/WEB_BUILDER_TOOLKIT/RNBT_architecture/Utils/*.js)",
-      "Bash(grep -l \"3D\\\\|three\\\\|THREE\" /c/Users/WEMB/Desktop/WEB_BUILDER_TOOLKIT/RNBT_architecture/Utils/*.js)"
+      "Bash(grep -l \"3D\\\\|three\\\\|THREE\" /c/Users/WEMB/Desktop/WEB_BUILDER_TOOLKIT/RNBT_architecture/Utils/*.js)",
+      "Bash(mkdir -p \"C:/Users/WEMB/Desktop/WEB_BUILDER_TOOLKIT/Figma_Conversion/Static_Components/MONIMO/data-platform/assets\")",
+      "Bash(mkdir -p \"C:/Users/WEMB/Desktop/WEB_BUILDER_TOOLKIT/Figma_Conversion/Static_Components/MONIMO/data-platform/screenshots\")",
+      "Bash(mkdir -p \"C:/Users/WEMB/Desktop/WEB_BUILDER_TOOLKIT/Figma_Conversion/Static_Components/MONIMO/chart/assets\")",
+      "Bash(mkdir -p \"C:/Users/WEMB/Desktop/WEB_BUILDER_TOOLKIT/Figma_Conversion/Static_Components/MONIMO/chart/screenshots\")",
+      "Bash(mkdir -p \"C:/Users/WEMB/Desktop/WEB_BUILDER_TOOLKIT/Figma_Conversion/Static_Components/MONIMO/chart2/assets\")",
+      "Bash(mkdir -p \"C:/Users/WEMB/Desktop/WEB_BUILDER_TOOLKIT/Figma_Conversion/Static_Components/MONIMO/chart2/screenshots\")",
+      "Bash(mkdir -p \"C:/Users/WEMB/Desktop/WEB_BUILDER_TOOLKIT/Figma_Conversion/Static_Components/MONIMO/chart3/assets\")",
+      "Bash(mkdir -p \"C:/Users/WEMB/Desktop/WEB_BUILDER_TOOLKIT/Figma_Conversion/Static_Components/MONIMO/chart3/screenshots\")"
     ],
     "deny": [],
     "ask": []

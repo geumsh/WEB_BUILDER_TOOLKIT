@@ -1,0 +1,310 @@
+/* Container: 863 x 181 (group 875:19515) */
+#chart2-container {
+    width: 863px;
+    height: 181px;
+    overflow: auto;
+
+    .chart2-group {
+        position: relative;
+        width: 100%;
+        height: 100%;
+    }
+
+    /* ===== 헤더 ===== */
+    .chart2-head {
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 25px;
+        display: flex;
+        align-items: flex-end;
+        justify-content: space-between;
+    }
+
+    .chart2-title {
+        display: flex;
+        gap: 8px;
+        align-items: center;
+        flex-shrink: 0;
+    }
+
+    .chart2-title-bullet {
+        width: 6px;
+        height: 6px;
+        flex-shrink: 0;
+        position: relative;
+    }
+
+    .chart2-title-bullet img {
+        position: absolute;
+        display: block;
+        max-width: none;
+        width: 100%;
+        height: 100%;
+    }
+
+    .chart2-title-text {
+        font-family: 'Samsung Sharp Sans', sans-serif;
+        font-weight: 500;
+        font-size: 13px;
+        line-height: normal;
+        color: #ffffff;
+        text-align: center;
+        white-space: nowrap;
+    }
+
+    .chart2-btn-popup {
+        height: 25px;
+        padding: 0 14px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: rgba(43, 102, 246, 0.3);
+        border: 0.5px solid #2b66f6;
+        border-radius: 5.92px;
+        flex-shrink: 0;
+        box-sizing: border-box;
+        cursor: pointer;
+    }
+
+    .chart2-btn-popup span {
+        font-family: 'Samsung Sharp Sans', sans-serif;
+        font-weight: 500;
+        font-size: 12px;
+        line-height: normal;
+        color: #e2ebff;
+        text-align: center;
+        letter-spacing: 0.24px;
+        white-space: nowrap;
+    }
+
+    /* ===== 차트 영역 ===== */
+    .chart2 {
+        position: absolute;
+        top: 37px;
+        left: 0;
+        width: 862px;
+        height: 144px;
+    }
+
+    .chart2-bg {
+        position: absolute;
+        inset: 0;
+    }
+
+    .chart2-bg img {
+        display: block;
+        width: 100%;
+        height: 100%;
+    }
+
+    /* Y축 */
+    .chart2-y-axis {
+        position: absolute;
+        top: 17px;
+        left: 26.14px;
+        width: 18px;
+        height: 101px;
+        display: flex;
+        flex-direction: column;
+        align-items: flex-end;
+        justify-content: space-between;
+        font-family: 'Samsung Sharp Sans', sans-serif;
+        font-weight: 400;
+        font-size: 12px;
+        line-height: normal;
+        color: #cdcfd2;
+        text-align: right;
+        white-space: nowrap;
+    }
+
+    .chart2-y-axis p {
+        margin: 0;
+    }
+
+    /* 그리드 라인 */
+    .chart2-grid-lines {
+        position: absolute;
+        top: 16px;
+        left: 54.14px;
+        width: 768px;
+        height: 104px;
+    }
+
+    .chart2-grid-lines img {
+        position: absolute;
+        display: block;
+        max-width: none;
+        width: 100%;
+        height: 100%;
+    }
+
+    /* 그래프 라인들 */
+    .chart2-graph {
+        position: absolute;
+        top: 32.95px;
+        left: 55.41px;
+        width: 767.28px;
+        height: 77.8px;
+    }
+
+    .chart2-line-green {
+        position: absolute;
+        top: 44.77%;
+        left: 0;
+        right: 0;
+        bottom: 0;
+    }
+
+    .chart2-line-green img {
+        position: absolute;
+        top: -0.95%;
+        left: 0;
+        right: 0;
+        display: block;
+        max-width: none;
+        width: 100%;
+        height: 101.95%;
+    }
+
+    .chart2-line-blue {
+        position: absolute;
+        top: 44.77%;
+        left: 0;
+        right: 0;
+        bottom: 22.39%;
+    }
+
+    .chart2-line-blue img {
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: -1.43%;
+        display: block;
+        max-width: none;
+        width: 100%;
+        height: 101.43%;
+        transform: scaleY(-1);
+    }
+
+    .chart2-line-red {
+        position: absolute;
+        top: 22.88%;
+        left: 0;
+        right: 0;
+        bottom: 33.45%;
+    }
+
+    .chart2-line-red img {
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: -0.47%;
+        display: block;
+        max-width: none;
+        width: 100%;
+        height: 100.47%;
+    }
+
+    .chart2-line-purple {
+        position: absolute;
+        top: 63.73%;
+        left: 0;
+        right: 0;
+        bottom: 29.97%;
+    }
+
+    .chart2-line-purple img {
+        position: absolute;
+        top: -2.34%;
+        left: 0;
+        right: 0;
+        bottom: -4.26%;
+        display: block;
+        max-width: none;
+        width: 100%;
+        height: 106.6%;
+    }
+
+    .chart2-line-yellow {
+        position: absolute;
+        top: 67.49%;
+        left: 0;
+        right: 0;
+        bottom: 29.34%;
+    }
+
+    .chart2-line-yellow img {
+        position: absolute;
+        top: -7.5%;
+        left: 0;
+        right: 0;
+        bottom: -8.48%;
+        display: block;
+        max-width: none;
+        width: 100%;
+        height: 115.98%;
+    }
+
+    /* X축 */
+    .chart2-x-axis {
+        position: absolute;
+        top: 120px;
+        left: 56.14px;
+        width: 767px;
+        height: 10px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+    }
+
+    .chart2-x-label {
+        width: 28.21px;
+        padding: 3.94px 17.06px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+        font-family: 'Samsung Sharp Sans', sans-serif;
+        font-weight: 400;
+        font-size: 12px;
+        line-height: normal;
+        color: #cdcfd2;
+        text-align: center;
+        white-space: nowrap;
+    }
+
+    /* + 버튼 */
+    .chart2-btn-plus {
+        position: absolute;
+        top: 9px;
+        right: 9px;
+        width: 18px;
+        height: 18px;
+        background: rgba(51, 51, 51, 0.3);
+        border: 0.38px solid #363c46;
+        border-radius: 6px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        box-sizing: border-box;
+    }
+
+    .chart2-btn-plus-icon {
+        width: 6.47px;
+        height: 6.47px;
+        transform: rotate(-135deg);
+        position: relative;
+    }
+
+    .chart2-btn-plus-icon img {
+        position: absolute;
+        display: block;
+        max-width: none;
+        width: 100%;
+        height: 100%;
+    }
+}

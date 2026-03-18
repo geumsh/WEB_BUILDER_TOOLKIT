@@ -1,0 +1,16 @@
+<svg preserveAspectRatio="none" width="100%" height="100%" overflow="visible" style="display: block;" viewBox="0 0 336.616 25.9458" fill="none" xmlns="http://www.w3.org/2000/svg">
+<g id="graph">
+<path id="lilne02" d="M0.507488 25.4382C41.7597 25.4382 40.6138 16.3172 81.866 16.3172C123.118 16.3172 122.977 0.507486 164.229 0.507486C205.482 0.507486 206.769 12.9588 248.021 12.9588C289.273 12.9588 294.856 22.4294 336.108 22.4294" stroke="url(#paint0_linear_933_6955)" stroke-width="1.01497" stroke-linecap="round"/>
+<path id="line01" d="M0.507486 25.4383C41.7597 25.4383 41.7597 4.80594 83.0119 4.80594C124.264 4.80594 124.264 13.3763 165.516 13.3763C206.769 13.3763 206.769 25.1209 248.021 25.1209C289.273 25.1209 294.856 22.4294 336.108 22.4294" stroke="url(#paint1_linear_933_6955)" stroke-width="1.01497" stroke-linecap="round"/>
+</g>
+<defs>
+<linearGradient id="paint0_linear_933_6955" x1="266.631" y1="13.4027" x2="60.1885" y2="6.24519" gradientUnits="userSpaceOnUse">
+<stop stop-color="#1CA4FF"/>
+<stop offset="1" stop-color="#0068FF"/>
+</linearGradient>
+<linearGradient id="paint1_linear_933_6955" x1="330.525" y1="4.80594" x2="12.5394" y2="4.80594" gradientUnits="userSpaceOnUse">
+<stop stop-color="#59CF90"/>
+<stop offset="1" stop-color="#60F3C4"/>
+</linearGradient>
+</defs>
+</svg>

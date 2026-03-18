@@ -1,0 +1,56 @@
+/* Container: 419 x 165 */
+#chart3-container {
+  width: 419px;
+  height: 165px;
+  overflow: auto;
+
+  .chart3-group {
+    position: relative;
+    width: 100%;
+    height: 100%;
+  }
+
+  /* ===== 타이틀 ===== */
+  .chart3-title {
+    position: absolute;
+    top: 0;
+    left: 0;
+    height: 9px;
+    display: flex;
+    gap: 8px;
+    align-items: center;
+  }
+
+  .chart3-title-bullet {
+    width: 6px;
+    height: 6px;
+    flex-shrink: 0;
+    position: relative;
+  }
+
+  .chart3-title-bullet img {
+    position: absolute;
+    display: block;
+    max-width: none;
+    width: 100%;
+    height: 100%;
+  }
+
+  .chart3-title-text {
+    font-family: "Samsung Sharp Sans", sans-serif;
+    font-weight: 500;
+    font-size: 13px;
+    line-height: normal;
+    color: #ffffff;
+    white-space: nowrap;
+  }
+
+  /* ===== ECharts 차트 영역 ===== */
+  .chart3-area {
+    position: absolute;
+    top: 21px;
+    left: 0;
+    width: 419px;
+    height: 144px;
+  }
+}
