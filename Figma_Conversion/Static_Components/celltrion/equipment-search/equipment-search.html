@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Equipment Search</title>
+  <link rel="stylesheet" href="equipment-search.css">
+</head>
+<body style="background: #0a0c10;">
+  <div id="component-container" style="width: 580px; height: 940px;">
+    <div class="eq-search">
+      <!-- Header -->
+      <div class="eqs-header">
+        <div class="eqs-title">
+          <div class="eqs-title-bar"></div>
+          <p class="eqs-title-text">설비 검색</p>
+        </div>
+        <div class="eqs-search-box">
+          <div class="eqs-search-icon">
+            <img src="./assets/icon-search.svg" alt="">
+          </div>
+          <p class="eqs-search-text">설비 검색</p>
+        </div>
+      </div>
+      <!-- Table Header -->
+      <div class="eqs-table-header">
+        <div class="eqs-th eqs-th--name">설비명</div>
+        <div class="eqs-th eqs-th--zone">위치</div>
+        <div class="eqs-th eqs-th--battery">배터리(%)</div>
+        <div class="eqs-th eqs-th--status">상태</div>
+      </div>
+      <!-- Contents -->
+      <div class="eqs-contents">
+        <!-- Row 1: Conveyor Belt C4 -->
+        <div class="eqs-row">
+          <div class="eqs-cell-name">
+            <div class="eqs-cell-img"><img src="./assets/etv.png" alt=""></div>
+            <div class="eqs-cell-txt">
+              <p class="eqs-cell-name-title">Conveyor Belt C4</p>
+              <p class="eqs-cell-name-sub">Normal Operation</p>
+            </div>
+          </div>
+          <div class="eqs-cell-zone"><p class="eqs-cell-zone-text">ZONE 1</p></div>
+          <div class="eqs-cell-battery">
+            <div class="eqs-battery-track"><div class="eqs-battery-bar eqs-battery-bar--normal" style="width: 73px;"></div></div>
+            <p class="eqs-battery-text">75%</p>
+          </div>
+          <div class="eqs-cell-status eqs-cell-status--normal"><p class="eqs-status-text">정상</p></div>
+        </div>
+        <!-- Row 2: Air Balance -->
+        <div class="eqs-row">
+          <div class="eqs-cell-name">
+            <div class="eqs-cell-img"><img src="./assets/air-balance.png" alt=""></div>
+            <div class="eqs-cell-txt">
+              <p class="eqs-cell-name-title">Air Balance</p>
+              <p class="eqs-cell-name-sub">Normal Operation</p>
+            </div>
+          </div>
+          <div class="eqs-cell-zone"><p class="eqs-cell-zone-text">ZONE 1</p></div>
+          <div class="eqs-cell-battery">
+            <div class="eqs-battery-track"><div class="eqs-battery-bar eqs-battery-bar--normal" style="width: 38px;"></div></div>
+            <p class="eqs-battery-text">45%</p>
+          </div>
+          <div class="eqs-cell-status eqs-cell-status--normal"><p class="eqs-status-text">정상</p></div>
+        </div>
+        <!-- Row 3: AMR Forklift B4 (selected) -->
+        <div class="eqs-row eqs-row--selected">
+          <div class="eqs-cell-name">
+            <div class="eqs-cell-img"><img src="./assets/amr.png" alt=""></div>
+            <div class="eqs-cell-txt">
+              <p class="eqs-cell-name-title">AMR Forklift B4</p>
+              <p class="eqs-cell-name-sub">High Precision Unit</p>
+            </div>
+          </div>
+          <div class="eqs-cell-zone"><p class="eqs-cell-zone-text">ZONE 3</p></div>
+          <div class="eqs-cell-battery">
+            <div class="eqs-battery-track"><div class="eqs-battery-bar eqs-battery-bar--normal" style="width: 95px;"></div></div>
+            <p class="eqs-battery-text">88%</p>
+          </div>
+          <div class="eqs-cell-status eqs-cell-status--normal"><p class="eqs-status-text">정상</p></div>
+        </div>
+        <!-- Row 4: CCTV A2 -->
+        <div class="eqs-row">
+          <div class="eqs-cell-name">
+            <div class="eqs-cell-img"><img src="./assets/cctv.png" alt=""></div>
+            <div class="eqs-cell-txt">
+              <p class="eqs-cell-name-title">CCTV A2</p>
+              <p class="eqs-cell-name-sub">Normal Operation</p>
+            </div>
+          </div>
+          <div class="eqs-cell-zone"><p class="eqs-cell-zone-text">ZONE 2</p></div>
+          <div class="eqs-cell-battery">
+            <div class="eqs-battery-track"><div class="eqs-battery-bar eqs-battery-bar--warning" style="width: 28px;"></div></div>
+            <p class="eqs-battery-text">35%</p>
+          </div>
+          <div class="eqs-cell-status eqs-cell-status--warning"><p class="eqs-status-text">정상</p></div>
+        </div>
+        <!-- Row 5: Dock D2 -->
+        <div class="eqs-row">
+          <div class="eqs-cell-name">
+            <div class="eqs-cell-img"><img src="./assets/dock.png" alt=""></div>
+            <div class="eqs-cell-txt">
+              <p class="eqs-cell-name-title">Dock D2</p>
+              <p class="eqs-cell-name-sub">Normal Operation</p>
+            </div>
+          </div>
+          <div class="eqs-cell-zone"><p class="eqs-cell-zone-text">ZONE 1</p></div>
+          <div class="eqs-cell-battery">
+            <div class="eqs-battery-track"><div class="eqs-battery-bar eqs-battery-bar--normal" style="width: 63px;"></div></div>
+            <p class="eqs-battery-text">65%</p>
+          </div>
+          <div class="eqs-cell-status eqs-cell-status--normal"><p class="eqs-status-text">정상</p></div>
+        </div>
+        <!-- Row 6: AGV D1 -->
+        <div class="eqs-row">
+          <div class="eqs-cell-name">
+            <div class="eqs-cell-img"><img src="./assets/agv.png" alt=""></div>
+            <div class="eqs-cell-txt">
+              <p class="eqs-cell-name-title">AGV D1</p>
+              <p class="eqs-cell-name-sub">Normal Operation</p>
+            </div>
+          </div>
+          <div class="eqs-cell-zone"><p class="eqs-cell-zone-text">ZONE 2</p></div>
+          <div class="eqs-cell-battery">
+            <div class="eqs-battery-track"><div class="eqs-battery-bar eqs-battery-bar--danger" style="width: 7px;"></div></div>
+            <p class="eqs-battery-text">7%</p>
+          </div>
+          <div class="eqs-cell-status eqs-cell-status--danger"><p class="eqs-status-text">고장</p></div>
+        </div>
+        <!-- Row 7: Pallet Stacker A3 -->
+        <div class="eqs-row">
+          <div class="eqs-cell-name">
+            <div class="eqs-cell-img"><img src="./assets/pallet-stacker.png" alt=""></div>
+            <div class="eqs-cell-txt">
+              <p class="eqs-cell-name-title">Pallet Stacker A3</p>
+              <p class="eqs-cell-name-sub">Normal Operation</p>
+            </div>
+          </div>
+          <div class="eqs-cell-zone"><p class="eqs-cell-zone-text">ZONE 1</p></div>
+          <div class="eqs-cell-battery">
+            <div class="eqs-battery-track"><div class="eqs-battery-bar eqs-battery-bar--normal" style="width: 87px;"></div></div>
+            <p class="eqs-battery-text">91%</p>
+          </div>
+          <div class="eqs-cell-status eqs-cell-status--normal"><p class="eqs-status-text">정상</p></div>
+        </div>
+        <!-- Row 8: Palletizing Robot D1 -->
+        <div class="eqs-row">
+          <div class="eqs-cell-name">
+            <div class="eqs-cell-img"><img src="./assets/palletizing-robot.png" alt=""></div>
+            <div class="eqs-cell-txt">
+              <p class="eqs-cell-name-title">Palletizing Robot D1</p>
+              <p class="eqs-cell-name-sub">Normal Operation</p>
+            </div>
+          </div>
+          <div class="eqs-cell-zone"><p class="eqs-cell-zone-text">ZONE 1</p></div>
+          <div class="eqs-cell-battery">
+            <div class="eqs-battery-track"><div class="eqs-battery-bar eqs-battery-bar--normal" style="width: 30px;"></div></div>
+            <p class="eqs-battery-text">41%</p>
+          </div>
+          <div class="eqs-cell-status eqs-cell-status--normal"><p class="eqs-status-text">정상</p></div>
+        </div>
+        <!-- Row 9: UP/DN Table LIFT B2 -->
+        <div class="eqs-row">
+          <div class="eqs-cell-name">
+            <div class="eqs-cell-img"><img src="./assets/table-lift.png" alt=""></div>
+            <div class="eqs-cell-txt">
+              <p class="eqs-cell-name-title">UP/DN Table LIFT B2</p>
+              <p class="eqs-cell-name-sub">Normal Operation</p>
+            </div>
+          </div>
+          <div class="eqs-cell-zone"><p class="eqs-cell-zone-text">ZONE 1</p></div>
+          <div class="eqs-cell-battery">
+            <div class="eqs-battery-track"><div class="eqs-battery-bar eqs-battery-bar--normal" style="width: 52px;"></div></div>
+            <p class="eqs-battery-text">59%</p>
+          </div>
+          <div class="eqs-cell-status eqs-cell-status--normal"><p class="eqs-status-text">정상</p></div>
+        </div>
+        <!-- Row 10: X-RAY A2 -->
+        <div class="eqs-row">
+          <div class="eqs-cell-name">
+            <div class="eqs-cell-img"><img src="./assets/xray.png" alt=""></div>
+            <div class="eqs-cell-txt">
+              <p class="eqs-cell-name-title">X-RAY A2</p>
+              <p class="eqs-cell-name-sub">Normal Operation</p>
+            </div>
+          </div>
+          <div class="eqs-cell-zone"><p class="eqs-cell-zone-text">ZONE 1</p></div>
+          <div class="eqs-cell-battery">
+            <div class="eqs-battery-track"><div class="eqs-battery-bar eqs-battery-bar--normal" style="width: 31px;"></div></div>
+            <p class="eqs-battery-text">28%</p>
+          </div>
+          <div class="eqs-cell-status eqs-cell-status--normal"><p class="eqs-status-text">정상</p></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</body>
+</html>

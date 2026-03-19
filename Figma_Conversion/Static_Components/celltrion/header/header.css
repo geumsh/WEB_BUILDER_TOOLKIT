@@ -1,0 +1,148 @@
+/* Header Component */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+#component-container {
+  width: 1920px;
+  height: 60px;
+  overflow: auto;
+}
+
+.header {
+  width: 1920px;
+  height: 60px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 20px;
+  position: relative;
+}
+
+/* ===== Left: Title ===== */
+.header-left {
+  display: flex;
+  align-items: center;
+  height: 32px;
+  flex: 1;
+  min-width: 0;
+}
+
+.header-title {
+  font-family: 'Pretendard', sans-serif;
+  font-size: 18px;
+  font-weight: 500;
+  line-height: 28px;
+  text-transform: uppercase;
+  white-space: nowrap;
+  background-image:
+    linear-gradient(90deg, rgba(0, 0, 0, 0) 0%, rgba(0, 0, 0, 0) 100%),
+    linear-gradient(90deg, rgb(255, 255, 255) 0%, rgb(206, 254, 234) 50%, rgb(226, 215, 202) 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+/* ===== Center: Navigation ===== */
+.nav {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  flex-shrink: 0;
+}
+
+.nav-btn {
+  height: 36px;
+  min-width: 130px;
+  border-radius: 5.744px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 11px 33px;
+  cursor: pointer;
+  border: none;
+  background: transparent;
+  flex-shrink: 0;
+}
+
+.nav-btn-label {
+  font-family: 'Pretendard', sans-serif;
+  font-size: 18px;
+  font-weight: 400;
+  line-height: normal;
+  color: #99a1af;
+  text-align: center;
+  white-space: nowrap;
+}
+
+.nav-btn--active {
+  background: #39e6c9;
+  border-radius: 4px;
+  box-shadow: 0px 0px 15px 0px rgba(57, 230, 201, 0.5);
+  padding: 0 33px;
+}
+
+.nav-btn--active .nav-btn-label {
+  font-weight: 700;
+  color: #000;
+}
+
+.nav-btn--wide {
+  width: 184px;
+  padding: 11px 33px;
+}
+
+.nav-btn--mid {
+  width: 153px;
+  padding: 11px 33px;
+}
+
+/* ===== Right: Icon Buttons ===== */
+.header-right {
+  display: flex;
+  gap: 2px;
+  align-items: center;
+  flex: 1;
+  min-width: 0;
+  justify-content: flex-end;
+}
+
+.icon-btn {
+  width: 46.161px;
+  height: 46.161px;
+  border-radius: 32268694px;
+  position: relative;
+  flex-shrink: 0;
+  cursor: pointer;
+}
+
+.icon-btn-img {
+  position: absolute;
+  width: 23.08px;
+  height: 23.08px;
+  top: 11.54px;
+  left: 11.54px;
+}
+
+.icon-btn-img img {
+  position: absolute;
+  display: block;
+  width: 100%;
+  height: 100%;
+  max-width: none;
+}
+
+/* Bell notification dot */
+.icon-btn--bell .notification-dot {
+  position: absolute;
+  width: 8.655px;
+  height: 8.655px;
+  top: 11.54px;
+  left: 25.97px;
+  background: #39e6c9;
+  border-radius: 100px;
+  opacity: 0.57;
+  box-shadow: 0px 0px 11.54px 0px rgba(57, 230, 201, 0.8);
+}

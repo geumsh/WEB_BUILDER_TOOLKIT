@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Equipment Status</title>
+  <link rel="stylesheet" href="equipment-status.css">
+</head>
+<body style="background: #0a0c10;">
+  <div id="component-container" style="width: 300px; height: 140px;">
+    <div class="equipment-status">
+      <!-- Title -->
+      <div class="eq-title">
+        <div class="eq-title-inner">
+          <div class="eq-title-icon">
+            <img src="./assets/icon-title.svg" alt="">
+          </div>
+          <p class="eq-title-text">설비현황</p>
+        </div>
+      </div>
+      <!-- Contents -->
+      <div class="eq-contents">
+        <!-- 총 설비수 -->
+        <div class="eq-chart">
+          <div class="eq-gauge">
+            <img src="./assets/gauge-total.svg" alt="">
+          </div>
+          <div class="eq-label eq-label--narrow">
+            <div class="eq-label-info">
+              <p class="eq-label-value">507</p>
+              <p class="eq-label-sub">총 설비수</p>
+            </div>
+            <p class="eq-label-type eq-label-type--total">설비</p>
+          </div>
+        </div>
+        <!-- 운영 설비수 -->
+        <div class="eq-chart">
+          <div class="eq-gauge">
+            <img src="./assets/gauge-operating.svg" alt="">
+          </div>
+          <div class="eq-label eq-label--wide">
+            <div class="eq-label-info">
+              <p class="eq-label-value">29</p>
+              <p class="eq-label-sub">운영 설비수</p>
+            </div>
+            <p class="eq-label-type eq-label-type--operating">운영</p>
+          </div>
+        </div>
+        <!-- 고장 설비수 -->
+        <div class="eq-chart">
+          <div class="eq-gauge">
+            <img src="./assets/gauge-broken.svg" alt="">
+          </div>
+          <div class="eq-label eq-label--wide">
+            <div class="eq-label-info">
+              <p class="eq-label-value">0</p>
+              <p class="eq-label-sub">고장 설비수</p>
+            </div>
+            <p class="eq-label-type eq-label-type--broken">고장</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</body>
+</html>

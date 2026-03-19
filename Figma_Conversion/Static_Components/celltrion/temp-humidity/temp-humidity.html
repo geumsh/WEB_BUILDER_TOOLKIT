@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Temp Humidity</title>
+  <link rel="stylesheet" href="temp-humidity.css">
+</head>
+<body style="background: #0a0c10;">
+  <div id="component-container" style="width: 300px; height: 320px;">
+    <div class="temp-humidity">
+      <!-- Title -->
+      <div class="th-title">
+        <div class="th-title-icon">
+          <img src="./assets/icon-title.svg" alt="">
+        </div>
+        <p class="th-title-text">구역별 온습도 현황</p>
+      </div>
+      <!-- Contents -->
+      <div class="th-contents">
+        <!-- Gauge Chart -->
+        <div class="th-chart">
+          <div class="th-gauge">
+            <img src="./assets/gauge.svg" alt="">
+          </div>
+          <div class="th-gauge-label">
+            <p class="th-gauge-subtitle">평균지수</p>
+            <div class="th-gauge-value">
+              <p class="th-gauge-value-num">92</p>
+              <p class="th-gauge-value-unit">%</p>
+            </div>
+            <p class="th-gauge-status">정상</p>
+          </div>
+        </div>
+        <!-- Legend -->
+        <div class="th-legend">
+          <!-- 1층 (정상) -->
+          <div class="th-legend-group">
+            <div class="th-legend-content">
+              <div class="th-legend-badge">
+                <p class="th-legend-badge-text">1층</p>
+              </div>
+              <div class="th-legend-list">
+                <div class="th-legend-item">
+                  <p class="th-legend-label">온도</p>
+                  <p class="th-legend-value">22.3°C</p>
+                </div>
+                <div class="th-legend-item">
+                  <p class="th-legend-label">습도</p>
+                  <p class="th-legend-value">58%</p>
+                </div>
+                <div class="th-legend-item">
+                  <p class="th-legend-label">지수</p>
+                  <p class="th-legend-value th-legend-value--normal">92점(A)</p>
+                </div>
+              </div>
+            </div>
+            <div class="th-progress-track">
+              <div class="th-progress-bar th-progress-bar--normal" style="width: 60px;"></div>
+            </div>
+          </div>
+          <!-- 2층 (정상) -->
+          <div class="th-legend-group">
+            <div class="th-legend-content">
+              <div class="th-legend-badge">
+                <p class="th-legend-badge-text">2층</p>
+              </div>
+              <div class="th-legend-list">
+                <div class="th-legend-item">
+                  <p class="th-legend-label">온도</p>
+                  <p class="th-legend-value">23.5°C</p>
+                </div>
+                <div class="th-legend-item">
+                  <p class="th-legend-label">습도</p>
+                  <p class="th-legend-value">61%</p>
+                </div>
+                <div class="th-legend-item">
+                  <p class="th-legend-label">지수</p>
+                  <p class="th-legend-value th-legend-value--normal">89점(A)</p>
+                </div>
+              </div>
+            </div>
+            <div class="th-progress-track">
+              <div class="th-progress-bar th-progress-bar--normal" style="width: 59px;"></div>
+            </div>
+          </div>
+          <!-- 3층 (경고) -->
+          <div class="th-legend-group th-legend-group--warning">
+            <div class="th-legend-content">
+              <div class="th-legend-badge">
+                <p class="th-legend-badge-text">3층</p>
+              </div>
+              <div class="th-legend-list">
+                <div class="th-legend-item">
+                  <p class="th-legend-label">온도</p>
+                  <p class="th-legend-value">24.2°C</p>
+                </div>
+                <div class="th-legend-item">
+                  <p class="th-legend-label">습도</p>
+                  <p class="th-legend-value">63%</p>
+                </div>
+                <div class="th-legend-item">
+                  <p class="th-legend-label">지수</p>
+                  <p class="th-legend-value th-legend-value--warning">82점(B)</p>
+                </div>
+              </div>
+            </div>
+            <div class="th-progress-track">
+              <div class="th-progress-bar th-progress-bar--warning" style="width: 55px;"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</body>
+</html>

@@ -1,0 +1,148 @@
+/* Pallet Status Component */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+#component-container {
+  width: 100%;
+  height: 100%;
+  overflow: auto;
+}
+
+.pallet-status {
+  width: 100%;
+  height: 100%;
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  border: 0.667px solid rgba(255, 255, 255, 0.1);
+  border-radius: 14px;
+  overflow: clip;
+  box-shadow:
+    0px 10px 15px -3px rgba(0, 0, 0, 0.1),
+    0px 4px 6px -4px rgba(0, 0, 0, 0.1);
+  background:
+    linear-gradient(151.807deg, rgba(255, 255, 255, 0.1) 0%, rgba(0, 0, 0, 0) 100%),
+    linear-gradient(90deg, rgba(15, 17, 21, 0.85) 0%, rgba(15, 17, 21, 0.85) 100%);
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  align-items: flex-start;
+  padding: 16px 17px;
+}
+
+/* ===== Title ===== */
+.ps-title {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  width: 100%;
+  padding-bottom: 10.667px;
+  border-bottom: 0.667px solid rgba(255, 255, 255, 0.1);
+  flex-shrink: 0;
+}
+
+.ps-title-icon {
+  width: 16px;
+  height: 16px;
+  position: relative;
+  flex-shrink: 0;
+}
+
+.ps-title-icon img {
+  position: absolute;
+  display: block;
+  width: 100%;
+  height: 100%;
+  max-width: none;
+}
+
+.ps-title-text {
+  font-family: 'Pretendard', sans-serif;
+  font-size: 14px;
+  font-weight: 600;
+  line-height: normal;
+  color: #39e6c9;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+/* ===== Contents ===== */
+.ps-contents {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  align-items: flex-start;
+  width: 100%;
+  flex-shrink: 0;
+}
+
+/* ===== Stat Box ===== */
+.ps-stat {
+  width: 100%;
+  background: rgba(0, 0, 0, 0.4);
+  border: 0.667px solid rgba(255, 255, 255, 0.05);
+  border-radius: 4px;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  padding: 7px 9px;
+}
+
+.ps-stat-row {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  width: 100%;
+  line-height: 16px;
+  white-space: nowrap;
+}
+
+.ps-stat-label {
+  font-family: 'Arial', 'Noto Sans KR', sans-serif;
+  font-size: 12px;
+  font-weight: 400;
+  color: #99a1af;
+}
+
+.ps-stat-value {
+  font-family: 'Pretendard', sans-serif;
+  font-size: 14px;
+  font-weight: 500;
+  color: #39e6c9;
+}
+
+/* ===== Progress Bar ===== */
+.ps-progress-track {
+  width: 100%;
+  height: 4px;
+  background: #1e2939;
+  border-radius: 22369600px;
+  overflow: clip;
+}
+
+.ps-progress-track--full {
+  background: #39e6c9;
+}
+
+.ps-progress-bar {
+  height: 4px;
+  background: #39e6c9;
+  border-radius: 22369600px;
+}
+
+/* ===== Bottom Row ===== */
+.ps-bottom-row {
+  display: flex;
+  gap: 6px;
+  align-items: flex-start;
+  width: 100%;
+}
+
+.ps-bottom-row .ps-stat {
+  flex: 1 0 0;
+  min-width: 0;
+  min-height: 1px;
+  padding: 8px 9px;
+}

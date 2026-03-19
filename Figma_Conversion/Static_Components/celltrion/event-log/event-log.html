@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>EventLog</title>
+  <link rel="stylesheet" href="event-log.css">
+</head>
+<body>
+  <div id="component-container">
+    <div class="event-log">
+      <!-- Header -->
+      <div class="header-wrapper">
+        <div class="header-content">
+          <div class="header-container">
+            <!-- Left: Title + Divider + Search -->
+            <div class="header-left">
+              <div class="header-item">
+                <div class="header-icon">
+                  <img src="./assets/icon-event.svg" alt="">
+                </div>
+                <p class="header-title">이벤트 현황</p>
+              </div>
+              <div class="header-divider"></div>
+              <div class="search-box">
+                <div class="search-icon">
+                  <img src="./assets/icon-search.svg" alt="">
+                </div>
+                <p class="search-text">Search logs...</p>
+              </div>
+            </div>
+            <!-- Right: Filter Tabs -->
+            <div class="filter-tabs">
+              <div class="filter-tab filter-tab--all">
+                <p class="filter-tab-label">All</p>
+                <div class="filter-tab-badge">
+                  <p class="filter-tab-count">24</p>
+                </div>
+              </div>
+              <div class="filter-tab filter-tab--normal">
+                <p class="filter-tab-label">Normal</p>
+                <div class="filter-tab-badge">
+                  <p class="filter-tab-count">24</p>
+                </div>
+              </div>
+              <div class="filter-tab filter-tab--critical">
+                <p class="filter-tab-label">Critical</p>
+                <div class="filter-tab-badge">
+                  <p class="filter-tab-count">24</p>
+                </div>
+              </div>
+              <div class="filter-tab filter-tab--warning">
+                <p class="filter-tab-label">Warning</p>
+                <div class="filter-tab-badge">
+                  <p class="filter-tab-count">5</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <!-- Cards -->
+      <div class="cards-container">
+        <div class="cards-content">
+          <!-- Card 1: Critical -->
+          <div class="event-card event-card--critical">
+            <div class="card-top">
+              <div class="card-header">
+                <div class="card-level">
+                  <div class="card-level-icon">
+                    <img src="./assets/icon-critical.svg" alt="">
+                  </div>
+                  <p class="card-level-text">CRITICAL</p>
+                </div>
+                <p class="card-time">10:42:15</p>
+              </div>
+              <div class="card-body">
+                <div class="card-location">
+                  <p class="card-location-text">2층 냉장구역 C존 #T5521</p>
+                </div>
+                <div class="card-description">
+                  <p class="card-description-text">허용 온도 범위를 초과하여 의약품 보관 기준을 벗어났습니다.</p>
+                </div>
+              </div>
+            </div>
+            <div class="card-tag">
+              <p class="card-tag-text">온도 이상</p>
+            </div>
+          </div>
+          <!-- Card 2: Warning -->
+          <div class="event-card event-card--warning">
+            <div class="card-top">
+              <div class="card-header">
+                <div class="card-level">
+                  <div class="card-level-icon">
+                    <img src="./assets/icon-warning.svg" alt="">
+                  </div>
+                  <p class="card-level-text">WARNING</p>
+                </div>
+                <p class="card-time">10:40:00</p>
+              </div>
+              <div class="card-body">
+                <div class="card-location">
+                  <p class="card-location-text">2층 피킹구역 B존 #P3302</p>
+                </div>
+                <div class="card-description">
+                  <p class="card-description-text">작업 물량 증가로 인해 출고 지연이 예상됩니다.</p>
+                </div>
+              </div>
+            </div>
+            <div class="card-tag">
+              <p class="card-tag-text">지연 경고</p>
+            </div>
+          </div>
+          <!-- Card 3: Normal -->
+          <div class="event-card event-card--normal">
+            <div class="card-top">
+              <div class="card-header">
+                <div class="card-level">
+                  <div class="card-level-icon">
+                    <img src="./assets/icon-normal.svg" alt="">
+                  </div>
+                  <p class="card-level-text">NORMAL</p>
+                </div>
+                <p class="card-time">10:38:22</p>
+              </div>
+              <div class="card-body">
+                <div class="card-location">
+                  <p class="card-location-text">1층 입고구역 A라인 #R1102</p>
+                </div>
+                <div class="card-description">
+                  <p class="card-description-text">화물 ID #CARGO-91562가 입고 처리 완료되었습니다.</p>
+                </div>
+              </div>
+            </div>
+            <div class="card-tag">
+              <p class="card-tag-text">입고 완료</p>
+            </div>
+          </div>
+          <!-- Card 4: Normal -->
+          <div class="event-card event-card--normal">
+            <div class="card-top">
+              <div class="card-header">
+                <div class="card-level">
+                  <div class="card-level-icon">
+                    <img src="./assets/icon-normal.svg" alt="">
+                  </div>
+                  <p class="card-level-text">NORMAL</p>
+                </div>
+                <p class="card-time">10:35:10</p>
+              </div>
+              <div class="card-body">
+                <div class="card-location">
+                  <p class="card-location-text">2층 피킹구역 B존 #P3302</p>
+                </div>
+                <div class="card-description">
+                  <p class="card-description-text">출고 작업이 계획 대비 98% 수준으로 정상 진행, 지연 요소 없음.</p>
+                </div>
+              </div>
+            </div>
+            <div class="card-tag">
+              <p class="card-tag-text">출고 진행</p>
+            </div>
+          </div>
+          <!-- Card 5: Normal -->
+          <div class="event-card event-card--normal">
+            <div class="card-top">
+              <div class="card-header">
+                <div class="card-level">
+                  <div class="card-level-icon">
+                    <img src="./assets/icon-normal.svg" alt="">
+                  </div>
+                  <p class="card-level-text">NORMAL</p>
+                </div>
+                <p class="card-time">10:30:05</p>
+              </div>
+              <div class="card-body">
+                <div class="card-location">
+                  <p class="card-location-text">2층 피킹구역 A존 #P2105</p>
+                </div>
+                <div class="card-description">
+                  <p class="card-description-text">화물 ID #CARGO-88421에 대한 피킹 작업이 완료되었습니다.</p>
+                </div>
+              </div>
+            </div>
+            <div class="card-tag">
+              <p class="card-tag-text">피킹 완료</p>
+            </div>
+          </div>
+          <!-- Card 6: Normal -->
+          <div class="event-card event-card--normal">
+            <div class="card-top">
+              <div class="card-header">
+                <div class="card-level">
+                  <div class="card-level-icon">
+                    <img src="./assets/icon-normal.svg" alt="">
+                  </div>
+                  <p class="card-level-text">NORMAL</p>
+                </div>
+                <p class="card-time">10:28:00</p>
+              </div>
+              <div class="card-body">
+                <div class="card-location">
+                  <p class="card-location-text">3층 보관구역 D존 #T9923</p>
+                </div>
+                <div class="card-description">
+                  <p class="card-description-text">화물 ID #CARGO-77210이 지정된 보관 위치에 정상 적치되었습니다.</p>
+                </div>
+              </div>
+            </div>
+            <div class="card-tag">
+              <p class="card-tag-text">적치 완료</p>
+            </div>
+          </div>
+          <!-- Card 7: Critical -->
+          <div class="event-card event-card--critical">
+            <div class="card-top">
+              <div class="card-header">
+                <div class="card-level">
+                  <div class="card-level-icon">
+                    <img src="./assets/icon-critical.svg" alt="">
+                  </div>
+                  <p class="card-level-text">CRITICAL</p>
+                </div>
+                <p class="card-time">10:15:17</p>
+              </div>
+              <div class="card-body">
+                <div class="card-location">
+                  <p class="card-location-text">1층 E구역 A존 #T1238</p>
+                </div>
+                <div class="card-description">
+                  <p class="card-description-text">컨베이어 2라인이 예기치 않게 정지했습니다.</p>
+                </div>
+              </div>
+            </div>
+            <div class="card-tag">
+              <p class="card-tag-text">장애 발생</p>
+            </div>
+          </div>
+          <!-- Card 8: Normal -->
+          <div class="event-card event-card--normal">
+            <div class="card-top">
+              <div class="card-header">
+                <div class="card-level">
+                  <div class="card-level-icon">
+                    <img src="./assets/icon-normal.svg" alt="">
+                  </div>
+                  <p class="card-level-text">NORMAL</p>
+                </div>
+                <p class="card-time">10:10:00</p>
+              </div>
+              <div class="card-body">
+                <div class="card-location">
+                  <p class="card-location-text">1층 출하구역 B라인 #L1203</p>
+                </div>
+                <div class="card-description">
+                  <p class="card-description-text">화물 ID #CARGO-91562가 출고 게이트를 정상 통과했습니다.</p>
+                </div>
+              </div>
+            </div>
+            <div class="card-tag">
+              <p class="card-tag-text">출고 확정</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</body>
+</html>

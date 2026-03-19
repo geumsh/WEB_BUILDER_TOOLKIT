@@ -1,0 +1,180 @@
+/* Moving Equipment Status (이동설비현황) Component */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+#component-container {
+  width: 296px;
+  height: 162px;
+  overflow: auto;
+}
+
+.glass-card {
+  width: 100%;
+  height: 100%;
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  border: 0.667px solid rgba(255, 255, 255, 0.1);
+  border-radius: 14px;
+  overflow: clip;
+  box-shadow:
+    0px 10px 15px -3px rgba(0, 0, 0, 0.1),
+    0px 4px 6px -4px rgba(0, 0, 0, 0.1);
+  background:
+    linear-gradient(151.358deg, rgba(255, 255, 255, 0.1) 0%, rgba(0, 0, 0, 0) 100%),
+    linear-gradient(90deg, rgba(15, 17, 21, 0.85) 0%, rgba(15, 17, 21, 0.85) 100%);
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  align-items: flex-start;
+  padding: 16px 17px 13px;
+}
+
+/* ===== Title ===== */
+.meq-title {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  padding-bottom: 10.667px;
+  border-bottom: 0.667px solid rgba(255, 255, 255, 0.1);
+  flex-shrink: 0;
+}
+
+.meq-head {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+}
+
+.meq-head-icon {
+  width: 16px;
+  height: 16px;
+  position: relative;
+  flex-shrink: 0;
+}
+
+.meq-head-icon img {
+  position: absolute;
+  display: block;
+  width: 100%;
+  height: 100%;
+  max-width: none;
+}
+
+.meq-head-text {
+  font-family: 'Pretendard', sans-serif;
+  font-size: 14px;
+  font-weight: 600;
+  line-height: normal;
+  color: #39e6c9;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+/* ===== Legends ===== */
+.meq-legends {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+
+.meq-legend-item {
+  display: flex;
+  gap: 4px;
+  align-items: center;
+}
+
+.meq-legend-dot {
+  width: 5px;
+  height: 5px;
+  position: relative;
+  flex-shrink: 0;
+}
+
+.meq-legend-dot img {
+  position: absolute;
+  display: block;
+  width: 100%;
+  height: 100%;
+  max-width: none;
+}
+
+.meq-legend-text {
+  font-family: 'Arial', 'Noto Sans KR', sans-serif;
+  font-size: 10px;
+  font-weight: 400;
+  line-height: normal;
+  color: rgba(255, 255, 255, 0.5);
+  white-space: nowrap;
+}
+
+/* ===== Contents ===== */
+.meq-contents {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  flex-shrink: 0;
+}
+
+/* ===== Bar Item ===== */
+.meq-item {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  align-items: center;
+  justify-content: center;
+  flex: 1 0 0;
+  min-width: 0;
+  min-height: 0;
+}
+
+.meq-graph {
+  width: 16px;
+  height: 72px;
+  background: rgba(255, 255, 255, 0.1);
+  border: 0.667px solid rgba(255, 255, 255, 0.2);
+  border-radius: 8px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: flex-end;
+  padding: 3.521px 0.667px 2.667px 2.667px;
+  flex-shrink: 0;
+  overflow: hidden;
+}
+
+.meq-bar-stack {
+  display: flex;
+  flex-direction: column;
+  line-height: 0;
+}
+
+.meq-bar--red {
+  background: #fb2c36;
+  width: 11px;
+  border-radius: 6px 6px 0 0;
+}
+
+.meq-bar--yellow {
+  background: #fdc700;
+  width: 11px;
+}
+
+.meq-bar--green {
+  background: #39e6c9;
+  width: 11px;
+  border-radius: 0 0 6px 6px;
+}
+
+.meq-label {
+  font-family: 'Arial', sans-serif;
+  font-size: 10px;
+  font-weight: 400;
+  line-height: 15px;
+  color: rgba(255, 255, 255, 0.5);
+  white-space: nowrap;
+}

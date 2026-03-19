@@ -1,0 +1,313 @@
+/* Equipment Search Component */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+#component-container {
+  width: 100%;
+  height: 100%;
+  overflow: auto;
+}
+
+.eq-search {
+  width: 100%;
+  height: 100%;
+  border-right: 0.667px solid rgba(39, 39, 42, 0.5);
+  border-radius: 20px;
+  overflow: clip;
+  background:
+    linear-gradient(120.887deg, rgba(24, 24, 27, 0.8) 0%, rgba(24, 24, 27, 0.4) 50%, rgb(0, 0, 0) 100%),
+    linear-gradient(90deg, rgba(27, 31, 38, 0.85) 0%, rgba(27, 31, 38, 0.85) 100%),
+    linear-gradient(90deg, rgb(24, 24, 27) 0%, rgb(24, 24, 27) 100%);
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+}
+
+/* ===== Header ===== */
+.eqs-header {
+  width: 100%;
+  height: 129px;
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  padding: 24px 24px 0;
+}
+
+.eqs-title {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  width: 100%;
+}
+
+.eqs-title-bar {
+  width: 3px;
+  align-self: stretch;
+  background: #39e6c9;
+  border-radius: 6px;
+  flex-shrink: 0;
+}
+
+.eqs-title-text {
+  font-family: 'Pretendard', sans-serif;
+  font-size: 16px;
+  font-weight: 700;
+  line-height: normal;
+  color: #fff;
+  white-space: nowrap;
+}
+
+.eqs-search-box {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  width: 100%;
+  padding: 14px 10px;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 10px;
+  flex-shrink: 0;
+}
+
+.eqs-search-icon {
+  width: 16px;
+  height: 16px;
+  position: relative;
+  flex-shrink: 0;
+}
+
+.eqs-search-icon img {
+  position: absolute;
+  display: block;
+  width: 100%;
+  height: 100%;
+  max-width: none;
+}
+
+.eqs-search-text {
+  font-family: 'Pretendard', sans-serif;
+  font-size: 14px;
+  font-weight: 500;
+  line-height: normal;
+  color: rgba(212, 212, 216, 0.5);
+  white-space: nowrap;
+}
+
+/* ===== Table Header ===== */
+.eqs-table-header {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  padding: 6px 21px;
+  border-bottom: 0.667px solid rgba(39, 39, 42, 0.5);
+  flex-shrink: 0;
+}
+
+.eqs-th {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: 'Pretendard', sans-serif;
+  font-size: 16px;
+  font-weight: 700;
+  line-height: normal;
+  color: #9f9fa9;
+  text-align: center;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.eqs-th--name { width: 181px; }
+.eqs-th--zone { width: 128px; }
+.eqs-th--battery { width: 139px; }
+.eqs-th--status { flex: 1; min-width: 0; }
+
+/* ===== Contents (Scrollable) ===== */
+.eqs-contents {
+  width: 100%;
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+
+/* ===== Row ===== */
+.eqs-row {
+  display: flex;
+  gap: 45px;
+  align-items: center;
+  padding: 16px;
+  width: 100%;
+  border-bottom: 0.667px solid rgba(39, 39, 42, 0.3);
+}
+
+.eqs-row--selected {
+  background: rgba(57, 230, 201, 0.1);
+}
+
+/* ===== Row: Name Cell ===== */
+.eqs-cell-name {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  width: 171px;
+  height: 100%;
+  flex-shrink: 0;
+}
+
+.eqs-cell-img {
+  width: 48px;
+  height: 48px;
+  border: 0.667px solid #27272a;
+  border-radius: 14px;
+  overflow: clip;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.eqs-row--selected .eqs-cell-img {
+  background: rgba(0, 0, 0, 0.5);
+  border-color: rgba(57, 230, 201, 0.5);
+  box-shadow: 0px 0px 15px 0px rgba(57, 230, 201, 0.2);
+}
+
+.eqs-cell-img img {
+  max-width: 40px;
+  max-height: 40px;
+  object-fit: contain;
+}
+
+.eqs-cell-txt {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  height: 38px;
+  white-space: nowrap;
+}
+
+.eqs-cell-name-title {
+  font-family: 'Pretendard', sans-serif;
+  font-size: 14px;
+  font-weight: 700;
+  line-height: normal;
+  color: #d4d4d8;
+}
+
+.eqs-row--selected .eqs-cell-name-title {
+  color: #39e6c9;
+}
+
+.eqs-cell-name-sub {
+  font-family: 'Pretendard', sans-serif;
+  font-size: 13px;
+  font-weight: 400;
+  line-height: normal;
+  color: #9f9fa9;
+}
+
+/* ===== Row: Zone Cell ===== */
+.eqs-cell-zone {
+  display: flex;
+  align-items: flex-start;
+  padding: 6px 17px;
+  background: #18181b;
+  border: 0.667px solid #27272a;
+  border-radius: 8px;
+  flex-shrink: 0;
+}
+
+.eqs-cell-zone-text {
+  font-family: 'Pretendard', sans-serif;
+  font-size: 12px;
+  font-weight: 400;
+  line-height: normal;
+  color: #9f9fa9;
+  white-space: nowrap;
+}
+
+.eqs-row--selected .eqs-cell-zone-text {
+  color: #39e6c9;
+}
+
+/* ===== Row: Battery Cell ===== */
+.eqs-cell-battery {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  align-items: center;
+  flex-shrink: 0;
+}
+
+.eqs-battery-track {
+  width: 95px;
+  height: 6px;
+  background: #27272a;
+  border-radius: 22369600px;
+  overflow: clip;
+}
+
+.eqs-battery-bar {
+  height: 6px;
+  border-radius: 22369600px;
+}
+
+.eqs-battery-bar--normal { background: #39e6c9; }
+.eqs-battery-bar--warning { background: #f0b100; }
+.eqs-battery-bar--danger { background: #fb2c36; }
+
+.eqs-battery-text {
+  font-family: 'Pretendard', sans-serif;
+  font-size: 13px;
+  font-weight: 400;
+  line-height: normal;
+  color: #9f9fa9;
+  white-space: nowrap;
+}
+
+/* ===== Row: Status Cell ===== */
+.eqs-cell-status {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 6px 17px;
+  border-radius: 22369600px;
+  border: 0.667px solid;
+  flex-shrink: 0;
+}
+
+.eqs-cell-status--normal {
+  background: rgba(57, 230, 201, 0.1);
+  border-color: rgba(57, 230, 201, 0.2);
+}
+
+.eqs-cell-status--warning {
+  background: rgba(240, 177, 0, 0.1);
+  border-color: rgba(240, 177, 0, 0.2);
+}
+
+.eqs-cell-status--danger {
+  background: rgba(251, 44, 54, 0.1);
+  border-color: rgba(251, 44, 54, 0.2);
+}
+
+.eqs-status-text {
+  font-family: 'Pretendard', sans-serif;
+  font-size: 12px;
+  font-weight: 400;
+  line-height: normal;
+  white-space: nowrap;
+}
+
+.eqs-cell-status--normal .eqs-status-text { color: #39e6c9; }
+.eqs-cell-status--warning .eqs-status-text { color: #f0b100; }
+.eqs-cell-status--danger .eqs-status-text { color: #fb2c36; }
+
+/* ===== Scrollbar ===== */
+.eqs-contents::-webkit-scrollbar { width: 6px; }
+.eqs-contents::-webkit-scrollbar-track { background: rgba(255, 255, 255, 0.05); }
+.eqs-contents::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.2); border-radius: 50px; }

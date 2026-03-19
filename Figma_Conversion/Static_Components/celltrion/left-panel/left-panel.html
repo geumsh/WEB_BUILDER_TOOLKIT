@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Left Panel</title>
+  <link rel="stylesheet" href="left-panel.css">
+</head>
+<body style="background: #0a0c10;">
+  <div id="component-container" style="width: 280px; height: 750px;">
+    <div class="left-panel">
+      <!-- Search Bar -->
+      <div class="glass-card search-bar">
+        <div class="icon">
+          <img src="./assets/icon-search.svg" alt="">
+        </div>
+        <p class="search-bar-text">설비 및 자산 검색</p>
+      </div>
+
+      <!-- 위치 선택 Section -->
+      <div class="glass-card section-card">
+        <div class="section-title">
+          <div class="icon">
+            <img src="./assets/icon-location.svg" alt="">
+          </div>
+          <p class="section-title-text">위치 선택</p>
+        </div>
+        <div class="tree-container">
+          <div class="tree-list">
+            <!-- 건물 -->
+            <div class="tree-item tree-item--l1">
+              <div class="tree-item-obj">
+                <div class="icon-main"><img src="./assets/icon-building.svg" alt=""></div>
+                <div class="icon-chevron"><img src="./assets/icon-chevron.svg" alt=""></div>
+              </div>
+              <p class="tree-item-text">건물</p>
+            </div>
+            <!-- 1층 -->
+            <div class="tree-item tree-item--l2">
+              <div class="tree-item-obj">
+                <div class="icon-main"><img src="./assets/icon-floor.svg" alt=""></div>
+                <div class="icon-chevron"><img src="./assets/icon-chevron.svg" alt=""></div>
+              </div>
+              <p class="tree-item-text">1층</p>
+            </div>
+            <!-- 2층 -->
+            <div class="tree-item tree-item--l2">
+              <div class="tree-item-obj">
+                <div class="icon-main"><img src="./assets/icon-floor.svg" alt=""></div>
+                <div class="icon-chevron"><img src="./assets/icon-chevron.svg" alt=""></div>
+              </div>
+              <p class="tree-item-text">2층</p>
+            </div>
+            <!-- 3층 (open) -->
+            <div class="tree-item tree-item--l2">
+              <div class="tree-item-obj">
+                <div class="icon-main"><img src="./assets/icon-floor-open.svg" alt=""></div>
+                <div class="icon-chevron"><img src="./assets/icon-chevron.svg" alt=""></div>
+              </div>
+              <p class="tree-item-text">3층</p>
+            </div>
+            <!-- Zone children -->
+            <div class="tree-item tree-item--l3">
+              <div class="tree-item-zone-icon"><img src="./assets/icon-zone-inactive.svg" alt=""></div>
+              <p class="tree-item-text tree-item-text--inactive">A Zone (Main)</p>
+            </div>
+            <div class="tree-item tree-item--l3">
+              <div class="tree-item-zone-icon"><img src="./assets/icon-zone-inactive.svg" alt=""></div>
+              <p class="tree-item-text tree-item-text--inactive">B Zone (Cold)</p>
+            </div>
+            <div class="tree-item tree-item--l3">
+              <div class="tree-item-zone-icon"><img src="./assets/icon-zone-active.svg" alt=""></div>
+              <p class="tree-item-text">D Zone (Except)</p>
+            </div>
+            <div class="tree-item tree-item--l3">
+              <div class="tree-item-zone-icon"><img src="./assets/icon-zone-inactive.svg" alt=""></div>
+              <p class="tree-item-text tree-item-text--inactive">E Zone (ETC)</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 화물 검색 Section -->
+      <div class="glass-card section-card section-card--cargo">
+        <div class="section-title">
+          <div class="icon">
+            <img src="./assets/icon-cargo.svg" alt="">
+          </div>
+          <p class="section-title-text">화물 검색</p>
+        </div>
+        <div class="cargo-tree-container">
+          <!-- Search input -->
+          <div class="cargo-search">
+            <div class="icon">
+              <img src="./assets/icon-search-sm.svg" alt="">
+            </div>
+            <p class="cargo-search-text">화물 검색</p>
+          </div>
+          <!-- Cargo tree -->
+          <div class="cargo-tree-list">
+            <!-- A Zone (Main) - expanded -->
+            <div class="cargo-group">
+              <div class="tree-item tree-item--l1">
+                <div class="tree-item-obj">
+                  <div class="icon-main"><img src="./assets/icon-cargo-folder.svg" alt=""></div>
+                  <div class="icon-chevron"><img src="./assets/icon-chevron.svg" alt=""></div>
+                </div>
+                <p class="tree-item-text">A Zone (Main)</p>
+              </div>
+              <!-- ZONE 01 (checked) -->
+              <div class="tree-item tree-item--l2-cargo">
+                <div class="tree-item-checkbox tree-item-checkbox--active">
+                  <div class="icon-cb"><img src="./assets/icon-checkbox-checked.svg" alt=""></div>
+                </div>
+                <p class="tree-item-text">ZONE 01</p>
+              </div>
+              <!-- ZONE 02-07 (unchecked) -->
+              <div class="tree-item tree-item--l2-cargo">
+                <div class="tree-item-checkbox tree-item-checkbox--inactive">
+                  <div class="checkbox-unchecked"><div class="checkbox-unchecked-inner"></div></div>
+                </div>
+                <p class="tree-item-text tree-item-text--inactive">ZONE 02</p>
+              </div>
+              <div class="tree-item tree-item--l2-cargo">
+                <div class="tree-item-checkbox tree-item-checkbox--inactive">
+                  <div class="checkbox-unchecked"><div class="checkbox-unchecked-inner"></div></div>
+                </div>
+                <p class="tree-item-text tree-item-text--inactive">ZONE 03</p>
+              </div>
+              <div class="tree-item tree-item--l2-cargo">
+                <div class="tree-item-checkbox tree-item-checkbox--inactive">
+                  <div class="checkbox-unchecked"><div class="checkbox-unchecked-inner"></div></div>
+                </div>
+                <p class="tree-item-text tree-item-text--inactive">ZONE 04</p>
+              </div>
+              <div class="tree-item tree-item--l2-cargo">
+                <div class="tree-item-checkbox tree-item-checkbox--inactive">
+                  <div class="checkbox-unchecked"><div class="checkbox-unchecked-inner"></div></div>
+                </div>
+                <p class="tree-item-text tree-item-text--inactive">ZONE 05</p>
+              </div>
+              <div class="tree-item tree-item--l2-cargo">
+                <div class="tree-item-checkbox tree-item-checkbox--inactive">
+                  <div class="checkbox-unchecked"><div class="checkbox-unchecked-inner"></div></div>
+                </div>
+                <p class="tree-item-text tree-item-text--inactive">ZONE 06</p>
+              </div>
+              <div class="tree-item tree-item--l2-cargo">
+                <div class="tree-item-checkbox tree-item-checkbox--inactive">
+                  <div class="checkbox-unchecked"><div class="checkbox-unchecked-inner"></div></div>
+                </div>
+                <p class="tree-item-text tree-item-text--inactive">ZONE 07</p>
+              </div>
+            </div>
+            <!-- B Zone (Cold) -->
+            <div class="tree-item tree-item--l1">
+              <div class="tree-item-obj">
+                <div class="icon-main"><img src="./assets/icon-cargo-folder-closed.svg" alt=""></div>
+                <div class="icon-chevron"><img src="./assets/icon-chevron.svg" alt=""></div>
+              </div>
+              <p class="tree-item-text">B Zone (Cold)</p>
+            </div>
+            <!-- D Zone (Except) -->
+            <div class="tree-item tree-item--l1">
+              <div class="tree-item-obj">
+                <div class="icon-main"><img src="./assets/icon-cargo-folder-closed.svg" alt=""></div>
+                <div class="icon-chevron"><img src="./assets/icon-chevron.svg" alt=""></div>
+              </div>
+              <p class="tree-item-text">D Zone (Except)</p>
+            </div>
+            <!-- E Zone (ETC) -->
+            <div class="tree-item tree-item--l1">
+              <div class="tree-item-obj">
+                <div class="icon-main"><img src="./assets/icon-cargo-etc.svg" alt=""></div>
+                <div class="icon-chevron"><img src="./assets/icon-chevron.svg" alt=""></div>
+              </div>
+              <p class="tree-item-text">E Zone (ETC)</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</body>
+</html>

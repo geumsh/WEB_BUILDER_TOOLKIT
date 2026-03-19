@@ -1,0 +1,340 @@
+/* Left Panel Component */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+#component-container {
+  width: 100%;
+  height: 100%;
+  overflow: auto;
+}
+
+.left-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  align-items: flex-start;
+  width: 100%;
+  height: 100%;
+}
+
+/* ===== Glass Card Base ===== */
+.glass-card {
+  width: 100%;
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  border: 0.667px solid rgba(255, 255, 255, 0.1);
+  border-radius: 14px;
+  overflow: clip;
+  box-shadow:
+    0px 10px 15px -3px rgba(0, 0, 0, 0.1),
+    0px 4px 6px -4px rgba(0, 0, 0, 0.1);
+  flex-shrink: 0;
+}
+
+/* ===== Search Bar ===== */
+.search-bar {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  padding: 10px 17px;
+  border-radius: 10px;
+  background:
+    linear-gradient(173.376deg, rgba(255, 255, 255, 0.1) 0%, rgba(0, 0, 0, 0) 100%),
+    linear-gradient(90deg, rgba(15, 17, 21, 0.9) 0%, rgba(15, 17, 21, 0.9) 100%);
+}
+
+.search-bar .icon {
+  width: 16px;
+  height: 16px;
+  position: relative;
+  flex-shrink: 0;
+}
+
+.search-bar .icon img {
+  position: absolute;
+  display: block;
+  width: 100%;
+  height: 100%;
+  max-width: none;
+}
+
+.search-bar-text {
+  font-family: 'Arial', 'Noto Sans KR', sans-serif;
+  font-size: 14px;
+  font-weight: 400;
+  line-height: normal;
+  color: #6a7282;
+  white-space: nowrap;
+}
+
+/* ===== Section Card ===== */
+.section-card {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  align-items: flex-start;
+  padding: 16px 17px 18px;
+  background:
+    linear-gradient(134.18deg, rgba(255, 255, 255, 0.1) 0%, rgba(0, 0, 0, 0) 100%),
+    linear-gradient(90deg, rgba(15, 17, 21, 0.85) 0%, rgba(15, 17, 21, 0.85) 100%);
+}
+
+.section-card--cargo {
+  background:
+    linear-gradient(126.236deg, rgba(255, 255, 255, 0.1) 0%, rgba(0, 0, 0, 0) 100%),
+    linear-gradient(90deg, rgba(15, 17, 21, 0.85) 0%, rgba(15, 17, 21, 0.85) 100%);
+}
+
+/* ===== Section Title ===== */
+.section-title {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  width: 100%;
+}
+
+.section-title .icon {
+  width: 16px;
+  height: 16px;
+  position: relative;
+  flex-shrink: 0;
+}
+
+.section-title .icon img {
+  position: absolute;
+  display: block;
+  width: 100%;
+  height: 100%;
+  max-width: none;
+}
+
+.section-title-text {
+  font-family: 'Pretendard', sans-serif;
+  font-size: 14px;
+  font-weight: 600;
+  line-height: normal;
+  color: #39e6c9;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+/* ===== Tree Container ===== */
+.tree-container {
+  width: 100%;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 4px;
+  padding: 10px 8px 30px;
+}
+
+/* ===== Tree Item ===== */
+.tree-list {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  width: 100%;
+}
+
+.tree-item {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  padding: 3px 6px;
+  border-radius: 9.085px;
+  width: 100%;
+  cursor: pointer;
+}
+
+.tree-item--l1 { padding-left: 6px; }
+.tree-item--l2 { padding-left: 18px; }
+.tree-item--l3 { padding-left: 35px; }
+
+.tree-item-obj {
+  height: 18px;
+  display: flex;
+  gap: 2px;
+  align-items: center;
+  justify-content: center;
+  opacity: 0.5;
+  flex-shrink: 0;
+}
+
+.tree-item-obj--active {
+  opacity: 1;
+}
+
+.tree-item-obj .icon-main {
+  width: 15.898px;
+  height: 15.898px;
+  position: relative;
+  flex-shrink: 0;
+}
+
+.tree-item-obj .icon-main img {
+  position: absolute;
+  display: block;
+  width: 100%;
+  height: 100%;
+  max-width: none;
+}
+
+.tree-item-obj .icon-chevron {
+  width: 14px;
+  height: 14px;
+  position: relative;
+  flex-shrink: 0;
+}
+
+.tree-item-obj .icon-chevron img {
+  position: absolute;
+  display: block;
+  width: 100%;
+  height: 100%;
+  max-width: none;
+}
+
+.tree-item-text {
+  font-family: 'Pretendard', sans-serif;
+  font-size: 14px;
+  font-weight: 500;
+  line-height: normal;
+  color: #d1d5dc;
+  white-space: nowrap;
+}
+
+.tree-item-text--inactive {
+  font-weight: 400;
+  color: #8a8d93;
+}
+
+/* ===== Zone Icon (leaf) ===== */
+.tree-item-zone-icon {
+  width: 16px;
+  height: 16px;
+  position: relative;
+  flex-shrink: 0;
+}
+
+.tree-item-zone-icon img {
+  position: absolute;
+  display: block;
+  width: 100%;
+  height: 100%;
+  max-width: none;
+}
+
+/* ===== Cargo Search Bar ===== */
+.cargo-search {
+  width: 100%;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  padding: 7px 10px;
+  gap: 8px;
+}
+
+.cargo-search .icon {
+  width: 16px;
+  height: 16px;
+  position: relative;
+  flex-shrink: 0;
+}
+
+.cargo-search .icon img {
+  position: absolute;
+  display: block;
+  width: 100%;
+  height: 100%;
+  max-width: none;
+}
+
+.cargo-search-text {
+  font-family: 'Pretendard', sans-serif;
+  font-size: 14px;
+  font-weight: 500;
+  line-height: normal;
+  color: #6a7282;
+  white-space: nowrap;
+}
+
+/* ===== Cargo Tree Container ===== */
+.cargo-tree-container {
+  width: 100%;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 4px;
+  padding: 10px 8px 30px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+/* ===== Cargo Tree Items ===== */
+.cargo-tree-list {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  width: 100%;
+}
+
+.cargo-group {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  width: 100%;
+}
+
+/* Checkbox item */
+.tree-item-checkbox {
+  height: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.tree-item-checkbox--active {
+  opacity: 1;
+}
+
+.tree-item-checkbox--inactive {
+  opacity: 0.5;
+}
+
+.tree-item-checkbox .icon-cb {
+  width: 14px;
+  height: 14px;
+  position: relative;
+  flex-shrink: 0;
+}
+
+.tree-item-checkbox .icon-cb img {
+  position: absolute;
+  display: block;
+  width: 100%;
+  height: 100%;
+  max-width: none;
+}
+
+/* Checkbox unchecked (CSS only) */
+.checkbox-unchecked {
+  width: 14px;
+  height: 14px;
+  position: relative;
+  flex-shrink: 0;
+}
+
+.checkbox-unchecked-inner {
+  width: 10px;
+  height: 10px;
+  border: 1px solid #d1d5dc;
+  border-radius: 2px;
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+}
+
+.tree-item--l2-cargo { padding-left: 24px; }

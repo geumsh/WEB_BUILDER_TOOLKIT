@@ -1,0 +1,188 @@
+#celltrion-kpi-section-container {
+
+  .kpi-section {
+    display: flex;
+    gap: 4px;
+    align-items: center;
+    width: 100%;
+    height: 100%;
+  }
+
+  /* ===== Common Card ===== */
+  .kpi-card {
+    height: 100%;
+    backdrop-filter: blur(6px);
+    -webkit-backdrop-filter: blur(6px);
+    background: rgba(15, 17, 21, 0.8);
+    border: 1px solid rgba(57, 230, 201, 0.4);
+    border-radius: 14px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    align-items: flex-start;
+    padding: 12px 20px;
+    flex-shrink: 0;
+  }
+
+  .kpi-card--alert {
+    backdrop-filter: blur(4px);
+    -webkit-backdrop-filter: blur(4px);
+    background: rgba(15, 17, 21, 0.85);
+    border-color: #fb2c36;
+    box-shadow: 0px 0px 15px 0px rgba(230, 57, 86, 0.4);
+  }
+
+  /* ===== Card Title Row ===== */
+  .kpi-title-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
+  }
+
+  .kpi-title {
+    font-family: 'Pretendard', sans-serif;
+    font-size: 14px;
+    font-weight: 400;
+    line-height: 20px;
+    color: #99a1af;
+    letter-spacing: 0.6px;
+    text-transform: uppercase;
+    white-space: nowrap;
+  }
+
+  .kpi-badge {
+    display: flex;
+    align-items: flex-start;
+    padding: 2px 6px;
+    height: 20px;
+    background: rgba(57, 230, 201, 0.2);
+    border-radius: 4px;
+  }
+
+  .kpi-badge-text {
+    font-family: 'Arial', sans-serif;
+    font-size: 12px;
+    font-weight: 400;
+    line-height: 16px;
+    color: #39e6c9;
+    text-align: right;
+    white-space: nowrap;
+  }
+
+  /* ===== Value Row ===== */
+  .kpi-value-row {
+    display: flex;
+    gap: 4px;
+    align-items: center;
+    white-space: nowrap;
+  }
+
+  .kpi-value {
+    font-family: 'Pretendard', sans-serif;
+    font-size: 24px;
+    font-weight: 700;
+    line-height: normal;
+    color: #fff;
+  }
+
+  .kpi-unit {
+    font-family: 'Pretendard', sans-serif;
+    font-size: 20px;
+    font-weight: 400;
+    line-height: normal;
+    color: #39e6c9;
+  }
+
+  .kpi-card--alert .kpi-value {
+    color: #fb2c36;
+  }
+
+  .kpi-card--alert .kpi-unit {
+    color: #fb2c36;
+  }
+
+  /* ===== Card: 입고/보관/출고 ===== */
+  .kpi-card--flow {
+    flex: 1 0 0;
+    min-width: 0;
+    flex-direction: row;
+    align-items: flex-start;
+    justify-content: space-between;
+    padding: 12px 40px;
+  }
+
+  .flow-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: space-between;
+    height: 100%;
+  }
+
+  .flow-divider {
+    display: flex;
+    align-items: center;
+    height: 100%;
+    padding: 4px 0;
+  }
+
+  .flow-divider-line {
+    width: 1.5px;
+    height: 100%;
+    background: rgba(153, 161, 175, 0.5);
+  }
+
+  /* ===== Card: 평균 Picking 시간 ===== */
+  .kpi-time-row {
+    display: flex;
+    gap: 6px;
+    align-items: flex-start;
+    white-space: nowrap;
+  }
+
+  .kpi-time-item {
+    display: flex;
+    gap: 4px;
+    align-items: center;
+  }
+
+  /* ===== Card: 설비 가동률 ===== */
+  .kpi-card--equipment {
+    flex: 1 0 0;
+    min-width: 0;
+    align-items: center;
+    padding: 12px 30px;
+  }
+
+  .equipment-row {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    width: 100%;
+  }
+
+  .equipment-group {
+    display: flex;
+    gap: 18px;
+    align-items: center;
+  }
+
+  .equipment-label {
+    display: flex;
+    align-items: flex-start;
+    padding: 2px 15px;
+    height: 20px;
+    background: rgba(153, 161, 175, 0.2);
+    border-radius: 4px;
+  }
+
+  .equipment-label-text {
+    font-family: 'Arial', 'Noto Sans KR', sans-serif;
+    font-size: 12px;
+    font-weight: 400;
+    line-height: 16px;
+    color: #39e6c9;
+    white-space: nowrap;
+  }
+}

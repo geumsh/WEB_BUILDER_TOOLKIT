@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Pallet Status</title>
+  <link rel="stylesheet" href="pallet-status.css">
+</head>
+<body style="background: #0a0c10;">
+  <div id="component-container" style="width: 296px; height: 162px;">
+    <div class="pallet-status">
+      <!-- Title -->
+      <div class="ps-title">
+        <div class="ps-title-icon">
+          <img src="./assets/icon-title.svg" alt="">
+        </div>
+        <p class="ps-title-text">팔레트 현황</p>
+      </div>
+      <!-- Contents -->
+      <div class="ps-contents">
+        <!-- 총 팔레트 -->
+        <div class="ps-stat">
+          <div class="ps-stat-row">
+            <p class="ps-stat-label">총 팔레트</p>
+            <p class="ps-stat-value">185</p>
+          </div>
+          <div class="ps-progress-track ps-progress-track--full">
+            <div class="ps-progress-bar" style="width: 100%;"></div>
+          </div>
+        </div>
+        <!-- 사용 / 재고 -->
+        <div class="ps-bottom-row">
+          <div class="ps-stat">
+            <div class="ps-stat-row">
+              <p class="ps-stat-label">사용 팔레트</p>
+              <p class="ps-stat-value">30</p>
+            </div>
+            <div class="ps-progress-track">
+              <div class="ps-progress-bar" style="width: 34px;"></div>
+            </div>
+          </div>
+          <div class="ps-stat">
+            <div class="ps-stat-row">
+              <p class="ps-stat-label">재고 팔레트</p>
+              <p class="ps-stat-value">10</p>
+            </div>
+            <div class="ps-progress-track">
+              <div class="ps-progress-bar" style="width: 11px;"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</body>
+</html>

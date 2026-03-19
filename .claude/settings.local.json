@@ -58,7 +58,20 @@
       "Bash(mkdir -p \"C:/Users/WEMB/Desktop/WEB_BUILDER_TOOLKIT/Figma_Conversion/Static_Components/MONIMO/chart2/assets\")",
       "Bash(mkdir -p \"C:/Users/WEMB/Desktop/WEB_BUILDER_TOOLKIT/Figma_Conversion/Static_Components/MONIMO/chart2/screenshots\")",
       "Bash(mkdir -p \"C:/Users/WEMB/Desktop/WEB_BUILDER_TOOLKIT/Figma_Conversion/Static_Components/MONIMO/chart3/assets\")",
-      "Bash(mkdir -p \"C:/Users/WEMB/Desktop/WEB_BUILDER_TOOLKIT/Figma_Conversion/Static_Components/MONIMO/chart3/screenshots\")"
+      "Bash(mkdir -p \"C:/Users/WEMB/Desktop/WEB_BUILDER_TOOLKIT/Figma_Conversion/Static_Components/MONIMO/chart3/screenshots\")",
+      "Bash(sleep:*)",
+      "Bash(mkdir -p \"C:/Users/WEMB/Desktop/WEB_BUILDER_TOOLKIT/Figma_Conversion/Static_Components/celltrion/header/assets\")",
+      "Bash(mkdir -p \"C:/Users/WEMB/Desktop/WEB_BUILDER_TOOLKIT/Figma_Conversion/Static_Components/celltrion/header/screenshots\")",
+      "Bash(mkdir -p \"C:/Users/WEMB/Desktop/WEB_BUILDER_TOOLKIT/Figma_Conversion/Static_Components/celltrion/left-panel/assets\")",
+      "Bash(mkdir -p \"C:/Users/WEMB/Desktop/WEB_BUILDER_TOOLKIT/Figma_Conversion/Static_Components/celltrion/left-panel/screenshots\")",
+      "Bash(mkdir -p \"C:/Users/WEMB/Desktop/WEB_BUILDER_TOOLKIT/Figma_Conversion/Static_Components/celltrion/temp-humidity/assets\")",
+      "Bash(mkdir -p \"C:/Users/WEMB/Desktop/WEB_BUILDER_TOOLKIT/Figma_Conversion/Static_Components/celltrion/temp-humidity/screenshots\")",
+      "Bash(mkdir -p \"C:/Users/WEMB/Desktop/WEB_BUILDER_TOOLKIT/Figma_Conversion/Static_Components/celltrion/equipment-status/assets\")",
+      "Bash(mkdir -p \"C:/Users/WEMB/Desktop/WEB_BUILDER_TOOLKIT/Figma_Conversion/Static_Components/celltrion/equipment-status/screenshots\")",
+      "Bash(mkdir -p \"C:/Users/WEMB/Desktop/WEB_BUILDER_TOOLKIT/Figma_Conversion/Static_Components/celltrion/pallet-status/assets\")",
+      "Bash(mkdir -p \"C:/Users/WEMB/Desktop/WEB_BUILDER_TOOLKIT/Figma_Conversion/Static_Components/celltrion/pallet-status/screenshots\")",
+      "Bash(mkdir -p \"C:/Users/WEMB/Desktop/WEB_BUILDER_TOOLKIT/Figma_Conversion/Static_Components/celltrion/equipment-search/assets\")",
+      "Bash(mkdir -p \"C:/Users/WEMB/Desktop/WEB_BUILDER_TOOLKIT/Figma_Conversion/Static_Components/celltrion/equipment-search/screenshots\")"
     ],
     "deny": [],
     "ask": []

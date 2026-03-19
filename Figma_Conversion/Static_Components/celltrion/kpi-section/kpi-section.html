@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>KPISection</title>
+  <link rel="stylesheet" href="kpi-section.css">
+</head>
+<body>
+  <div id="component-container">
+    <div class="kpi-section">
+      <!-- Card 1: 당일 물동량 -->
+      <div class="kpi-card kpi-card--volume">
+        <div class="kpi-title-row">
+          <p class="kpi-title">당일 물동량(처리량)</p>
+          <div class="kpi-badge">
+            <p class="kpi-badge-text">+12.5%</p>
+          </div>
+        </div>
+        <div class="kpi-value-row">
+          <p class="kpi-value">15,420</p>
+          <p class="kpi-unit">t</p>
+        </div>
+      </div>
+      <!-- Card 2: 입고/보관/출고 -->
+      <div class="kpi-card kpi-card--flow">
+        <div class="flow-item">
+          <p class="kpi-title">입고</p>
+          <div class="kpi-value-row">
+            <p class="kpi-value">500</p>
+            <p class="kpi-unit">t</p>
+          </div>
+        </div>
+        <div class="flow-divider">
+          <div class="flow-divider-line"></div>
+        </div>
+        <div class="flow-item">
+          <p class="kpi-title">보관</p>
+          <div class="kpi-value-row">
+            <p class="kpi-value">500</p>
+            <p class="kpi-unit">t</p>
+          </div>
+        </div>
+        <div class="flow-divider">
+          <div class="flow-divider-line"></div>
+        </div>
+        <div class="flow-item">
+          <p class="kpi-title">출고</p>
+          <div class="kpi-value-row">
+            <p class="kpi-value">300</p>
+            <p class="kpi-unit">t</p>
+          </div>
+        </div>
+      </div>
+      <!-- Card 3: Picking on-time 성능 -->
+      <div class="kpi-card kpi-card--picking-rate">
+        <p class="kpi-title">Picking on-time 성능</p>
+        <div class="kpi-value-row">
+          <p class="kpi-value">98.8</p>
+          <p class="kpi-unit">%</p>
+        </div>
+      </div>
+      <!-- Card 4: 평균 Picking 시간 -->
+      <div class="kpi-card kpi-card--picking-time">
+        <p class="kpi-title">평균 Picking 시간</p>
+        <div class="kpi-time-row">
+          <div class="kpi-time-item">
+            <p class="kpi-value">2</p>
+            <p class="kpi-unit">h</p>
+          </div>
+          <div class="kpi-time-item">
+            <p class="kpi-value">30</p>
+            <p class="kpi-unit">m</p>
+          </div>
+        </div>
+      </div>
+      <!-- Card 5: 설비 가동률 -->
+      <div class="kpi-card kpi-card--equipment">
+        <p class="kpi-title">설비 가동률</p>
+        <div class="equipment-row">
+          <div class="equipment-group">
+            <div class="equipment-label">
+              <p class="equipment-label-text">가동</p>
+            </div>
+            <div class="kpi-value-row">
+              <p class="kpi-value">98</p>
+              <p class="kpi-unit">%</p>
+            </div>
+          </div>
+          <div class="equipment-group">
+            <div class="equipment-label">
+              <p class="equipment-label-text">대기</p>
+            </div>
+            <div class="kpi-value-row">
+              <p class="kpi-value">1</p>
+              <p class="kpi-unit">%</p>
+            </div>
+          </div>
+          <div class="equipment-group">
+            <div class="equipment-label">
+              <p class="equipment-label-text">점검</p>
+            </div>
+            <div class="kpi-value-row">
+              <p class="kpi-value">1</p>
+              <p class="kpi-unit">%</p>
+            </div>
+          </div>
+        </div>
+      </div>
+      <!-- Card 6: 시간당 처리량 PPH -->
+      <div class="kpi-card kpi-card--pph">
+        <p class="kpi-title">시간단 처리량 단위 PPH</p>
+        <div class="kpi-value-row">
+          <p class="kpi-value">200</p>
+          <p class="kpi-unit">UPH</p>
+        </div>
+      </div>
+      <!-- Card 7: 영상분석 알람수 -->
+      <div class="kpi-card kpi-card--alert kpi-card--alarm">
+        <p class="kpi-title">영상분석 알람수</p>
+        <div class="kpi-value-row">
+          <p class="kpi-value">3</p>
+          <p class="kpi-unit">건</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</body>
+</html>

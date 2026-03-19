@@ -1,0 +1,166 @@
+/* Equipment Status Component */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+#component-container {
+  width: 100%;
+  height: 100%;
+  overflow: auto;
+}
+
+.equipment-status {
+  width: 100%;
+  height: 100%;
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  border: 0.667px solid rgba(255, 255, 255, 0.1);
+  border-radius: 14px;
+  overflow: clip;
+  box-shadow:
+    0px 10px 15px -3px rgba(0, 0, 0, 0.1),
+    0px 4px 6px -4px rgba(0, 0, 0, 0.1);
+  background:
+    linear-gradient(153.797deg, rgba(255, 255, 255, 0.1) 0%, rgba(0, 0, 0, 0) 100%),
+    linear-gradient(90deg, rgba(15, 17, 21, 0.85) 0%, rgba(15, 17, 21, 0.85) 100%);
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  align-items: flex-start;
+  padding: 16px 17px 13px;
+}
+
+/* ===== Title ===== */
+.eq-title {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  padding-bottom: 10.667px;
+  border-bottom: 0.667px solid rgba(255, 255, 255, 0.1);
+  flex-shrink: 0;
+}
+
+.eq-title-inner {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+}
+
+.eq-title-icon {
+  width: 16px;
+  height: 16px;
+  position: relative;
+  flex-shrink: 0;
+}
+
+.eq-title-icon img {
+  position: absolute;
+  display: block;
+  width: 100%;
+  height: 100%;
+  max-width: none;
+}
+
+.eq-title-text {
+  font-family: 'Pretendard', sans-serif;
+  font-size: 14px;
+  font-weight: 600;
+  line-height: normal;
+  color: #39e6c9;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+/* ===== Contents ===== */
+.eq-contents {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  line-height: 0;
+  flex-shrink: 0;
+}
+
+/* ===== Chart (Gauge) ===== */
+.eq-chart {
+  display: inline-grid;
+  grid-template-columns: max-content;
+  grid-template-rows: max-content;
+  place-items: start;
+}
+
+.eq-gauge {
+  grid-column: 1;
+  grid-row: 1;
+  width: 77px;
+  height: 77px;
+  position: relative;
+}
+
+.eq-gauge img {
+  position: absolute;
+  display: block;
+  width: 100%;
+  height: 100%;
+  max-width: none;
+}
+
+/* ===== Label (overlaid on gauge) ===== */
+.eq-label {
+  grid-column: 1;
+  grid-row: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 4.863px;
+  align-items: center;
+  justify-content: center;
+  height: 51.063px;
+  margin-top: 19.45px;
+}
+
+/* 총 설비수: 좁은 라벨 */
+.eq-label--narrow {
+  width: 39.716px;
+  margin-left: 18.64px;
+}
+
+/* 운영/고장 설비수: 넓은 라벨 */
+.eq-label--wide {
+  width: 48.632px;
+  margin-left: 14.18px;
+}
+
+.eq-label-info {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  line-height: normal;
+  color: #fff;
+  white-space: nowrap;
+}
+
+.eq-label-value {
+  font-family: 'Pretendard', sans-serif;
+  font-size: 18px;
+  font-weight: 700;
+}
+
+.eq-label-sub {
+  font-family: 'Pretendard', sans-serif;
+  font-size: 11px;
+  font-weight: 400;
+}
+
+.eq-label-type {
+  font-family: 'Pretendard', sans-serif;
+  font-size: 14px;
+  font-weight: 500;
+  line-height: normal;
+  white-space: nowrap;
+}
+
+.eq-label-type--total { color: #39e6c9; }
+.eq-label-type--operating { color: #2b7fff; }
+.eq-label-type--broken { color: #fb2c36; }

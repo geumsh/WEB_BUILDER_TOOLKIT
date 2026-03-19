@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CelltrionEquipmentSearch - Preview</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { background: #0a0c10; }
+  </style>
+  <link rel="stylesheet" href="styles/component.css">
+</head>
+<body>
+
+<div id="celltrion-equipment-search-container" style="width: 580px; height: 940px; overflow: auto;">
+</div>
+
+<script>
+const GlobalDataPublisher = {
+    subscribe: (topic, instance, handler) => {},
+    unsubscribe: (topic, instance) => {}
+};
+const Wkit = {
+    bindEvents: (instance, events) => {},
+    removeCustomEvents: (instance, events) => {}
+};
+const fx = {
+    go: (...args) => { const [initial, ...fns] = args; return fns.reduce((acc, fn) => fn(acc), initial); },
+    each: (fn) => (arr) => { arr.forEach(fn); return arr; }
+};
+
+const container = document.getElementById('celltrion-equipment-search-container');
+
+fetch('views/component.html')
+    .then(res => res.text())
+    .then(html => {
+        container.innerHTML = html;
+        const mockThis = { appendElement: container, name: 'CelltrionEquipmentSearch_preview' };
+
+        fetch('scripts/register.js')
+            .then(res => res.text())
+            .then(script => {
+                const cleanScript = script
+                    .replace(/const\s*\{[^}]*\}\s*=\s*GlobalDataPublisher;/g, '')
+                    .replace(/const\s*\{[^}]*\}\s*=\s*Wkit;/g, '');
+
+                const fn = new Function('GlobalDataPublisher', 'Wkit', 'fx', 'subscribe', 'bindEvents', cleanScript);
+                fn.call(mockThis, GlobalDataPublisher, Wkit, fx, GlobalDataPublisher.subscribe, Wkit.bindEvents);
+                console.log('[Preview] Component initialized');
+                window._component = mockThis;
+            });
+    });
+</script>
+
+</body>
+</html>
