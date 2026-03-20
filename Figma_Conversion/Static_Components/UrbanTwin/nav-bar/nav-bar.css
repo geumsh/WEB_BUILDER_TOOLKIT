@@ -1,0 +1,156 @@
+/* Reset */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  background: #0a0a0a;
+}
+
+/* Container: Figma 선택 요소 크기 */
+#nav-bar-container {
+  width: 1920px;
+  height: 78px;
+  overflow: auto;
+}
+
+/* 내부 요소: Figma 스타일 그대로 */
+#nav-bar-container {
+  .nav-bar {
+    display: flex;
+    align-items: center;
+    gap: 100px;
+    width: 100%;
+    height: 100%;
+    padding: 16px 24px;
+  }
+
+  /* BI (Logo) */
+  .bi {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex: 1 0 0;
+    min-width: 0;
+    height: 32px;
+  }
+
+  .logo-icon {
+    width: 25px;
+    height: 24px;
+    display: block;
+    flex-shrink: 0;
+  }
+
+  .logo-text {
+    font-family: 'Quicksand', sans-serif;
+    font-weight: 700;
+    font-size: 26px;
+    line-height: 24px;
+    letter-spacing: -0.7125px;
+    color: #62e1f7;
+    white-space: nowrap;
+  }
+
+  /* Search Input */
+  .search-wrapper {
+    position: relative;
+    width: 576px;
+    height: 46px;
+    flex-shrink: 0;
+  }
+
+  .search-input {
+    width: 100%;
+    height: 100%;
+    background: rgba(255, 255, 255, 0.05);
+    border: 2px solid rgba(255, 255, 255, 0.1);
+    border-radius: 9999px;
+    padding: 10px 48px;
+    font-family: 'SUIT', sans-serif;
+    font-size: 16px;
+    line-height: normal;
+    letter-spacing: -0.3125px;
+    color: #cccedc;
+    outline: none;
+  }
+
+  .search-input::placeholder {
+    color: #cccedc;
+  }
+
+  .search-icon {
+    position: absolute;
+    left: 16px;
+    top: 15px;
+    width: 16px;
+    height: 16px;
+    pointer-events: none;
+  }
+
+  /* Navigation Buttons */
+  .nav-buttons {
+    display: flex;
+    align-items: center;
+    gap: 26px;
+    flex-shrink: 0;
+  }
+
+  /* Icon Buttons */
+  .icon-buttons {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+  }
+
+  .icon-btn {
+    width: 80px;
+    height: 42px;
+    display: block;
+    flex-shrink: 0;
+    cursor: pointer;
+  }
+
+  /* Text Buttons */
+  .text-buttons {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .btn-advertise {
+    width: 97.375px;
+    height: 42px;
+    background: #1f1f1f;
+    border: 2px solid rgba(255, 255, 255, 0.1);
+    border-radius: 9999px;
+    font-family: 'Inter', 'Noto Sans KR', sans-serif;
+    font-weight: 500;
+    font-size: 16px;
+    line-height: 24px;
+    letter-spacing: -0.3125px;
+    color: #ffffff;
+    text-align: center;
+    cursor: pointer;
+  }
+
+  .btn-mypage {
+    flex: 1 0 0;
+    min-width: 0;
+    width: 109.203px;
+    height: 40px;
+    background: linear-gradient(to right, #00b8db, #2b7fff);
+    border: none;
+    border-radius: 9999px;
+    font-family: 'Inter', 'Noto Sans KR', sans-serif;
+    font-weight: 500;
+    font-size: 16px;
+    line-height: 24px;
+    letter-spacing: -0.3125px;
+    color: #ffffff;
+    text-align: center;
+    cursor: pointer;
+  }
+}

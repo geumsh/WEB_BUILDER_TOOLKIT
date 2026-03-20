@@ -1,0 +1,168 @@
+/* Reset */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  background: #0a0a0a;
+}
+
+/* Container: Figma 선택 요소 크기 */
+#location-card-list-container {
+  width: 337px;
+  height: 821px;
+  overflow: auto;
+}
+
+/* 내부 요소: Figma 스타일 그대로 */
+#location-card-list-container {
+
+  .location-card-list {
+    width: 100%;
+    height: 100%;
+    background: rgba(15, 15, 15, 0.4);
+    border-left: 1px solid rgba(255, 255, 255, 0.05);
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    padding: 16px 20px;
+    overflow-y: auto;
+  }
+
+  .location-card-list::-webkit-scrollbar {
+    width: 4px;
+  }
+
+  .location-card-list::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  .location-card-list::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.15);
+    border-radius: 2px;
+  }
+
+  /* ===== Card ===== */
+  .card {
+    width: 100%;
+    height: 114px;
+    min-height: 114px;
+    background: #1f1f1f;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 16px;
+    position: relative;
+    flex-shrink: 0;
+  }
+
+  /* ===== Card Image ===== */
+  .card-image {
+    position: absolute;
+    left: 16px;
+    top: 16px;
+    width: 80px;
+    height: 80px;
+    border-radius: 14px;
+    overflow: hidden;
+  }
+
+  .card-image > img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+  }
+
+  /* ===== Badge ===== */
+  .badge {
+    position: absolute;
+    top: 6px;
+    left: 4px;
+    display: flex;
+    align-items: center;
+    gap: 3px;
+    height: 20px;
+    padding: 2px 8px;
+    background: #00b8db;
+    border-radius: 9999px;
+  }
+
+  .badge-count {
+    font-family: 'SUIT', sans-serif;
+    font-weight: 700;
+    font-size: 12px;
+    line-height: 16px;
+    color: #ffffff;
+    white-space: nowrap;
+  }
+
+  .badge-icon {
+    width: 16px;
+    height: 8px;
+    display: block;
+  }
+
+  /* ===== Card Info ===== */
+  .card-info {
+    position: absolute;
+    left: 112px;
+    top: 16px;
+    width: 155px;
+    height: 80px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    justify-content: center;
+  }
+
+  .card-title {
+    font-family: 'SUIT', sans-serif;
+    font-weight: 600;
+    font-size: 16px;
+    line-height: 27px;
+    letter-spacing: -0.4395px;
+    color: #ffffff;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 155px;
+  }
+
+  .card-detail {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    height: 16px;
+    width: 155px;
+  }
+
+  .detail-icon {
+    width: 12px;
+    height: 12px;
+    flex-shrink: 0;
+    display: block;
+  }
+
+  .detail-type {
+    font-family: 'SUIT', sans-serif;
+    font-weight: 400;
+    font-size: 12px;
+    line-height: 16px;
+    color: rgba(255, 255, 255, 0.6);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .detail-address {
+    font-family: 'SUIT', sans-serif;
+    font-weight: 400;
+    font-size: 12px;
+    line-height: 16px;
+    color: rgba(255, 255, 255, 0.4);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+}

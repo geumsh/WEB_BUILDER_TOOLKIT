@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>UrbanTwinLocationCardList - Preview</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { background: #0a0a0a; }
+  </style>
+  <link rel="stylesheet" href="styles/component.css">
+</head>
+<body>
+
+<div id="urban-twin-location-card-list-container" style="width: 337px; height: 821px; overflow: auto;">
+</div>
+
+<script>
+// ======================
+// MOCK DEPENDENCIES
+// ======================
+
+const GlobalDataPublisher = {
+    subscribe: (topic, instance, handler) => {
+        console.log(`[GDP] subscribe: ${topic}`);
+    },
+    unsubscribe: (topic, instance) => {
+        console.log(`[GDP] unsubscribe: ${topic}`);
+    }
+};
+
+const Wkit = {
+    bindEvents: (instance, events) => {
+        console.log('[Wkit] bindEvents:', Object.keys(events));
+    },
+    removeCustomEvents: (instance, events) => {
+        console.log('[Wkit] removeCustomEvents');
+    }
+};
+
+const fx = {
+    go: (...args) => {
+        const [initial, ...fns] = args;
+        return fns.reduce((acc, fn) => fn(acc), initial);
+    },
+    each: (fn) => (arr) => { arr.forEach(fn); return arr; },
+    map: (fn) => (arr) => arr.map(fn)
+};
+
+// ======================
+// MOCK COMPONENT CONTEXT
+// ======================
+
+const container = document.getElementById('urban-twin-location-card-list-container');
+
+fetch('views/component.html')
+    .then(res => res.text())
+    .then(html => {
+        container.innerHTML = html;
+
+        const mockThis = {
+            appendElement: container,
+            name: 'UrbanTwinLocationCardList_preview'
+        };
+
+        fetch('scripts/register.js')
+            .then(res => res.text())
+            .then(script => {
+                const cleanScript = script
+                    .replace(/const\s*\{[^}]*\}\s*=\s*GlobalDataPublisher;/g, '')
+                    .replace(/const\s*\{[^}]*\}\s*=\s*Wkit;/g, '');
+
+                const fn = new Function(
+                    'GlobalDataPublisher', 'Wkit', 'fx',
+                    'subscribe', 'bindEvents',
+                    cleanScript
+                );
+
+                fn.call(
+                    mockThis,
+                    GlobalDataPublisher, Wkit, fx,
+                    GlobalDataPublisher.subscribe, Wkit.bindEvents
+                );
+
+                console.log('[Preview] Component initialized');
+                window._component = mockThis;
+            });
+    });
+</script>
+
+</body>
+</html>

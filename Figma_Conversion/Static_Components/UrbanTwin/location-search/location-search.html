@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>UrbanTwin Location Search</title>
+  <link rel="stylesheet" href="location-search.css" />
+</head>
+<body>
+  <div id="location-search-container">
+    <div class="location-search">
+      <!-- Search Input -->
+      <div class="search-row">
+        <img class="search-icon" src="./assets/search-icon.svg" alt="" />
+        <input type="text" class="search-input" placeholder="위치 검색..." />
+        <button class="filter-btn">
+          <div class="filter-icon">
+            <svg width="12" height="8" viewBox="0 0 12 8" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <line x1="0" y1="1" x2="12" y2="1" stroke="white" stroke-opacity="0.6" stroke-width="1.33" stroke-linecap="round"/>
+              <line x1="2" y1="4" x2="7" y2="4" stroke="white" stroke-opacity="0.6" stroke-width="1.33" stroke-linecap="round"/>
+              <line x1="4" y1="7" x2="5.5" y2="7" stroke="white" stroke-opacity="0.6" stroke-width="1.33" stroke-linecap="round"/>
+            </svg>
+          </div>
+        </button>
+      </div>
+
+      <!-- Filter Tags -->
+      <div class="filter-tags">
+        <button class="tag tag--active">전체</button>
+        <button class="tag">상업시설</button>
+        <button class="tag">오피스</button>
+        <button class="tag">쇼핑몰</button>
+        <button class="tag">리테일</button>
+        <button class="tag">문화시설</button>
+      </div>
+
+      <!-- Count Row -->
+      <div class="count-row">
+        <div class="count-text">
+          <span class="count-label">총</span>
+          <span class="count-number">10</span>
+          <span class="count-label">개 위치</span>
+        </div>
+        <button class="add-btn">
+          <img class="add-icon" src="./assets/add-icon.svg" alt="" />
+          <span>새 위치 추가</span>
+        </button>
+      </div>
+    </div>
+  </div>
+</body>
+</html>

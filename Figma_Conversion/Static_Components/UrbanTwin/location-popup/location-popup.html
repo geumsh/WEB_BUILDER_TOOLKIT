@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>UrbanTwin Location Popup</title>
+  <link rel="stylesheet" href="location-popup.css" />
+</head>
+<body>
+  <div id="location-popup-container">
+    <div class="popup">
+      <!-- Title Bar -->
+      <div class="popup-title-bar">
+        <p class="popup-title">홍대입구 전광판</p>
+        <button class="btn-close">
+          <img src="./assets/btn-close.svg" alt="Close" />
+        </button>
+      </div>
+
+      <!-- Content -->
+      <div class="popup-content">
+        <!-- Left: Image -->
+        <div class="image-container">
+          <img class="popup-image" src="./assets/popup-image.png" alt="" />
+          <div class="image-badge">
+            <span class="badge-text">상업시설</span>
+          </div>
+        </div>
+
+        <!-- Right: Info + Settings + Button -->
+        <div class="right-container">
+          <!-- 상세정보 -->
+          <div class="info-card">
+            <p class="card-title">상세정보</p>
+            <div class="info-row">
+              <span class="info-label">위치:</span>
+              <span class="info-value">서울 마포구 양화로 100</span>
+            </div>
+            <div class="info-row">
+              <span class="info-label">규격:</span>
+              <span class="info-value">81m ✕ 21m</span>
+            </div>
+            <div class="info-row">
+              <span class="info-label">운영시간:</span>
+              <span class="info-value">30초(1일 70회)</span>
+            </div>
+          </div>
+
+          <!-- 환경설정 -->
+          <div class="settings-card">
+            <p class="card-title">환경설정</p>
+            <div class="info-row">
+              <span class="info-label">시간대:</span>
+              <img class="toggle-icon" src="./assets/toggle.svg" alt="" />
+            </div>
+            <div class="info-row">
+              <span class="info-label">시점:</span>
+              <span class="info-value">보행자 / 차량시점 중 선택</span>
+            </div>
+            <div class="info-row">
+              <span class="info-label">프리셋:</span>
+              <span class="info-value">보행자 / 차량 프리셋 수량 입력</span>
+            </div>
+          </div>
+
+          <!-- 체험하기 버튼 -->
+          <button class="btn-experience">체험하기</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</body>
+</html>

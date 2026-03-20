@@ -71,7 +71,9 @@
       "Bash(mkdir -p \"C:/Users/WEMB/Desktop/WEB_BUILDER_TOOLKIT/Figma_Conversion/Static_Components/celltrion/pallet-status/assets\")",
       "Bash(mkdir -p \"C:/Users/WEMB/Desktop/WEB_BUILDER_TOOLKIT/Figma_Conversion/Static_Components/celltrion/pallet-status/screenshots\")",
       "Bash(mkdir -p \"C:/Users/WEMB/Desktop/WEB_BUILDER_TOOLKIT/Figma_Conversion/Static_Components/celltrion/equipment-search/assets\")",
-      "Bash(mkdir -p \"C:/Users/WEMB/Desktop/WEB_BUILDER_TOOLKIT/Figma_Conversion/Static_Components/celltrion/equipment-search/screenshots\")"
+      "Bash(mkdir -p \"C:/Users/WEMB/Desktop/WEB_BUILDER_TOOLKIT/Figma_Conversion/Static_Components/celltrion/equipment-search/screenshots\")",
+      "Bash(mkdir -p \"C:/Users/WEMB/Desktop/WEB_BUILDER_TOOLKIT/Figma_Conversion/Static_Components/UrbanTwin/nav-bar/assets\")",
+      "Bash(mkdir -p \"C:/Users/WEMB/Desktop/WEB_BUILDER_TOOLKIT/Figma_Conversion/Static_Components/UrbanTwin/nav-bar/screenshots\")"
     ],
     "deny": [],
     "ask": []

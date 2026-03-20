@@ -1,0 +1,6 @@
+<svg preserveAspectRatio="none" width="100%" height="100%" overflow="visible" style="display: block;" viewBox="0 0 30.9258 30.9258" fill="none" xmlns="http://www.w3.org/2000/svg">
+<g id="btn-close">
+<rect id="Close button background" x="0.5" y="0.5" width="29.9258" height="29.9258" rx="7.5" fill="var(--fill-0, #292836)" stroke="var(--stroke-0, #3B4045)"/>
+<path id="Union" d="M21.3178 11.8301L16.8246 15.9395L21.3178 20.0498L19.9262 21.5713L15.2973 17.3369L10.6693 21.5713L9.27773 20.0498L13.7699 15.9395L9.27773 11.8301L10.6693 10.3086L15.2973 14.542L19.9262 10.3086L21.3178 11.8301Z" fill="var(--fill-0, #A4A4A4)"/>
+</g>
+</svg>
